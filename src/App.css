@@ -740,3 +740,30 @@
   background-color: rgba(0, 229, 255, 0.06);
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
 }
+
+/* Config Panel Collapse Toggle */
+.config-panel-toggle {
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 48px;
+  background-color: #161616;
+  border: 1px solid var(--border-color);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 10px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.config-panel-toggle:hover {
+  background-color: #202020;
+  color: #ffffff;
+}

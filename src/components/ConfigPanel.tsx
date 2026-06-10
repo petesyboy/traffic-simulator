@@ -10,6 +10,15 @@ const ConfigPanel: React.FC = () => {
   const isRunning = useStore((state) => state.isRunning);
 
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [prevSelectedNodeId, setPrevSelectedNodeId] = useState<string | null>(null);
+
+  if (selectedNodeId !== prevSelectedNodeId) {
+    setPrevSelectedNodeId(selectedNodeId);
+    if (selectedNodeId) {
+      setIsCollapsed(false);
+    }
+  }
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -242,52 +251,95 @@ const ConfigPanel: React.FC = () => {
   // If no node is selected, render Dashboard & CLI Generator
   if (!selectedNodeId || !selectedNode) {
     return (
-      <aside className="config-panel">
-        <h2>Global Dashboard</h2>
-        
-        {isRunning ? (
-          <div>
-            <h3>Active Metrics</h3>
-            <div className="metric-grid">
-              <div className="form-group">
-                <label>Total Ingest</label>
-                <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.1)', borderRadius: '4px', border: '1px solid rgba(76, 175, 80, 0.2)', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-input)' }}>
-                  {formatBandwidth(globalStats.totalIngest)}
+      <aside
+        className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
+        style={{
+          width: isCollapsed ? '0px' : '320px',
+          padding: isCollapsed ? '0px' : '16px',
+          borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
+          position: 'relative',
+          overflow: isCollapsed ? 'visible' : 'auto',
+          transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+          flexShrink: 0
+        }}
+      >
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="config-panel-toggle"
+          title={isCollapsed ? "Expand Panel" : "Collapse Panel"}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '-20px',
+            transform: 'translateY(-50%)',
+            width: '20px',
+            height: '48px',
+            backgroundColor: '#161616',
+            border: '1px solid var(--border-color)',
+            borderRight: 'none',
+            borderRadius: '6px 0 0 6px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 10,
+            fontSize: '10px',
+          }}
+        >
+          {isCollapsed ? '◀' : '▶'}
+        </button>
+
+        {!isCollapsed && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '288px' }}>
+            <h2>Global Dashboard</h2>
+            
+            {isRunning ? (
+              <div>
+                <h3>Active Metrics</h3>
+                <div className="metric-grid">
+                  <div className="form-group">
+                    <label>Total Ingest</label>
+                    <div style={{ padding: '8px', background: 'rgba(76, 175, 80, 0.1)', borderRadius: '4px', border: '1px solid rgba(76, 175, 80, 0.2)', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-input)' }}>
+                      {formatBandwidth(globalStats.totalIngest)}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Total Delivered</label>
+                    <div style={{ padding: '8px', background: 'rgba(0, 229, 255, 0.1)', borderRadius: '4px', border: '1px solid rgba(0, 229, 255, 0.2)', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-gigasmart)' }}>
+                      {formatBandwidth(globalStats.totalEgress)}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ marginTop: '10px' }} className="form-group">
+                  <label>Dropped Traffic</label>
+                  <div style={{ padding: '8px', background: 'rgba(239, 83, 80, 0.1)', borderRadius: '4px', border: '1px solid rgba(239, 83, 80, 0.2)', fontSize: '13px', fontWeight: 'bold', color: '#ef5350' }}>
+                    {formatBandwidth(globalStats.totalDrops)}
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <label>Total Delivered</label>
-                <div style={{ padding: '8px', background: 'rgba(0, 229, 255, 0.1)', borderRadius: '4px', border: '1px solid rgba(0, 229, 255, 0.2)', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-gigasmart)' }}>
-                  {formatBandwidth(globalStats.totalEgress)}
-                </div>
+            ) : (
+              <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px dashed var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Start the simulation in the header to view active bandwidth graphs and metrics.
               </div>
-            </div>
-            <div style={{ marginTop: '10px' }} className="form-group">
-              <label>Dropped Traffic</label>
-              <div style={{ padding: '8px', background: 'rgba(239, 83, 80, 0.1)', borderRadius: '4px', border: '1px solid rgba(239, 83, 80, 0.2)', fontSize: '13px', fontWeight: 'bold', color: '#ef5350' }}>
-                {formatBandwidth(globalStats.totalDrops)}
+            )}
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0 }}>Gigamon CLI Script</h3>
+                <button className="primary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={handleCopyCli}>
+                  {copySuccess ? 'Copied!' : 'Copy CLI'}
+                </button>
               </div>
+              <textarea
+                readOnly
+                value={generateCliScript()}
+                style={{ width: '100%', height: '350px', backgroundColor: 'var(--bg-primary)', color: '#00e5ff', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', padding: '10px', whiteSpace: 'pre', resize: 'none' }}
+              />
             </div>
-          </div>
-        ) : (
-          <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px dashed var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Start the simulation in the header to view active bandwidth graphs and metrics.
           </div>
         )}
-
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ margin: 0 }}>Gigamon CLI Script</h3>
-            <button className="primary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={handleCopyCli}>
-              {copySuccess ? 'Copied!' : 'Copy CLI'}
-            </button>
-          </div>
-          <textarea
-            readOnly
-            value={generateCliScript()}
-            style={{ width: '100%', height: '350px', backgroundColor: 'var(--bg-primary)', color: '#00e5ff', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', padding: '10px', whiteSpace: 'pre', resize: 'none' }}
-          />
-        </div>
       </aside>
     );
   }
@@ -362,8 +414,49 @@ const ConfigPanel: React.FC = () => {
   };
 
   return (
-    <aside className="config-panel">
-      <h2>Edit Node Configuration</h2>
+    <aside
+      className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
+      style={{
+        width: isCollapsed ? '0px' : '320px',
+        padding: isCollapsed ? '0px' : '16px',
+        borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
+        position: 'relative',
+        overflow: isCollapsed ? 'visible' : 'auto',
+        transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+        flexShrink: 0
+      }}
+    >
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="config-panel-toggle"
+        title={isCollapsed ? "Expand Panel" : "Collapse Panel"}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '-20px',
+          transform: 'translateY(-50%)',
+          width: '20px',
+          height: '48px',
+          backgroundColor: '#161616',
+          border: '1px solid var(--border-color)',
+          borderRight: 'none',
+          borderRadius: '6px 0 0 6px',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 10,
+          fontSize: '10px',
+        }}
+      >
+        {isCollapsed ? '◀' : '▶'}
+      </button>
+
+      {!isCollapsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '288px' }}>
+          <h2>Edit Node Configuration</h2>
       
       <div className="form-group">
         <label>Node Label</label>
@@ -708,6 +801,8 @@ const ConfigPanel: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
         </div>
       )}
     </aside>
