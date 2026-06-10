@@ -9,6 +9,7 @@ const TrafficGenerator: React.FC = () => {
   const deleteTrafficStream = useStore((state) => state.deleteTrafficStream);
   const deliveredStreams = useStore((state) => state.deliveredStreams);
   const isRunning = useStore((state) => state.isRunning);
+  const toggleSimulation = useStore((state) => state.toggleSimulation);
 
   const inputPorts = nodes.filter((node) => node.type === 'inputNode');
 
@@ -45,9 +46,28 @@ const TrafficGenerator: React.FC = () => {
         <h3 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           📊 Live Traffic Generator & Injector
         </h3>
-        <button className="primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={handleAddStream}>
-          + Inject Traffic Stream
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className={`sim-btn ${isRunning ? 'running' : ''}`} 
+            style={{ 
+              padding: '6px 12px', 
+              fontSize: '12px', 
+              backgroundColor: isRunning ? 'rgba(239, 83, 80, 0.2)' : 'rgba(37, 179, 75, 0.2)', 
+              border: isRunning ? '1px solid rgba(239, 83, 80, 0.4)' : '1px solid rgba(37, 179, 75, 0.4)',
+              color: isRunning ? '#ef5350' : 'var(--color-green)',
+              borderRadius: '4px', 
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }} 
+            onClick={toggleSimulation}
+          >
+            {isRunning ? '⏸ Pause Simulation' : '▶ Run Simulation'}
+          </button>
+          <button className="primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={handleAddStream}>
+            + Inject Traffic Stream
+          </button>
+        </div>
       </div>
 
       {trafficStreams.length === 0 ? (
