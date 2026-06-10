@@ -7,17 +7,17 @@ interface TrajectoryStream extends TrafficStream {
 }
 
 // Match VLAN IDs: e.g. "100" in "100, 200, 300"
-const matchesVlan = (streamVlan: string, filterVlan: string | undefined): boolean => {
+const matchesVlan = (streamVlan: string | undefined, filterVlan: string | undefined): boolean => {
   if (!filterVlan) return false;
   const allowed = filterVlan.split(',').map((s) => s.trim());
-  return allowed.includes(streamVlan);
+  return allowed.includes(String(streamVlan || '').trim());
 };
 
 // Match IP Subnet: simple prefix matching for demo purposes
-const matchesIp = (streamIp: string, filterIp: string | undefined): boolean => {
+const matchesIp = (streamIp: string | undefined, filterIp: string | undefined): boolean => {
   if (!filterIp) return false;
   const cleanFilter = filterIp.trim().toLowerCase();
-  const cleanStream = streamIp.trim().toLowerCase();
+  const cleanStream = String(streamIp || '').trim().toLowerCase();
   // Standard prefix matching
   if (cleanFilter.includes('/') && cleanFilter.split('/')[0]) {
     const prefix = cleanFilter.split('/')[0];
@@ -27,10 +27,10 @@ const matchesIp = (streamIp: string, filterIp: string | undefined): boolean => {
 };
 
 // Match Ports: e.g. "80" in "80, 443"
-const matchesPort = (streamPort: string, filterPort: string | undefined): boolean => {
+const matchesPort = (streamPort: string | undefined, filterPort: string | undefined): boolean => {
   if (!filterPort) return false;
   const allowed = filterPort.split(',').map((s) => s.trim());
-  return allowed.includes(streamPort);
+  return allowed.includes(String(streamPort || '').trim());
 };
 
 // Evaluate map conditions sequentially with logic rules (AND / OR)
@@ -41,7 +41,7 @@ const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[]
   
   for (let i = 0; i < conditions.length; i++) {
     const cond = conditions[i];
-    const val = String(cond.value).toLowerCase().trim();
+    const val = String(cond.value || '').toLowerCase().trim();
     const field = cond.field;
     
     let streamVal = '';
@@ -52,10 +52,16 @@ const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[]
     else if (field === 'portdst') streamVal = stream.portDst;
     else if (field === 'protocol') streamVal = stream.protocol;
     
-    const cleanStreamVal = String(streamVal).toLowerCase().trim();
+    const cleanStreamVal = String(streamVal || '').toLowerCase().trim();
     
     const isMatch = val === ''
       ? true
+      : field === 'ipver'
+      ? (val === 'ipv6' 
+        ? (!!(stream.ipSrc && stream.ipSrc.includes(':')) || !!(stream.ipDst && stream.ipDst.includes(':'))) 
+        : val === 'ipv4' 
+        ? !(!!(stream.ipSrc && stream.ipSrc.includes(':')) || !!(stream.ipDst && stream.ipDst.includes(':'))) 
+        : false)
       : field === 'vlan'
       ? matchesVlan(cleanStreamVal, val)
       : (field === 'ipsrc' || field === 'ipdst' || field === 'ip6src' || field === 'ip6dst')
@@ -149,6 +155,7 @@ const SimulationEngine: React.FC = () => {
 
       const queue: QueueItem[] = [];
       const toolReceivedStreams: Record<string, TrajectoryStream[]> = {};
+      const deliveredStreamIds = new Set<string>();
 
       // Find starting nodes for all active traffic streams
       currentTraffic.forEach((stream) => {
@@ -186,13 +193,17 @@ const SimulationEngine: React.FC = () => {
           nodeMetric.rxPackets += packetsPerSecond;
         }
 
-        const outboundEdges = currentEdges.filter((e) => e.source === node.id);
+        let outboundEdges = currentEdges.filter((e) => e.source === node.id);
+        if (outboundEdges.length === 0 && node.parentId) {
+          outboundEdges = currentEdges.filter((e) => e.source === node.parentId);
+        }
 
         if (node.type === 'toolNode') {
           if (!toolReceivedStreams[node.id]) {
             toolReceivedStreams[node.id] = [];
           }
           toolReceivedStreams[node.id].push(item.stream);
+          deliveredStreamIds.add(item.stream.id);
           continue;
         }
 
@@ -249,10 +260,13 @@ const SimulationEngine: React.FC = () => {
             nodeMetric.txPackets += validBandwidth * 250;
             forwardStream = { ...item.stream, bandwidth: validBandwidth };
           } 
-          else if (actionType === 'Application Metadata') {
+          else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
             const format = (node.data?.metadataFormat as string) || 'CEF';
-            const metadataBandwidth = item.stream.bandwidth * 0.1;
+            const scale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.1; // AMX/AMI uses 1.5%, App Metadata uses 10%
+            const metadataBandwidth = item.stream.bandwidth * scale;
 
+            dropBandwidth = item.stream.bandwidth * (1 - scale);
+            nodeMetric.droppedPackets += dropBandwidth;
             nodeMetric.txBps += metadataBandwidth;
             nodeMetric.txPackets += metadataBandwidth * 250;
             forwardStream = { 
@@ -402,7 +416,12 @@ const SimulationEngine: React.FC = () => {
         }
       });
 
-      updateSimulationTick(metrics, Array.from(activeEdgeSet), Array.from(blockedEdgeSet));
+      updateSimulationTick(
+        metrics, 
+        Array.from(activeEdgeSet), 
+        Array.from(blockedEdgeSet), 
+        Array.from(deliveredStreamIds)
+      );
     };
 
     runSimulationStep();

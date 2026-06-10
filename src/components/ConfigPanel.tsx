@@ -120,10 +120,22 @@ const ConfigPanel: React.FC = () => {
       
       // Find source ports
       const inboundEdges = edges.filter((e) => e.target === mapNode.id);
-      const srcPorts = inboundEdges.map((e) => {
-        const inputIdx = inputNodes.findIndex((inNode) => inNode.id === e.source);
-        return inputIdx !== -1 ? `1/1/x${inputIdx + 1}` : null;
-      }).filter(Boolean);
+      const srcPorts: string[] = [];
+      inboundEdges.forEach((e) => {
+        const sourceNode = nodes.find((n) => n.id === e.source);
+        if (!sourceNode) return;
+        
+        if (sourceNode.type === 'inputNode') {
+          const inputIdx = inputNodes.findIndex((inNode) => inNode.id === sourceNode.id);
+          if (inputIdx !== -1) srcPorts.push(`1/1/x${inputIdx + 1}`);
+        } else if (sourceNode.type === 'groupNode') {
+          const nestedInputs = inputNodes.filter((inNode) => inNode.parentId === sourceNode.id);
+          nestedInputs.forEach((nestedNode) => {
+            const inputIdx = inputNodes.findIndex((inNode) => inNode.id === nestedNode.id);
+            if (inputIdx !== -1) srcPorts.push(`1/1/x${inputIdx + 1}`);
+          });
+        }
+      });
 
       // Find destinations or next hops
       const outboundEdges = edges.filter((e) => e.source === mapNode.id);
@@ -172,7 +184,12 @@ const ConfigPanel: React.FC = () => {
       const conditions = (mapNode.data?.conditions as MapCondition[]) || [];
       conditions.forEach((c) => {
         if (c.value) {
-          rules.push(`rule add pass ${c.field} ${c.value}`);
+          if (c.field === 'ipver') {
+            const versionVal = c.value === 'ipv6' ? '6' : '4';
+            rules.push(`rule add pass ipver ${versionVal}`);
+          } else {
+            rules.push(`rule add pass ${c.field} ${c.value}`);
+          }
         }
       });
 
@@ -286,6 +303,7 @@ const ConfigPanel: React.FC = () => {
     { key: 'portsrc', label: 'Source Port', placeholder: 'e.g. 1024..65535' },
     { key: 'ipdst', label: 'Destination IPv4', placeholder: 'e.g. 192.168.1.0/24' },
     { key: 'ipsrc', label: 'Source IPv4', placeholder: 'e.g. 10.0.0.5' },
+    { key: 'ipver', label: 'IP Version', placeholder: 'ipv4 or ipv6' },
   ];
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,6 +319,19 @@ const ConfigPanel: React.FC = () => {
     if (key === 'erspanId') {
       updates.erspanId = parseInt(val, 10) || 10;
     }
+    if (key === 'configType' && selectedNode?.type === 'inputNode') {
+      const oldLabel = String(selectedNode.data?.label || '');
+      const match = oldLabel.match(/(?:x|Tunnel\s+)(\d+)/i);
+      const portIdx = match ? match[1] : '1';
+      
+      if (val === 'TAP') {
+        updates.label = `TAP Device 1/1/x${portIdx}`;
+      } else if (val === 'SPAN') {
+        updates.label = `SPAN Port 1/1/x${portIdx}`;
+      } else if (val === 'ERSPAN') {
+        updates.label = `ERSPAN Tunnel ${portIdx}`;
+      }
+    }
     updateNodeData(selectedNodeId, updates);
   };
 
@@ -313,6 +344,14 @@ const ConfigPanel: React.FC = () => {
   const handleConditionChange = (index: number, key: string, value: string) => {
     const conditions = [...((selectedNode.data?.conditions as MapCondition[]) || [])];
     conditions[index] = { ...conditions[index], [key]: value };
+    
+    // Default the value when switching field to 'ipver'
+    if (key === 'field' && value === 'ipver') {
+      if (conditions[index].value !== 'ipv4' && conditions[index].value !== 'ipv6') {
+        conditions[index].value = 'ipv4';
+      }
+    }
+    
     updateNodeData(selectedNodeId, { conditions });
   };
 
@@ -334,6 +373,16 @@ const ConfigPanel: React.FC = () => {
           onChange={handleLabelChange}
         />
       </div>
+
+      {/* Port Group specific properties */}
+      {selectedNode.type === 'groupNode' && (
+        <div style={{ padding: '12px', background: 'rgba(0, 229, 255, 0.05)', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.15)', fontSize: '12px', color: '#00e5ff', marginBottom: '15px' }}>
+          📦 <b>Port Group Node</b>
+          <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            This group represents a Port Group, bundling multiple input ports together. Connecting the output handle of this group to a Traffic Map automatically maps all nested input ports to that map.
+          </p>
+        </div>
+      )}
 
       {/* SPAN / TAP / ERSPAN Input specific properties */}
       {selectedNode.type === 'inputNode' && (
@@ -477,7 +526,7 @@ const ConfigPanel: React.FC = () => {
               <option value="SSL Decrypt">SSL Decrypt</option>
             </select>
           </div>
-          {((selectedNode.data?.actionType as string) === 'Application Metadata') && (
+          {((selectedNode.data?.actionType as string) === 'Application Metadata' || (selectedNode.data?.actionType as string) === 'AMX' || (selectedNode.data?.actionType as string) === 'AMI') && (
             <div className="form-group">
               <label>Output Metadata Format</label>
               <select
@@ -592,12 +641,23 @@ const ConfigPanel: React.FC = () => {
                   Remove
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder={mapCriteria.find(c => c.key === condition.field)?.placeholder || ''}
-                value={condition.value}
-                onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
-              />
+              {condition.field === 'ipver' ? (
+                <select
+                  value={condition.value || 'ipv4'}
+                  onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
+                  style={{ width: '100%', padding: '6px 10px', marginTop: '4px', backgroundColor: '#1a1a1a', border: '1px solid var(--border-color)', borderRadius: '3px', color: 'var(--text-primary)', fontSize: '12px' }}
+                >
+                  <option value="ipv4">IPv4</option>
+                  <option value="ipv6">IPv6</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder={mapCriteria.find(c => c.key === condition.field)?.placeholder || ''}
+                  value={condition.value}
+                  onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
+                />
+              )}
             </div>
           ))}
           <button className="secondary" onClick={handleAddCondition} style={{ width: '100%', marginTop: '5px' }}>

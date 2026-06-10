@@ -52,6 +52,7 @@ export type RFState = {
   nodeMetrics: Record<string, NodeMetrics>;
   activeEdges: string[];
   blockedEdges: string[];
+  deliveredStreams: string[];
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -65,9 +66,10 @@ export type RFState = {
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
   deleteTrafficStream: (id: string) => void;
   resetMetrics: () => void;
-  updateSimulationTick: (metrics: Record<string, NodeMetrics>, activeEdges: string[], blockedEdges: string[]) => void;
+  updateSimulationTick: (metrics: Record<string, NodeMetrics>, activeEdges: string[], blockedEdges: string[], deliveredStreams?: string[]) => void;
   clearCanvas: () => void;
   loadDemo: () => void;
+  groupSelectedNodes: () => void;
 };
 
 // Create a default topology
@@ -170,6 +172,19 @@ const initialTraffic: TrafficStream[] = [
     protocol: 'udp',
     bandwidth: 35, // 35 Mbps
     active: true,
+  },
+  {
+    id: 't-4',
+    name: 'IPv6 Sync Flow',
+    sourceNodeId: defaultInputId,
+    vlan: '300',
+    ipSrc: '2001:db8::1',
+    ipDst: '2001:db8::2',
+    portSrc: '8080',
+    portDst: '8080',
+    protocol: 'tcp',
+    bandwidth: 45, // 45 Mbps
+    active: true,
   }
 ];
 
@@ -183,9 +198,45 @@ export const useStore = create<RFState>((set, get) => ({
   nodeMetrics: {},
   activeEdges: [],
   blockedEdges: [],
+  deliveredStreams: [],
   
   onNodesChange: (changes: NodeChange[]) => {
-    set({ nodes: applyNodeChanges(changes, get().nodes) });
+    let nextNodes = applyNodeChanges(changes, get().nodes);
+    const deletedNodeIds = changes
+      .filter((c) => c.type === 'remove')
+      .map((c) => (c as { id: string }).id);
+      
+    const deletedGroupNodeIds = deletedNodeIds.filter((id) => id.includes('group'));
+    
+    if (deletedGroupNodeIds.length > 0) {
+      // Un-nest child nodes: remove parentId, restore absolute position
+      nextNodes = nextNodes.map((node) => {
+        if (node.parentId && deletedGroupNodeIds.includes(node.parentId)) {
+          const parentNode = get().nodes.find((n) => n.id === node.parentId);
+          const parentX = parentNode?.position.x || 0;
+          const parentY = parentNode?.position.y || 0;
+          return {
+            ...node,
+            parentId: undefined,
+            position: {
+              x: node.position.x + parentX,
+              y: node.position.y + parentY,
+            },
+            extent: undefined,
+          };
+        }
+        return node;
+      });
+    }
+
+    if (deletedNodeIds.length > 0) {
+      const nextTraffic = get().trafficStreams.filter(
+        (s) => !deletedNodeIds.includes(s.sourceNodeId)
+      );
+      set({ nodes: nextNodes, trafficStreams: nextTraffic });
+    } else {
+      set({ nodes: nextNodes });
+    }
   },
   
   onEdgesChange: (changes: EdgeChange[]) => {
@@ -253,19 +304,20 @@ export const useStore = create<RFState>((set, get) => ({
   },
 
   resetMetrics: () => {
-    set({ nodeMetrics: {}, activeEdges: [], blockedEdges: [] });
+    set({ nodeMetrics: {}, activeEdges: [], blockedEdges: [], deliveredStreams: [] });
   },
 
-  updateSimulationTick: (metrics: Record<string, NodeMetrics>, activeEdges: string[], blockedEdges: string[]) => {
+  updateSimulationTick: (metrics: Record<string, NodeMetrics>, activeEdges: string[], blockedEdges: string[], deliveredStreams?: string[]) => {
     set({
       nodeMetrics: metrics,
       activeEdges,
       blockedEdges,
+      deliveredStreams: deliveredStreams || [],
     });
   },
 
   clearCanvas: () => {
-    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [] });
+    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [] });
   },
 
   loadDemo: () => {
@@ -277,6 +329,65 @@ export const useStore = create<RFState>((set, get) => ({
       activeEdges: [],
       blockedEdges: [],
       trafficStreams: initialTraffic,
+      deliveredStreams: [],
+    });
+  },
+
+  groupSelectedNodes: () => {
+    const selectedNodes = get().nodes.filter(
+      (n) => n.selected && n.type === 'inputNode'
+    );
+    if (selectedNodes.length < 2) return;
+
+    // 1. Calculate bounding box
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    selectedNodes.forEach((node) => {
+      const { x, y } = node.position;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    });
+
+    const parentX = minX - 25;
+    const parentY = minY - 45;
+    const parentWidth = (maxX - minX) + 170 + 50;
+    const parentHeight = (maxY - minY) + 75 + 70;
+
+    const groupId = `group-${uuidv4()}`;
+
+    // 2. Create the group node
+    const groupNode: Node = {
+      id: groupId,
+      type: 'groupNode',
+      position: { x: parentX, y: parentY },
+      style: { width: parentWidth, height: parentHeight },
+      data: { label: 'Port Group', configType: 'Port Group' },
+    };
+
+    // 3. Update child nodes to be nested
+    const updatedNodes = get().nodes.map((node) => {
+      if (node.selected && node.type === 'inputNode') {
+        return {
+          ...node,
+          parentId: groupId,
+          position: {
+            x: node.position.x - parentX,
+            y: node.position.y - parentY,
+          },
+          extent: 'parent' as const,
+          selected: false, // deselect child node
+        };
+      }
+      return node;
+    });
+
+    set({
+      nodes: [groupNode, ...updatedNodes],
     });
   },
 }));

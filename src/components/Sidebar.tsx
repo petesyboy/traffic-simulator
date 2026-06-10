@@ -36,7 +36,7 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
           <rect width="24" height="24" rx="4" fill="#0091ea"/>
-          <text x="12" y="12" fill="white" fontSize={rate !== undefined ? "8" : "11"} fontFamily="Inter, sans-serif" fontWeight="bold" textAnchor="middle" dominantBaseline="central">
+          <text x="12" y="12" fill="white" fontSize={rate !== undefined ? "12" : "13"} fontFamily="Inter, sans-serif" fontWeight="bold" textAnchor="middle" dominantBaseline="central">
             {rate !== undefined ? `${Math.round(rate)}%` : '%'}
           </text>
         </svg>

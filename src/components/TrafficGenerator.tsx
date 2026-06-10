@@ -7,6 +7,8 @@ const TrafficGenerator: React.FC = () => {
   const addTrafficStream = useStore((state) => state.addTrafficStream);
   const updateTrafficStream = useStore((state) => state.updateTrafficStream);
   const deleteTrafficStream = useStore((state) => state.deleteTrafficStream);
+  const deliveredStreams = useStore((state) => state.deliveredStreams);
+  const isRunning = useStore((state) => state.isRunning);
 
   const inputPorts = nodes.filter((node) => node.type === 'inputNode');
 
@@ -65,6 +67,7 @@ const TrafficGenerator: React.FC = () => {
                 <th style={{ padding: '6px 4px' }}>Dest IP</th>
                 <th style={{ padding: '6px 4px', width: '70px' }}>Dst Port</th>
                 <th style={{ padding: '6px 4px', width: '100px' }}>Rate (Mbps)</th>
+                <th style={{ padding: '6px 4px', width: '90px' }}>Status</th>
                 <th style={{ padding: '6px 4px', width: '60px', textAlign: 'center' }}>Active</th>
                 <th style={{ padding: '6px 4px', width: '60px' }}>Action</th>
               </tr>
@@ -150,6 +153,25 @@ const TrafficGenerator: React.FC = () => {
                       />
                       <span>M</span>
                     </div>
+                  </td>
+                  <td style={{ padding: '4px 2px' }}>
+                    {!isRunning ? (
+                      <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', fontSize: '10px', color: '#888', display: 'inline-block' }}>
+                        Idle
+                      </span>
+                    ) : !stream.active ? (
+                      <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', fontSize: '10px', color: '#666', display: 'inline-block' }}>
+                        Inactive
+                      </span>
+                    ) : deliveredStreams.includes(stream.id) ? (
+                      <span style={{ padding: '2px 6px', background: 'rgba(76, 175, 80, 0.12)', border: '1px solid rgba(76, 175, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#4caf50', display: 'inline-block', whiteSpace: 'nowrap' }}>
+                        ✓ Passed
+                      </span>
+                    ) : (
+                      <span style={{ padding: '2px 6px', background: 'rgba(239, 83, 80, 0.12)', border: '1px solid rgba(239, 83, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#ef5350', display: 'inline-block', whiteSpace: 'nowrap' }}>
+                        ❌ Filtered
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '4px 2px', textAlign: 'center' }}>
                     <input

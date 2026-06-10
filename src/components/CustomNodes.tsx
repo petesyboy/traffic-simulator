@@ -18,10 +18,10 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const configType = (data.configType as string) || '';
 
   const renderIcon = () => {
-    if (configType.startsWith('SPAN')) return <SpanIcon size={16} />;
-    if (configType.startsWith('TAP')) return <TapIcon size={16} />;
-    if (configType.startsWith('ERSPAN')) return <ErspanIcon size={16} />;
-    return <MapIcon size={16} />;
+    if (configType.startsWith('SPAN')) return <SpanIcon size={20} />;
+    if (configType.startsWith('TAP')) return <TapIcon size={20} />;
+    if (configType.startsWith('ERSPAN')) return <ErspanIcon size={20} />;
+    return <MapIcon size={20} />;
   };
 
   const nodeTypeLabel = configType.startsWith('SPAN') 
@@ -68,7 +68,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <MapIcon size={16} />
+            <MapIcon size={20} />
             <span className="node-title">{data.label as string}</span>
           </div>
           <span style={{ fontSize: '12px', color: '#666', cursor: 'pointer' }}>⋮</span>
@@ -110,7 +110,7 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <SmartIcon size={16} />
+            <SmartIcon size={20} />
             <span className="node-title">{data.label as string}</span>
           </div>
         </div>
@@ -144,9 +144,9 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isMetadataTool = configType === 'Metadata Tool';
 
   const renderIcon = () => {
-    if (isPacketTool) return <PacketToolIcon size={16} />;
-    if (isMetadataTool) return <MetadataToolIcon size={16} />;
-    return <GreenCircleIcon size={16} />;
+    if (isPacketTool) return <PacketToolIcon size={20} />;
+    if (isMetadataTool) return <MetadataToolIcon size={20} />;
+    return <GreenCircleIcon size={20} />;
   };
 
   const status = data.status as 'warning' | 'optimal' | undefined;
@@ -219,7 +219,7 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <AppIcon type="Load Balancing" size={16} />
+            <AppIcon type="Load Balancing" size={20} />
             <span className="node-title">{data.label as string}</span>
           </div>
         </div>
@@ -250,7 +250,7 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <AppIcon type={actionType} size={16} rate={data.dedupRate as number} />
+            <AppIcon type={actionType} size={22} rate={data.dedupRate as number} />
             <span className="node-title">{data.label as string}</span>
           </div>
           <span style={{ fontSize: '12px', color: '#666' }}>⋮</span>
@@ -260,11 +260,11 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           {actionType === 'Deduplication' && 'Action: Drop'}
           {actionType === 'Packet Slicing' && 'Action: Slice'}
           {actionType === 'Header Stripping' && 'Action: Strip'}
-          {actionType === 'Application Metadata' && `Format: ${data.metadataFormat as string || 'CEF'}`}
-          {actionType !== 'Deduplication' && actionType !== 'Packet Slicing' && actionType !== 'Header Stripping' && actionType !== 'Application Metadata' && `Action: ${actionType}`}
+          {(actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') && `Format: ${data.metadataFormat as string || 'CEF'}`}
+          {actionType !== 'Deduplication' && actionType !== 'Packet Slicing' && actionType !== 'Header Stripping' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && `Action: ${actionType}`}
         </div>
 
-        {actionType === 'Application Metadata' && (
+        {(actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') && (
           <div className="node-chip-row" style={{ marginTop: '4px' }}>
             <div className="node-inner-chip" style={{ color: '#00e5ff', borderColor: 'rgba(0, 229, 255, 0.2)', fontSize: '8px', padding: '2px 4px' }}>
               Output: {data.metadataFormat as string || 'CEF'}
@@ -284,5 +284,16 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="source" position={Position.Right} id="out" />
       </div>
     </>
+  );
+};
+
+export const GroupNode: React.FC<NodeProps> = ({ data, selected }) => {
+  return (
+    <div className={`custom-group-node ${selected ? 'selected' : ''}`} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div className="group-header" style={{ position: 'absolute', top: '-24px', left: '0', fontSize: '11px', fontWeight: 'bold', color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+        <span>📦 {data.label as string}</span>
+      </div>
+      <Handle type="source" position={Position.Right} id="out" style={{ top: '50%' }} />
+    </div>
   );
 };
