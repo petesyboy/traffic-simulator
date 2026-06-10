@@ -16,9 +16,9 @@ function App() {
     const savedState = localStorage.getItem('fm-simulator-default-file');
     if (savedState) {
       try {
-        const { nodes, edges } = JSON.parse(savedState);
+        const { nodes, edges, trafficStreams } = JSON.parse(savedState);
         if (nodes && edges) {
-          restoreState(nodes, edges);
+          restoreState(nodes, edges, trafficStreams);
         }
       } catch (error) {
         console.error('Failed to parse the saved canvas state:', error);

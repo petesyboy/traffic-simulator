@@ -12,7 +12,11 @@ const Header: React.FC = () => {
   const loadDemo = useStore((state) => state.loadDemo);
 
   const handleSave = () => {
-    const flow = { nodes, edges: useStore.getState().edges };
+    const flow = {
+      nodes,
+      edges: useStore.getState().edges,
+      trafficStreams: useStore.getState().trafficStreams
+    };
     localStorage.setItem('fm-simulator-default-file', JSON.stringify(flow));
     alert('Canvas state saved successfully!');
   };

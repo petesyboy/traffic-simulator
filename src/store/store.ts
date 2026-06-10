@@ -59,7 +59,7 @@ export type RFState = {
   addNode: (node: Node) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
   updateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
-  restoreState: (nodes: Node[], edges: Edge[]) => void;
+  restoreState: (nodes: Node[], edges: Edge[], trafficStreams?: TrafficStream[]) => void;
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
   addTrafficStream: (stream: TrafficStream) => void;
@@ -267,8 +267,12 @@ export const useStore = create<RFState>((set, get) => ({
     });
   },
   
-  restoreState: (nodes: Node[], edges: Edge[]) => {
-    set({ nodes, edges });
+  restoreState: (nodes: Node[], edges: Edge[], trafficStreams?: TrafficStream[]) => {
+    set({
+      nodes,
+      edges,
+      trafficStreams: trafficStreams || get().trafficStreams
+    });
   },
   
   toggleSimulation: () => {
