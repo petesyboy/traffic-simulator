@@ -42,6 +42,7 @@ export interface MapCondition {
   logic?: 'AND' | 'OR';
   field: string;
   value: string;
+  action?: 'pass' | 'drop';
 }
 
 export type RFState = {

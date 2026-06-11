@@ -34,9 +34,7 @@ const matchesPort = (streamPort: string | undefined, filterPort: string | undefi
 };
 
 // Evaluate map conditions sequentially with logic rules (AND / OR)
-const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[] | undefined): boolean => {
-  if (!conditions || conditions.length === 0) return true; // Default: pass all
-  
+const evaluateConditionGroup = (stream: TrafficStream, conditions: MapCondition[]): boolean => {
   let result = false;
   
   for (let i = 0; i < conditions.length; i++) {
@@ -82,6 +80,28 @@ const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[]
   }
   
   return result;
+};
+
+const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[] | undefined): boolean => {
+  if (!conditions || conditions.length === 0) return true; // Default: pass all
+  
+  const passConditions = conditions.filter(c => !c.action || c.action === 'pass');
+  const dropConditions = conditions.filter(c => c.action === 'drop');
+  
+  // 1. Evaluate drop rules: if matched, drop immediately (return false)
+  if (dropConditions.length > 0) {
+    const matchesDrop = evaluateConditionGroup(stream, dropConditions);
+    if (matchesDrop) {
+      return false;
+    }
+  }
+  
+  // 2. Evaluate pass rules: if present, must match to pass
+  if (passConditions.length > 0) {
+    return evaluateConditionGroup(stream, passConditions);
+  }
+  
+  return true; // No pass rules, didn't match drop rules -> pass
 };
 
 const SimulationEngine: React.FC = () => {

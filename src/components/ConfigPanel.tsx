@@ -193,11 +193,12 @@ const ConfigPanel: React.FC = () => {
       const conditions = (mapNode.data?.conditions as MapCondition[]) || [];
       conditions.forEach((c) => {
         if (c.value) {
+          const action = c.action || 'pass';
           if (c.field === 'ipver') {
             const versionVal = c.value === 'ipv6' ? '6' : '4';
-            rules.push(`rule add pass ipver ${versionVal}`);
+            rules.push(`rule add ${action} ipver ${versionVal}`);
           } else {
-            rules.push(`rule add pass ${c.field} ${c.value}`);
+            rules.push(`rule add ${action} ${c.field} ${c.value}`);
           }
         }
       });
@@ -390,7 +391,7 @@ const ConfigPanel: React.FC = () => {
   // Map node condition handlers
   const handleAddCondition = () => {
     const conditions = (selectedNode.data?.conditions as MapCondition[]) || [];
-    updateNodeData(selectedNodeId, { conditions: [...conditions, { logic: 'AND', field: 'vlan', value: '' }] });
+    updateNodeData(selectedNodeId, { conditions: [...conditions, { logic: 'AND', field: 'vlan', value: '', action: 'pass' }] });
   };
 
   const handleConditionChange = (index: number, key: string, value: string) => {
@@ -751,6 +752,27 @@ const ConfigPanel: React.FC = () => {
                   onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
                 />
               )}
+              <div className="condition-card-row" style={{ marginTop: '2px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: '0 0 45px' }}>Action:</span>
+                <select
+                  value={condition.action || 'pass'}
+                  onChange={(e) => handleConditionChange(index, 'action', e.target.value)}
+                  style={{ 
+                    flex: 1, 
+                    padding: '4px 6px', 
+                    fontSize: '11px',
+                    backgroundColor: condition.action === 'drop' ? 'rgba(239, 83, 80, 0.15)' : 'rgba(76, 175, 80, 0.15)', 
+                    border: condition.action === 'drop' ? '1px solid rgba(239, 83, 80, 0.3)' : '1px solid rgba(76, 175, 80, 0.3)', 
+                    color: condition.action === 'drop' ? '#ef5350' : '#4caf50', 
+                    fontWeight: 'bold', 
+                    borderRadius: '3px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="pass" style={{ backgroundColor: '#1a1a1a', color: '#4caf50' }}>🟢 PASS</option>
+                  <option value="drop" style={{ backgroundColor: '#1a1a1a', color: '#ef5350' }}>🔴 DROP</option>
+                </select>
+              </div>
             </div>
           ))}
           <button className="secondary" onClick={handleAddCondition} style={{ width: '100%', marginTop: '5px' }}>
