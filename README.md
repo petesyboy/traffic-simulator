@@ -49,24 +49,28 @@ To run the simulator locally, follow these steps:
 Here is how to set up a basic flow map that routes mirror traffic through a GigaSMART deduplication engine to a Vectra security sensor:
 
 ### Step 1: Add a Traffic Source
+
 1. Look at the left sidebar under the **"Demonstration"** section.
 2. Drag a **SPAN Port** (or a **TAP Device**) and drop it onto the canvas grid.
 3. You will immediately see a new port allocated (e.g., `1/1/x1`).
 4. In the bottom **Traffic Generator** drawer, note that a new live traffic stream has been generated automatically with a random bandwidth between 1 and 100 Gbps (e.g., `52.4 Gbps`).
 
 ### Step 2: Add a Basic Traffic Map
+
 1. In the left sidebar, find the **"Traffic Map"** node.
 2. Drag and drop it onto the canvas.
 3. Connect the right handle of your **SPAN Port** to the left handle of your **Traffic Map**.
-4. *(Optional)* Click on the Traffic Map node. In the right-hand properties panel, click **"+ Add Match Condition"** and choose options like `VLAN ID` (e.g., `100`) or `IP Version` (`IPv4` or `IPv6`) to restrict what traffic is allowed through the map.
+4. *(Optional)* Click on the Traffic Map node in the properties panel. Click **"+ Add Match Condition"** and choose options like `VLAN ID` (e.g., `100`) or `IP Version` (`IPv4` or `IPv6`) to restrict what traffic is allowed through the map.
 
 ### Step 3: Add a Deduplication GigaSMART Transformation
+
 1. From the left sidebar, drag a **GigaSMART** node and drop it onto the canvas.
 2. Connect the right handle of your **Traffic Map** to the left handle of your **GigaSMART** node.
-3. Click on the GigaSMART node to select it. In the right-hand panel, set the **GigaSMART Engine Operation** to **"De-duplication (Adaptive)"**.
+3. Click on the GigaSMART node in the properties panel. Set the **GigaSMART Engine Operation** to **"De-duplication (Adaptive)"**.
 4. You will see a bold percentage text overlay (e.g., `35%`) appear on the canvas node. If you start the simulation (via **▶ Run Simulation** in the top header), this value will drift dynamically by `+/- 5%` every few seconds, reducing downstream traffic volume proportionally.
 
 ### Step 4: Output to a Vectra Sensor
+
 1. In the left sidebar under **"Packet Tools"**, find the **Vectra** sensor.
 2. Drag and drop it onto the canvas.
 3. Connect the right handle of the **GigaSMART** deduplication node to the left handle of the **Vectra** node.
