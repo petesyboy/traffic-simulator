@@ -11,8 +11,10 @@ Welcome to the **Gigamon Fabric Manager & Flow Map Simulator**, an interactive v
 3. **Live GigaSMART Deduplication Drift**: Deduplication nodes on the canvas dynamically drift their duplicate drop rate between `10%` and `50%` in real time, rendering the current rate directly onto the canvas node icon.
 4. **Flow Validation & Warnings**: Validates traffic paths dynamically. E.g., alerts are flagged if a Packet Tool (like Vectra) receives metadata instead of raw packets, or if a SIEM tool (like Splunk) receives format mismatches.
 5. **Port Grouping**: Group multiple traffic sources together inside a Port Group node. Connecting the group container to a Traffic Map aggregates all nested source interfaces.
-6. **Real-time Status Drawer**: Tracks and badges each traffic stream as `✓ Passed`, `❌ Filtered`, or `Idle` based on active path deliveries.
-7. **Collapsible Config Panel**: Slide the properties panel off the screen to make more room on the canvas, with intelligent auto-expansion when a node is selected.
+6. **Federated Search Enclosures**: Connect a Splunk node to an S3 / Object Storage node to visually group them with a dashed enclosure, representing a unified federated search entity across traditional ingest and object storage.
+7. **Edge Deletion UI**: Click on any link between two nodes to select it and reveal a hovering banner with path details and an easy delete option (or just press the 'Delete' key).
+8. **Real-time Status Drawer**: Tracks and badges each traffic stream as `✓ Passed`, `❌ Filtered`, or `Idle` based on active path deliveries.
+9. **Collapsible Config Panel**: Slide the properties panel off the screen to make more room on the canvas, with intelligent auto-expansion when a node is selected.
 
 ---
 
@@ -63,9 +65,9 @@ Here is how to set up a basic flow map that routes mirror traffic through a Giga
 
 ### Step 3: Add a Deduplication GigaSMART Transformation
 
-1. From the left sidebar, drag a **GigaSMART** node and drop it onto the canvas.
-2. Connect the right handle of your **Traffic Map** to the left handle of your **GigaSMART** node.
-3. Click on the GigaSMART node in the properties panel. Set the **GigaSMART Engine Operation** to **"De-duplication (Adaptive)"**.
+1. Expand the **"Applications"** section in the left sidebar.
+2. Find **"Deduplication"** in the list, drag it, and drop it onto the canvas.
+3. Connect the right handle of your **Traffic Map** to the left handle of your **Deduplication** node.
 4. You will see a bold percentage text overlay (e.g., `35%`) appear on the canvas node. If you start the simulation (via **▶ Run Simulation** in the top header), this value will drift dynamically by `+/- 5%` every few seconds, reducing downstream traffic volume proportionally.
 
 ### Step 4: Output to a Vectra Sensor
