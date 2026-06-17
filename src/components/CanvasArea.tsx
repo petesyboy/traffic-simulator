@@ -122,11 +122,13 @@ const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges 
         const width  = (maxX - minX + ENCLOSURE_PAD * 2) * zoom;
         const height = (maxY - minY + ENCLOSURE_PAD * 2) * zoom;
 
-        const splunkId = groupNodes[0].id; // The Splunk node is always the first one
+        // Use a key that changes when the group composition changes
+        // This ensures React completely remounts the enclosure and cleans up any visual artifacts
+        const groupKey = groupNodes.map(n => n.id).sort().join('-');
 
         return (
           <div
-            key={`federated-${splunkId}`}
+            key={`federated-${groupKey}`}
             className="federated-enclosure pulse"
             style={{ left, top, width, height }}
           >
