@@ -20,7 +20,7 @@ import { formatBandwidth } from '../utils/format';
 import {
   MapIcon, GreenCircleIcon, SmartIcon, AppIcon,
   SpanIcon, TapIcon, ErspanIcon, EastWestIcon, VmwareIcon,
-  PacketToolIcon, MetadataToolIcon,
+  PacketToolIcon, MetadataToolIcon, S3StorageIcon,
 } from './Icons';
 import { CONFIG_TYPES, ACTION_TYPES, isMetadataAction, isDedupAction } from '../constants/nodeTypes';
 
@@ -172,8 +172,14 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const isPacketTool = configType === CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
+  const isStorageTool = configType === CONFIG_TYPES.STORAGE_TOOL;
+
+  // Splunk and S3 can link to each other — they need a source handle
+  const isSplunk = toolName === 'Splunk';
+  const canLinkOut = isSplunk || isStorageTool;
 
   const renderIcon = () => {
+    if (isStorageTool) return <S3StorageIcon size={20} />;
     if (isPacketTool) return <PacketToolIcon size={20} />;
     if (isMetadataTool) return <MetadataToolIcon size={20} />;
     return <GreenCircleIcon size={20} />;
@@ -187,6 +193,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   // indicates a traffic type or format mismatch detected by SimulationEngine.
   let nodeClass = 'tool-node';
   if (isPacketTool) nodeClass = 'tool-node packet-tool-node';
+  else if (isStorageTool) nodeClass = 'tool-node storage-tool-node';
   else if (isMetadataTool) nodeClass = 'tool-node metadata-tool-node';
   if (status === 'warning') nodeClass += ' node-warning';
 
@@ -234,6 +241,9 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           <div className="node-metrics" style={{ marginTop: '8px' }}>
             <span>Rx: {formatBandwidth(metrics?.rxBps)}</span>
           </div>
+        )}
+        {canLinkOut && (
+          <Handle type="source" position={Position.Right} id="out" />
         )}
       </div>
     </>

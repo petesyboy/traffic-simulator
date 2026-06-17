@@ -274,3 +274,15 @@ export const MetadataToolIcon: React.FC<{ size?: number }> = ({ size = 20 }) => 
     <circle cx="15" cy="9" r="1.5" fill="white"/>
   </svg>
 );
+
+// ─── Storage tool icon ────────────────────────────────────────────────────────
+
+/** Teal square with a cylinder/bucket — S3 / Object Storage tool. */
+export const S3StorageIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="4" fill="#00695c" stroke="#004d40" strokeWidth="1"/>
+    <ellipse cx="12" cy="8" rx="5" ry="2" stroke="white" strokeWidth="1.3" fill="none"/>
+    <path d="M7 8v8c0 1.1 2.24 2 5 2s5-.9 5-2V8" stroke="white" strokeWidth="1.3"/>
+    <ellipse cx="12" cy="12" rx="5" ry="1.5" stroke="white" strokeWidth="0.8" strokeDasharray="2 1.5" fill="none"/>
+  </svg>
+);

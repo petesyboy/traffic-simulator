@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 import {
   AppIcon, MapIcon, GreenCircleIcon,
   SpanIcon, TapIcon, ErspanIcon, EastWestIcon, VmwareIcon,
-  PacketToolIcon, MetadataToolIcon,
+  PacketToolIcon, MetadataToolIcon, S3StorageIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 
@@ -26,7 +26,7 @@ import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 export {
   AppIcon, MapIcon, GreenCircleIcon,
   SpanIcon, TapIcon, ErspanIcon, EastWestIcon, VmwareIcon,
-  PacketToolIcon, MetadataToolIcon,
+  PacketToolIcon, MetadataToolIcon, S3StorageIcon,
 };
 
 // ─── Application palette data ─────────────────────────────────────────────────
@@ -160,6 +160,12 @@ const Sidebar: React.FC = () => {
               <div className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.TOOL, 'Microsoft Sentinel SIEM', { configType: CONFIG_TYPES.METADATA_TOOL, toolName: 'Microsoft Sentinel', expectedType: 'metadata', expectedFormat: 'CEF' })}>
                 <MetadataToolIcon size={18} />
                 <span>Sentinel</span>
+              </div>
+
+              <div className="demo-group-label" style={{ padding: '8px 12px 2px 12px', fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '0.5px' }}>STORAGE TOOLS</div>
+              <div className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.TOOL, 'S3 / Object Storage', { configType: CONFIG_TYPES.STORAGE_TOOL, toolName: 'S3 Object Storage', expectedType: 'any' })}>
+                <S3StorageIcon size={18} />
+                <span>S3 / Object Storage</span>
               </div>
             </div>
           )}

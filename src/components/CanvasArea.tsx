@@ -1,7 +1,8 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   useReactFlow,
+  useViewport,
   Background,
   Controls,
   type Node
@@ -31,6 +32,88 @@ const nodeTypes = {
   [NODE_TYPES.GIGASTREAM]: GigaStreamNode,
   [NODE_TYPES.GIGASMART]:  GigaSmartNode,
   [NODE_TYPES.GROUP]:      GroupNode,
+};
+
+// ─── Federated Search Enclosure ───────────────────────────────────────────────
+/**
+ * Detects edges between Splunk and S3/Object Storage tool nodes and renders
+ * a visual enclosure around each pair to indicate they form a logical
+ * "Federated Search" entity.
+ *
+ * Positioned in flow-space coordinates and scaled/panned via the viewport
+ * transform so the enclosures move with the canvas.
+ */
+import type { Edge } from '@xyflow/react';
+
+interface FederatedEnclosuresProps {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+const NODE_EST_WIDTH = 180;
+const NODE_EST_HEIGHT = 90;
+const ENCLOSURE_PAD = 28;
+
+const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges }) => {
+  const { x: vpX, y: vpY, zoom } = useViewport();
+
+  /** Find all Splunk↔S3 pairs connected by an edge. */
+  const pairs = useMemo(() => {
+    const result: { splunkNode: Node; s3Node: Node }[] = [];
+
+    for (const edge of edges) {
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      const targetNode = nodes.find((n) => n.id === edge.target);
+      if (!sourceNode || !targetNode) continue;
+
+      const srcTool = (sourceNode.data?.toolName as string) || '';
+      const tgtTool = (targetNode.data?.toolName as string) || '';
+      const srcConfig = (sourceNode.data?.configType as string) || '';
+      const tgtConfig = (targetNode.data?.configType as string) || '';
+
+      const isSplunkToS3 = srcTool === 'Splunk' && tgtConfig === 'Storage Tool';
+      const isS3ToSplunk = srcConfig === 'Storage Tool' && tgtTool === 'Splunk';
+
+      if (isSplunkToS3) {
+        result.push({ splunkNode: sourceNode, s3Node: targetNode });
+      } else if (isS3ToSplunk) {
+        result.push({ splunkNode: targetNode, s3Node: sourceNode });
+      }
+    }
+    return result;
+  }, [nodes, edges]);
+
+  if (pairs.length === 0) return null;
+
+  return (
+    <>
+      {pairs.map(({ splunkNode, s3Node }, i) => {
+        // Compute bounding box around both nodes in flow coordinates
+        const x1 = Math.min(splunkNode.position.x, s3Node.position.x);
+        const y1 = Math.min(splunkNode.position.y, s3Node.position.y);
+        const x2 = Math.max(splunkNode.position.x + NODE_EST_WIDTH, s3Node.position.x + NODE_EST_WIDTH);
+        const y2 = Math.max(splunkNode.position.y + NODE_EST_HEIGHT, s3Node.position.y + NODE_EST_HEIGHT);
+
+        // Add padding around the enclosure
+        const left   = (x1 - ENCLOSURE_PAD) * zoom + vpX;
+        const top    = (y1 - ENCLOSURE_PAD) * zoom + vpY;
+        const width  = (x2 - x1 + ENCLOSURE_PAD * 2) * zoom;
+        const height = (y2 - y1 + ENCLOSURE_PAD * 2) * zoom;
+
+        return (
+          <div
+            key={`federated-${splunkNode.id}-${s3Node.id}-${i}`}
+            className="federated-enclosure pulse"
+            style={{ left, top, width, height }}
+          >
+            <div className="federated-enclosure-label">
+              🔍 Federated Search
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
 };
 
 const CanvasArea: React.FC = () => {
@@ -242,6 +325,12 @@ const CanvasArea: React.FC = () => {
         <Background />
         <Controls />
       </ReactFlow>
+
+      {/* ── Federated Search Enclosures ── */}
+      {/* When a Splunk tool is linked to an S3 / Object Storage tool, draw
+          a dashed enclosure around both nodes to show they form a logical
+          "Federated Search" entity across traditional ingest and object storage. */}
+      <FederatedEnclosures nodes={nodes} edges={edges} />
 
       {showGroupingBanner && (
         <div style={{
