@@ -8,7 +8,6 @@ import {
   type EdgeChange,
   type Node,
   type NodeChange,
-  type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
 } from '@xyflow/react';
@@ -46,8 +45,55 @@ export interface MapCondition {
   action?: 'pass' | 'drop';
 }
 
+export type NodeType = 
+  | 'inputNode' 
+  | 'mapNode' 
+  | 'filterNode' 
+  | 'toolNode' 
+  | 'gigaSmartNode' 
+  | 'gigaStreamNode' 
+  | 'groupNode';
+
+export interface BaseNodeData {
+  label: string;
+  configType: string;
+  status?: 'optimal' | 'warning' | 'error';
+  statusMessage?: string;
+  receivedFormat?: string;
+  [key: string]: any; // Add index signature
+}
+
+export interface InputNodeData extends BaseNodeData {
+  configType: 'SPAN Port' | 'Network Tap' | 'Virtual TAP' | 'GigaVUE-VM';
+}
+
+export interface MapNodeData extends BaseNodeData {
+  configType: 'Traffic Map';
+  conditions: MapCondition[];
+}
+
+export interface FilterNodeData extends BaseNodeData {
+  configType: 'VLAN Filter' | 'IP Subnet Filter' | 'Port Filter';
+  vlanIds?: string;
+  ipSubnet?: string;
+  ports?: string;
+}
+
+export interface GigaSmartNodeData extends BaseNodeData {
+  actionType: string;
+  dedupRate?: number;
+  lastDedupUpdate?: number;
+  metadataFormat?: 'CEF' | 'JSON';
+}
+
+export interface ToolNodeData extends BaseNodeData {
+  expectedFormat?: string;
+}
+
+export type CustomNode = Node<BaseNodeData>;
+
 export type RFState = {
-  nodes: Node[];
+  nodes: CustomNode[];
   edges: Edge[];
   selectedNodeId: string | null;
   isRunning: boolean;
@@ -58,13 +104,13 @@ export type RFState = {
   blockedEdges: string[];
   deliveredStreams: string[];
   fitViewTrigger: number;
-  onNodesChange: OnNodesChange;
+  onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
-  addNode: (node: Node) => void;
+  addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
-  updateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
-  restoreState: (nodes: Node[], edges: Edge[], trafficStreams?: TrafficStream[]) => void;
+  updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
+  restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => void;
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
   addTrafficStream: (stream: TrafficStream) => void;
@@ -109,7 +155,7 @@ const defaultToolHopId = 'node-tool-1';
 const defaultAmiId = 'node-gigasmart-ami-1';
 const defaultToolSplunkId = 'node-tool-splunk-1';
 
-const initialNodes: Node[] = [
+const initialNodes: CustomNode[] = [
   {
     id: defaultInputId,
     type: 'inputNode',
@@ -337,8 +383,8 @@ export const useStore = create<RFState>((set, get) => ({
   deliveredStreams: [],
   fitViewTrigger: 0,
   
-  onNodesChange: (changes: NodeChange[]) => {
-    let nextNodes = applyNodeChanges(changes, get().nodes);
+  onNodesChange: (changes: NodeChange<CustomNode>[]) => {
+    let nextNodes = applyNodeChanges<CustomNode>(changes, get().nodes);
     const deletedNodeIds = changes
       .filter((c) => c.type === 'remove')
       .map((c) => (c as { id: string }).id);
@@ -396,7 +442,7 @@ export const useStore = create<RFState>((set, get) => ({
     set({ edges: addEdge(newEdge, get().edges) });
   },
   
-  addNode: (node: Node) => {
+  addNode: (node: CustomNode) => {
     set({ nodes: get().nodes.concat(node) });
   },
   
@@ -404,7 +450,7 @@ export const useStore = create<RFState>((set, get) => ({
     set({ selectedNodeId: nodeId });
   },
   
-  updateNodeData: (nodeId: string, data: Record<string, unknown>) => {
+  updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => {
     set({
       nodes: get().nodes.map((node) => 
         node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
@@ -412,7 +458,7 @@ export const useStore = create<RFState>((set, get) => ({
     });
   },
   
-  restoreState: (nodes: Node[], edges: Edge[], trafficStreams?: TrafficStream[]) => {
+  restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => {
     set({
       nodes,
       edges,
@@ -551,7 +597,7 @@ export const useStore = create<RFState>((set, get) => ({
     const groupId = `group-${uuidv4()}`;
 
     // 2. Create the group node
-    const groupNode: Node = {
+    const groupNode: CustomNode = {
       id: groupId,
       type: 'groupNode',
       position: { x: parentX, y: parentY },

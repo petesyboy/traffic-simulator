@@ -4,12 +4,11 @@ import {
   useReactFlow,
   useViewport,
   Background,
-  Controls,
-  type Node
+  Controls
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
-import { useStore } from '../store/store';
+import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode } from './CustomNodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import dashboardImg from '../assets/dashboard-mock.webp';
@@ -306,7 +305,7 @@ const CanvasArea: React.FC = () => {
         mergedData.lastDedupUpdate = Date.now();
       }
 
-      const newNode: Node = {
+      const newNode: CustomNode = {
         id: uuidv4(),
         type,
         position,
@@ -342,7 +341,7 @@ const CanvasArea: React.FC = () => {
     [screenToFlowPosition, addNode, addTrafficStream, nodes]
   );
 
-  const onSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
+  const onSelectionChange = useCallback(({ nodes }: { nodes: CustomNode[] }) => {
     if (nodes.length === 1) {
       setSelectedNodeId(nodes[0].id);
     } else {
