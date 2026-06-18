@@ -142,6 +142,45 @@ export type RFState = {
   ungroupGroup: (groupId: string) => void;
 };
 
+/**
+ * Toggles a Splunk node's label between 'Splunk Federated Search' and 'Splunk Collector' 
+ * based on whether it is connected/linked to an S3/Object Storage node.
+ */
+export function syncSplunkLabels(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
+  return nodes.map(node => {
+    const toolName = (node.data?.toolName as string) || '';
+    if (toolName === 'Splunk') {
+      const currentLabel = (node.data?.label as string) || '';
+      if (
+        currentLabel === 'Splunk Collector' || 
+        currentLabel === 'Splunk Tool' || 
+        currentLabel === 'Splunk Federated Search'
+      ) {
+        const isLinkedToS3 = edges.some(edge => {
+          if (edge.source === node.id || edge.target === node.id) {
+            const otherNodeId = edge.source === node.id ? edge.target : edge.source;
+            const otherNode = nodes.find(n => n.id === otherNodeId);
+            return otherNode?.data?.configType === 'Storage Tool'; // Storage Tool is CONFIG_TYPES.STORAGE_TOOL
+          }
+          return false;
+        });
+
+        const targetLabel = isLinkedToS3 ? 'Splunk Federated Search' : 'Splunk Collector';
+        if (currentLabel !== targetLabel) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: targetLabel
+            }
+          };
+        }
+      }
+    }
+    return node;
+  });
+}
+
 // Create a default topology
 const defaultInputId = 'node-input-1';
 const tapInputId2 = 'node-input-tap-2';
@@ -234,7 +273,7 @@ const initialNodes: CustomNode[] = [
     id: defaultToolSplunkId,
     type: 'toolNode',
     position: { x: 1160, y: 340 },
-    data: { label: 'Splunk Tool', configType: 'Metadata Tool', expectedFormat: 'CEF' },
+    data: { label: 'Splunk Collector', configType: 'Metadata Tool', toolName: 'Splunk', expectedType: 'metadata', expectedFormat: 'CEF' },
   },
 ];
 
@@ -433,7 +472,9 @@ export const useStore = create<RFState>((set, get) => ({
   },
   
   onEdgesChange: (changes: EdgeChange[]) => {
-    set({ edges: applyEdgeChanges(changes, get().edges) });
+    const nextEdges = applyEdgeChanges(changes, get().edges);
+    const syncedNodes = syncSplunkLabels(get().nodes, nextEdges);
+    set({ edges: nextEdges, nodes: syncedNodes });
   },
   
   onConnect: (connection: Connection) => {
@@ -441,7 +482,9 @@ export const useStore = create<RFState>((set, get) => ({
       ...connection,
       id: `e-${uuidv4()}`,
     };
-    set({ edges: addEdge(newEdge, get().edges) });
+    const nextEdges = addEdge(newEdge, get().edges);
+    const syncedNodes = syncSplunkLabels(get().nodes, nextEdges);
+    set({ edges: nextEdges, nodes: syncedNodes });
   },
   
   addNode: (node: CustomNode) => {
@@ -453,16 +496,17 @@ export const useStore = create<RFState>((set, get) => ({
   },
   
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => {
+    const updatedNodes = get().nodes.map((node) => 
+      node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
+    );
     set({
-      nodes: get().nodes.map((node) => 
-        node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
-      ),
+      nodes: syncSplunkLabels(updatedNodes, get().edges),
     });
   },
   
   restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => {
     set({
-      nodes,
+      nodes: syncSplunkLabels(nodes, edges),
       edges,
       trafficStreams: trafficStreams || get().trafficStreams,
       fitViewTrigger: get().fitViewTrigger + 1
@@ -512,12 +556,13 @@ export const useStore = create<RFState>((set, get) => ({
   },
 
   resetMetrics: () => {
+    const resetNodes = get().nodes.map(n => ({ ...n, data: { ...n.data, totalIngestedBytes: 0 } }));
     set({ 
       nodeMetrics: {}, 
       activeEdges: [], 
       blockedEdges: [], 
       deliveredStreams: [],
-      nodes: get().nodes.map(n => ({ ...n, data: { ...n.data, totalIngestedBytes: 0 } }))
+      nodes: syncSplunkLabels(resetNodes, get().edges)
     });
   },
 
@@ -583,7 +628,7 @@ export const useStore = create<RFState>((set, get) => ({
 
   loadDemo: () => {
     set({
-      nodes: initialNodes,
+      nodes: syncSplunkLabels(initialNodes, initialEdges),
       edges: initialEdges,
       selectedNodeId: null,
       isRunning: false,
@@ -691,7 +736,7 @@ export const useStore = create<RFState>((set, get) => ({
     );
 
     set({
-      nodes: updatedNodes,
+      nodes: syncSplunkLabels(updatedNodes, updatedEdges),
       edges: updatedEdges,
       selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId,
     });
