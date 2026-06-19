@@ -65,10 +65,10 @@ const SimulationEngine: React.FC = () => {
         if (!stream.active) return;
 
         // Calculate a smooth sine-wave drift to simulate real-world traffic variability.
-        // The drift oscillates between 0.4 and 1.0 (40% to 100% of base bandwidth) over a ~50s cycle.
+        // The drift oscillates between 0.92 and 1.08 (+/- 8% of base bandwidth) over a ~50s cycle.
         const timeFactor = now / 8000;
         const phase = stream.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 0.1;
-        const newDrift = 0.7 + 0.3 * Math.sin(timeFactor + phase);
+        const newDrift = 1.0 + 0.08 * Math.sin(timeFactor + phase);
 
         streamPatches[stream.id] = { 
           drift: newDrift, 

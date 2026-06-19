@@ -319,13 +319,15 @@ const CanvasArea: React.FC = () => {
       if (type === NODE_TYPES.INPUT) {
         const speeds = [1, 10, 25, 40, 100];
         const randomGbps = speeds[Math.floor(Math.random() * speeds.length)];
-        const randomMbps = randomGbps * 1000;
+        const linkSpeedMbps = randomGbps * 1000;
+        const initialBandwidthMbps = linkSpeedMbps * 0.5; // 50% utilization by default
+        const labelSpeedStr = randomGbps === 1 ? '500 Mbps' : `${randomGbps * 0.5} Gbps`;
         const randomSubnet = Math.floor(Math.random() * 254) + 1;
         const randomVlan = String(Math.floor(Math.random() * 900) + 100);
         
         addTrafficStream({
           id: `t-${uuidv4()}`,
-          name: `${labelToUse} Flow (${randomGbps} Gbps)`,
+          name: `${labelToUse} Flow (${labelSpeedStr})`,
           sourceNodeId: newNode.id,
           vlan: randomVlan,
           ipSrc: `192.168.${randomSubnet}.10`,
@@ -333,7 +335,7 @@ const CanvasArea: React.FC = () => {
           portSrc: String(Math.floor(Math.random() * 50000) + 1024),
           portDst: '80',
           protocol: 'tcp',
-          bandwidth: randomMbps,
+          bandwidth: initialBandwidthMbps,
           active: true,
         });
       }
