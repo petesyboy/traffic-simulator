@@ -20,7 +20,7 @@ import { formatBandwidth, formatPackets, formatBytes } from '../utils/format';
 import {
   MapIcon, GreenCircleIcon, SmartIcon, AppIcon,
   SpanIcon, TapIcon, ErspanIcon, EastWestIcon, VmwareIcon,
-  PacketToolIcon, MetadataToolIcon, S3StorageIcon,
+  PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
 } from './Icons';
 import { CONFIG_TYPES, ACTION_TYPES, isMetadataAction, isDedupAction } from '../constants/nodeTypes';
 
@@ -189,6 +189,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const renderIcon = () => {
     if (isStorageTool) return <S3StorageIcon size={20} />;
+    if (toolName === 'Wireshark') return <WiresharkIcon size={20} />;
     if (isPacketTool) return <PacketToolIcon size={20} />;
     if (isMetadataTool) return <MetadataToolIcon size={20} />;
     return <GreenCircleIcon size={20} />;

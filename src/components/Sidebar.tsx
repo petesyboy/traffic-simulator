@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 import {
   AppIcon, MapIcon, GreenCircleIcon,
   SpanIcon, TapIcon, ErspanIcon, EastWestIcon, VmwareIcon,
-  PacketToolIcon, MetadataToolIcon, S3StorageIcon,
+  PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 
@@ -144,7 +144,7 @@ const Sidebar: React.FC = () => {
                 <span>Endace Capture</span>
               </div>
               <div className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.TOOL, 'Wireshark Tool', { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Wireshark', expectedType: 'packet' })}>
-                <PacketToolIcon size={18} />
+                <WiresharkIcon size={18} />
                 <span>Wireshark</span>
               </div>
 
