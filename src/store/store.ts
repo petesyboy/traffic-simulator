@@ -105,6 +105,7 @@ export type RFState = {
   activeEdges: string[];
   blockedEdges: string[];
   deliveredStreams: string[];
+  uniqueEgressBps: number;
   fitViewTrigger: number;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
@@ -135,6 +136,7 @@ export type RFState = {
      * Replaces individual updateTrafficStream() calls from SimulationEngine.
      */
     streamPatches?: Record<string, Partial<TrafficStream>>,
+    uniqueEgressBps?: number,
   ) => void;
   clearCanvas: () => void;
   loadDemo: () => void;
@@ -190,18 +192,14 @@ const tapInputId5 = 'node-input-tap-5';
 const tapInputId6 = 'node-input-tap-6';
 
 const defaultMapId = 'node-map-1';
-const defaultVlanFilterId = 'node-filter-1';
-const defaultPortFilterId = 'node-filter-2';
 const defaultToolHopId = 'node-tool-1';
-const defaultAmiId = 'node-gigasmart-ami-1';
-const defaultToolSplunkId = 'node-tool-splunk-1';
 
 const initialNodes: CustomNode[] = [
   {
     id: defaultInputId,
     type: 'inputNode',
     position: { x: 50, y: 60 },
-    data: { label: 'SPAN Port 1/1/x1', configType: 'SPAN Port', linkSpeed: 10000 },
+    data: { label: 'TAP Device 1/1/x1', configType: 'TAP Device', linkSpeed: 40000 },
   },
   {
     id: tapInputId2,
@@ -231,7 +229,7 @@ const initialNodes: CustomNode[] = [
     id: tapInputId6,
     type: 'inputNode',
     position: { x: 50, y: 460 },
-    data: { label: 'TAP Device 1/1/x6', configType: 'TAP Device', linkSpeed: 40000 },
+    data: { label: 'SPAN Port 1/1/x6', configType: 'SPAN Port', linkSpeed: 40000 },
   },
   {
     id: defaultMapId,
@@ -241,39 +239,16 @@ const initialNodes: CustomNode[] = [
       label: 'Core Traffic Map', 
       configType: 'Traffic Map',
       conditions: [
-        { logic: 'AND', field: 'protocol', value: 'tcp' }
+        { logic: 'AND', field: 'protocol', value: 'tcp' },
+        { logic: 'AND', field: 'vlan', value: '100, 200, 999' }
       ]
     },
   },
   {
-    id: defaultVlanFilterId,
-    type: 'filterNode',
-    position: { x: 620, y: 180 },
-    data: { label: 'VLAN 100 Filter', configType: 'VLAN Filter', vlanIds: '100' },
-  },
-  {
-    id: defaultPortFilterId,
-    type: 'filterNode',
-    position: { x: 620, y: 340 },
-    data: { label: 'Port 80 Filter', configType: 'Port Filter', ports: '80' },
-  },
-  {
     id: defaultToolHopId,
     type: 'toolNode',
-    position: { x: 890, y: 180 },
+    position: { x: 600, y: 260 },
     data: { label: 'ExtraHop Tool', configType: 'ExtraHop' },
-  },
-  {
-    id: defaultAmiId,
-    type: 'gigaSmartNode',
-    position: { x: 890, y: 340 },
-    data: { label: 'AMI Node', configType: 'AMI', actionType: 'AMI', metadataFormat: 'CEF' },
-  },
-  {
-    id: defaultToolSplunkId,
-    type: 'toolNode',
-    position: { x: 1160, y: 340 },
-    data: { label: 'Splunk Collector', configType: 'Metadata Tool', toolName: 'Splunk', expectedType: 'metadata', expectedFormat: 'CEF' },
   },
 ];
 
@@ -284,17 +259,13 @@ const initialEdges: Edge[] = [
   { id: 'e-tap-4', source: tapInputId4, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
   { id: 'e-tap-5', source: tapInputId5, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
   { id: 'e-tap-6', source: tapInputId6, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e2', source: defaultMapId, target: defaultVlanFilterId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e3', source: defaultMapId, target: defaultPortFilterId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e4', source: defaultVlanFilterId, target: defaultToolHopId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e5', source: defaultPortFilterId, target: defaultAmiId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e6', source: defaultAmiId, target: defaultToolSplunkId, sourceHandle: 'out', targetHandle: 'in' },
+  { id: 'e2', source: defaultMapId, target: defaultToolHopId, sourceHandle: 'out', targetHandle: 'in' },
 ];
 
 const initialTraffic: TrafficStream[] = [
   {
     id: 't-1',
-    name: 'Web Prod Traffic (10 Gbps)',
+    name: 'Web Prod Traffic (2 Gbps)',
     sourceNodeId: defaultInputId,
     vlan: '100',
     ipSrc: '192.168.1.0/24',
@@ -302,7 +273,7 @@ const initialTraffic: TrafficStream[] = [
     portSrc: '49152',
     portDst: '80',
     protocol: 'tcp',
-    bandwidth: 10000, // 10 Gbps
+    bandwidth: 2000, // 2 Gbps
     active: true,
   },
   {
@@ -333,15 +304,15 @@ const initialTraffic: TrafficStream[] = [
   },
   {
     id: 't-4',
-    name: 'IPv6 Sync Flow (10 Gbps)',
+    name: 'IPv6 Sync Flow (35 Gbps)',
     sourceNodeId: defaultInputId,
-    vlan: '300',
+    vlan: '999',
     ipSrc: '2001:db8::1',
     ipDst: '2001:db8::2',
     portSrc: '8080',
     portDst: '8080',
     protocol: 'tcp',
-    bandwidth: 10000, // 10 Gbps
+    bandwidth: 35000, // 35 Gbps
     active: true,
   },
   {
@@ -398,7 +369,7 @@ const initialTraffic: TrafficStream[] = [
   },
   {
     id: 't-tap-6',
-    name: 'TAP 6 Flow (40 Gbps)',
+    name: 'SPAN 6 Flow (42 Gbps)',
     sourceNodeId: tapInputId6,
     vlan: '100',
     ipSrc: '192.168.10.6',
@@ -406,7 +377,7 @@ const initialTraffic: TrafficStream[] = [
     portSrc: '50006',
     portDst: '80',
     protocol: 'tcp',
-    bandwidth: 40000,
+    bandwidth: 42000,
     active: true,
   }
 ];
@@ -422,6 +393,7 @@ export const useStore = create<RFState>((set, get) => ({
   activeEdges: [],
   blockedEdges: [],
   deliveredStreams: [],
+  uniqueEgressBps: 0,
   fitViewTrigger: 0,
   
   onNodesChange: (changes: NodeChange<CustomNode>[]) => {
@@ -562,6 +534,7 @@ export const useStore = create<RFState>((set, get) => ({
       activeEdges: [], 
       blockedEdges: [], 
       deliveredStreams: [],
+      uniqueEgressBps: 0,
       nodes: syncSplunkLabels(resetNodes, get().edges)
     });
   },
@@ -573,6 +546,7 @@ export const useStore = create<RFState>((set, get) => ({
     deliveredStreams?: string[],
     nodeDataPatches?: Record<string, Record<string, unknown>>,
     streamPatches?: Record<string, Partial<TrafficStream>>,
+    uniqueEgressBps?: number,
   ) => {
     // Apply node-data patches (e.g. dedupRate drift, tool status)
     let nextNodes = get().nodes;
@@ -619,11 +593,12 @@ export const useStore = create<RFState>((set, get) => ({
       deliveredStreams: deliveredStreams || [],
       nodes: nextNodes,
       trafficStreams: nextStreams,
+      uniqueEgressBps: uniqueEgressBps ?? 0,
     });
   },
 
   clearCanvas: () => {
-    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [] });
+    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressBps: 0 });
   },
 
   loadDemo: () => {
@@ -636,6 +611,7 @@ export const useStore = create<RFState>((set, get) => ({
       blockedEdges: [],
       trafficStreams: initialTraffic,
       deliveredStreams: [],
+      uniqueEgressBps: 0,
       fitViewTrigger: get().fitViewTrigger + 1
     });
   },

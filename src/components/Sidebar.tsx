@@ -143,6 +143,10 @@ const Sidebar: React.FC = () => {
                 <PacketToolIcon size={18} />
                 <span>Endace Capture</span>
               </div>
+              <div className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.TOOL, 'Wireshark Tool', { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Wireshark', expectedType: 'packet' })}>
+                <PacketToolIcon size={18} />
+                <span>Wireshark</span>
+              </div>
 
               <div className="demo-group-label" style={{ padding: '8px 12px 2px 12px', fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '0.5px' }}>METADATA CONSUMING TOOLS</div>
               <div className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.TOOL, 'Splunk Collector', { configType: CONFIG_TYPES.METADATA_TOOL, toolName: 'Splunk', expectedType: 'metadata', expectedFormat: 'CEF' })}>

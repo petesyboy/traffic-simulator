@@ -106,7 +106,8 @@ const SimulationEngine: React.FC = () => {
         result.blockedEdges,
         result.deliveredStreamIds,
         finalNodeDataPatches,
-        streamPatches
+        streamPatches,
+        result.uniqueEgressBps
       );
     };
 

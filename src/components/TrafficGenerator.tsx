@@ -169,7 +169,7 @@ const TrafficGenerator: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                  <th style={{ padding: '6px 4px' }}>Name</th>
+                  <th style={{ padding: '6px 4px', width: '180px' }}>Name</th>
                   <th style={{ padding: '6px 4px' }}>Ingress Port</th>
                   <th style={{ padding: '6px 4px', width: '70px' }}>VLAN</th>
                   <th style={{ padding: '6px 4px', width: '70px' }}>Proto</th>
@@ -190,7 +190,7 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.name}
                         onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', width: '105px', borderBottom: '1px solid transparent' }}
+                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', width: '175px', borderBottom: '1px solid transparent' }}
                         onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
                         onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                       />

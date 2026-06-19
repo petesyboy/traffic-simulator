@@ -147,6 +147,7 @@ export interface SimulationStepResult {
   blockedEdges: string[];
   deliveredStreamIds: string[];
   nodeDataPatches: Record<string, Record<string, unknown>>;
+  uniqueEgressBps: number;
 }
 
 export const calculateSimulationStep = (
@@ -478,11 +479,21 @@ export const calculateSimulationStep = (
     }
   });
 
+  // Calculate unique egress metrics across duplicate paths
+  const maxStreamBandwidth: Record<string, number> = {};
+  Object.values(toolReceivedStreams).forEach((received) => {
+    received.forEach((s) => {
+      maxStreamBandwidth[s.id] = Math.max(maxStreamBandwidth[s.id] || 0, s.bandwidth);
+    });
+  });
+  const uniqueEgressBps = Object.values(maxStreamBandwidth).reduce((sum, bw) => sum + bw, 0);
+
   return {
     metrics,
     activeEdges: Array.from(activeEdgeSet),
     blockedEdges: Array.from(blockedEdgeSet),
     deliveredStreamIds: Array.from(deliveredStreamIds),
-    nodeDataPatches
+    nodeDataPatches,
+    uniqueEgressBps
   };
 };
