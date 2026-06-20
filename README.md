@@ -2,6 +2,9 @@
 
 Welcome to the **Gigamon Fabric Manager & Flow Map Simulator**, an interactive visual orchestration tool built with React, TypeScript, React Flow, and Zustand. This application models a physical Gigamon H-Series Fabric Manager deployment, letting users visually configure network visibility pipelines, simulate real-time traffic throughput, and inspect flow validation rules.
 
+> [!TIP]
+> To demonstrate port congestion and packet drops dynamically, run the simulation on the default topology. The traffic flow on **SPAN Port 1/1/x6** is configured to run at **42 Gbps** (exceeding its 40 Gbps limit). As the live traffic oscillates, you will see the drops warning badge on the canvas node dynamically appear and disappear!
+
 ---
 
 ## Key Features
