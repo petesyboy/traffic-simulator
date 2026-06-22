@@ -26,6 +26,7 @@ const TrafficGenerator: React.FC = () => {
   const deliveredStreams  = useStore((state) => state.deliveredStreams);
   const isRunning        = useStore((state) => state.isRunning);
   const toggleSimulation = useStore((state) => state.toggleSimulation);
+  const edges            = useStore((state) => state.edges);
 
   // Resizable tray: tracks the current drawer height in pixels.
   const [drawerHeight, setDrawerHeight] = useState(220);
@@ -76,18 +77,43 @@ const TrafficGenerator: React.FC = () => {
       return;
     }
     setNoPortError(false);
+    
+    const sourceNode = inputPorts[0];
+    let defaultBandwidth = 10000;
+    
+    if (sourceNode.type === 'hardwareNode' && typeof sourceNode.data.model === 'string' && sourceNode.data.model.includes('TAP')) {
+      const outgoingEdges = edges.filter(e => e.source === sourceNode.id);
+      if (outgoingEdges.length > 0) {
+        const targetNode = nodes.find(n => n.id === outgoingEdges[0].target);
+        if (targetNode && targetNode.data.optics) {
+          const optics = targetNode.data.optics as any[];
+          let maxSpeedValue = 0;
+          optics.forEach(opt => {
+            const match = opt.optic.match(/(1|10|25|40|100|400)G/i);
+            if (match) {
+              const val = parseInt(match[1]);
+              if (val > maxSpeedValue) maxSpeedValue = val;
+            }
+          });
+          if (maxSpeedValue > 0) {
+            const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
+            defaultBandwidth = numLinks * maxSpeedValue * 1000;
+          }
+        }
+      }
+    }
 
     const newStream: TrafficStream = {
       id: `t-${Date.now()}`,
-      name: `Traffic Stream ${trafficStreams.length + 1} (10 Gbps)`,
-      sourceNodeId: inputPorts[0].id,
+      name: `Traffic Stream ${trafficStreams.length + 1} (${defaultBandwidth >= 1000 ? defaultBandwidth/1000 + ' Gbps' : defaultBandwidth + ' Mbps'})`,
+      sourceNodeId: sourceNode.id,
       vlan: '100',
       ipSrc: '192.168.1.50',
       ipDst: '10.0.0.100',
       portSrc: '50231',
       portDst: '443',
       protocol: 'tcp',
-      bandwidth: 10000, // 10 Gbps
+      bandwidth: defaultBandwidth,
       active: true,
     };
 

@@ -262,6 +262,47 @@ const HardwareNodePanel: React.FC<{ node: CustomNode }> = ({ node }) => {
             <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
               Specifies the number of links this TAP is monitoring (1-{maxLinks}).
             </div>
+            {(() => {
+              // Calculate derived capacity based on connected hardware optics
+              const outgoingEdges = edges.filter(e => e.source === node.id);
+              if (outgoingEdges.length === 0) return null;
+              
+              const targetNode = nodes.find(n => n.id === outgoingEdges[0].target);
+              if (!targetNode || !targetNode.data.optics) return null;
+              
+              const optics = targetNode.data.optics as any[];
+              if (optics.length === 0) return null;
+              
+              let maxSpeedStr = '';
+              let maxSpeedValue = 0;
+              optics.forEach(opt => {
+                const match = opt.optic.match(/(1|10|25|40|100|400)G/i);
+                if (match) {
+                  const val = parseInt(match[1]);
+                  if (val > maxSpeedValue) {
+                    maxSpeedValue = val;
+                    maxSpeedStr = match[1] + 'G';
+                  }
+                }
+              });
+              
+              if (!maxSpeedValue) return null;
+              
+              const numLinks = (node.data.tappedLinksCount as number) ?? 1;
+              const totalSpeed = numLinks * maxSpeedValue;
+              
+              return (
+                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(37, 179, 75, 0.1)', border: '1px solid rgba(37, 179, 75, 0.3)', borderRadius: '4px' }}>
+                  <div style={{ fontSize: '11px', color: '#4caf50', fontWeight: 'bold' }}>Derived Input Capacity</div>
+                  <div style={{ fontSize: '11px', color: '#fff', marginTop: '4px' }}>
+                    {numLinks} link(s) × {maxSpeedStr} = <strong>{totalSpeed}G Total</strong>
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#aaa', marginTop: '2px' }}>
+                    (Based on {maxSpeedStr} optics detected in {targetNode.data.model as string})
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
