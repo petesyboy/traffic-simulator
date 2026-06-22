@@ -62,7 +62,10 @@ const TrafficGenerator: React.FC = () => {
     document.addEventListener('mouseup', onMouseUp);
   }, [drawerHeight]);
 
-  const inputPorts = nodes.filter((node) => node.type === 'inputNode');
+  const inputPorts = nodes.filter((node) => 
+    node.type === 'inputNode' || 
+    (node.type === 'hardwareNode' && typeof node.data.model === 'string' && node.data.model.includes('TAP'))
+  );
   const [noPortError, setNoPortError] = useState(false);
 
   const handleAddStream = () => {
