@@ -106,7 +106,7 @@
       "fans": 4,
       "airflow": "Front-to-Rear",
       "ports": 48,
-      "image": "./hardware-icons/GigaVUE-TA25.png"
+      "image": "./hardware-icons/GigaVUE-TA25E.png"
     },
     {
       "model": "GigaVUE-TA200",
@@ -124,7 +124,7 @@
       "fans": 8,
       "airflow": "Front-to-Rear",
       "ports": 128,
-      "image": "./hardware-icons/GigaVUE-TA200.png"
+      "image": "./hardware-icons/GigaVUE-TA200E.png"
     },
     {
       "model": "GigaVUE-TA400",
