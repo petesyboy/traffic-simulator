@@ -273,7 +273,7 @@ const Sidebar: React.FC = () => {
             {openSections.advanced && (
               <div className="tree-content" style={{ maxHeight: '550px', overflowY: 'auto' }}>
                 <div className="demo-group-label" style={{ padding: '6px 12px 2px 12px', fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '0.5px' }}>TAPS</div>
-                {hardwareCatalogue.taps.map((item) => (
+                {hardwareCatalogue.taps.filter(item => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku)).map((item) => (
                   <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku })}>
                     <TapIcon size={18} />
                     <span>{item.model} {item.ru ? `(${item.ru < 1 ? '1/2' : item.ru} RU)` : ''}</span>

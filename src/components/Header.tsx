@@ -82,13 +82,25 @@ const BomModal: React.FC<{
   // Aggregate hardware nodes and their optics
   const bom: Record<string, { model: string; sku: string; qty: number; type: string }> = {};
   
+  let stdTapCount = 0;
+  let ultTapCount = 0;
+
   nodes.forEach(n => {
     if (n.type === NODE_TYPES.HARDWARE) {
       const sku = (n.data?.sku as string) || 'UNKNOWN-SKU';
       const model = (n.data?.model as string) || 'Hardware';
+      
+      // Filter out any stray chassis that might have been added before we hid them
+      if (['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(sku)) return;
+
       if (!bom[sku]) bom[sku] = { model, sku, qty: 0, type: 'Appliance/TAP' };
       bom[sku].qty += 1;
       
+      if (sku.includes('TAP')) {
+        if (sku.includes('ULT')) ultTapCount += 1;
+        else stdTapCount += 1;
+      }
+
       const optics = (n.data?.optics as { board: string, optic: string, qty: number }[]) || [];
       optics.forEach(opt => {
         const optKey = `OPTIC-${opt.optic}`;
@@ -104,6 +116,31 @@ const BomModal: React.FC<{
       });
     }
   });
+
+  if (stdTapCount > 0) {
+    const m200t_qty = Math.floor(stdTapCount / 6);
+    const remainder = stdTapCount % 6;
+    let m100t_qty = 0;
+    let extra_m200t_qty = 0;
+
+    if (remainder >= 4) {
+      extra_m200t_qty = 1;
+    } else if (remainder > 0) {
+      m100t_qty = 1;
+    }
+
+    if (m200t_qty + extra_m200t_qty > 0) {
+      bom['TAP-M200T'] = { model: 'TAP-M200T', sku: 'TAP-M200T', qty: m200t_qty + extra_m200t_qty, type: 'Appliance/TAP (Chassis)' };
+    }
+    if (m100t_qty > 0) {
+      bom['TAP-M100T'] = { model: 'TAP-M100T', sku: 'TAP-M100T', qty: m100t_qty, type: 'Appliance/TAP (Chassis)' };
+    }
+  }
+
+  if (ultTapCount > 0) {
+    const m202ult_qty = Math.ceil(ultTapCount / 2);
+    bom['TAP-M202ULT'] = { model: 'TAP-M202ULT', sku: 'TAP-M202ULT', qty: m202ult_qty, type: 'Appliance/TAP (Chassis)' };
+  }
   
   const items = Object.values(bom).sort((a, b) => a.type.localeCompare(b.type) || a.model.localeCompare(b.model));
 
