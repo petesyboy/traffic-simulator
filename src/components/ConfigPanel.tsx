@@ -112,7 +112,12 @@ const LiveMetrics: React.FC<{
 
 // ─── HardwareNodePanel ────────────────────────────────────────────────────────
 
-const HardwareNodePanel: React.FC<{ node: CustomNode }> = ({ node }) => {
+const HardwareNodePanel: React.FC<{ 
+  node: CustomNode;
+  onConditionChange: (index: number, key: string, value: string) => void;
+  onAddCondition: () => void;
+  onRemoveCondition: (index: number) => void;
+}> = ({ node, onConditionChange, onAddCondition, onRemoveCondition }) => {
   const model = node.data?.model as string;
   const sku = node.data?.sku as string;
   const installedOptics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
@@ -415,6 +420,18 @@ const HardwareNodePanel: React.FC<{ node: CustomNode }> = ({ node }) => {
             }
             return null;
           })()}
+          {/* Native Map Filtering for HC and TA nodes */}
+          {!model?.includes('TAP') && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', marginTop: '16px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffb74d' }}>Traffic Map Filter Rules</h4>
+              <MapNodePanel 
+                node={node}
+                onConditionChange={onConditionChange}
+                onAddCondition={onAddCondition}
+                onRemoveCondition={onRemoveCondition}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -659,12 +676,17 @@ const MAP_CRITERIA = [
   { key: 'ipver',    label: 'IP Version',          placeholder: 'ipv4 or ipv6' },
 ];
 
-const MapNodePanel: React.FC<{
+function MapNodePanel({ 
+  node, 
+  onConditionChange, 
+  onAddCondition, 
+  onRemoveCondition 
+}: {
   node: CustomNode;
   onConditionChange: (index: number, key: string, value: string) => void;
   onAddCondition: () => void;
   onRemoveCondition: (index: number) => void;
-}> = ({ node, onConditionChange, onAddCondition, onRemoveCondition }) => {
+}) {
   const conditions = (node.data?.conditions as MapCondition[]) || [];
 
   return (
@@ -1118,7 +1140,12 @@ const ConfigPanel: React.FC = () => {
 
           {/* Node-type-specific panels */}
           {selectedNode.type === NODE_TYPES.HARDWARE && (
-            <HardwareNodePanel node={selectedNode} />
+            <HardwareNodePanel 
+              node={selectedNode} 
+              onConditionChange={handleConditionChange}
+              onAddCondition={handleAddCondition}
+              onRemoveCondition={handleRemoveCondition}
+            />
           )}
           {selectedNode.type === NODE_TYPES.INPUT && (
             <InputNodePanel node={selectedNode} onGenericChange={handleGenericChange} />

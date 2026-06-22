@@ -402,6 +402,21 @@ export const calculateSimulationStep = (
     else if (node.type === 'inputNode') {
       // Done at top
     }
+    else if (node.type === 'hardwareNode') {
+      const isTap = String(node.data?.model || '').includes('TAP');
+      const conditions = node.data?.conditions as MapCondition[] | undefined;
+      
+      const isMatch = isTap ? true : evaluateMapConditions(item.stream, conditions);
+      
+      if (isMatch) {
+        nodeMetric.txBps += item.stream.bandwidth;
+        nodeMetric.txPackets += packetsPerSecond;
+      } else {
+        dropBandwidth = item.stream.bandwidth;
+        nodeMetric.droppedPackets += dropBandwidth;
+        forwardStream = null;
+      }
+    }
     else {
       nodeMetric.txBps += item.stream.bandwidth;
       nodeMetric.txPackets += packetsPerSecond;
