@@ -15,6 +15,27 @@ export interface TrajectoryStream extends TrafficStream {
   metadataFormat?: 'CEF' | 'JSON';
 }
 
+const getHardwareOpticCapacity = (node: CustomNode): number => {
+  if (node.type !== 'hardwareNode') return Infinity;
+  const optics = (node.data?.optics as { optic: string, qty: number }[]) || [];
+  if (optics.length === 0) return Infinity;
+  
+  let capacity = 0;
+  for (const opt of optics) {
+    if (!opt.optic) continue;
+    const name = opt.optic.toUpperCase();
+    let speed = 0;
+    if (name.includes('400G') || name.startsWith('QDD-')) speed = 400000;
+    else if (name.includes('100G') || name.startsWith('Q28-')) speed = 100000;
+    else if (name.includes('40G') || name.startsWith('QSF-')) speed = 40000;
+    else if (name.includes('25G') || name.startsWith('SFP-55')) speed = 25000;
+    else if (name.includes('10G') || name.startsWith('SFP-53')) speed = 10000;
+    else if (name.includes('1G') || name.startsWith('SFP-50')) speed = 1000;
+    capacity += speed * opt.qty;
+  }
+  return capacity > 0 ? capacity : Infinity;
+};
+
 // ─── IP matching helpers ──────────────────────────────────────────────────────
 
 /**
@@ -258,8 +279,24 @@ export const calculateSimulationStep = (
       nodeMetric.txBps += item.stream.bandwidth;
       nodeMetric.txPackets += packetsPerSecond;
     } else {
-      nodeMetric.rxBps += item.stream.bandwidth;
-      nodeMetric.rxPackets += packetsPerSecond;
+      let allowedBandwidth = item.stream.bandwidth;
+      if (node.type === 'hardwareNode') {
+        const capacity = getHardwareOpticCapacity(node);
+        if (nodeMetric.rxBps + allowedBandwidth > capacity) {
+          const excess = (nodeMetric.rxBps + allowedBandwidth) - capacity;
+          const drop = Math.min(excess, allowedBandwidth);
+          nodeMetric.droppedPackets += drop * 250;
+          allowedBandwidth -= drop;
+        }
+      }
+
+      nodeMetric.rxBps += allowedBandwidth;
+      nodeMetric.rxPackets += allowedBandwidth * 250;
+      item.stream.bandwidth = allowedBandwidth;
+
+      if (allowedBandwidth <= 0) {
+        continue;
+      }
     }
 
     let outboundEdges = edges.filter((e) => e.source === node.id);

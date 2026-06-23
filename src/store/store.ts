@@ -101,6 +101,7 @@ export type RFState = {
   isRunning: boolean;
   simulationSpeed: number; // multiplier, e.g. 1
   advancedMode: boolean;
+  advancedModeUnlocked: boolean;
   projectLicenseMode: 'HTL' | 'Perpetual';
   defaultTermDuration: string;
   disableDcWarnings: boolean;
@@ -121,6 +122,7 @@ export type RFState = {
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
   setAdvancedMode: (mode: boolean) => void;
+  setAdvancedModeUnlocked: (unlocked: boolean) => void;
   setProjectLicenseMode: (mode: 'HTL' | 'Perpetual') => void;
   setDefaultTermDuration: (duration: string) => void;
   setDisableDcWarnings: (disable: boolean) => void;
@@ -401,6 +403,7 @@ export const useStore = create<RFState>((set, get) => ({
   isRunning: false,
   simulationSpeed: 1,
   advancedMode: false,
+  advancedModeUnlocked: false,
   projectLicenseMode: 'HTL',
   defaultTermDuration: '36',
   disableDcWarnings: false,
@@ -535,6 +538,10 @@ export const useStore = create<RFState>((set, get) => ({
 
   setAdvancedMode: (mode: boolean) => {
     set({ advancedMode: mode });
+  },
+  
+  setAdvancedModeUnlocked: (unlocked: boolean) => {
+    set({ advancedModeUnlocked: unlocked });
   },
 
   setProjectLicenseMode: (mode) => set({ projectLicenseMode: mode }),

@@ -42,6 +42,11 @@ export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpe
     resolvedSku = power === 'DC' ? 'GVS-TAC02' : 'GVS-TAC01';
   }
 
+  // TAPs do not have separate HW/SW SKUs, return early
+  if (model.includes('TAP')) {
+    return { hwSku: resolvedSku };
+  }
+
   // Adjust for port capacity in Perpetual mode
   if (licenseMode !== 'HTL') {
     if (model.includes('TA25E') || model.includes('TA25') || model.includes('TA200') || model.includes('TA400')) {

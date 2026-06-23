@@ -177,12 +177,24 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const clearCanvas    = useStore((state) => state.clearCanvas);
   const loadDemo       = useStore((state) => state.loadDemo);
   const advancedMode   = useStore((state) => state.advancedMode);
+  const setAdvancedModeUnlocked = useStore((state) => state.setAdvancedModeUnlocked);
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
 
   // Local UI state for the toast and confirm modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBom, setShowBom] = useState(false);
+  const [logoClicks, setLogoClicks] = useState<number[]>([]);
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    const recentClicks = [...logoClicks, now].filter(t => now - t < 2000);
+    setLogoClicks(recentClicks);
+    if (recentClicks.length >= 4) {
+      setAdvancedModeUnlocked(true);
+      setLogoClicks([]);
+    }
+  };
 
   const handleClearRequest = () => setShowClearConfirm(true);
   const handleClearConfirm  = () => { clearCanvas(); setShowClearConfirm(false); };
@@ -207,7 +219,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
         <header className="header-brand">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img src="/gigamon-logo.png" alt="Gigamon" style={{ height: '18px', display: 'block', objectFit: 'contain' }} />
+              <img 
+                src="/gigamon-logo.png" 
+                alt="Gigamon" 
+                style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
+                onClick={handleLogoClick}
+              />
               <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px' }}>Flow Mapping Example</span>
               <span className="build-number">
                 v{(() => {

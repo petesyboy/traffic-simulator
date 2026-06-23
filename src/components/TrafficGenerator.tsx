@@ -315,6 +315,11 @@ const TrafficGenerator: React.FC = () => {
                           onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
                         >
+                          {![1000, 10000, 25000, 40000, 100000].includes(stream.bandwidth) && (
+                            <option value={stream.bandwidth}>
+                              {stream.bandwidth >= 1000 ? `${(stream.bandwidth / 1000).toFixed(1).replace('.0', '')} Gbps` : `${stream.bandwidth} Mbps`}
+                            </option>
+                          )}
                           <option value={1000}>1 Gbps</option>
                           <option value={10000}>10 Gbps</option>
                           <option value={25000}>25 Gbps</option>
