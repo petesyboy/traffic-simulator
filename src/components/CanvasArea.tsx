@@ -182,6 +182,8 @@ const CanvasArea: React.FC = () => {
   const addTrafficStream = useStore((state) => state.addTrafficStream);
   const setSelectedNodeId = useStore((state) => state.setSelectedNodeId);
   const fitViewTrigger = useStore((state) => state.fitViewTrigger);
+  const advancedMode = useStore((state) => state.advancedMode);
+  const updateNodeData = useStore((state) => state.updateNodeData);
   const { screenToFlowPosition, fitView } = useReactFlow();
 
   useEffect(() => {
@@ -281,6 +283,37 @@ const CanvasArea: React.FC = () => {
         x: event.clientX,
         y: event.clientY,
       });
+
+      if (advancedMode && type === NODE_TYPES.GIGASMART) {
+        const targetNode = nodes.find(n => {
+          if (n.type !== 'hardwareNode') return false;
+          if (!n.measured?.width || !n.measured?.height) return false;
+          return position.x >= n.position.x && position.x <= n.position.x + n.measured.width &&
+                 position.y >= n.position.y && position.y <= n.position.y + n.measured.height;
+        });
+
+        if (targetNode) {
+          if (!String(targetNode.data?.model || '').includes('HC')) {
+            alert("GigaSMART applications can only be dropped onto GigaVUE-HC series appliances in Advanced Mode.");
+            return;
+          }
+          
+          const newApp = {
+             id: `gs-${Date.now()}`,
+             label,
+             actionType: initialData?.actionType || 'Deduplication',
+             dedupRate: 20,
+             metadataFormat: 'CEF'
+          };
+          
+          const apps = targetNode.data.gigaSmartApps || [];
+          updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
+          return;
+        } else {
+          alert("In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
+          return;
+        }
+      }
 
       const mergedData = { ...initialData };
       let labelToUse = label;

@@ -116,6 +116,17 @@ export function generateBom(
     // Trace downstream paths to find GigaSMART action nodes connected to this HC chassis
     if (model.includes('HC')) {
       const gsActions = new Set<string>();
+      
+      // Add embedded GigaSMART apps directly from the hardware node (Advanced Mode)
+      if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
+        node.data.gigaSmartApps.forEach((app: any) => {
+          const action = (app.actionType as string) || '';
+          if (action) {
+            gsActions.add(action);
+          }
+        });
+      }
+
       const visited = new Set<string>();
       const queue = [node.id];
       visited.add(node.id);

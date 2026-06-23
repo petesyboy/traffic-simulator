@@ -65,6 +65,10 @@ export interface BaseNodeData {
   [key: string]: any; // Add index signature
 }
 
+export interface HardwareNodeData extends BaseNodeData {
+  gigaSmartApps?: GigaSmartNodeData[];
+}
+
 export interface InputNodeData extends BaseNodeData {
   configType: 'SPAN Port' | 'Network Tap' | 'Virtual TAP' | 'GigaVUE-VM';
 }

@@ -471,7 +471,8 @@ export const GroupNode: React.FC<NodeProps> = ({ data, selected }) => {
 
 // ─── HardwareNode ─────────────────────────────────────────────────────────────
 
-export const HardwareNode: React.FC<NodeProps> = ({ data, selected }) => {
+export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const updateNodeData = useStore((state) => state.updateNodeData);
   const model = (data.model as string) || 'Hardware';
   const projectLicenseMode = useStore((state) => state.projectLicenseMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
@@ -502,6 +503,42 @@ export const HardwareNode: React.FC<NodeProps> = ({ data, selected }) => {
         <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8 }}>
           <span>SKU: {displaySku}</span>
         </div>
+        
+        {/* Render internal GigaSMART apps in Advanced Mode */}
+        {!!(data.gigaSmartApps && Array.isArray(data.gigaSmartApps) && data.gigaSmartApps.length > 0) && (
+          <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,152,0,0.3)', paddingTop: '6px' }}>
+            <div style={{ fontSize: '9px', color: '#ff9800', marginBottom: '4px', fontWeight: 'bold' }}>GigaSMART Apps:</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {(data.gigaSmartApps as any[]).map((app, idx) => (
+                <div key={app.id || idx} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '4px', padding: '2px 4px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AppIcon type={app.actionType} size={14} rate={app.dedupRate} />
+                    <span style={{ fontSize: '9px', color: '#ccc' }}>{app.label || app.actionType}</span>
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newApps = (data.gigaSmartApps as any[]).filter(a => a.id !== app.id);
+                      updateNodeData(id, { gigaSmartApps: newApps });
+                    }}
+                    style={{
+                      background: 'none', border: 'none', color: '#888', cursor: 'pointer',
+                      fontSize: '10px', padding: '0 2px', lineHeight: 1
+                    }}
+                    title="Remove app"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Handle type="source" position={Position.Right} id="out" />
       </div>
     </>

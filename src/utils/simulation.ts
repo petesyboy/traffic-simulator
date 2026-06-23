@@ -53,6 +53,27 @@ const ipv4ToInt = (ip: string): number => {
   return result >>> 0;
 };
 
+const getGigaSmartAppOrder = (actionType: string): number => {
+  const t = actionType.toLowerCase();
+  if (t.includes('lb') && t.includes('stateful')) return 1;
+  if (t.includes('afi')) return 2;
+  if (t.includes('decap')) return 3;
+  if (t.includes('dedup')) return 4;
+  if (t.includes('ssl')) return 5;
+  if (t.includes('sampling')) return 6;
+  if (t.includes('strip')) return 7;
+  if (t.includes('enhanced slicing')) return 9;
+  if (t.includes('slice')) return 8;
+  if (t.includes('masking')) return 10;
+  if (t.includes('trailer')) return 11;
+  if (t.includes('encap')) return 12;
+  if (t.includes('add-header')) return 13;
+  if (t.includes('netflow')) return 14;
+  if (t.includes('lb')) return 15;
+  if (t.includes('ami') || t.includes('amx') || t.includes('metadata')) return 16;
+  return 99;
+};
+
 /**
  * CIDR-aware IP subnet matching (IPv4).
  */
@@ -446,10 +467,48 @@ export const calculateSimulationStep = (
       const isMatch = isTap ? true : evaluateMapConditions(item.stream, conditions);
       
       if (isMatch) {
+        if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
+          const sortedApps = [...node.data.gigaSmartApps].sort((a, b) => 
+            getGigaSmartAppOrder(a.actionType as string) - getGigaSmartAppOrder(b.actionType as string)
+          );
+          for (const app of sortedApps) {
+            if (item.stream.bandwidth <= 0) break;
+            const actionType = (app.actionType as string) || 'Deduplication';
+            if (actionType === 'Deduplication' || actionType === 'Dedup') {
+              const dropFraction = (app.dedupRate || 20) / 100;
+              const drop = item.stream.bandwidth * dropFraction;
+              nodeMetric.droppedPackets += drop;
+              item.stream.bandwidth -= drop;
+            } else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
+              const scale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+              const metadataBandwidth = item.stream.bandwidth * scale;
+              const drop = item.stream.bandwidth * (1 - scale);
+              nodeMetric.droppedPackets += drop;
+              item.stream.bandwidth = metadataBandwidth;
+              item.stream.trafficType = 'metadata';
+              item.stream.metadataFormat = (app.metadataFormat as 'CEF' | 'JSON') || 'CEF';
+            } else if (actionType === 'Packet Slicing') {
+              item.stream.bandwidth *= 0.6;
+            } else if (actionType === 'Header Stripping') {
+              item.stream.bandwidth *= 0.95;
+            } else {
+              let scale = 1.0;
+              if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;
+              const outBandwidth = item.stream.bandwidth * scale;
+              if (scale < 1.0) {
+                 nodeMetric.droppedPackets += item.stream.bandwidth * (1 - scale);
+              }
+              item.stream.bandwidth = outBandwidth;
+            }
+          }
+          // Update forwardStream with mutated stream details
+          forwardStream = { ...item.stream };
+        }
+
         const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
         if (!alreadyAddedAtTop) {
           nodeMetric.txBps += item.stream.bandwidth;
-          nodeMetric.txPackets += packetsPerSecond;
+          nodeMetric.txPackets += item.stream.bandwidth * 250;
         }
       } else {
         dropBandwidth = item.stream.bandwidth;

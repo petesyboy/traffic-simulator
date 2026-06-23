@@ -757,6 +757,63 @@ const HardwareNodePanel: React.FC<{
           )}
         </div>
       )}
+
+      {/* Internal GigaSMART Apps Configuration */}
+      {node.data.gigaSmartApps && Array.isArray(node.data.gigaSmartApps) && node.data.gigaSmartApps.length > 0 && (
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', marginTop: '16px' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffb74d' }}>GigaSMART Applications</h4>
+          {node.data.gigaSmartApps.map((app: any, idx: number) => (
+            <div key={app.id || idx} style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '10px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <span style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>{app.label || app.actionType}</span>
+              </div>
+              
+              {(app.actionType === 'Deduplication' || app.actionType === 'Dedup') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>Estimated Deduplication Rate (%)</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={app.dedupRate ?? 20}
+                    onChange={e => {
+                      const newApps = [...(node.data.gigaSmartApps as any[])];
+                      newApps[idx] = { ...newApps[idx], dedupRate: Number(e.target.value) };
+                      updateNodeData(node.id, { gigaSmartApps: newApps });
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                  <div style={{ fontSize: '11px', color: '#00e5ff', textAlign: 'right' }}>{app.dedupRate ?? 20}% Duplicate Drops</div>
+                </div>
+              )}
+              
+              {(app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>Metadata Output Format</label>
+                  <select
+                    value={app.metadataFormat || 'CEF'}
+                    onChange={e => {
+                      const newApps = [...(node.data.gigaSmartApps as any[])];
+                      newApps[idx] = { ...newApps[idx], metadataFormat: e.target.value };
+                      updateNodeData(node.id, { gigaSmartApps: newApps });
+                    }}
+                    style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                  >
+                    <option value="CEF">CEF (Common Event Format)</option>
+                    <option value="JSON">JSON</option>
+                  </select>
+                </div>
+              )}
+              
+              {app.actionType !== 'Deduplication' && app.actionType !== 'Dedup' && app.actionType !== 'Application Metadata' && app.actionType !== 'AMX' && app.actionType !== 'AMI' && (
+                <div style={{ fontSize: '11px', color: '#aaa' }}>
+                  No additional configuration required for {app.actionType}.
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 };
