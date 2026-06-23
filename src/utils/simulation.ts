@@ -339,11 +339,27 @@ export const calculateSimulationStep = (
     let generatedMetadataStreams: TrajectoryStream[] = [];
 
     if (node.type === 'toolNode') {
+      const data = node.data as ToolNodeData;
+      const configType = data.configType || '';
+      const isPacketTool = configType === 'Packet Tool';
+      const isMetadataTool = configType === 'Metadata Tool';
+      const rType = item.stream.trafficType || 'packet';
+      
+      let isValidForTool = true;
+      if (isPacketTool && rType !== 'packet') isValidForTool = false;
+      if (isMetadataTool && rType !== 'metadata') isValidForTool = false;
+
       if (!toolReceivedStreams[node.id]) {
         toolReceivedStreams[node.id] = [];
       }
       toolReceivedStreams[node.id].push(item.stream);
-      deliveredStreamIds.add(item.stream.id);
+      
+      if (isValidForTool) {
+        deliveredStreamIds.add(item.stream.id);
+        // Only count valid traffic towards the tool's Rx bandwidth
+        nodeMetric.rxBps += item.stream.bandwidth;
+        nodeMetric.rxPackets += item.stream.bandwidth * 250;
+      }
       continue;
     }
 
@@ -595,33 +611,43 @@ export const calculateSimulationStep = (
       let receivedFormat = '';
 
       if (received.length > 0) {
+        let hasValid = false;
+        let hasMismatch = false;
+        let mismatchMsg = '';
+
         for (const rStream of received) {
           const rType = rStream.trafficType || 'packet';
           const rFormat = rStream.metadataFormat;
 
           if (isPacketTool) {
-            if (rType !== 'packet') {
-              nextStatus = 'warning';
-              nextStatusMessage = 'Expected packets, got metadata';
-              break;
+            if (rType === 'packet') {
+              hasValid = true;
+            } else {
+              hasMismatch = true;
+              if (!mismatchMsg) mismatchMsg = 'Expected packets, got metadata';
             }
           } else if (isMetadataTool) {
-            if (rType !== 'metadata') {
-              nextStatus = 'warning';
-              nextStatusMessage = 'Expected metadata, got packets';
-              break;
-            } else if (expectedFormat !== 'Any' && rFormat !== expectedFormat) {
-              nextStatus = 'warning';
-              nextStatusMessage = `Format mismatch: got ${rFormat}, expected ${expectedFormat}`;
-              break;
+            if (rType === 'metadata') {
+              if (expectedFormat !== 'Any' && rFormat !== expectedFormat) {
+                hasMismatch = true;
+                if (!mismatchMsg) mismatchMsg = `Format mismatch: got ${rFormat}, expected ${expectedFormat}`;
+              } else {
+                hasValid = true;
+                receivedFormat = rFormat || 'Metadata';
+              }
+            } else {
+              hasMismatch = true;
+              if (!mismatchMsg) mismatchMsg = 'Expected metadata, got packets';
             }
-            receivedFormat = rFormat || 'Metadata';
           }
         }
-        
-        if (!nextStatus) {
+
+        if (hasValid) {
           nextStatus = 'optimal';
           nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`;
+        } else if (hasMismatch) {
+          nextStatus = 'warning';
+          nextStatusMessage = mismatchMsg;
         }
       } else {
         nextStatus = undefined;
