@@ -363,6 +363,30 @@ const CanvasArea: React.FC = () => {
         } else if (initialData?.configType === CONFIG_TYPES.VMWARE || initialData?.configType === 'GigaVUE-VM') {
           labelToUse = `VMWare Estate ${nextIdx}`;
         }
+      } else if (type === NODE_TYPES.HARDWARE) {
+        let maxIndex = 0;
+        const baseModel = String(initialData?.model || initialData?.label || 'Node');
+        nodes.forEach((node) => {
+          if (node.type === NODE_TYPES.HARDWARE) {
+            const nodeBaseModel = String(node.data?.model || node.data?.label || 'Node');
+            if (nodeBaseModel === baseModel) {
+              const labelStr = String(node.data?.label || '');
+              // Match "BaseModel #2" or "BaseModel 2"
+              const escapedModel = baseModel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const match = labelStr.match(new RegExp(`^${escapedModel}\\s+#?(\\d+)$`, 'i'));
+              if (match) {
+                const idx = parseInt(match[1], 10);
+                if (idx > maxIndex) maxIndex = idx;
+              } else if (labelStr === baseModel) {
+                if (1 > maxIndex) maxIndex = 1;
+              }
+            }
+          }
+        });
+        
+        if (maxIndex > 0) {
+           labelToUse = `${baseModel} #${maxIndex + 1}`;
+        }
       }
 
       if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) {
