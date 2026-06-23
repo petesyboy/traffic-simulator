@@ -47,6 +47,7 @@ import {
 import { type NodeMetrics } from '../store/store';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getSupportedBoards, validateOptic } from '../utils/opticValidation';
+import skusData from '../constants/skus.json';
 
 // ─── Shared form helpers ──────────────────────────────────────────────────────
 
@@ -260,6 +261,21 @@ const HardwareNodePanel: React.FC<{
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', marginBottom: '16px' }}>
           <div><strong>Model:</strong> {details.model}</div>
           <div><strong>SKU:</strong> {details.sku}</div>
+          {skusData[details.sku as keyof typeof skusData] && (
+            <div style={{ 
+              background: 'rgba(255, 152, 0, 0.08)', 
+              padding: '8px 12px', 
+              borderRadius: '6px', 
+              border: '1px solid rgba(255, 152, 0, 0.2)', 
+              marginTop: '4px', 
+              marginBottom: '6px',
+              fontSize: '11px', 
+              color: '#ffe0b2', 
+              lineHeight: '1.4' 
+            }}>
+              <strong>Description:</strong> {skusData[details.sku as keyof typeof skusData]}
+            </div>
+          )}
           {details.ru && <div><strong>Form Factor:</strong> {details.ru} RU</div>}
           {details.power && <div><strong>Power:</strong> {details.power}</div>}
           {details.fans !== undefined && <div><strong>Fans:</strong> {details.fans}</div>}

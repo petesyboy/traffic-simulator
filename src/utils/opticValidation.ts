@@ -22,7 +22,7 @@ export function getSupportedBoards(model: string): OpticSupport[] {
 
   return Object.keys(rules).map(board => ({
     board,
-    supportedOptics: rules[board]
+    supportedOptics: rules[board].filter(opt => opt !== 'Cable')
   }));
 }
 
