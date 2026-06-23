@@ -104,6 +104,7 @@ const SimulationEngine: React.FC = () => {
       // ── 3. Single batched store update ──
       updateSimulationTick(
         result.metrics,
+        result.edgeMetrics,
         result.activeEdges,
         result.blockedEdges,
         result.deliveredStreamIds,

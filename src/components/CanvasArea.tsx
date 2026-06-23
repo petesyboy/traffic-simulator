@@ -173,6 +173,7 @@ const CanvasArea: React.FC = () => {
   const edges = useStore((state) => state.edges);
   const activeEdges = useStore((state) => state.activeEdges);
   const blockedEdges = useStore((state) => state.blockedEdges);
+  const edgeMetrics = useStore((state) => state.edgeMetrics || {});
   const isRunning = useStore((state) => state.isRunning);
   
   const onNodesChange = useStore((state) => state.onNodesChange);
@@ -238,6 +239,13 @@ const CanvasArea: React.FC = () => {
       // Flow from source (S3) to target (Splunk)
       className = 'active-flow';
       animated = true;
+    }
+    
+    // Append throughput if available
+    const bps = edgeMetrics[edge.id];
+    if (isRunning && bps !== undefined && bps > 0) {
+      const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
+      label = label ? `${label} | ${throughputLabel}` : throughputLabel;
     }
     
     return {

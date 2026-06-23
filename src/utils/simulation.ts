@@ -185,6 +185,7 @@ export const evaluateMapConditions = (stream: TrafficStream, conditions: MapCond
 
 export interface SimulationStepResult {
   metrics: Record<string, NodeMetrics>;
+  edgeMetrics: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
   deliveredStreamIds: string[];
@@ -227,6 +228,7 @@ export const calculateSimulationStep = (
 
   const activeEdgeSet = new Set<string>();
   const blockedEdgeSet = new Set<string>();
+  const edgeTraffic: Record<string, number> = {};
 
   // Traversal queue
   interface QueueItem {
@@ -448,6 +450,7 @@ export const calculateSimulationStep = (
         
         outboundEdges.forEach((edge) => {
           activeEdgeSet.add(edge.id);
+          edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
           queue.push({
             nodeId: edge.target,
             stream: { ...item.stream, bandwidth: splitBandwidth },
@@ -524,6 +527,7 @@ export const calculateSimulationStep = (
     if (forwardStream && forwardStream.bandwidth > 0 && outboundEdges.length > 0) {
       outboundEdges.forEach((edge) => {
         activeEdgeSet.add(edge.id);
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
         queue.push({
           nodeId: edge.target,
           stream: { ...forwardStream! },
@@ -624,6 +628,7 @@ export const calculateSimulationStep = (
 
   return {
     metrics,
+    edgeMetrics: edgeTraffic,
     activeEdges: Array.from(activeEdgeSet),
     blockedEdges: Array.from(blockedEdgeSet),
     deliveredStreamIds: Array.from(deliveredStreamIds),

@@ -111,6 +111,7 @@ export type RFState = {
   disableDcWarnings: boolean;
   trafficStreams: TrafficStream[];
   nodeMetrics: Record<string, NodeMetrics>;
+  edgeMetrics: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
   deliveredStreams: string[];
@@ -136,6 +137,7 @@ export type RFState = {
   resetMetrics: () => void;
   updateSimulationTick: (
     metrics: Record<string, NodeMetrics>,
+    edgeMetrics: Record<string, number>,
     activeEdges: string[],
     blockedEdges: string[],
     deliveredStreams?: string[],
@@ -413,6 +415,7 @@ export const useStore = create<RFState>((set, get) => ({
   disableDcWarnings: false,
   trafficStreams: initialTraffic,
   nodeMetrics: {},
+  edgeMetrics: {},
   activeEdges: [],
   blockedEdges: [],
   deliveredStreams: [],
@@ -584,6 +587,7 @@ export const useStore = create<RFState>((set, get) => ({
 
   updateSimulationTick: (
     metrics: Record<string, NodeMetrics>,
+    edgeMetrics: Record<string, number>,
     activeEdges: string[],
     blockedEdges: string[],
     deliveredStreams?: string[],
@@ -631,6 +635,7 @@ export const useStore = create<RFState>((set, get) => ({
     // ONE Zustand set() call → ONE React re-render per tick
     set({
       nodeMetrics: metrics,
+      edgeMetrics,
       activeEdges,
       blockedEdges,
       deliveredStreams: deliveredStreams || [],
