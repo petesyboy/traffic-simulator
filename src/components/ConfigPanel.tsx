@@ -179,7 +179,7 @@ const HardwareNodePanel: React.FC<{
   else if (model?.includes('TA')) details = hardwareCatalogue.ta_series.find(t => t.sku === sku);
   else if (model?.includes('HC')) details = hardwareCatalogue.hc_series.find(t => t.sku === sku);
 
-  const supportedBoards = getSupportedBoards(model || '');
+  const supportedBoards = getSupportedBoards(model || '', node.data?.portCapacity as string);
   
   // Determine available boards for optics: Main board / Base Ports + explicitly installed slot boards
   const availableOpticBoards = supportedBoards.filter(b => 
@@ -297,7 +297,7 @@ const HardwareNodePanel: React.FC<{
       setErrorMsg('Please select a board and an optic.');
       return;
     }
-    const validation = validateOptic(model, targetBoard, selectedOptic);
+    const validation = validateOptic(model, targetBoard, selectedOptic, node.data?.portCapacity as string);
     if (!validation.valid) {
       setErrorMsg(validation.message || 'Invalid optic combination.');
       return;
@@ -427,11 +427,18 @@ const HardwareNodePanel: React.FC<{
               {model?.includes('TA') && (
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Software Port Capacity</label>
-                  <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                    <option value="Full">Full Capacity</option>
-                    <option value="Half">Half Capacity</option>
-                    <option value="Quarter">Quarter Capacity</option>
-                  </select>
+                  {model.includes('TA400') ? (
+                    <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                      <option value="Full">32 x 400Gb ports</option>
+                      <option value="100G">32 x 100Gb ports</option>
+                    </select>
+                  ) : (
+                    <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                      <option value="Full">Full Capacity</option>
+                      <option value="Half">Half Capacity</option>
+                      <option value="Quarter">Quarter Capacity</option>
+                    </select>
+                  )}
                 </div>
               )}
             </div>
@@ -684,9 +691,16 @@ const DashboardPanel: React.FC<{ isRunning: boolean }> = ({ isRunning }) => {
 
   // Aggregate ingest (from inputNodes or TAP hardware nodes)
   let totalIngest = 0;
+  let totalDedupDrops = 0;
+  let totalFilterDrops = 0;
+  
   nodes.forEach((n) => {
     const metric = nodeMetrics[n.id];
     if (!metric) return;
+    
+    totalDedupDrops += metric.dedupDroppedBps || 0;
+    totalFilterDrops += metric.filterDroppedBps || 0;
+    
     if (
       n.type === NODE_TYPES.INPUT ||
       (n.type === NODE_TYPES.HARDWARE && typeof n.data?.model === 'string' && n.data.model.includes('TAP'))
@@ -779,8 +793,9 @@ const DashboardPanel: React.FC<{ isRunning: boolean }> = ({ isRunning }) => {
                 ({formatBandwidth(reductionRaw)} saved)
               </span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-              Filtered: {formatPackets(reductionRaw * 250)} packet reduction
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div>Deduped: {formatBandwidth(totalDedupDrops)} ({formatPackets(totalDedupDrops * 250)})</div>
+              <div>Filtered: {formatBandwidth(totalFilterDrops)} ({formatPackets(totalFilterDrops * 250)})</div>
             </div>
             {/* Animated progress bar */}
             <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', overflow: 'hidden', marginTop: '6px' }}>
@@ -854,6 +869,7 @@ const InputNodePanel: React.FC<{
             <option value="25G">25 Gbps</option>
             <option value="40G">40 Gbps</option>
             <option value="100G">100 Gbps</option>
+            <option value="400G">400 Gbps</option>
           </select>
         </FormGroup>
       )}
@@ -1343,6 +1359,7 @@ const ConfigPanel: React.FC = () => {
       else if (val === '25G') speedMbps = 25000;
       else if (val === '40G') speedMbps = 40000;
       else if (val === '100G') speedMbps = 100000;
+      else if (val === '400G') speedMbps = 400000;
       updates.linkSpeed = speedMbps;
     }
 

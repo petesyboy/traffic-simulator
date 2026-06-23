@@ -35,7 +35,9 @@ export interface NodeMetrics {
   txBps: number;
   rxPackets: number;
   txPackets: number;
-  droppedPackets: number;
+  droppedPackets: number; // total drops (legacy/catch-all)
+  dedupDroppedBps?: number;
+  filterDroppedBps?: number;
 }
 
 export interface MapCondition {

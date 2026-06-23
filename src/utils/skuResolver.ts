@@ -50,7 +50,7 @@ export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpe
   // Adjust for port capacity in Perpetual mode
   if (licenseMode !== 'HTL') {
     if (model.includes('TA25E') || model.includes('TA25') || model.includes('TA200') || model.includes('TA400')) {
-      if (portCapacity === 'Half') {
+      if (portCapacity === 'Half' || portCapacity === '100G') {
         resolvedSku += 'A';
       } else if (portCapacity === 'Quarter') {
         resolvedSku += 'B';
@@ -83,7 +83,7 @@ export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpe
       baseSwSku = baseSwSku.replace(/[12]/, '0');
     }
 
-    if (portCapacity === 'Half') {
+    if (portCapacity === 'Half' || portCapacity === '100G') {
       baseSwSku += 'A';
     } else if (portCapacity === 'Quarter') {
       baseSwSku += 'B';

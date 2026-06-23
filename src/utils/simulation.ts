@@ -223,7 +223,7 @@ export const calculateSimulationStep = (
   // 1. Initialize metrics for all nodes
   const metrics: Record<string, NodeMetrics> = {};
   nodes.forEach((node) => {
-    metrics[node.id] = { rxBps: 0, txBps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 };
+    metrics[node.id] = { rxBps: 0, txBps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedBps: 0, filterDroppedBps: 0 };
   });
 
   const activeEdgeSet = new Set<string>();
@@ -386,6 +386,7 @@ export const calculateSimulationStep = (
       } else {
         dropBandwidth = item.stream.bandwidth;
         nodeMetric.droppedPackets += dropBandwidth;
+        nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
         forwardStream = null;
       }
     } 
@@ -398,6 +399,7 @@ export const calculateSimulationStep = (
       } else {
         dropBandwidth = item.stream.bandwidth;
         nodeMetric.droppedPackets += dropBandwidth;
+        nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
         forwardStream = null;
       }
     }
@@ -413,6 +415,7 @@ export const calculateSimulationStep = (
         const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
 
         nodeMetric.droppedPackets += dropBandwidth;
+        nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + dropBandwidth;
         nodeMetric.txBps += validBandwidth;
         nodeMetric.txPackets += validBandwidth * 250;
         forwardStream = { ...item.stream, bandwidth: validBandwidth };
@@ -500,6 +503,7 @@ export const calculateSimulationStep = (
               const dropFraction = (app.dedupRate || 20) / 100;
               const drop = item.stream.bandwidth * dropFraction;
               nodeMetric.droppedPackets += drop;
+              nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + drop;
               item.stream.bandwidth -= drop;
             } else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
               const scale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
@@ -537,6 +541,7 @@ export const calculateSimulationStep = (
       } else {
         dropBandwidth = item.stream.bandwidth;
         nodeMetric.droppedPackets += dropBandwidth;
+        nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
         forwardStream = null;
       }
     }

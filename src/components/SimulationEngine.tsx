@@ -59,6 +59,42 @@ const SimulationEngine: React.FC = () => {
             };
           }
         }
+
+        if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
+          let appsUpdated = false;
+          const updatedApps = node.data.gigaSmartApps.map((app: any) => {
+            if (isDedupAction(app.actionType || '')) {
+              const lastUpdate = app.lastDedupUpdate || 0;
+              const currentRate = app.dedupRate;
+
+              if (currentRate === undefined || currentRate === null) {
+                appsUpdated = true;
+                return {
+                  ...app,
+                  dedupRate: Math.floor(Math.random() * 41) + 10,
+                  lastDedupUpdate: now,
+                };
+              } else if (now - lastUpdate >= 2000) {
+                const delta = Math.floor(Math.random() * 11) - 5;
+                const newRate = Math.min(50, Math.max(10, currentRate + delta));
+                appsUpdated = true;
+                return {
+                  ...app,
+                  dedupRate: newRate,
+                  lastDedupUpdate: now,
+                };
+              }
+            }
+            return app;
+          });
+
+          if (appsUpdated) {
+            nodeDataPatches[node.id] = {
+              ...nodeDataPatches[node.id],
+              gigaSmartApps: updatedApps,
+            };
+          }
+        }
       });
 
       trafficStreams.forEach((stream) => {
