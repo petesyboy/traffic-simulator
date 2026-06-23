@@ -591,12 +591,17 @@ const DashboardPanel: React.FC<{ isRunning: boolean }> = ({ isRunning }) => {
   const disableDcWarnings = useStore((state) => state.disableDcWarnings);
   const setDisableDcWarnings = useStore((state) => state.setDisableDcWarnings);
 
-  // Aggregate ingest (from inputNodes)
+  // Aggregate ingest (from inputNodes or TAP hardware nodes)
   let totalIngest = 0;
   nodes.forEach((n) => {
     const metric = nodeMetrics[n.id];
     if (!metric) return;
-    if (n.type === NODE_TYPES.INPUT) totalIngest += metric.txBps;
+    if (
+      n.type === NODE_TYPES.INPUT ||
+      (n.type === NODE_TYPES.HARDWARE && typeof n.data?.model === 'string' && n.data.model.includes('TAP'))
+    ) {
+      totalIngest += metric.txBps;
+    }
   });
 
   const totalEgress = uniqueEgressBps;

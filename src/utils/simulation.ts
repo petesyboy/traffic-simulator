@@ -409,8 +409,11 @@ export const calculateSimulationStep = (
       const isMatch = isTap ? true : evaluateMapConditions(item.stream, conditions);
       
       if (isMatch) {
-        nodeMetric.txBps += item.stream.bandwidth;
-        nodeMetric.txPackets += packetsPerSecond;
+        const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
+        if (!alreadyAddedAtTop) {
+          nodeMetric.txBps += item.stream.bandwidth;
+          nodeMetric.txPackets += packetsPerSecond;
+        }
       } else {
         dropBandwidth = item.stream.bandwidth;
         nodeMetric.droppedPackets += dropBandwidth;
