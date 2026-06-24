@@ -5,7 +5,8 @@ import {
   useViewport,
   Background,
   Controls,
-  BackgroundVariant
+  BackgroundVariant,
+  Panel
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
@@ -180,6 +181,7 @@ const CanvasArea: React.FC = () => {
   const isRunning = useStore((state) => state.isRunning);
   const showGrid = useStore((state) => state.showGrid);
   const snapToGrid = useStore((state) => state.snapToGrid);
+  const snapAllNodesToGrid = useStore((state) => state.snapAllNodesToGrid);
   
   const onNodesChange = useStore((state) => state.onNodesChange);
   const onEdgesChange = useStore((state) => state.onEdgesChange);
@@ -729,6 +731,37 @@ const CanvasArea: React.FC = () => {
       >
         {showGrid && <Background variant={BackgroundVariant.Lines} color="rgba(255,255,255,0.06)" gap={15} size={1} />}
         <Controls />
+        <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px' }}>
+          <button
+            onClick={snapAllNodesToGrid}
+            title="Align all nodes to the nearest grid points"
+            style={{
+              padding: '6px 12px',
+              fontSize: '11px',
+              fontWeight: 600,
+              background: '#1e1e1e',
+              border: '1px solid #333',
+              borderRadius: '4px',
+              color: '#00e5ff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#252525';
+              e.currentTarget.style.borderColor = '#00e5ff';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = '#1e1e1e';
+              e.currentTarget.style.borderColor = '#333';
+            }}
+          >
+            <span>🧲</span> Snap All to Grid
+          </button>
+        </Panel>
       </ReactFlow>
 
       {/* ── Federated Search Enclosures ── */}

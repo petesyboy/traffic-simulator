@@ -140,6 +140,7 @@ export type RFState = {
   snapToGrid: boolean;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
+  snapAllNodesToGrid: () => void;
   addTrafficStream: (stream: TrafficStream) => void;
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
   deleteTrafficStream: (id: string) => void;
@@ -691,6 +692,18 @@ export const useStore = create<RFState>((set, get) => ({
   setDisableDcWarnings: (disable) => set({ disableDcWarnings: disable }),
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
+
+  snapAllNodesToGrid: () => {
+    const snapped = get().nodes.map((node) => {
+      const snapX = Math.round(node.position.x / 15) * 15;
+      const snapY = Math.round(node.position.y / 15) * 15;
+      return {
+        ...node,
+        position: { x: snapX, y: snapY }
+      };
+    });
+    set({ nodes: snapped });
+  },
 
   addTrafficStream: (stream: TrafficStream) => {
     set({ trafficStreams: [...get().trafficStreams, stream] });
