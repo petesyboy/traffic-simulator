@@ -102,6 +102,25 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     return 'Unknown';
   };
 
+  const getOpticFiberType = (opticName: string): string => {
+    const upper = opticName.toUpperCase();
+    if (upper.includes('COPPER') || upper.includes('BASE-T') || upper.includes('BASET') || upper.endsWith('T') || upper.includes('ACTIVE CABLE') || upper.includes('DIRECT ATTACH') || upper.includes('DAC')) {
+      return 'Copper';
+    }
+    if (/\b(SX|SR\d*|LRM|SWDM\d*)\b/i.test(upper) || upper.includes(' SX') || upper.includes(' SR') || upper.includes(' LRM') || upper.includes(' SWDM')) {
+      return 'MM';
+    }
+    if (/\b(LX|LR\d*|ER\d*|ZR\d*|LH|DR\d*|FR\d*|CWDM\d*|PLR\d*|PSM\d*)\b/i.test(upper) || upper.includes(' LX') || upper.includes(' LR') || upper.includes(' ER') || upper.includes(' ZR') || upper.includes(' LH') || upper.includes(' DR') || upper.includes(' FR') || upper.includes(' CWDM') || upper.includes(' PLR') || upper.includes(' PSM')) {
+      return 'SM';
+    }
+    return '';
+  };
+
+  const formatOpticLabel = (opticName: string): string => {
+    const type = getOpticFiberType(opticName);
+    return type ? `${opticName} [${type}]` : opticName;
+  };
+
   const getBoardCageCapacities = (boardName: string, isPlus: boolean): {
     ports1G: number;
     ports10G: number;
@@ -453,7 +472,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               )}
               <select value={selectedOptic} onChange={e => { setSelectedOptic(e.target.value); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }} disabled={availableOpticBoards.length === 0 || (availableOpticBoards.length > 1 && !selectedOpticBoard)}>
                 <option value="">-- Select Optic --</option>
-                {activeOpticBoardObj?.supportedOptics.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {activeOpticBoardObj?.supportedOptics.map(opt => <option key={opt} value={opt}>{formatOpticLabel(opt)}</option>)}
               </select>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <label style={{ fontSize: '11px', color: '#ccc' }}>Qty:</label>
@@ -470,7 +489,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                   {installedOptics.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', border: '1px solid #333' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ color: '#fff' }}>{opt.qty}x {opt.optic}</span>
+                        <span style={{ color: '#fff' }}>{opt.qty}x {formatOpticLabel(opt.optic)}</span>
                         <span style={{ color: '#888' }}>{opt.board}</span>
                       </div>
                       <button onClick={() => handleRemoveOptic(i)} style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }} title="Remove Optic">×</button>
