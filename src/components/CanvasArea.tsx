@@ -647,30 +647,46 @@ const CanvasArea: React.FC = () => {
 
       setHoveredEdgeId(null);
 
-      // Automatically generate a traffic stream whenever an input port is dropped.
-      if (type === NODE_TYPES.INPUT) {
-        const speeds = [10, 25, 40, 100];
-        const randomOpticGbps = speeds[Math.floor(Math.random() * speeds.length)];
-        const streamGbps = Math.floor(Math.random() * randomOpticGbps) + 1;
-        const initialBandwidthMbps = streamGbps * 1000;
-        
-        let labelSpeedStr = `${streamGbps} Gbps`;
+      // Automatically generate a traffic stream whenever an input port or a G-TAP hardware node is dropped.
+      const isInput = type === NODE_TYPES.INPUT;
+      const isTapHardware = type === NODE_TYPES.HARDWARE && String(newNode.data?.model || '').includes('TAP');
 
+      if (isInput || isTapHardware) {
+        const speeds = [10000, 25000, 40000]; // 10G, 25G, 40G in Mbps
+        const randomSpeed = speeds[Math.floor(Math.random() * speeds.length)];
+        
+        // Random utilization between 20% and 75%
+        const utilization = 0.2 + Math.random() * 0.55;
+        const initialBandwidthMbps = Math.floor(randomSpeed * utilization);
+        const streamGbps = (initialBandwidthMbps / 1000).toFixed(1);
+        
+        // Varied traffic profiles
+        const profiles = [
+          { name: 'Web Traffic', port: '443', proto: 'tcp' },
+          { name: 'DB Sync Flow', port: '5432', proto: 'tcp' },
+          { name: 'App Services API', port: '8080', proto: 'tcp' },
+          { name: 'DNS Queries Query', port: '53', proto: 'udp' },
+          { name: 'Video Streaming Media', port: '5004', proto: 'udp' },
+        ];
+        const profile = profiles[Math.floor(Math.random() * profiles.length)];
+        
         const randomSubnet = Math.floor(Math.random() * 254) + 1;
         const randomVlan = String(Math.floor(Math.random() * 900) + 100);
         
         addTrafficStream({
           id: `t-${uuidv4()}`,
-          name: `${labelToUse} Flow (${labelSpeedStr})`,
+          name: `${labelToUse} - ${profile.name} (${streamGbps} Gbps)`,
           sourceNodeId: newNode.id,
           vlan: randomVlan,
-          ipSrc: `192.168.${randomSubnet}.10`,
-          ipDst: `10.0.0.${randomSubnet}`,
+          ipSrc: `192.168.${randomSubnet}.25`,
+          ipDst: `10.10.${randomSubnet}.5`,
           portSrc: String(Math.floor(Math.random() * 50000) + 1024),
-          portDst: '80',
-          protocol: 'tcp',
+          portDst: profile.port,
+          protocol: profile.proto as 'tcp' | 'udp' | 'icmp',
           bandwidth: initialBandwidthMbps,
           active: true,
+          drift: 1,
+          lastDriftUpdate: 0
         });
       }
     },
