@@ -213,201 +213,314 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], _edges: Edge[]): 
 }
 
 // Create a default topology
-const defaultInputId = 'node-input-1';
-const tapInputId2 = 'node-input-tap-2';
-const tapInputId3 = 'node-input-tap-3';
-const tapInputId4 = 'node-input-tap-4';
-const tapInputId5 = 'node-input-tap-5';
-const tapInputId6 = 'node-input-tap-6';
-
-const defaultMapId = 'node-map-1';
-const defaultToolHopId = 'node-tool-1';
 
 const initialNodes: CustomNode[] = [
   {
-    id: defaultInputId,
-    type: 'inputNode',
-    position: { x: 50, y: 60 },
-    data: { label: 'TAP Device 1/1/x1', configType: 'TAP Device', linkSpeed: 40000 },
-  },
-  {
-    id: tapInputId2,
-    type: 'inputNode',
-    position: { x: 50, y: 140 },
-    data: { label: 'TAP Device 1/1/x2', configType: 'TAP Device', linkSpeed: 10000 },
-  },
-  {
-    id: tapInputId3,
-    type: 'inputNode',
-    position: { x: 50, y: 220 },
-    data: { label: 'TAP Device 1/1/x3', configType: 'TAP Device', linkSpeed: 10000 },
-  },
-  {
-    id: tapInputId4,
-    type: 'inputNode',
-    position: { x: 50, y: 300 },
-    data: { label: 'TAP Device 1/1/x4', configType: 'TAP Device', linkSpeed: 1000 },
-  },
-  {
-    id: tapInputId5,
-    type: 'inputNode',
-    position: { x: 50, y: 380 },
-    data: { label: 'TAP Device 1/1/x5', configType: 'TAP Device', linkSpeed: 25000 },
-  },
-  {
-    id: tapInputId6,
-    type: 'inputNode',
-    position: { x: 50, y: 460 },
-    data: { label: 'SPAN Port 1/1/x6', configType: 'SPAN Port', linkSpeed: 40000 },
-  },
-  {
-    id: defaultMapId,
-    type: 'mapNode',
-    position: { x: 320, y: 260 },
-    data: { 
-      label: 'Core Traffic Map', 
-      configType: 'Traffic Map',
-      conditions: [
-        { logic: 'AND', field: 'protocol', value: 'tcp' },
-        { logic: 'AND', field: 'vlan', value: '100, 200, 999' }
-      ]
+    id: "node-input-1",
+    type: "inputNode",
+    position: {
+      x: 27.5,
+      y: 61.5
     },
+    data: {
+      label: "TAP Device 1/1/x1 - Main Hall",
+      configType: "TAP Device",
+      linkSpeed: 40000
+    }
   },
   {
-    id: defaultToolHopId,
-    type: 'toolNode',
-    position: { x: 600, y: 260 },
-    data: { label: 'ExtraHop Tool', configType: 'ExtraHop' },
+    id: "node-input-tap-2",
+    type: "inputNode",
+    position: {
+      x: 26.5,
+      y: 136.5
+    },
+    data: {
+      label: "TAP Device 1/1/x2 - Site Two",
+      configType: "TAP Device",
+      linkSpeed: 10000
+    }
   },
+  {
+    id: "node-input-tap-3",
+    type: "inputNode",
+    position: {
+      x: 50,
+      y: 220
+    },
+    data: {
+      label: "TAP Device 1/1/x3 - Production Floor A",
+      configType: "TAP Device",
+      linkSpeed: 10000
+    }
+  },
+  {
+    id: "node-input-tap-4",
+    type: "inputNode",
+    position: {
+      x: 49.5,
+      y: 301.5
+    },
+    data: {
+      label: "TAP Device 1/1/x4 Production Floor B",
+      configType: "TAP Device",
+      linkSpeed: 1000
+    }
+  },
+  {
+    id: "node-input-tap-5",
+    type: "inputNode",
+    position: {
+      x: 41,
+      y: 376.5
+    },
+    data: {
+      label: "TAP Device 1/1/x5 - Comms Room",
+      configType: "TAP Device",
+      linkSpeed: 25000
+    }
+  },
+  {
+    id: "node-input-tap-6",
+    type: "inputNode",
+    position: {
+      x: 23,
+      y: 451.5
+    },
+    data: {
+      label: "Juniper SPAN Port 1/1/x6 ",
+      configType: "SPAN Port",
+      linkSpeed: 40000
+    }
+  },
+  {
+    id: "node-map-1",
+    type: "mapNode",
+    position: {
+      x: 428,
+      y: 217
+    },
+    data: {
+      label: "Core Traffic Map",
+      configType: "Traffic Map",
+      conditions: [
+        {
+          logic: "AND",
+          field: "protocol",
+          value: "tcp"
+        },
+        {
+          logic: "AND",
+          field: "vlan",
+          value: "100, 200, 999"
+        }
+      ]
+    }
+  },
+  {
+    id: "node-tool-1",
+    type: "toolNode",
+    position: {
+      x: 758,
+      y: 145.5
+    },
+    data: {
+      label: "ExtraHop Tool",
+      configType: "ExtraHop",
+      totalIngestedBytes: 81632270614.26353,
+      statusMessage: "",
+      receivedFormat: ""
+    }
+  }
 ];
 
 const initialEdges: Edge[] = [
-  { id: 'e1', source: defaultInputId, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e-tap-2', source: tapInputId2, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e-tap-3', source: tapInputId3, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e-tap-4', source: tapInputId4, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e-tap-5', source: tapInputId5, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e-tap-6', source: tapInputId6, target: defaultMapId, sourceHandle: 'out', targetHandle: 'in' },
-  { id: 'e2', source: defaultMapId, target: defaultToolHopId, sourceHandle: 'out', targetHandle: 'in' },
+  {
+    id: "e1",
+    source: "node-input-1",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e-tap-2",
+    source: "node-input-tap-2",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e-tap-3",
+    source: "node-input-tap-3",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e-tap-4",
+    source: "node-input-tap-4",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e-tap-5",
+    source: "node-input-tap-5",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e-tap-6",
+    source: "node-input-tap-6",
+    target: "node-map-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  },
+  {
+    id: "e2",
+    source: "node-map-1",
+    target: "node-tool-1",
+    sourceHandle: "out",
+    targetHandle: "in"
+  }
 ];
 
 const initialTraffic: TrafficStream[] = [
   {
-    id: 't-1',
-    name: 'Web Prod Traffic (2 Gbps)',
-    sourceNodeId: defaultInputId,
-    vlan: '100',
-    ipSrc: '192.168.1.0/24',
-    ipDst: '10.0.0.5',
-    portSrc: '49152',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 2000, // 2 Gbps
+    id: "t-1",
+    name: "Web Prod Traffic (2 Gbps)",
+    sourceNodeId: "node-input-1",
+    vlan: "100",
+    ipSrc: "192.168.1.0/24",
+    ipDst: "10.0.0.5",
+    portSrc: "49152",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 2000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-2',
-    name: 'DB Sync Traffic (1 Gbps)',
-    sourceNodeId: defaultInputId,
-    vlan: '200',
-    ipSrc: '192.168.2.11',
-    ipDst: '10.0.0.10',
-    portSrc: '5432',
-    portDst: '5432',
-    protocol: 'tcp',
-    bandwidth: 1000, // 1 Gbps
+    id: "t-2",
+    name: "DB Sync Traffic (1 Gbps)",
+    sourceNodeId: "node-input-1",
+    vlan: "200",
+    ipSrc: "192.168.2.11",
+    ipDst: "10.0.0.10",
+    portSrc: "5432",
+    portDst: "5432",
+    protocol: "tcp",
+    bandwidth: 1000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-3',
-    name: 'DNS Query Flood (1.5 Gbps)',
-    sourceNodeId: defaultInputId,
-    vlan: '100',
-    ipSrc: '192.168.1.15',
-    ipDst: '8.8.8.8',
-    portSrc: '60124',
-    portDst: '53',
-    protocol: 'udp',
-    bandwidth: 1500, // 1.5 Gbps
+    id: "t-3",
+    name: "DNS Query Flood (1.5 Gbps)",
+    sourceNodeId: "node-input-1",
+    vlan: "100",
+    ipSrc: "192.168.1.15",
+    ipDst: "8.8.8.8",
+    portSrc: "60124",
+    portDst: "53",
+    protocol: "udp",
+    bandwidth: 1500,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-4',
-    name: 'IPv6 Sync Flow (35 Gbps)',
-    sourceNodeId: defaultInputId,
-    vlan: '999',
-    ipSrc: '2001:db8::1',
-    ipDst: '2001:db8::2',
-    portSrc: '8080',
-    portDst: '8080',
-    protocol: 'tcp',
-    bandwidth: 35000, // 35 Gbps
+    id: "t-4",
+    name: "IPv6 Sync Flow (35 Gbps)",
+    sourceNodeId: "node-input-1",
+    vlan: "999",
+    ipSrc: "2001:db8::1",
+    ipDst: "2001:db8::2",
+    portSrc: "8080",
+    portDst: "8080",
+    protocol: "tcp",
+    bandwidth: 35000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-tap-2',
-    name: 'TAP 2 Flow (10 Gbps)',
-    sourceNodeId: tapInputId2,
-    vlan: '100',
-    ipSrc: '192.168.10.2',
-    ipDst: '10.0.0.20',
-    portSrc: '50002',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 10000, // 100% utilization
+    id: "t-tap-2",
+    name: "TAP 2 Flow (10 Gbps)",
+    sourceNodeId: "node-input-tap-2",
+    vlan: "100",
+    ipSrc: "192.168.10.2",
+    ipDst: "10.0.0.20",
+    portSrc: "50002",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 10000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-tap-3',
-    name: 'TAP 3 Flow (5 Gbps)',
-    sourceNodeId: tapInputId3,
-    vlan: '200',
-    ipSrc: '192.168.10.3',
-    ipDst: '10.0.0.30',
-    portSrc: '50003',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 5000, // 50% utilization
+    id: "t-tap-3",
+    name: "TAP 3 Flow (5 Gbps)",
+    sourceNodeId: "node-input-tap-3",
+    vlan: "200",
+    ipSrc: "192.168.10.3",
+    ipDst: "10.0.0.30",
+    portSrc: "50003",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 5000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-tap-4',
-    name: 'TAP 4 Flow (10 Mbps)',
-    sourceNodeId: tapInputId4,
-    vlan: '100',
-    ipSrc: '192.168.10.4',
-    ipDst: '10.0.0.40',
-    portSrc: '50004',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 10, // 1% utilization (10 Mbps on 1 Gbps port)
+    id: "t-tap-4",
+    name: "TAP 4 Flow (10 Mbps)",
+    sourceNodeId: "node-input-tap-4",
+    vlan: "100",
+    ipSrc: "192.168.10.4",
+    ipDst: "10.0.0.40",
+    portSrc: "50004",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 10,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-tap-5',
-    name: 'TAP 5 Flow (15 Gbps)',
-    sourceNodeId: tapInputId5,
-    vlan: '100',
-    ipSrc: '192.168.10.5',
-    ipDst: '10.0.0.50',
-    portSrc: '50005',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 15000, // 60% utilization (15 Gbps on 25 Gbps port)
+    id: "t-tap-5",
+    name: "TAP 5 Flow (15 Gbps)",
+    sourceNodeId: "node-input-tap-5",
+    vlan: "100",
+    ipSrc: "192.168.10.5",
+    ipDst: "10.0.0.50",
+    portSrc: "50005",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 15000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   },
   {
-    id: 't-tap-6',
-    name: 'SPAN 6 Flow (42 Gbps)',
-    sourceNodeId: tapInputId6,
-    vlan: '100',
-    ipSrc: '192.168.10.6',
-    ipDst: '10.0.0.60',
-    portSrc: '50006',
-    portDst: '80',
-    protocol: 'tcp',
-    bandwidth: 42000, // 105% utilization (exceeds link speed to show drops)
+    id: "t-tap-6",
+    name: "SPAN 6 Flow (42 Gbps)",
+    sourceNodeId: "node-input-tap-6",
+    vlan: "100",
+    ipSrc: "192.168.10.6",
+    ipDst: "10.0.0.60",
+    portSrc: "50006",
+    portDst: "80",
+    protocol: "tcp",
+    bandwidth: 42000,
     active: true,
+    drift: 1,
+    lastDriftUpdate: 0
   }
 ];
 
