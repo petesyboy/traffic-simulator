@@ -255,12 +255,59 @@ export function generateBom(
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
 }
 
-// ─── Global Configuration Validator ───────────────────────────────────────────
-
 import { NODE_TYPES } from '../constants/nodeTypes';
 
+// Helper to get physical cage capacities for HC nodes and modules
+function getBoardCages(boardName: string, isPlus: boolean, model: string): { sfp: number; qsfp: number } {
+  const name = boardName.toLowerCase();
+  const modelLower = model.toLowerCase();
+  
+  if (modelLower.includes('ta25')) {
+    return { sfp: 48, qsfp: 8 };
+  }
+  
+  if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
+    if (isPlus) {
+      return { sfp: 8, qsfp: 4 };
+    } else if (modelLower.includes('hct')) {
+      return { sfp: 4, qsfp: 2 };
+    } else { // HC1
+      return { sfp: 12, qsfp: 0 };
+    }
+  }
+  
+  if (name.includes('q04x08')) {
+    return { sfp: 8, qsfp: 4 };
+  }
+  if (name.includes('d25a24') || name.includes('bps-hc1-d25a24')) {
+    return { sfp: 24, qsfp: 0 };
+  }
+  if (name.includes('x12') || name.includes('g12')) {
+    return { sfp: 12, qsfp: 0 };
+  }
+  if (name.includes('x24')) {
+    return { sfp: 24, qsfp: 0 };
+  }
+  if (name.includes('c08q08')) {
+    return { sfp: 0, qsfp: 16 };
+  }
+  if (name.includes('c16')) {
+    return { sfp: 0, qsfp: 16 };
+  }
+  if (name.includes('c08')) {
+    return { sfp: 0, qsfp: 8 };
+  }
+  if (name.includes('c05')) {
+    return { sfp: 0, qsfp: 5 };
+  }
+  if (name.includes('bps-hc3')) {
+    return { sfp: 16, qsfp: 4 };
+  }
+  return { sfp: 0, qsfp: 0 };
+}
+
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -321,14 +368,72 @@ export function validateConfiguration(
     }
   });
 
-  // 3. Check for chassis nodes with insufficient optics
+  // 3. Check for chassis nodes with insufficient optics and physical port/cage limits
   const chassisNodes = nodes.filter(
     (n) => n.type === NODE_TYPES.HARDWARE && !String(n.data?.model || '').includes('TAP')
   );
 
   chassisNodes.forEach((chassis) => {
-    const installedOptics = (chassis.data?.optics as { qty: number }[]) || [];
+    const installedOptics = (chassis.data?.optics as { board: string; optic: string; qty: number }[]) || [];
     const totalInstalledOptics = installedOptics.reduce((sum, opt) => sum + opt.qty, 0);
+
+    const model = (chassis.data?.model as string) || '';
+    const isPlus = model.includes('Plus');
+
+    // Calculate maximum available SFP and QSFP cages on this chassis
+    const installedBoards = (chassis.data?.installedBoards as Record<string, string>) || {};
+    
+    // SFP/QSFP counts across all active boards
+    let totalSfpCages = 0;
+    let totalQsfpCages = 0;
+
+    // Get base/main board name from the model to query base cages
+    let baseBoardName = 'Main Board';
+    if (model.includes('HC1') && !isPlus) baseBoardName = 'HC1-X12G4 (Main board)';
+    else if (model.includes('HC1') && isPlus) baseBoardName = 'HC1P-BASE (Main Board)';
+    else if (model.includes('HCT')) baseBoardName = 'HCT-C02 (Main Board)';
+    
+    const baseCages = getBoardCages(baseBoardName, isPlus, model);
+    totalSfpCages += baseCages.sfp;
+    totalQsfpCages += baseCages.qsfp;
+
+    Object.values(installedBoards).forEach((boardSku) => {
+      if (!boardSku) return;
+      const cages = getBoardCages(boardSku, isPlus, model);
+      totalSfpCages += cages.sfp;
+      totalQsfpCages += cages.qsfp;
+    });
+
+    // Check installed optics counts against physical cage limits
+    let installedSfp = 0;
+    let installedQsfp = 0;
+    installedOptics.forEach((opt) => {
+      const upper = opt.optic.toUpperCase();
+      const isQsfp = upper.includes('QSFP') || upper.includes('Q28') || upper.includes('QSF-') || upper.startsWith('Q28-') || upper.includes('40G') || upper.includes('100G') || upper.includes('400G');
+      if (isQsfp) {
+        installedQsfp += opt.qty;
+      } else {
+        installedSfp += opt.qty;
+      }
+    });
+
+    if (installedSfp > totalSfpCages) {
+      errors.push({
+        type: 'port_capacity_exceeded',
+        nodeId: chassis.id,
+        nodeLabel: String(chassis.data?.model || 'Chassis'),
+        message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") has exceeded its physical SFP cage capacity. Allowed: ${totalSfpCages}, Installed: ${installedSfp}.`,
+      });
+    }
+
+    if (installedQsfp > totalQsfpCages) {
+      errors.push({
+        type: 'port_capacity_exceeded',
+        nodeId: chassis.id,
+        nodeLabel: String(chassis.data?.model || 'Chassis'),
+        message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") has exceeded its physical QSFP cage capacity. Allowed: ${totalQsfpCages}, Installed: ${installedQsfp}.`,
+      });
+    }
 
     // Calculate TAP link requirements
     const incomingTapEdges = edges.filter((e) => e.target === chassis.id);

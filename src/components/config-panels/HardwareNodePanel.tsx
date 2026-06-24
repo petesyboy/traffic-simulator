@@ -121,6 +121,54 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     return type ? `${opticName} [${type}]` : opticName;
   };
 
+  const getBoardCages = (boardName: string, isPlus: boolean): { sfp: number; qsfp: number } => {
+    const name = boardName.toLowerCase();
+    const modelLower = String(model || '').toLowerCase();
+    
+    if (modelLower.includes('ta25')) {
+      return { sfp: 48, qsfp: 8 };
+    }
+    
+    if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
+      if (isPlus) {
+        return { sfp: 8, qsfp: 4 };
+      } else if (modelLower.includes('hct')) {
+        return { sfp: 4, qsfp: 2 };
+      } else { // HC1
+        return { sfp: 12, qsfp: 0 };
+      }
+    }
+    
+    if (name.includes('q04x08')) {
+      return { sfp: 8, qsfp: 4 };
+    }
+    if (name.includes('d25a24') || name.includes('bps-hc1-d25a24')) {
+      return { sfp: 24, qsfp: 0 };
+    }
+    if (name.includes('x12') || name.includes('g12')) {
+      return { sfp: 12, qsfp: 0 };
+    }
+    if (name.includes('x24')) {
+      return { sfp: 24, qsfp: 0 };
+    }
+    if (name.includes('c08q08')) {
+      return { sfp: 0, qsfp: 16 };
+    }
+    if (name.includes('c16')) {
+      return { sfp: 0, qsfp: 16 };
+    }
+    if (name.includes('c08')) {
+      return { sfp: 0, qsfp: 8 };
+    }
+    if (name.includes('c05')) {
+      return { sfp: 0, qsfp: 5 };
+    }
+    if (name.includes('bps-hc3')) {
+      return { sfp: 16, qsfp: 4 };
+    }
+    return { sfp: 0, qsfp: 0 };
+  };
+
   const getBoardCageCapacities = (boardName: string, isPlus: boolean): {
     ports1G: number;
     ports10G: number;
@@ -131,60 +179,19 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     const caps = { ports1G: 0, ports10G: 0, ports25G: 0, ports40G: 0, ports100G: 0 };
     const name = boardName.toLowerCase();
     const modelLower = String(model || '').toLowerCase();
+    const cages = getBoardCages(boardName, isPlus);
     
-    if (modelLower.includes('ta25')) {
-      caps.ports100G = 8;
-      caps.ports40G = 8;
-      caps.ports25G = 48;
-      caps.ports10G = 48;
-      caps.ports1G = 48;
-    } else if (name.includes('main') || name.includes('base ports') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08')) {
-      if (isPlus) {
-        caps.ports100G = 4;
-        caps.ports40G = 4;
-        caps.ports25G = 8;
-        caps.ports10G = 8;
-        caps.ports1G = 8;
-      } else {
-        caps.ports10G = 12;
-        caps.ports1G = 16;
-      }
-    } else if (name.includes('bps-hc1-d25a24') || name.includes('d25a24')) {
-      caps.ports10G = 24;
-      caps.ports1G = 24;
-    } else if (name.includes('prt-hc1-x12') || name.includes('x12')) {
-      caps.ports10G = 12;
-      caps.ports1G = 12;
-    } else if (name.includes('prt-hc1-q04x08') || name.includes('q04x08')) {
-      if (isPlus) {
-        caps.ports100G = 4;
-        caps.ports40G = 4;
-        caps.ports25G = 8;
-        caps.ports10G = 8;
-        caps.ports1G = 8;
-      } else {
-        caps.ports40G = 4;
-        caps.ports10G = 8;
-        caps.ports1G = 8;
-      }
-    } else if (name.includes('prt-hc3-x24')) {
-      caps.ports10G = 24;
-      caps.ports25G = 24;
-    } else if (name.includes('prt-hc3-c08q08')) {
-      caps.ports100G = 8;
-      caps.ports40G = 8;
-    } else if (name.includes('prt-hc3-c16')) {
-      caps.ports100G = 16;
-    } else if (name.includes('smt-hc3-c08')) {
-      caps.ports100G = 8;
-      caps.ports40G = 8;
-    } else if (name.includes('smt-hc3-c05')) {
-      caps.ports100G = 5;
-      caps.ports40G = 5;
-    } else if (name.includes('bps-hc3')) {
-      caps.ports10G = 16;
-      caps.ports25G = 16;
+    caps.ports100G = cages.qsfp;
+    caps.ports40G = cages.qsfp;
+    caps.ports25G = cages.sfp;
+    caps.ports10G = cages.sfp;
+    caps.ports1G = cages.sfp;
+    
+    // For GigaVUE-HC1 main board SFP cages + copper ports
+    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct')) {
+      caps.ports1G = 12 + 4; // 12 SFP + 4 RJ45 copper ports
     }
+    
     return caps;
   };
 
@@ -241,6 +248,36 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
     let qty = parseInt(qtyStr);
     if (isNaN(qty) || qty < 1) qty = 1;
+
+    // Enforce target board physical cage limit
+    const cages = getBoardCages(targetBoard, isPlus);
+    let currentSfp = 0;
+    let currentQsfp = 0;
+    installedOptics.forEach(opt => {
+      if (opt.board === targetBoard) {
+        const speed = getOpticSpeed(opt.optic);
+        if (speed === '100G' || speed === '40G') {
+          currentQsfp += opt.qty;
+        } else {
+          currentSfp += opt.qty;
+        }
+      }
+    });
+
+    const newSpeed = getOpticSpeed(selectedOptic);
+    const isNewQsfp = newSpeed === '100G' || newSpeed === '40G';
+    
+    if (isNewQsfp) {
+      if (currentQsfp + qty > cages.qsfp) {
+        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${cages.qsfp} QSFP cage(s) (currently using ${currentQsfp}, attempting to add ${qty}).`);
+        return;
+      }
+    } else {
+      if (currentSfp + qty > cages.sfp) {
+        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${cages.sfp} SFP cage(s) (currently using ${currentSfp}, attempting to add ${qty}).`);
+        return;
+      }
+    }
 
     const newOpticObj = { board: targetBoard, optic: selectedOptic, qty };
     const newOptics = [...installedOptics, newOpticObj];

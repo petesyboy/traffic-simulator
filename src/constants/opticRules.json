@@ -87,7 +87,7 @@
     "TAP-HC1-G10040": []
   },
   "GigaVUE-HC1-Plus": {
-    "HC1P-C04X08 (Main Board)": [
+    "HC1P-BASE (Main Board)": [
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
