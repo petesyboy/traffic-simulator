@@ -80,7 +80,11 @@
       "SFP-534 (10G SFP+ ER)",
       "SFP-534T (10G SFP+ ER)",
       "SFP-535 (10G SFP+ LRM)"
-    ]
+    ],
+    "BPS-HC1-D25A60": [],
+    "BPS-HC1-D35C60": [],
+    "SMT-HC1-S": [],
+    "TAP-HC1-G10040": []
   },
   "GigaVUE-HC1-Plus": {
     "HC1P-C04X08 (Main Board)": [
@@ -198,7 +202,11 @@
       "SFP-534 (10G SFP+ ER)",
       "SFP-534T (10G SFP+ ER)",
       "SFP-535 (10G SFP+ LRM)"
-    ]
+    ],
+    "BPS-HC1-D25A60": [],
+    "BPS-HC1-D35C60": [],
+    "SMT-HC1-S": [],
+    "TAP-HC1-G10040": []
   },
   "GigaVUE-HCT": {
     "HCT-C02 (Main Board)": [
@@ -265,7 +273,11 @@
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
       "SFP-505T (1G SFP FX)"
-    ]
+    ],
+    "BPS-HC1-D25A60": [],
+    "BPS-HC1-D35C60": [],
+    "SMT-HC1-S": [],
+    "TAP-HC1-G10040": []
   },
   "GigaVUE-HC2 CCv1                                                 Final GVOS Version : 6.5.00": {
     "PRT-HC0-X24": [
