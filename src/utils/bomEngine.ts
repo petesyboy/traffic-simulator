@@ -260,7 +260,7 @@ export function generateBom(
 import { NODE_TYPES } from '../constants/nodeTypes';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -374,6 +374,109 @@ export function validateConfiguration(
         nodeId: chassis.id,
         nodeLabel: String(chassis.data?.model || 'Chassis'),
         message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") has insufficient optics installed. Needs at least ${totalRequiredOptics} optics (currently has ${totalInstalledOptics}).`,
+      });
+    }
+  });
+
+  // 4. Validate TA25/TA25E port license limits
+  const ta25Nodes = nodes.filter(
+    (n) => n.type === NODE_TYPES.HARDWARE && (String(n.data?.model || '').includes('TA25') || String(n.data?.model || '').includes('TA25E'))
+  );
+
+  ta25Nodes.forEach((node) => {
+    const portCapacity = node.data?.portCapacity || 'Full';
+    if (portCapacity === 'Full') return; // Full license has no restrictions below physical limits
+    
+    let maxSfp = 48;
+    let maxQsfp = 8;
+    
+    if (portCapacity === 'Quarter') {
+      maxSfp = 12;
+      maxQsfp = 2;
+    } else if (portCapacity === 'Half') {
+      maxSfp = 24;
+      maxQsfp = 4;
+    }
+
+    // Count installed optics by type (SFP vs QSFP)
+    const installedOptics = (node.data?.optics as { optic: string; qty: number }[]) || [];
+    let installedSfp = 0;
+    let installedQsfp = 0;
+
+    installedOptics.forEach((opt) => {
+      if (!opt.optic) return;
+      const upper = opt.optic.toUpperCase();
+      const isQsfp = upper.includes('QSFP') || upper.includes('Q28') || upper.includes('QSF-') || upper.startsWith('Q28-') || upper.includes('40G') || upper.includes('100G') || upper.includes('400G');
+      if (isQsfp) {
+        installedQsfp += opt.qty;
+      } else {
+        installedSfp += opt.qty;
+      }
+    });
+
+    if (installedSfp > maxSfp) {
+      errors.push({
+        type: 'license_port_limit_exceeded',
+        nodeId: node.id,
+        nodeLabel: String(node.data?.model || 'TA25'),
+        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") has exceeded its SFP port license limit. Capacity "${portCapacity}" allows up to ${maxSfp} SFP ports (currently using ${installedSfp}).`,
+      });
+    }
+
+    if (installedQsfp > maxQsfp) {
+      errors.push({
+        type: 'license_port_limit_exceeded',
+        nodeId: node.id,
+        nodeLabel: String(node.data?.model || 'TA25'),
+        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") has exceeded its QSFP port license limit. Capacity "${portCapacity}" allows up to ${maxQsfp} QSFP ports (currently using ${installedQsfp}).`,
+      });
+    }
+    
+    // Calculate required ports from incoming connections
+    const incomingEdges = edges.filter((e) => e.target === node.id);
+    let requiredSfpPorts = 0;
+    let requiredQsfpPorts = 0;
+
+    incomingEdges.forEach((e) => {
+      const sourceNode = nodes.find((n) => n.id === e.source);
+      if (!sourceNode) return;
+      
+      let linkCount = 1;
+      if (sourceNode.data?.model?.includes('TAP')) {
+        linkCount = ((sourceNode.data.tappedLinksCount as number) ?? 1) * 2;
+      }
+      
+      const sourceSpeed = sourceNode.data?.linkSpeed || 0;
+      const isQsfp = sourceSpeed >= 40000 || String(sourceNode.data?.label || '').includes('40G') || String(sourceNode.data?.label || '').includes('100G');
+      
+      if (isQsfp) {
+        requiredQsfpPorts += linkCount;
+      } else {
+        requiredSfpPorts += linkCount;
+      }
+    });
+
+    // Also include outbound connections to tools
+    const outboundEdges = edges.filter((e) => e.source === node.id);
+    outboundEdges.forEach(() => {
+      requiredSfpPorts += 1;
+    });
+
+    if (requiredSfpPorts > maxSfp) {
+      errors.push({
+        type: 'license_port_limit_exceeded',
+        nodeId: node.id,
+        nodeLabel: String(node.data?.model || 'TA25'),
+        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") requires ${requiredSfpPorts} SFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxSfp} ports.`,
+      });
+    }
+
+    if (requiredQsfpPorts > maxQsfp) {
+      errors.push({
+        type: 'license_port_limit_exceeded',
+        nodeId: node.id,
+        nodeLabel: String(node.data?.model || 'TA25'),
+        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") requires ${requiredQsfpPorts} QSFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxQsfp} ports.`,
       });
     }
   });
