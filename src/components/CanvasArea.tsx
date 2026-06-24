@@ -383,7 +383,7 @@ const CanvasArea: React.FC = () => {
 
       const { type, label, initialData } = JSON.parse(rawData);
 
-      if (type === NODE_TYPES.GIGASMART) {
+      if (advancedMode && type === NODE_TYPES.GIGASMART) {
         const hasHc = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC'));
         const hasTa = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('TA'));
         

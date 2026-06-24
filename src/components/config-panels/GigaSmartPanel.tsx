@@ -38,9 +38,11 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
     if (hasConnectedHc) break;
   }
 
+  const advancedMode = useStore((state) => state.advancedMode);
+
   return (
     <>
-      {!hasConnectedHc && (
+      {advancedMode && !hasConnectedHc && (
         <div style={{ marginBottom: '12px', padding: '8px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
           ⚠️ GigaSMART functions are only supported on GigaVUE-HC series nodes. Please connect this GigaSMART node downstream of an HC chassis.
         </div>

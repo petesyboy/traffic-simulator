@@ -222,7 +222,7 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           <div className="node-metrics">
             <span>Tx: {formatBandwidth(metrics?.txBps)}</span>
             {/* "drop" CSS class applies red colour — defined in App.css */}
-            <span className="drop">Drop: {formatBandwidth(metrics?.droppedPackets)}</span>
+            <span className="drop">Drop: {formatBandwidth(metrics?.filterDroppedBps || 0)}</span>
           </div>
         )}
         <Handle type="source" position={Position.Right} id="out" />
@@ -385,6 +385,10 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const algorithm = (data.algorithm as string) || 'Round Robin';
+  const edges = useStore((state) => state.edges);
+  
+  const outboundEdges = edges.filter(e => e.source === id);
+  const handleCount = Math.max(1, outboundEdges.length + 1);
 
   return (
     <>
@@ -406,7 +410,19 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <span>Tx: {formatBandwidth(metrics?.txBps)}</span>
           </div>
         )}
-        <Handle type="source" position={Position.Right} id="out" />
+        {Array.from({ length: handleCount }).map((_, idx) => {
+          const topPercent = ((idx + 1) * 100) / (handleCount + 1);
+          const handleId = idx === 0 ? 'out' : `out-${idx}`;
+          return (
+            <Handle
+              key={idx}
+              type="source"
+              position={Position.Right}
+              id={handleId}
+              style={{ top: `${topPercent}%` }}
+            />
+          );
+        })}
       </div>
     </>
   );
@@ -420,6 +436,7 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const actionType = (data.actionType as string) || ACTION_TYPES.DEDUPLICATION;
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
+  const advancedMode = useStore((state) => state.advancedMode);
 
   // Trace upstream from this GigaSMART node to find a GigaVUE-HC chassis
   let hasConnectedHc = false;
@@ -502,12 +519,12 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             {/* Deduplication shows the dropped volume in red; all others show Tx */}
             <span className={isDedupAction(actionType) ? 'drop' : ''}>
               {isDedupAction(actionType)
-                ? `Drop: ${formatBandwidth(metrics?.droppedPackets)}`
+                ? `Drop: ${formatBandwidth(metrics?.dedupDroppedBps || 0)}`
                 : `Tx: ${formatBandwidth(metrics?.txBps)}`}
             </span>
           </div>
         )}
-        {!hasConnectedHc && (
+        {advancedMode && !hasConnectedHc && (
           <div style={{ color: '#ef5350', fontSize: '9px', fontWeight: 'bold', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span>⚠️ Requires HC Chassis</span>
           </div>

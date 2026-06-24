@@ -297,7 +297,6 @@ const processGigaSmartNode = (
     const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + dropBandwidth;
     nodeMetric.txBps += validBandwidth;
     nodeMetric.txPackets += validBandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: validBandwidth };
@@ -349,6 +348,9 @@ const processGigaSmartNode = (
     nodeMetric.txBps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: outputBandwidth };
+  }
+  if (dropBandwidth > 0) {
+    nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + dropBandwidth;
   }
   return { forwardStream, dropBandwidth, generatedMetadataStreams };
 };
@@ -643,6 +645,7 @@ export const calculateSimulationStep = (
     }
     const seenTargets = new Set<string>();
     outboundEdges = outboundEdges.filter((edge) => {
+      if (node.type === 'gigaStreamNode') return true;
       if (seenTargets.has(edge.target)) return false;
       seenTargets.add(edge.target);
       return true;
