@@ -457,11 +457,6 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
 
         {/* ── Sub-Header: breadcrumb + live stats ── */}
         <div className="header-sub">
-          <div className="session-title-area">
-            <span className="session-icon">☁️</span>
-            <span className="session-name-label">Test</span>
-          </div>
-
           <div className="header-stats-indicator">
             <span>Active Ingress Port Loads: <b>{activeStreamsCount} / {trafficStreams.length}</b></span>
           </div>
