@@ -292,6 +292,43 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     updateNodeData(node.id, { optics: newOptics });
   };
 
+  const getBoardDescription = (boardName: string): string => {
+    const name = boardName.toUpperCase();
+    const isPlus = String(model || '').includes('Plus');
+    
+    let desc = '';
+    if (name.includes('Q04X08')) {
+      desc = isPlus ? '4x 100G QSFP28 & 8x 25G SFP28' : '4x 40G QSFP+ & 8x 10G SFP+';
+    } else if (name.includes('D25A24')) {
+      desc = 'Bypass: 2x 10G SR Pairs & 20x 10G SFP+';
+    } else if (name.includes('X12') || name.includes('G12')) {
+      desc = '12x 10G/1G SFP+';
+    } else if (name.includes('X24')) {
+      desc = '24x 25G/10G SFP28/SFP+';
+    } else if (name.includes('C08Q08')) {
+      desc = '8x 100G QSFP28 & 8x 40G QSFP+';
+    } else if (name.includes('C16')) {
+      desc = '16x 100G QSFP28';
+    } else if (name.includes('C08')) {
+      desc = '8x 100G QSFP28';
+    } else if (name.includes('C05')) {
+      desc = '5x 100G/40G QSFP28';
+    } else if (name.includes('C25F2G')) {
+      desc = 'Bypass: 2x 100G SR4 Pairs & 16x 10G SFP+';
+    } else if (name.includes('C35C2G')) {
+      desc = 'Bypass: 2x 100G LR Pairs & 16x 10G SFP+';
+    } else if (name.includes('Q35C2G')) {
+      desc = 'Bypass: 2x 40G LR Pairs & 16x 10G SFP+';
+    }
+    
+    const hasGigaSmart = name.startsWith('SMT-');
+    
+    if (desc) {
+      return `${boardName} (${hasGigaSmart ? 'GigaSMART Engine + ' : ''}${desc})`;
+    }
+    return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
+  };
+
   const renderModuleSlots = () => {
     if (!details?.module_slots) return null;
     
@@ -309,7 +346,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           >
             <option value="">-- Empty Slot --</option>
             {installableBoards.map(b => (
-              <option key={b.board} value={b.board}>{b.board}</option>
+              <option key={b.board} value={b.board}>{getBoardDescription(b.board)}</option>
             ))}
           </select>
         </div>
