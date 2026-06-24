@@ -322,7 +322,6 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   // Subscribe to exactly the state slices we need
   const isRunning      = useStore((state) => state.isRunning);
   const simulationSpeed = useStore((state) => state.simulationSpeed);
-  const trafficStreams  = useStore((state) => state.trafficStreams);  // for active stream count
   const toggleSimulation  = useStore((state) => state.toggleSimulation);
   const setSimulationSpeed = useStore((state) => state.setSimulationSpeed);
   const clearCanvas    = useStore((state) => state.clearCanvas);
@@ -351,8 +350,6 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const handleClearRequest = () => setShowClearConfirm(true);
   const handleClearConfirm  = () => { clearCanvas(); setShowClearConfirm(false); };
   const handleClearCancel   = () => setShowClearConfirm(false);
-
-  const activeStreamsCount = trafficStreams.filter((s) => s.active).length;
 
   return (
     <>
@@ -454,13 +451,6 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
             </button>
           </div>
         </header>
-
-        {/* ── Sub-Header: breadcrumb + live stats ── */}
-        <div className="header-sub">
-          <div className="header-stats-indicator">
-            <span>Active Ingress Port Loads: <b>{activeStreamsCount} / {trafficStreams.length}</b></span>
-          </div>
-        </div>
       </div>
     </>
   );
