@@ -167,6 +167,23 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         caps.ports10G = 8;
         caps.ports1G = 8;
       }
+    } else if (name.includes('prt-hc3-x24')) {
+      caps.ports10G = 24;
+      caps.ports25G = 24;
+    } else if (name.includes('prt-hc3-c08q08')) {
+      caps.ports100G = 8;
+      caps.ports40G = 8;
+    } else if (name.includes('prt-hc3-c16')) {
+      caps.ports100G = 16;
+    } else if (name.includes('smt-hc3-c08')) {
+      caps.ports100G = 8;
+      caps.ports40G = 8;
+    } else if (name.includes('smt-hc3-c05')) {
+      caps.ports100G = 5;
+      caps.ports40G = 5;
+    } else if (name.includes('bps-hc3')) {
+      caps.ports10G = 16;
+      caps.ports25G = 16;
     }
     return caps;
   };
