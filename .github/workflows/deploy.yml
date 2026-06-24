@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - refactor/code-quality-improvements
   workflow_dispatch:
 
 permissions:
