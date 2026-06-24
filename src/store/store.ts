@@ -123,6 +123,8 @@ export type RFState = {
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
   setEdges: (edges: Edge[]) => void;
+  draggedNodeType: string | null;
+  setDraggedNodeType: (type: string | null) => void;
   addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
@@ -416,6 +418,7 @@ export const useStore = create<RFState>((set, get) => ({
   projectLicenseMode: 'HTL',
   defaultTermDuration: '36',
   disableDcWarnings: false,
+  draggedNodeType: null,
   trafficStreams: initialTraffic,
   nodeMetrics: {},
   edgeMetrics: {},
@@ -494,6 +497,10 @@ export const useStore = create<RFState>((set, get) => ({
     let syncedNodes = syncSplunkLabels(get().nodes, edges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, edges);
     set({ edges, nodes: syncedNodes });
+  },
+
+  setDraggedNodeType: (type: string | null) => {
+    set({ draggedNodeType: type });
   },
   
   addNode: (node: CustomNode) => {

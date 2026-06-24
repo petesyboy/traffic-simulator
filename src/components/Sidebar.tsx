@@ -62,7 +62,7 @@ const appsList = [
 // ─── Sidebar component ────────────────────────────────────────────────────────
 
 const Sidebar: React.FC = () => {
-  const { advancedMode, setAdvancedMode, advancedModeUnlocked } = useStore();
+  const { advancedMode, setAdvancedMode, advancedModeUnlocked, setDraggedNodeType } = useStore();
   const [openSections, setOpenSections] = useState({
     demo: true,  // "Demonstration" section — expanded by default
     apps: true,  // "Applications" section — shows all 15 GigaSMART apps
@@ -112,6 +112,16 @@ const Sidebar: React.FC = () => {
     };
   }, [isResizing]);
 
+  useEffect(() => {
+    const handleDragEnd = () => {
+      setDraggedNodeType(null);
+    };
+    window.addEventListener('dragend', handleDragEnd);
+    return () => {
+      window.removeEventListener('dragend', handleDragEnd);
+    };
+  }, [setDraggedNodeType]);
+
   /**
    * Attach drag data to the event so CanvasArea.onDrop can read it.
    */
@@ -123,6 +133,7 @@ const Sidebar: React.FC = () => {
   ) => {
     event.dataTransfer.setData('application/reactflow', JSON.stringify({ type: nodeType, label, initialData }));
     event.dataTransfer.effectAllowed = 'move';
+    setDraggedNodeType(nodeType);
   };
 
   return (

@@ -169,6 +169,8 @@ const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges,
 const CanvasArea: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
+  const draggedNodeType = useStore((state) => state.draggedNodeType);
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
   const activeEdges = useStore((state) => state.activeEdges);
@@ -356,11 +358,20 @@ const CanvasArea: React.FC = () => {
         animationDuration: `${duration.toFixed(2)}s`
       };
     }
+
+    if (hoveredEdgeId === edge.id) {
+      style = {
+        ...style,
+        stroke: '#00e5ff',
+        strokeWidth: 4,
+        filter: 'drop-shadow(0px 0px 8px #00e5ff)',
+      };
+    }
     
     return {
       ...edge,
       className,
-      animated,
+      animated: hoveredEdgeId === edge.id ? true : animated,
       label,
       style,
     };
@@ -369,7 +380,56 @@ const CanvasArea: React.FC = () => {
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-  }, []);
+
+    if (draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM) {
+      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!reactFlowBounds) return;
+
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      let foundEdgeId: string | null = null;
+      for (const edge of edges) {
+        const srcNode = nodes.find((n) => n.id === edge.source);
+        const targetNode = nodes.find((n) => n.id === edge.target);
+        if (!srcNode || !targetNode || targetNode.type !== 'toolNode') continue;
+
+        const srcW = srcNode.measured?.width || srcNode.width || 170;
+        const srcH = srcNode.measured?.height || srcNode.height || 75;
+        const ax = srcNode.position.x + srcW;
+        const ay = srcNode.position.y + srcH / 2;
+
+        const targetH = targetNode.measured?.height || targetNode.height || 75;
+        const bx = targetNode.position.x;
+        const by = targetNode.position.y + targetH / 2;
+
+        const px = position.x;
+        const py = position.y;
+
+        const dx = bx - ax;
+        const dy = by - ay;
+        const lenSq = dx * dx + dy * dy;
+
+        let t = 0;
+        if (lenSq > 0) {
+          t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+        }
+
+        const cx = ax + t * dx;
+        const cy = ay + t * dy;
+
+        const distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+        if (Math.sqrt(distSq) < 65) {
+          foundEdgeId = edge.id;
+          break;
+        }
+      }
+      setHoveredEdgeId(foundEdgeId);
+    }
+  }, [draggedNodeType, edges, nodes, screenToFlowPosition]);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -515,7 +575,7 @@ const CanvasArea: React.FC = () => {
       }
 
       let edgeToInterpose: Edge | null = null;
-      if (type === NODE_TYPES.GIGASTREAM) {
+      if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
         for (const edge of edges) {
           const srcNode = nodes.find((n) => n.id === edge.source);
           const targetNode = nodes.find((n) => n.id === edge.target);
@@ -547,7 +607,7 @@ const CanvasArea: React.FC = () => {
           const cy = ay + t * dy;
 
           const distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
-          if (Math.sqrt(distSq) < 35) {
+          if (Math.sqrt(distSq) < 65) {
             edgeToInterpose = edge;
             break;
           }
@@ -581,6 +641,8 @@ const CanvasArea: React.FC = () => {
         const updatedEdges = edges.filter(e => e.id !== edgeToInterpose!.id).concat(leftEdge, rightEdge);
         setEdges(updatedEdges);
       }
+
+      setHoveredEdgeId(null);
 
       // Automatically generate a traffic stream whenever an input port is dropped.
       if (type === NODE_TYPES.INPUT) {
@@ -657,6 +719,7 @@ const CanvasArea: React.FC = () => {
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onDragLeave={() => setHoveredEdgeId(null)}
         onSelectionChange={onSelectionChange}
         deleteKeyCode={['Backspace', 'Delete']}
         nodeOrigin={[0.5, 0.5]}
