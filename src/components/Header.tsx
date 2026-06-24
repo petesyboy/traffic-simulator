@@ -373,7 +373,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img 
-                src="/gigamon-logo.png" 
+                src="./gigamon-logo.png" 
                 alt="Gigamon" 
                 style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
                 onClick={handleLogoClick}
