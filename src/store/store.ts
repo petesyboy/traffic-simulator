@@ -122,6 +122,7 @@ export type RFState = {
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  setEdges: (edges: Edge[]) => void;
   addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
@@ -487,6 +488,12 @@ export const useStore = create<RFState>((set, get) => ({
     let syncedNodes = syncSplunkLabels(get().nodes, nextEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, nextEdges);
     set({ edges: nextEdges, nodes: syncedNodes });
+  },
+
+  setEdges: (edges: Edge[]) => {
+    let syncedNodes = syncSplunkLabels(get().nodes, edges);
+    syncedNodes = syncOpticsOnTapConnection(syncedNodes, edges);
+    set({ edges, nodes: syncedNodes });
   },
   
   addNode: (node: CustomNode) => {
