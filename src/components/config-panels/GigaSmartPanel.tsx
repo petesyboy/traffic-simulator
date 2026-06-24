@@ -100,6 +100,27 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           </FormGroup>
         </>
       )}
+
+      {actionType === ACTION_TYPES.PACKET_SLICING && (
+        <FormGroup label="Packet Slice Size (Bytes)">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="range"
+              min={64}
+              max={1518}
+              value={(node.data?.sliceSize as number) || 128}
+              onChange={(e) => onGenericChange('sliceSize', e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '11px', fontFamily: 'monospace', minWidth: '45px', textAlign: 'right', color: '#00e5ff', fontWeight: 'bold' }}>
+              {node.data?.sliceSize || 128}B
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#80cbc4', marginTop: '4px', lineHeight: '1.3' }}>
+            Retains headers, truncating payload bytes. Downstream bandwidth reduced by: <strong style={{ color: '#00e5ff' }}>{Math.round((1 - ((node.data?.sliceSize as number || 128) / 1518)) * 100)}%</strong>
+          </div>
+        </FormGroup>
+      )}
     </>
   );
 };

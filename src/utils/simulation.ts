@@ -319,9 +319,15 @@ const processGigaSmartNode = (
     };
   }
   else if (actionType === 'Packet Slicing') {
-    const slicedBandwidth = item.stream.bandwidth * 0.6;
+    const sliceSize = Number(data.sliceSize) || 128;
+    const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
+    const slicedBandwidth = item.stream.bandwidth * ratio;
+    dropBandwidth = item.stream.bandwidth * (1 - ratio);
+    
     nodeMetric.txBps += slicedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    
     forwardStream = { ...item.stream, bandwidth: slicedBandwidth };
   } 
   else if (actionType === 'Header Stripping') {
@@ -414,7 +420,11 @@ const processHardwareNode = (
             metadataFormat: (app.metadataFormat as 'CEF' | 'JSON') || 'CEF'
           });
         } else if (actionType === 'Packet Slicing') {
-          item.stream.bandwidth *= 0.6;
+          const sliceSize = Number(app.sliceSize) || 128;
+          const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
+          const drop = item.stream.bandwidth * (1 - ratio);
+          nodeMetric.droppedPackets += drop * 250;
+          item.stream.bandwidth *= ratio;
         } else if (actionType === 'Header Stripping') {
           item.stream.bandwidth *= 0.95;
         } else {

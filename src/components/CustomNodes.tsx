@@ -467,7 +467,7 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         {/* Action summary line — shows what this GigaSMART engine is doing */}
         <div className="node-meta-small">
           {isDedupAction(actionType) && 'Action: Drop'}
-          {actionType === ACTION_TYPES.PACKET_SLICING && 'Action: Slice'}
+          {actionType === ACTION_TYPES.PACKET_SLICING && `Action: Slice (${(data.sliceSize as number) || 128}B)`}
           {actionType === ACTION_TYPES.HEADER_STRIP && 'Action: Strip'}
           {isMetadataAction(actionType) && `Format: ${data.metadataFormat as string || 'CEF'}`}
           {!isDedupAction(actionType) &&
@@ -484,6 +484,15 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               Output: {data.metadataFormat as string || 'CEF'}
             </div>
             <span style={{ fontSize: '8.5px', color: '#666' }}>Metadata Gen</span>
+          </div>
+        )}
+
+        {actionType === ACTION_TYPES.PACKET_SLICING && (
+          <div className="node-chip-row" style={{ marginTop: '4px' }}>
+            <div className="node-inner-chip" style={{ color: '#00e5ff', borderColor: 'rgba(0, 229, 255, 0.2)', fontSize: '8px', padding: '2px 4px' }}>
+              Slice: {(data.sliceSize as number) || 128} Bytes
+            </div>
+            <span style={{ fontSize: '8.5px', color: '#666' }}>Truncate Payload</span>
           </div>
         )}
 
@@ -654,7 +663,10 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <AppIcon type={app.actionType} size={14} rate={app.dedupRate} />
-                    <span style={{ fontSize: '9px', color: '#ccc' }}>{app.label || app.actionType}</span>
+                    <span style={{ fontSize: '9px', color: '#ccc' }}>
+                      {app.label || app.actionType}
+                      {app.actionType === 'Packet Slicing' && ` (${app.sliceSize ?? 128}B)`}
+                    </span>
                   </div>
                   <button 
                     onClick={(e) => {

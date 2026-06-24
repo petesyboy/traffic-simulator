@@ -50,6 +50,10 @@ const ConfigPanel: React.FC = () => {
       updates.erspanId = parseInt(val, 10) || 10;
     }
 
+    if (key === 'sliceSize') {
+      updates.sliceSize = parseInt(val, 10) || 128;
+    }
+
     if (key === 'portSpeed') {
       let speedMbps = 10000; // default 10G
       if (val === '1G') speedMbps = 1000;

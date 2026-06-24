@@ -567,7 +567,33 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                   </div>
                 )}
                 
-                {app.actionType !== 'Deduplication' && app.actionType !== 'Dedup' && app.actionType !== 'Application Metadata' && app.actionType !== 'AMX' && app.actionType !== 'AMI' && (
+                {app.actionType === 'Packet Slicing' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '11px', color: '#ccc' }}>Packet Slice Size (Bytes)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input 
+                        type="range" 
+                        min={64} 
+                        max={1518} 
+                        value={app.sliceSize ?? 128} 
+                        onChange={e => {
+                          const newApps = [...(node.data.gigaSmartApps as any[])];
+                          newApps[idx] = { ...newApps[idx], sliceSize: Number(e.target.value) };
+                          updateNodeData(node.id, { gigaSmartApps: newApps });
+                        }} 
+                        style={{ flex: 1 }} 
+                      />
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00e5ff', minWidth: '40px', textAlign: 'right', fontWeight: 'bold' }}>
+                        {app.sliceSize ?? 128}B
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#80cbc4', lineHeight: '1.3' }}>
+                      Retains headers, truncating payload. Downstream bandwidth reduced by: <strong style={{ color: '#00e5ff' }}>{Math.round((1 - ((app.sliceSize ?? 128) / 1518)) * 100)}%</strong>
+                    </div>
+                  </div>
+                )}
+
+                {app.actionType !== 'Deduplication' && app.actionType !== 'Dedup' && app.actionType !== 'Application Metadata' && app.actionType !== 'AMX' && app.actionType !== 'AMI' && app.actionType !== 'Packet Slicing' && (
                   <div style={{ fontSize: '11px', color: '#aaa' }}>
                     No additional configuration required for {app.actionType}.
                   </div>
