@@ -24,6 +24,8 @@ import {
 } from './Icons';
 import { CONFIG_TYPES, ACTION_TYPES, isMetadataAction, isDedupAction } from '../constants/nodeTypes';
 import { resolveNodeSkus } from '../utils/skuResolver';
+import skusData from '../constants/skus.json';
+const skus = skusData as Record<string, string>;
 
 const getTapDetails = (sku: string, model: string) => {
   const isULT = sku.includes('ULT') || model.includes('ULT');
@@ -565,10 +567,20 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
+  const hwDesc = skus[resolved.hwSku] || '';
+  const swDesc = resolved.swSku ? skus[resolved.swSku] : '';
+  const tooltipText = swDesc
+    ? `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}\n\nSoftware SKU: ${resolved.swSku}\nDescription: ${swDesc}`
+    : `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}`;
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node hardware-node ${selected ? 'selected-node' : ''}`} style={{ borderLeft: '4px solid #ff9800' }}>
+      <div 
+        className={`custom-node hardware-node ${selected ? 'selected-node' : ''}`} 
+        style={{ borderLeft: '4px solid #ff9800' }}
+        title={tooltipText}
+      >
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
