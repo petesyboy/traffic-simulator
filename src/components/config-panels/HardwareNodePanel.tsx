@@ -434,21 +434,35 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 </select>
               </div>
               {model?.includes('TA') && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Software Port Capacity</label>
-                  {model.includes('TA400') ? (
-                    <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                      <option value="Full">32 x 400Gb ports</option>
-                      <option value="100G">32 x 100Gb ports</option>
-                    </select>
-                  ) : (
-                    <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                      <option value="Full">Full Capacity</option>
-                      <option value="Half">Half Capacity</option>
-                      <option value="Quarter">Quarter Capacity</option>
-                    </select>
-                  )}
-                </div>
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Software Port Capacity</label>
+                    {model.includes('TA400') ? (
+                      <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                        <option value="Full">32 x 400Gb ports</option>
+                        <option value="100G">32 x 100Gb ports</option>
+                      </select>
+                    ) : (
+                      <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                        <option value="Full">Full Capacity</option>
+                        <option value="Half">Half Capacity</option>
+                        <option value="Quarter">Quarter Capacity</option>
+                      </select>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(node.data?.advancedFeatures)}
+                      onChange={(e) => updateNodeData(node.id, { advancedFeatures: e.target.checked })}
+                      id="checkboxAdvancedFeatures"
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label htmlFor="checkboxAdvancedFeatures" style={{ fontSize: '11px', color: '#ccc', cursor: 'pointer' }}>
+                      Include Advanced Features License
+                    </label>
+                  </div>
+                </>
               )}
             </div>
           </div>

@@ -96,13 +96,23 @@ export function generateBom(
       addRow(resolved.swSku, 1, 'Chassis', termOverride);
     }
 
-    // Special case: TA25E with quarter ports requires the advanced features license
-    if (model.includes('TA25E') && node.data?.portCapacity === 'Quarter') {
-      const advSku = licenseMode === 'HTL' ? 'CLS-TAX20E-SW-TM' : 'CLS-TAX20E';
-      // Only add if not already added by regex description parsing for this specific node
-      // We will increment safely if needed, but to avoid double counting from the regex above
-      // we just add it explicitly
-      addRow(advSku, 1, 'Dependency', termOverride);
+    // Special case: TA nodes with advanced features enabled or required
+    if (model.includes('TA')) {
+      const needsAdv = node.data?.advancedFeatures || (model.includes('TA25E') && node.data?.portCapacity === 'Quarter');
+      if (needsAdv) {
+        let baseSku = '';
+        if (model.includes('TA25E')) baseSku = 'CLS-TAX20E';
+        else if (model.includes('TA25')) baseSku = 'CLS-TAX20';
+        else if (model.includes('TA200E')) baseSku = 'CLS-TAC20E';
+        else if (model.includes('TA200')) baseSku = 'CLS-TAC20';
+        else if (model.includes('TA400E')) baseSku = 'CLS-TAC40E';
+        else if (model.includes('TA400')) baseSku = 'CLS-TAC40';
+
+        if (baseSku) {
+          const advSku = licenseMode === 'HTL' ? `${baseSku}-SW-TM` : baseSku;
+          addRow(advSku, 1, 'Dependency', termOverride);
+        }
+      }
     }
 
     const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};
