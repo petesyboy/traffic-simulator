@@ -96,23 +96,8 @@ export function generateBom(
       addRow(resolved.swSku, 1, 'Chassis', termOverride);
     }
 
-    // Special case: TA nodes with advanced features enabled or required
-    if (model.includes('TA')) {
-      const needsAdv = node.data?.advancedFeatures || (model.includes('TA25E') && node.data?.portCapacity === 'Quarter');
-      if (needsAdv) {
-        let baseSku = '';
-        if (model.includes('TA25E')) baseSku = 'CLS-TAX20E';
-        else if (model.includes('TA25')) baseSku = 'CLS-TAX20';
-        else if (model.includes('TA200E')) baseSku = 'CLS-TAC20E';
-        else if (model.includes('TA200')) baseSku = 'CLS-TAC20';
-        else if (model.includes('TA400E')) baseSku = 'CLS-TAC40E';
-        else if (model.includes('TA400')) baseSku = 'CLS-TAC40';
-
-        if (baseSku) {
-          const advSku = licenseMode === 'HTL' ? `${baseSku}-SW-TM` : baseSku;
-          addRow(advSku, 1, 'Dependency', termOverride);
-        }
-      }
+    if (resolved.advSku) {
+      addRow(resolved.advSku, 1, 'Dependency', termOverride);
     }
 
     const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};

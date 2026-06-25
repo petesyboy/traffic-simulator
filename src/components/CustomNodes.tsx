@@ -551,27 +551,63 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const model = (data.model as string) || 'Hardware';
   const projectLicenseMode = useStore((state) => state.projectLicenseMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
-  const displaySku = resolved.swSku ? `${resolved.hwSku} + ${resolved.swSku}` : resolved.hwSku;
+  
+  let displaySku = resolved.hwSku;
+  if (resolved.swSku) displaySku += ` + ${resolved.swSku}`;
+  if (resolved.advSku) displaySku += ` + ${resolved.advSku}`;
+
   const image = (data.image as string) || '';
   
-  let iconComponent = image ? (
-    <img src={image} alt={model} style={{ height: '32px', objectFit: 'contain' }} />
+  let rawIcon = image ? (
+    <img src={image} alt={model} style={{ height: '32px', display: 'block', objectFit: 'contain' }} />
   ) : <GreenCircleIcon size={20} />;
   
   if (!image) {
-    if (model.includes('TAP')) iconComponent = <TapIcon size={20} />;
-    else if (model.includes('HC')) iconComponent = <MapIcon size={20} />;
+    if (model.includes('TAP')) rawIcon = <TapIcon size={20} />;
+    else if (model.includes('HC')) rawIcon = <MapIcon size={20} />;
   }
 
+  const iconComponent = (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {rawIcon}
+      {resolved.advSku && (
+        <div style={{
+          position: 'absolute',
+          top: '-5px',
+          right: '-5px',
+          background: '#ffd54f',
+          color: '#000',
+          borderRadius: '50%',
+          width: '11px',
+          height: '11px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8px',
+          fontWeight: 'bold',
+          boxShadow: '0 0 3px rgba(0,0,0,0.8)',
+          lineHeight: '1',
+          pointerEvents: 'none'
+        }} title="Advanced Features Licensed">★</div>
+      )}
+    </div>
+  );
+  
   const isTap = model.includes('TAP');
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
   const hwDesc = skus[resolved.hwSku] || '';
   const swDesc = resolved.swSku ? skus[resolved.swSku] : '';
-  const tooltipText = swDesc
-    ? `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}\n\nSoftware SKU: ${resolved.swSku}\nDescription: ${swDesc}`
-    : `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}`;
+  const advDesc = resolved.advSku ? skus[resolved.advSku] : '';
+  
+  let tooltipText = `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}`;
+  if (resolved.swSku) {
+    tooltipText += `\n\nSoftware SKU: ${resolved.swSku}\nDescription: ${swDesc}`;
+  }
+  if (resolved.advSku) {
+    tooltipText += `\n\nLicense SKU: ${resolved.advSku}\nDescription: ${advDesc}`;
+  }
 
   return (
     <>
@@ -588,8 +624,24 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <span className="node-title">{data.label as string}</span>
           </div>
         </div>
-        <div className="node-type-label" style={{ display: 'block', color: '#ff9800', fontWeight: 'bold' }}>{model}</div>
-        <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', marginTop: '2px' }}>
+          <div className="node-type-label" style={{ display: 'block', color: '#ff9800', fontWeight: 'bold', margin: 0 }}>{model}</div>
+          {resolved.advSku && (
+            <span style={{
+              fontSize: '8px',
+              background: 'rgba(255, 213, 79, 0.15)',
+              color: '#ffd54f',
+              border: '1px solid rgba(255, 213, 79, 0.3)',
+              borderRadius: '3px',
+              padding: '1px 4px',
+              fontWeight: 'bold',
+              marginRight: '6px'
+            }}>
+              ★ ADV LICENSED
+            </span>
+          )}
+        </div>
+        <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
           <span>SKU: {displaySku}</span>
         </div>
         {isTap && tapInfo && (
