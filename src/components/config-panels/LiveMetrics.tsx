@@ -48,12 +48,20 @@ export const LiveMetrics: React.FC<LiveMetricsProps> = ({ nodeType, metrics }) =
         </div>
       )}
       {(metrics.droppedPackets > 0 || nodeType === NODE_TYPES.FILTER) && (
-        <div className="metric-badge">
-          <span className="label">Dropped Traffic:</span>
-          <span className="value" style={{ color: '#ef5350' }}>
-            {formatBandwidth(metrics.droppedPackets)}
-          </span>
-        </div>
+        <>
+          <div className="metric-badge">
+            <span className="label">Dropped Traffic:</span>
+            <span className="value" style={{ color: '#ef5350' }}>
+              {formatBandwidth(metrics.droppedPackets / 250)}
+            </span>
+          </div>
+          <div className="metric-badge">
+            <span className="label">Dropped Packet Rate:</span>
+            <span className="value" style={{ color: '#ef5350' }}>
+              {formatPackets(metrics.droppedPackets)}
+            </span>
+          </div>
+        </>
       )}
     </div>
   </div>
