@@ -2,6 +2,7 @@
 export interface ResolvedSkus {
   hwSku: string;
   swSku?: string;
+  advSku?: string;
 }
 
 export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpetual'): ResolvedSkus {
@@ -56,40 +57,60 @@ export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpe
         resolvedSku += 'B';
       }
     }
-    return { hwSku: resolvedSku };
   }
 
   // HTL Mode: separate hardware SKU and software SKU
-  const hwSku = resolvedSku + '-HW';
-  let swSku = '';
+  const hwSku = licenseMode === 'HTL' ? resolvedSku + '-HW' : resolvedSku;
+  let swSku = undefined;
 
-  if (model.includes('HC1') && !model.includes('HC1-Plus')) {
-    swSku = 'GVS-HC100-SW-TM';
-  } else if (model.includes('HC1-Plus') || model.includes('HC1P')) {
-    swSku = 'GVS-HC1P-SW-TM';
-  } else if (model.includes('HC3')) {
-    swSku = 'GVS-HC3A0-SW-TM';
-  } else if (model.includes('HCT')) {
-    swSku = 'GVS-HCT00-SW-TM';
-  } else if (model.includes('TA')) {
-    let baseSwSku = resolvedSku;
-    if (baseSwSku.includes('TAX21')) baseSwSku = baseSwSku.replace('TAX21', 'TAX20');
-    else if (baseSwSku.includes('TAX22')) baseSwSku = baseSwSku.replace('TAX22', 'TAX20');
-    else if (baseSwSku.includes('TAC21')) baseSwSku = baseSwSku.replace('TAC21', 'TAC20');
-    else if (baseSwSku.includes('TAC22')) baseSwSku = baseSwSku.replace('TAC22', 'TAC20');
-    else if (baseSwSku.includes('TAC41')) baseSwSku = baseSwSku.replace('TAC41', 'TAC40');
-    else if (baseSwSku.includes('TAC42')) baseSwSku = baseSwSku.replace('TAC42', 'TAC40');
-    else {
-      baseSwSku = baseSwSku.replace(/[12]/, '0');
-    }
+  if (licenseMode === 'HTL') {
+    if (model.includes('HC1') && !model.includes('HC1-Plus')) {
+      swSku = 'GVS-HC100-SW-TM';
+    } else if (model.includes('HC1-Plus') || model.includes('HC1P')) {
+      swSku = 'GVS-HC1P-SW-TM';
+    } else if (model.includes('HC3')) {
+      swSku = 'GVS-HC3A0-SW-TM';
+    } else if (model.includes('HCT')) {
+      swSku = 'GVS-HCT00-SW-TM';
+    } else if (model.includes('TA')) {
+      let baseSwSku = resolvedSku;
+      if (baseSwSku.includes('TAX21')) baseSwSku = baseSwSku.replace('TAX21', 'TAX20');
+      else if (baseSwSku.includes('TAX22')) baseSwSku = baseSwSku.replace('TAX22', 'TAX20');
+      else if (baseSwSku.includes('TAC21')) baseSwSku = baseSwSku.replace('TAC21', 'TAC20');
+      else if (baseSwSku.includes('TAC22')) baseSwSku = baseSwSku.replace('TAC22', 'TAC20');
+      else if (baseSwSku.includes('TAC41')) baseSwSku = baseSwSku.replace('TAC41', 'TAC40');
+      else if (baseSwSku.includes('TAC42')) baseSwSku = baseSwSku.replace('TAC42', 'TAC40');
+      else {
+        baseSwSku = baseSwSku.replace(/[12]/, '0');
+      }
 
-    if (portCapacity === 'Half' || portCapacity === '100G') {
-      baseSwSku += 'A';
-    } else if (portCapacity === 'Quarter') {
-      baseSwSku += 'B';
+      if (portCapacity === 'Half' || portCapacity === '100G') {
+        baseSwSku += 'A';
+      } else if (portCapacity === 'Quarter') {
+        baseSwSku += 'B';
+      }
+      swSku = baseSwSku + '-SW-TM';
     }
-    swSku = baseSwSku + '-SW-TM';
   }
 
-  return { hwSku, swSku };
+  // Resolve Advanced Features license SKU for all TA nodes if enabled
+  let advSku = undefined;
+  if (model.includes('TA')) {
+    const needsAdv = nodeData.advancedFeatures || (model.includes('TA25E') && portCapacity === 'Quarter');
+    if (needsAdv) {
+      let baseSku = '';
+      if (model.includes('TA25E')) baseSku = 'CLS-TAX20E';
+      else if (model.includes('TA25')) baseSku = 'CLS-TAX20';
+      else if (model.includes('TA200E')) baseSku = 'CLS-TAC20E';
+      else if (model.includes('TA200')) baseSku = 'CLS-TAC20';
+      else if (model.includes('TA400E')) baseSku = 'CLS-TAC40E';
+      else if (model.includes('TA400')) baseSku = 'CLS-TAC40';
+
+      if (baseSku) {
+        advSku = licenseMode === 'HTL' ? `${baseSku}-SW-TM` : baseSku;
+      }
+    }
+  }
+
+  return { hwSku, swSku, advSku };
 }
