@@ -30,15 +30,41 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const nodes = useStore(state => state.nodes);
   const projectLicenseMode = useStore(state => state.projectLicenseMode);
 
-  // Calculate TAP link requirements and total optics
+  // Calculate TAP link requirements and total optics by fiber type
   const incomingTapEdges = edges.filter(e => e.target === node.id);
   let tappedLinks = 0;
+  let requiredMMOptics = 0;
+  let requiredSMOptics = 0;
+
   incomingTapEdges.forEach(e => {
     const sourceNode = nodes.find(n => n.id === e.source);
     if (sourceNode?.data?.model?.includes('TAP')) {
-      tappedLinks += (sourceNode.data.tappedLinksCount as number) ?? 1;
+      const tapSku = String(sourceNode.data?.sku || '');
+      const tapModel = String(sourceNode.data?.model || '');
+      const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
+      
+      const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
+      tappedLinks += numLinks;
+      if (isSMTap) {
+        requiredSMOptics += numLinks * 2;
+      } else {
+        requiredMMOptics += numLinks * 2;
+      }
     }
   });
+
+  let installedMMOptics = 0;
+  let installedSMOptics = 0;
+  installedOptics.forEach(opt => {
+    const name = opt.optic.toUpperCase();
+    const isOpticMM = name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX');
+    const isOpticSM = name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR');
+    if (isOpticMM) installedMMOptics += opt.qty;
+    else if (isOpticSM) installedSMOptics += opt.qty;
+  });
+
+  const missingMM = Math.max(0, requiredMMOptics - installedMMOptics);
+  const missingSM = Math.max(0, requiredSMOptics - installedSMOptics);
 
   const totalOptics = installedOptics.reduce((sum, opt) => sum + opt.qty, 0);
 
@@ -548,14 +574,26 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 <strong style={{ color: '#00e5ff', fontFamily: 'monospace' }}>{totalOptics}</strong>
               </div>
               {tappedLinks > 0 && (() => {
-                const unterminated = Math.max(0, tappedLinks - Math.floor(totalOptics / 2));
+                const terminatedMM = Math.min(Math.floor(requiredMMOptics / 2), Math.floor(installedMMOptics / 2));
+                const terminatedSM = Math.min(Math.floor(requiredSMOptics / 2), Math.floor(installedSMOptics / 2));
+                const totalTerminated = terminatedMM + terminatedSM;
+                
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #222', paddingTop: '6px', marginTop: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Tapped Links Terminated:</span>
-                      <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{Math.min(tappedLinks, Math.floor(totalOptics / 2))} / {tappedLinks}</strong>
+                      <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{totalTerminated} / {tappedLinks}</strong>
                     </div>
-                    {unterminated > 0 && <div style={{ color: '#ef5350', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}><span>⚠️ {unterminated} tapped link(s) lack optics for termination ({unterminated * 2} optic(s) missing)</span></div>}
+                    {missingMM > 0 && (
+                      <div style={{ color: '#ef5350', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <span>⚠️ Multi-mode links lack optics: need {missingMM} more Multi-mode optic(s).</span>
+                      </div>
+                    )}
+                    {missingSM > 0 && (
+                      <div style={{ color: '#ef5350', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <span>⚠️ Single-mode links lack optics: need {missingSM} more Single-mode optic(s).</span>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -624,11 +662,17 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 });
               }
               const numToolLinks = toolsReached.size;
-              const requiredTapOptics = tappedLinks * 2;
+              const requiredTapOptics = requiredMMOptics + requiredSMOptics;
               const totalRequiredOptics = requiredTapOptics + numToolLinks;
 
-              if (totalOptics < requiredTapOptics) {
-                return <div style={{ marginTop: '12px', padding: '8px', background: 'rgba(255, 152, 0, 0.1)', border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: '4px', color: '#ffb74d', fontSize: '11px' }}><strong>⚠️ Attention:</strong> You have <strong>{tappedLinks}</strong> connected TAP link(s). Every tapped link produces two outputs. Therefore, a minimum of <strong>{requiredTapOptics}</strong> optics must be installed.</div>;
+              if (missingMM > 0 || missingSM > 0) {
+                return (
+                  <div style={{ marginTop: '12px', padding: '8px', background: 'rgba(255, 152, 0, 0.1)', border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: '4px', color: '#ffb74d', fontSize: '11px' }}>
+                    <strong>⚠️ Attention:</strong> Every tapped link produces two outputs.
+                    {missingMM > 0 && <div>• You need <strong>{missingMM}</strong> more Multi-mode optic(s) (e.g. SR/SX).</div>}
+                    {missingSM > 0 && <div>• You need <strong>{missingSM}</strong> more Single-mode optic(s) (e.g. LR/LX).</div>}
+                  </div>
+                );
               } else if (numToolLinks > 0 && totalOptics < totalRequiredOptics) {
                 const diff = totalRequiredOptics - totalOptics;
                 return <div style={{ marginTop: '12px', padding: '8px', background: 'rgba(0, 150, 136, 0.1)', border: '1px solid rgba(0, 150, 136, 0.3)', borderRadius: '4px', color: '#80cbc4', fontSize: '11px' }}><strong>💡 Suggestion:</strong> You have <strong>{numToolLinks}</strong> tool output(s). You need to install at least <strong>{diff}</strong> more optic(s) to support the tools.</div>;

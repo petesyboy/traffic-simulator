@@ -603,6 +603,56 @@ export const useStore = create<RFState>((set, get) => ({
   },
   
   onConnect: (connection: Connection) => {
+    const nodeA = get().nodes.find(n => n.id === connection.source);
+    const nodeB = get().nodes.find(n => n.id === connection.target);
+    if (!nodeA || !nodeB) return;
+
+    const sourceNode = (nodeA.type === 'hardwareNode' && String(nodeA.data?.model || '').includes('TAP')) || (nodeA.type === 'inputNode' && nodeA.data?.configType === 'TAP') ? nodeA : ((nodeB.type === 'hardwareNode' && String(nodeB.data?.model || '').includes('TAP')) || (nodeB.type === 'inputNode' && nodeB.data?.configType === 'TAP') ? nodeB : null);
+    const targetNode = sourceNode === nodeA ? nodeB : (sourceNode === nodeB ? nodeA : null);
+
+    if (sourceNode && targetNode && targetNode.type === 'hardwareNode' && (String(targetNode.data?.model || '').includes('HC') || String(targetNode.data?.model || '').includes('TA'))) {
+      const tapSku = String(sourceNode.data?.sku || '');
+      const tapModel = String(sourceNode.data?.model || '');
+      
+      const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
+      
+      const tapFiber = isSMTap ? 'Singlemode' : 'Multimode';
+
+      const installedOptics = (targetNode.data?.optics as { board: string, optic: string, qty: number }[]) || [];
+      let mmCount = 0;
+      let smCount = 0;
+      installedOptics.forEach(opt => {
+        const name = opt.optic.toUpperCase();
+        const isOpticMM = name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX');
+        const isOpticSM = name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR');
+        if (isOpticMM) mmCount += opt.qty;
+        else if (isOpticSM) smCount += opt.qty;
+      });
+
+      const tappedLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
+      const requiredOptics = tappedLinks * 2;
+
+      if (tapFiber === 'Multimode') {
+        if (smCount > 0 && mmCount === 0) {
+          alert(`Connection rejected: Linking a multi-mode tap to single-mode optics is not allowed.`);
+          return;
+        }
+        if (mmCount < requiredOptics) {
+          alert(`Connection rejected: The multi-mode tap requires ${requiredOptics} multi-mode optic ports (2 per tapped link) on ${targetNode.data.model}, but only ${mmCount} are installed. You need ${requiredOptics - mmCount} more multi-mode optics.`);
+          return;
+        }
+      } else if (tapFiber === 'Singlemode') {
+        if (mmCount > 0 && smCount === 0) {
+          alert(`Connection rejected: Linking a single-mode tap to multi-mode optics is not allowed.`);
+          return;
+        }
+        if (smCount < requiredOptics) {
+          alert(`Connection rejected: The single-mode tap requires ${requiredOptics} single-mode optic ports (2 per tapped link) on ${targetNode.data.model}, but only ${smCount} are installed. You need ${requiredOptics - smCount} more single-mode optics.`);
+          return;
+        }
+      }
+    }
+
     const newEdge: Edge = {
       ...connection,
       id: `e-${uuidv4()}`,
