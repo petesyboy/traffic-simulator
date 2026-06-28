@@ -686,8 +686,12 @@ export const calculateSimulationStep = (
     if ((hasForwardStream || hasMetadataStreams) && outboundEdges.length > 0) {
       outboundEdges.forEach((edge) => {
         const targetNode = nodes.find(n => n.id === edge.target);
-        const isTargetPacketTool = targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Packet Tool';
-        const isTargetMetadataTool = targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Metadata Tool';
+        const isTargetPacketTool = targetNode?.type === 'toolNode' && 
+          (targetNode.data?.configType === 'Packet Tool' || 
+           (targetNode.data?.configType === 'Storage Tool' && !hasMetadataStreams));
+        const isTargetMetadataTool = targetNode?.type === 'toolNode' && 
+          (targetNode.data?.configType === 'Metadata Tool' || 
+           (targetNode.data?.configType === 'Storage Tool' && hasMetadataStreams));
 
         activeEdgeSet.add(edge.id);
         

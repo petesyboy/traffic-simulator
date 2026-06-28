@@ -138,4 +138,77 @@ describe('Simulation Utils', () => {
       expect(nodes[0].data.linkSpeed).toBe(1000);
     });
   });
+
+  describe('GigaSMART hardware node routing', () => {
+    it('should route only scaled metadata to Metadata Tools and only packet streams to Packet Tools', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 40000 },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'HC Chassis',
+            configType: 'HC',
+            model: 'GigaVUE-HC1',
+            gigaSmartApps: [
+              {
+                id: 'app-ami',
+                label: 'Application Metadata',
+                actionType: 'Application Metadata',
+                metadataFormat: 'CEF',
+              }
+            ]
+          },
+        },
+        {
+          id: 'splunk-1',
+          type: 'toolNode',
+          position: { x: 400, y: -100 },
+          data: { label: 'Splunk', configType: 'Metadata Tool', toolName: 'Splunk' },
+        },
+        {
+          id: 'vectra-1',
+          type: 'toolNode',
+          position: { x: 400, y: 100 },
+          data: { label: 'Vectra', configType: 'Packet Tool', toolName: 'Vectra' },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
+        { id: 'e-hc-splunk', source: 'hc-1', target: 'splunk-1' },
+        { id: 'e-hc-vectra', source: 'hc-1', target: 'vectra-1' },
+      ];
+
+      const streams = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '80',
+          protocol: 'tcp',
+          bandwidth: 10000, // 10 Gbps
+          active: true,
+        },
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+
+      // Splunk (Metadata Tool) should receive only CEF metadata (3% of 10G = 300 Mbps)
+      expect(result.edgeMetrics['e-hc-splunk']).toBe(300);
+      
+      // Vectra (Packet Tool) should receive only raw packets (10G = 10000 Mbps)
+      expect(result.edgeMetrics['e-hc-vectra']).toBe(10000);
+    });
+  });
 });
