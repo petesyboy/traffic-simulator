@@ -652,42 +652,93 @@ const CanvasArea: React.FC = () => {
       const isTapHardware = type === NODE_TYPES.HARDWARE && String(newNode.data?.model || '').includes('TAP');
 
       if (isInput || isTapHardware) {
-        const speeds = [10000, 25000, 40000]; // 10G, 25G, 40G in Mbps
-        const randomSpeed = speeds[Math.floor(Math.random() * speeds.length)];
-        
-        // Random utilization between 20% and 75%
-        const utilization = 0.2 + Math.random() * 0.55;
-        const initialBandwidthMbps = Math.floor(randomSpeed * utilization);
-        const streamGbps = (initialBandwidthMbps / 1000).toFixed(1);
-        
-        // Varied traffic profiles
+        // Determine physical limit per link in Mbps
+        let speedLimitMbps = 10000; // default 10G
+        if (isInput) {
+          const portSpeedStr = String(newNode.data?.portSpeed || '');
+          const speedMatch = portSpeedStr.match(/(\d+)G/i);
+          if (speedMatch) {
+            speedLimitMbps = parseInt(speedMatch[1], 10) * 1000;
+          } else if (newNode.data?.linkSpeed) {
+            speedLimitMbps = Number(newNode.data.linkSpeed);
+          }
+        } else if (isTapHardware) {
+          const modelStr = String(newNode.data?.model || '');
+          if (modelStr.includes('25')) {
+            speedLimitMbps = 25000; // 25G
+          } else if (modelStr.includes('40')) {
+            speedLimitMbps = 40000; // 40G
+          } else if (modelStr.includes('100')) {
+            speedLimitMbps = 100000; // 100G
+          } else if (modelStr.includes('400')) {
+            speedLimitMbps = 400000; // 400G
+          } else {
+            speedLimitMbps = 10000; // default 10G
+          }
+        }
+
+        const tappedLinksCount = isTapHardware ? ((newNode.data?.tappedLinksCount as number) ?? 1) : 1;
+        const numStreamsToCreate = Math.min(tappedLinksCount, 4);
+
         const profiles = [
           { name: 'Web Traffic', port: '443', proto: 'tcp' },
           { name: 'DB Sync Flow', port: '5432', proto: 'tcp' },
           { name: 'App Services API', port: '8080', proto: 'tcp' },
           { name: 'DNS Queries Query', port: '53', proto: 'udp' },
           { name: 'Video Streaming Media', port: '5004', proto: 'udp' },
+          { name: 'VoIP Signaling', port: '5060', proto: 'udp' },
+          { name: 'Encrypted VPN Tunnel', port: '500', proto: 'udp' },
+          { name: 'ICMP Diagnostics', port: '0', proto: 'icmp' },
         ];
-        const profile = profiles[Math.floor(Math.random() * profiles.length)];
-        
-        const randomSubnet = Math.floor(Math.random() * 254) + 1;
-        const randomVlan = String(Math.floor(Math.random() * 900) + 100);
-        
-        addTrafficStream({
-          id: `t-${uuidv4()}`,
-          name: `${labelToUse} - ${profile.name} (${streamGbps} Gbps)`,
-          sourceNodeId: newNode.id,
-          vlan: randomVlan,
-          ipSrc: `192.168.${randomSubnet}.25`,
-          ipDst: `10.10.${randomSubnet}.5`,
-          portSrc: String(Math.floor(Math.random() * 50000) + 1024),
-          portDst: profile.port,
-          protocol: profile.proto as 'tcp' | 'udp' | 'icmp',
-          bandwidth: initialBandwidthMbps,
-          active: true,
-          drift: 1,
-          lastDriftUpdate: 0
-        });
+
+        for (let i = 0; i < numStreamsToCreate; i++) {
+          const profile = profiles[(Math.floor(Math.random() * profiles.length) + i) % profiles.length];
+          const profileTypes = ['low', 'medium', 'high'];
+          const chosenProfileType = profileTypes[Math.floor(Math.random() * profileTypes.length)];
+
+          let bandwidthMbps = 1000;
+          if (chosenProfileType === 'low') {
+            const lowSpeeds = [10, 50, 100, 250, 500];
+            bandwidthMbps = lowSpeeds[Math.floor(Math.random() * lowSpeeds.length)];
+          } else if (chosenProfileType === 'medium') {
+            const medSpeeds = [1000, 2000, 5000];
+            bandwidthMbps = medSpeeds[Math.floor(Math.random() * medSpeeds.length)];
+          } else {
+            const utilization = 0.3 + Math.random() * 0.45;
+            bandwidthMbps = Math.floor(speedLimitMbps * utilization);
+          }
+
+          // Enforce physical limits
+          if (bandwidthMbps > speedLimitMbps) {
+            bandwidthMbps = Math.floor(speedLimitMbps * 0.75);
+          }
+
+          const randomSubnet = Math.floor(Math.random() * 254) + 1;
+          const randomVlan = String(Math.floor(Math.random() * 900) + 100);
+          const streamGbps = bandwidthMbps >= 1000
+            ? `${(bandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
+            : `${bandwidthMbps} Mbps`;
+
+          const streamName = numStreamsToCreate > 1
+            ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${streamGbps})`
+            : `${labelToUse} - ${profile.name} (${streamGbps})`;
+
+          addTrafficStream({
+            id: `t-${uuidv4()}`,
+            name: streamName,
+            sourceNodeId: newNode.id,
+            vlan: randomVlan,
+            ipSrc: `192.168.${randomSubnet}.25`,
+            ipDst: `10.10.${randomSubnet}.5`,
+            portSrc: String(Math.floor(Math.random() * 50000) + 1024),
+            portDst: profile.port,
+            protocol: profile.proto as 'tcp' | 'udp' | 'icmp',
+            bandwidth: bandwidthMbps,
+            active: true,
+            drift: 1,
+            lastDriftUpdate: 0
+          });
+        }
       }
     },
     [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData]
