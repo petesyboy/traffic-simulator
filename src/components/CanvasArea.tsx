@@ -586,12 +586,13 @@ const CanvasArea: React.FC = () => {
           if (!srcNode || !targetNode) continue;
 
           const srcW = srcNode.measured?.width || srcNode.width || 170;
-          const ax = srcNode.position.x + srcW / 2;
-          const ay = srcNode.position.y;
+          const srcH = srcNode.measured?.height || srcNode.height || 75;
+          const ax = srcNode.position.x + srcW;
+          const ay = srcNode.position.y + srcH / 2;
 
-          const targetW = targetNode.measured?.width || targetNode.width || 170;
-          const bx = targetNode.position.x - targetW / 2;
-          const by = targetNode.position.y;
+          const targetH = targetNode.measured?.height || targetNode.height || 75;
+          const bx = targetNode.position.x;
+          const by = targetNode.position.y + targetH / 2;
 
           const px = position.x;
           const py = position.y;
