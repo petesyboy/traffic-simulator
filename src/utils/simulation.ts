@@ -685,10 +685,14 @@ export const calculateSimulationStep = (
 
     if ((hasForwardStream || hasMetadataStreams) && outboundEdges.length > 0) {
       outboundEdges.forEach((edge) => {
+        const targetNode = nodes.find(n => n.id === edge.target);
+        const isTargetPacketTool = targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Packet Tool';
+        const isTargetMetadataTool = targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Metadata Tool';
+
         activeEdgeSet.add(edge.id);
         
-        // Forward the main packet stream
-        if (hasForwardStream) {
+        // Forward the main packet stream if the target is NOT a metadata-only tool
+        if (hasForwardStream && !isTargetMetadataTool) {
           edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
           queue.push({
             nodeId: edge.target,
@@ -697,15 +701,17 @@ export const calculateSimulationStep = (
           });
         }
         
-        // Forward any generated metadata streams on the SAME edge
-        generatedMetadataStreams.forEach((ms) => {
-          edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
-          queue.push({
-            nodeId: edge.target,
-            stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id },
-            edgePath: [...item.edgePath, edge.id],
+        // Forward any generated metadata streams if the target is NOT a packet-only tool
+        if (hasMetadataStreams && !isTargetPacketTool) {
+          generatedMetadataStreams.forEach((ms) => {
+            edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
+            queue.push({
+              nodeId: edge.target,
+              stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id },
+              edgePath: [...item.edgePath, edge.id],
+            });
           });
-        });
+        }
       });
       
       // Accumulate transmission stats for the metadata streams
