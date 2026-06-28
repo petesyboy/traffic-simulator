@@ -427,8 +427,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               {details.power && <div><strong>Power:</strong> {details.power}</div>}
               {details.fans !== undefined && <div><strong>Fans:</strong> {details.fans}</div>}
               {details.airflow && <div><strong>Airflow:</strong> {details.airflow}</div>}
-              {details.ports !== undefined && <div><strong>Base Ports:</strong> {details.ports}</div>}
-              {details.base_ports !== undefined && <div><strong>Base Ports:</strong> {details.base_ports}</div>}
+              {!model?.includes('TAP') && details.ports !== undefined && <div><strong>Base Ports:</strong> {details.ports}</div>}
+              {!model?.includes('TAP') && details.base_ports !== undefined && <div><strong>Base Ports:</strong> {details.base_ports}</div>}
               {details.module_slots !== undefined && <div><strong>Module Slots:</strong> {details.module_slots}</div>}
             </div>
           ) : (
@@ -722,7 +722,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 )}
                 
                 {(app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI') && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '11px', color: '#ccc' }}>Metadata Output Format</label>
                     <select value={app.metadataFormat || 'CEF'} onChange={e => {
                         const newApps = [...(node.data.gigaSmartApps as any[])];
@@ -732,6 +732,26 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                       <option value="CEF">CEF (Common Event Format)</option>
                       <option value="JSON">JSON</option>
                     </select>
+
+                    <label style={{ fontSize: '11px', color: '#ccc', marginTop: '4px' }}>Metadata Generation Rate (%)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="range"
+                        min={1}
+                        max={6}
+                        step={0.5}
+                        value={app.metadataRate !== undefined ? app.metadataRate : (app.actionType === 'Application Metadata' ? 3 : 1.5)}
+                        onChange={e => {
+                          const newApps = [...(node.data.gigaSmartApps as any[])];
+                          newApps[idx] = { ...newApps[idx], metadataRate: Number(e.target.value) };
+                          updateNodeData(node.id, { gigaSmartApps: newApps });
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <span style={{ fontSize: '11px', fontFamily: 'monospace', minWidth: '35px', textAlign: 'right', color: '#00e5ff', fontWeight: 'bold' }}>
+                        {app.metadataRate !== undefined ? app.metadataRate : (app.actionType === 'Application Metadata' ? 3 : 1.5)}%
+                      </span>
+                    </div>
                   </div>
                 )}
                 

@@ -303,7 +303,9 @@ const processGigaSmartNode = (
   } 
   else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
     const format = data.metadataFormat || 'CEF';
-    const scale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+    const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+    const ratePercent = data.metadataRate !== undefined ? Number(data.metadataRate) : (defaultScale * 100);
+    const scale = ratePercent / 100;
     const metadataBandwidth = item.stream.bandwidth * scale;
 
     dropBandwidth = item.stream.bandwidth * (1 - scale);
@@ -412,7 +414,9 @@ const processHardwareNode = (
           nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + drop;
           item.stream.bandwidth -= drop;
         } else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
-          const scale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+          const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+          const ratePercent = app.metadataRate !== undefined ? Number(app.metadataRate) : (defaultScale * 100);
+          const scale = ratePercent / 100;
           const metadataBandwidth = item.stream.bandwidth * scale;
           generatedMetadataStreams.push({
             ...item.stream,
