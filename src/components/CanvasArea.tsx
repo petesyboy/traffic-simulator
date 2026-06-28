@@ -225,7 +225,8 @@ const CanvasArea: React.FC = () => {
         const hasMetadataApp = apps.some(app => 
           app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI'
         );
-        if (hasMetadataApp && targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Metadata Tool') {
+        if (hasMetadataApp && targetNode?.type === 'toolNode' && 
+            (targetNode.data?.configType === 'Metadata Tool' || targetNode.data?.configType === 'Storage Tool')) {
           return true;
         }
       }
@@ -270,7 +271,10 @@ const CanvasArea: React.FC = () => {
           }
         });
       }
-      return (hasMetadataOrigin && !hasPacketOrigin) || (targetNode?.type === 'toolNode' && targetNode.data?.configType === 'Metadata Tool');
+      return (hasMetadataOrigin && !hasPacketOrigin) || 
+             (targetNode?.type === 'toolNode' && 
+              (targetNode.data?.configType === 'Metadata Tool' || 
+               (targetNode.data?.configType === 'Storage Tool' && hasMetadataOrigin)));
     })();
 
     let className = '';
