@@ -70,15 +70,36 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
       </FormGroup>
 
       {isMetadataAction(actionType) && (
-        <FormGroup label="Output Metadata Format">
-          <select
-            value={(node.data?.metadataFormat as string) || 'CEF'}
-            onChange={(e) => onGenericChange('metadataFormat', e.target.value)}
-          >
-            <option value="CEF">CEF (Common Event Format)</option>
-            <option value="JSON">JSON format</option>
-          </select>
-        </FormGroup>
+        <>
+          <FormGroup label="Output Metadata Format">
+            <select
+              value={(node.data?.metadataFormat as string) || 'CEF'}
+              onChange={(e) => onGenericChange('metadataFormat', e.target.value)}
+            >
+              <option value="CEF">CEF (Common Event Format)</option>
+              <option value="JSON">JSON format</option>
+            </select>
+          </FormGroup>
+          <FormGroup label="Metadata Generation Rate (%)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="range"
+                min={1}
+                max={6}
+                step={0.5}
+                value={(node.data?.metadataRate as number) !== undefined ? (node.data?.metadataRate as number) : (actionType === ACTION_TYPES.APP_METADATA ? 3 : 1.5)}
+                onChange={(e) => onGenericChange('metadataRate', e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <span style={{ fontSize: '11px', fontFamily: 'monospace', minWidth: '45px', textAlign: 'right', color: '#00e5ff', fontWeight: 'bold' }}>
+                {((node.data?.metadataRate as number) !== undefined ? (node.data?.metadataRate as number) : (actionType === ACTION_TYPES.APP_METADATA ? 3 : 1.5))}%
+              </span>
+            </div>
+            <div style={{ fontSize: '11px', color: '#80cbc4', marginTop: '4px', lineHeight: '1.3' }}>
+              Specifies the metadata output traffic size as a percentage of input traffic (typically 1% to 6%).
+            </div>
+          </FormGroup>
+        </>
       )}
 
       {isDedupAction(actionType) && (
