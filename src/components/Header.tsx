@@ -327,6 +327,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const clearCanvas    = useStore((state) => state.clearCanvas);
   const loadDemo       = useStore((state) => state.loadDemo);
   const advancedMode   = useStore((state) => state.advancedMode);
+  const setAdvancedMode = useStore((state) => state.setAdvancedMode);
   const setAdvancedModeUnlocked = useStore((state) => state.setAdvancedModeUnlocked);
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
@@ -342,7 +343,9 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
     const recentClicks = [...logoClicks, now].filter(t => now - t < 2000);
     setLogoClicks(recentClicks);
     if (recentClicks.length >= 4) {
-      setAdvancedModeUnlocked(true);
+      const nextMode = !advancedMode;
+      setAdvancedMode(nextMode);
+      setAdvancedModeUnlocked(nextMode);
       setLogoClicks([]);
     }
   };
