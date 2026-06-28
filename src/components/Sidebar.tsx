@@ -53,7 +53,7 @@ const appsList = [
 // ─── Sidebar component ────────────────────────────────────────────────────────
 
 const Sidebar: React.FC = () => {
-  const { advancedMode, setAdvancedMode, advancedModeUnlocked, setDraggedNodeType } = useStore();
+  const { advancedMode, setDraggedNodeType } = useStore();
   const [openSections, setOpenSections] = useState({
     demo: true,  // "Demonstration" section — expanded by default
     apps: true,  // "Applications" section — shows all 15 GigaSMART apps
@@ -136,19 +136,7 @@ const Sidebar: React.FC = () => {
           <span style={{ color: '#555', fontSize: '10px' }}>◄ ►</span>
         </div>
 
-        {advancedModeUnlocked && (
-          <div style={{ padding: '10px 15px', borderBottom: '1px solid #333', flexShrink: 0 }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>
-              <input
-                type="checkbox"
-                checked={advancedMode}
-                onChange={(e) => setAdvancedMode(e.target.checked)}
-                style={{ marginRight: '8px' }}
-              />
-              Advanced Mode (SE)
-            </label>
-          </div>
-        )}
+
 
         <div style={{ padding: '10px 12px', borderBottom: '1px solid #333', flexShrink: 0 }}>
           <input
