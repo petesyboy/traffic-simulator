@@ -306,8 +306,17 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       }
     }
 
-    const newOpticObj = { board: targetBoard, optic: selectedOptic, qty };
-    const newOptics = [...installedOptics, newOpticObj];
+    const existingOpticIdx = installedOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic);
+    let newOptics;
+    if (existingOpticIdx >= 0) {
+      newOptics = [...installedOptics];
+      newOptics[existingOpticIdx] = {
+        ...newOptics[existingOpticIdx],
+        qty: newOptics[existingOpticIdx].qty + qty
+      };
+    } else {
+      newOptics = [...installedOptics, { board: targetBoard, optic: selectedOptic, qty }];
+    }
     updateNodeData(node.id, { optics: newOptics });
     setSelectedOptic('');
     setQtyStr('1');

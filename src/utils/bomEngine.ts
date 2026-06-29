@@ -59,9 +59,24 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     });
 
     const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
-    let changed = false;
+    
+    // Consolidate optics of the same type and target board/cage together
+    const consolidatedMap: Record<string, { board: string, optic: string, qty: number }> = {};
+    currentOptics.forEach(opt => {
+      if (!opt.optic) return;
+      const boardKey = opt.board || 'Base Ports';
+      const key = `${boardKey}|||${opt.optic}`;
+      if (consolidatedMap[key]) {
+        consolidatedMap[key].qty += opt.qty;
+      } else {
+        consolidatedMap[key] = { ...opt, board: boardKey };
+      }
+    });
+    
+    const consolidatedOptics = Object.values(consolidatedMap);
+    let changed = consolidatedOptics.length !== currentOptics.length;
 
-    const nextOptics = currentOptics.map(opt => {
+    const nextOptics = consolidatedOptics.map(opt => {
       const needed = tapOpticsNeeded[opt.optic];
       if (needed !== undefined) {
         if (opt.qty < needed) {
