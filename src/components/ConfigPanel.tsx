@@ -58,6 +58,10 @@ const ConfigPanel: React.FC = () => {
       updates.tappedLinksCount = parseInt(val, 10) || 1;
     }
 
+    if (key === 'linkCount') {
+      updates.linkCount = parseInt(val, 10) || 2;
+    }
+
     if (key === 'portSpeed') {
       let speedMbps = 10000; // default 10G
       if (val === '1G') speedMbps = 1000;
@@ -209,6 +213,17 @@ const ConfigPanel: React.FC = () => {
                 >
                   <option value="Round Robin">Round Robin (Even Split)</option>
                   <option value="L4 Hash">L4 Hash (Five-Tuple hash)</option>
+                </select>
+              </FormGroup>
+              <FormGroup label="Load Balanced Links (Count)">
+                <select
+                  value={String((selectedNode.data?.linkCount as number) || 2)}
+                  onChange={(e) => handleGenericChange('linkCount', e.target.value)}
+                >
+                  <option value="2">2 Links</option>
+                  <option value="3">3 Links</option>
+                  <option value="4">4 Links</option>
+                  <option value="8">8 Links</option>
                 </select>
               </FormGroup>
             </div>

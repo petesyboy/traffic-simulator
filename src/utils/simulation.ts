@@ -590,6 +590,24 @@ export const calculateSimulationStep = (
         };
       }
     }
+
+    if (node.type === 'gigaStreamNode') {
+      const linkCount = (node.data?.linkCount as number) || 2;
+      const actualLinks = edges.filter((e) => e.source === node.id).length;
+      if (actualLinks !== linkCount) {
+        nodeDataPatches[node.id] = {
+          ...nodeDataPatches[node.id],
+          status: 'warning',
+          statusMessage: `Port mismatch: expected ${linkCount}, connected ${actualLinks}`
+        };
+      } else {
+        nodeDataPatches[node.id] = {
+          ...nodeDataPatches[node.id],
+          status: 'ok',
+          statusMessage: ''
+        };
+      }
+    }
   });
 
   // 1. Initialize metrics for all nodes
