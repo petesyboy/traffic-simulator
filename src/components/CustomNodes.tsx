@@ -549,6 +549,8 @@ export const GroupNode: React.FC<NodeProps> = ({ data, selected }) => {
 
 export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const isRunning = useStore((state) => state.isRunning);
+  const metrics = useStore((state) => state.nodeMetrics[id]);
   const model = (data.model as string) || 'Hardware';
   const projectLicenseMode = useStore((state) => state.projectLicenseMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
@@ -754,6 +756,13 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {isRunning && (
+          <div className="node-metrics" style={{ marginTop: '8px' }}>
+            <span>In: {formatBandwidth(metrics?.rxBps)}</span>
+            <span>Out: {formatBandwidth(metrics?.txBps)}</span>
           </div>
         )}
 
