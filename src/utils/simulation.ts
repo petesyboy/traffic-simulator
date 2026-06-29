@@ -37,6 +37,29 @@ const getHardwareOpticCapacity = (node: CustomNode): number => {
   return capacity > 0 ? capacity : Infinity;
 };
 
+const isPacketToolConfig = (configType: string): boolean => {
+  const norm = configType.trim();
+  return norm === 'Packet Tool' || 
+         norm === 'ExtraHop' || 
+         norm === 'Wireshark' || 
+         norm === 'Vectra';
+};
+
+const isMetadataToolConfig = (configType: string): boolean => {
+  const norm = configType.trim();
+  return norm === 'Metadata Tool' || 
+         norm === 'Splunk' || 
+         norm === 'Elastic Search' || 
+         norm === 'Elastic';
+};
+
+const isStorageToolConfig = (configType: string): boolean => {
+  const norm = configType.trim();
+  return norm === 'Storage Tool' || 
+         norm === 'AWS S3 Storage' || 
+         norm === 'S3';
+};
+
 // ─── IP matching helpers ──────────────────────────────────────────────────────
 
 /**
@@ -206,8 +229,8 @@ const processToolNode = (
 ): NodeProcessingResult => {
   const data = node.data as ToolNodeData;
   const configType = data.configType || '';
-  const isPacketTool = configType === 'Packet Tool';
-  const isMetadataTool = configType === 'Metadata Tool';
+  const isPacketTool = isPacketToolConfig(configType);
+  const isMetadataTool = isMetadataToolConfig(configType);
   const rType = item.stream.trafficType || 'packet';
   
   let isValidForTool = true;
@@ -712,8 +735,8 @@ export const calculateSimulationStep = (
         }
 
         const toolConfig = targetNode.data?.configType || '';
-        const supportsPackets = toolConfig === 'Packet Tool' || toolConfig === 'Storage Tool';
-        const supportsMetadata = toolConfig === 'Metadata Tool' || toolConfig === 'Storage Tool';
+        const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
+        const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
 
         // Forward the main stream if target tool supports its traffic type
         if (hasForwardStream) {
@@ -772,8 +795,8 @@ export const calculateSimulationStep = (
       const configType = data.configType || '';
       const expectedFormat = data.expectedFormat || 'CEF';
       
-      const isPacketTool = configType === 'Packet Tool';
-      const isMetadataTool = configType === 'Metadata Tool';
+      const isPacketTool = isPacketToolConfig(configType);
+      const isMetadataTool = isMetadataToolConfig(configType);
       
       const received = toolReceivedStreams[node.id] || [];
       
