@@ -405,13 +405,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
               />
               <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px' }}>Flow Mapping Example</span>
               <span className="build-number">
-                v{(() => {
-                  const parts = pkg.version.split('.');
-                  if (parts.length >= 3) {
-                    return parts[2] === '0' ? `${parts[0]}.${parts[1]}` : `${parts[0]}.${parts[1]}${parts[2]}`;
-                  }
-                  return pkg.version;
-                })()}
+                <a 
+                  href="https://github.com/petesyboy/traffic-simulator/commits" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: 'inherit', textDecoration: 'none' }}
+                >
+                  v{(() => {
+                    const parts = pkg.version.split('.');
+                    if (parts.length >= 3) {
+                      return parts[2] === '0' ? `${parts[0]}.${parts[1]}` : `${parts[0]}.${parts[1]}${parts[2]}`;
+                    }
+                    return pkg.version;
+                  })()}
+                </a>
               </span>
             </div>
             <div className="tab monitoring-session active">Monitoring Session</div>
