@@ -115,3 +115,22 @@ export const isMetadataAction = (actionType: string): boolean =>
  */
 export const isDedupAction = (actionType: string): boolean =>
   actionType === ACTION_TYPES.DEDUPLICATION;
+
+export interface TapOpticOption {
+  value: string;
+  label: string;
+  isSM: boolean;
+}
+
+export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
+  { value: 'SFP-502 (1G SFP SX)', label: '1G SX Multimode (SFP)', isSM: false },
+  { value: 'SFP-503 (1G SFP LX)', label: '1G LX Singlemode (SFP)', isSM: true },
+  { value: 'SFP-532 (10G SFP+ SR)', label: '10G SR Multimode (SFP+)', isSM: false },
+  { value: 'SFP-533 (10G SFP+ LR)', label: '10G LR Singlemode (SFP+)', isSM: true },
+  { value: 'SFP-552 (25G SFP28 SR)', label: '25G SR Multimode (SFP28)', isSM: false },
+  { value: 'SFP-553T (25G SFP28 LR)', label: '25G LR Singlemode (SFP28)', isSM: true },
+  { value: 'QSF-502 (40G QSFP+ SR4)', label: '40G SR4 Multimode (QSFP+)', isSM: false },
+  { value: 'QSF-503T (40G QSFP+ LR4)', label: '40G LR4 Singlemode (QSFP+)', isSM: true },
+  { value: 'Q28-502T (100G QSFP28 SR4)', label: '100G SR4 Multimode (QSFP28)', isSM: false },
+  { value: 'Q28-503 (100G QSFP28 LR4)', label: '100G LR4 Singlemode (QSFP28)', isSM: true }
+];

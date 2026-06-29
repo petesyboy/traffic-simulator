@@ -4,6 +4,7 @@ import { getSupportedBoards, validateOptic } from '../../utils/opticValidation';
 import { resolveNodeSkus } from '../../utils/skuResolver';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
+import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 
 interface HardwareNodePanelProps {
   node: CustomNode;
@@ -496,16 +497,39 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
         {model?.includes('TAP') && (() => {
           const maxLinks = details?.max_links || 6;
+          const tapSku = String(node.data?.sku || '');
+          const tapModel = String(node.data?.model || '');
+          const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
+          
+          const selectedOpticVal = node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+          const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
+          const hasMismatch = matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
+
           return (
             <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>TAP Settings</h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ fontSize: '11px', color: '#ccc' }}>Tapped Links:</label>
-                <select value={node.data.tappedLinksCount ?? 1} onChange={e => updateNodeData(node.id, { tappedLinksCount: parseInt(e.target.value) })} style={{ width: '60px', fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
-                  {Array.from({ length: maxLinks }, (_, i) => i + 1).map(num => <option key={num} value={num}>{num}</option>)}
-                </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc', width: '90px' }}>Tapped Links:</label>
+                  <select value={node.data.tappedLinksCount ?? 1} onChange={e => updateNodeData(node.id, { tappedLinksCount: parseInt(e.target.value) })} style={{ width: '80px', fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
+                    {Array.from({ length: maxLinks }, (_, i) => i + 1).map(num => <option key={num} value={num}>{num}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc', width: '90px' }}>Target Optic:</label>
+                  <select value={selectedOpticVal} onChange={e => updateNodeData(node.id, { tappedLinkOptic: e.target.value })} style={{ flex: 1, fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
+                    {SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                </div>
               </div>
-              <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>Specifies the number of links this TAP is monitoring (1-{maxLinks}).</div>
+              <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>Specifies the number of links this TAP is monitoring (1-{maxLinks}) and target optic speed/fiber type.</div>
+              
+              {hasMismatch && (
+                <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '10px' }}>
+                  ⚠️ Fiber mode mismatch: TAP is {isSMTap ? 'Single-mode' : 'Multi-mode'} but target optic is {matchedOptic?.isSM ? 'Single-mode' : 'Multi-mode'}.
+                </div>
+              )}
+
               {(() => {
                 const outgoingEdges = edges.filter(e => e.source === node.id);
                 if (outgoingEdges.length === 0) return null;
