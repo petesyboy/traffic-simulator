@@ -78,6 +78,8 @@ const ProjectSettingsModal: React.FC<{
   const setProjectLicenseMode = useStore((state) => state.setProjectLicenseMode);
   const defaultTermDuration = useStore((state) => state.defaultTermDuration);
   const setDefaultTermDuration = useStore((state) => state.setDefaultTermDuration);
+  const projectRegion = useStore((state) => state.projectRegion);
+  const setProjectRegion = useStore((state) => state.setProjectRegion);
   const disableDcWarnings = useStore((state) => state.disableDcWarnings);
   const setDisableDcWarnings = useStore((state) => state.setDisableDcWarnings);
   const showGrid = useStore((state) => state.showGrid);
@@ -135,6 +137,28 @@ const ProjectSettingsModal: React.FC<{
             >
               <option value="HTL">Hybrid Term Licensing (HTL)</option>
               <option value="Perpetual">Perpetual</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' }}>Hardware Deployment Region</label>
+            <select
+              value={projectRegion}
+              onChange={(e) => setProjectRegion(e.target.value as 'US' | 'EU' | 'UK')}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                background: '#121212',
+                border: '1px solid #2d2d2d',
+                borderRadius: '4px',
+                color: '#e0e0e0',
+                fontSize: '12px',
+                outline: 'none'
+              }}
+            >
+              <option value="US">North America (US)</option>
+              <option value="EU">Europe (EU)</option>
+              <option value="UK">United Kingdom (UK)</option>
             </select>
           </div>
 
@@ -231,8 +255,9 @@ const BomModal: React.FC<{
   const edges = useStore((state) => state.edges);
   const globalLicenseMode = useStore((state) => state.projectLicenseMode);
   const globalTermDuration = useStore((state) => state.defaultTermDuration);
+  const globalRegion = useStore((state) => state.projectRegion);
   
-  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration);
+  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion);
   const validationErrors = validateConfiguration(nodes, edges);
 
   return (

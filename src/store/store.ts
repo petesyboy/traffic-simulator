@@ -111,6 +111,7 @@ export type RFState = {
   advancedModeUnlocked: boolean;
   projectLicenseMode: 'HTL' | 'Perpetual';
   defaultTermDuration: string;
+  projectRegion: 'US' | 'EU' | 'UK';
   disableDcWarnings: boolean;
   trafficStreams: TrafficStream[];
   nodeMetrics: Record<string, NodeMetrics>;
@@ -138,6 +139,7 @@ export type RFState = {
   setAdvancedModeUnlocked: (unlocked: boolean) => void;
   setProjectLicenseMode: (mode: 'HTL' | 'Perpetual') => void;
   setDefaultTermDuration: (duration: string) => void;
+  setProjectRegion: (region: 'US' | 'EU' | 'UK') => void;
   setDisableDcWarnings: (disable: boolean) => void;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -536,6 +538,7 @@ export const useStore = create<RFState>((set, get) => ({
   advancedModeUnlocked: false,
   projectLicenseMode: 'HTL',
   defaultTermDuration: '36',
+  projectRegion: 'US',
   disableDcWarnings: false,
   draggedNodeType: null,
   showGrid: true,
@@ -759,6 +762,7 @@ export const useStore = create<RFState>((set, get) => ({
 
   setProjectLicenseMode: (mode) => set({ projectLicenseMode: mode }),
   setDefaultTermDuration: (duration) => set({ defaultTermDuration: duration }),
+  setProjectRegion: (region) => set({ projectRegion: region }),
   setDisableDcWarnings: (disable) => set({ disableDcWarnings: disable }),
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
