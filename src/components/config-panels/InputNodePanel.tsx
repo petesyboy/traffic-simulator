@@ -14,9 +14,12 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
   // Derive TAP specific settings for simple mode
   const tapFiberMode = (node.data?.tapFiberMode as string) || 'Multimode';
   const isSMTap = tapFiberMode === 'Singlemode';
-  const selectedOpticVal = (node.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+  const isM506T = String(node.data?.model || '').includes('TAP-M506T') || String(node.data?.sku || '').includes('TAP-M506T');
+  const selectedOpticVal = isM506T
+    ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
+    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
   const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
-  const hasMismatch = matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
+  const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
 
   return (
     <>
@@ -84,6 +87,8 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
             <select
               value={selectedOpticVal}
               onChange={(e) => onGenericChange('tappedLinkOptic', e.target.value)}
+              disabled={isM506T}
+              style={{ opacity: isM506T ? 0.7 : 1 }}
             >
               {SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>

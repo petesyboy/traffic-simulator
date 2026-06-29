@@ -657,7 +657,10 @@ export const useStore = create<RFState>((set, get) => ({
       const requiredOptics = tappedLinks * 2;
 
       const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
-      const selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+      let selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+      if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
+        selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
+      }
 
       let addedOpticsMsg = '';
       let updatedOptics = [...installedOptics];

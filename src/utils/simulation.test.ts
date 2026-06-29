@@ -669,6 +669,44 @@ describe('Simulation Utils', () => {
       expect(sfp532Row?.qty).toBe(6);
     });
 
+    it('should force and suggest QSB-523T optics for TAP-M506T connected to a GigaVUE chassis', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TAP-M506T',
+            configType: 'TAP',
+            model: 'TAP-M506T',
+            sku: 'TAP-M506T',
+            tappedLinksCount: 4,
+          },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'HC1 Chassis',
+            configType: 'HC',
+            model: 'GigaVUE-HC1',
+          },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
+      ];
+
+      const bom = generateBom(nodes, edges, 'Perpetual', '36');
+      
+      // Should suggest QSB-523T with quantity = 4 links * 2 = 8
+      const qsb523Row = bom.find(row => row.sku === 'QSB-523T');
+      expect(qsb523Row).toBeDefined();
+      expect(qsb523Row?.qty).toBe(8);
+    });
+
     it('should suggest Q28-502T for TA25E linked to HC1 Plus', () => {
       const nodes: CustomNode[] = [
         {

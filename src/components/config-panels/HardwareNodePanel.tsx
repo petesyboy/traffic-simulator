@@ -649,9 +649,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const tapModel = String(node.data?.model || '');
           const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
           
-          const selectedOpticVal = node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+          const isM506T = tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
+          const selectedOpticVal = isM506T 
+            ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
+            : (node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
           const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
-          const hasMismatch = matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
+          const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
 
           return (
             <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '16px', marginBottom: '16px' }}>
@@ -665,12 +668,21 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <label style={{ fontSize: '11px', color: '#ccc', width: '90px' }}>Target Optic:</label>
-                  <select value={selectedOpticVal} onChange={e => updateNodeData(node.id, { tappedLinkOptic: e.target.value })} style={{ flex: 1, fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
+                  <select 
+                    value={selectedOpticVal} 
+                    onChange={e => updateNodeData(node.id, { tappedLinkOptic: e.target.value })} 
+                    disabled={isM506T}
+                    style={{ flex: 1, fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px', opacity: isM506T ? 0.7 : 1 }}
+                  >
                     {SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                   </select>
                 </div>
               </div>
-              <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>Specifies the number of links this TAP is monitoring (1-{maxLinks}) and target optic speed/fiber type.</div>
+              <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
+                {isM506T 
+                  ? 'Note: TAP-M506T requires termination with QSB-523T optics in the TA/HC unit.' 
+                  : `Specifies the number of links this TAP is monitoring (1-${maxLinks}) and target optic speed/fiber type.`}
+              </div>
               
               {hasMismatch && (
                 <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '10px' }}>
