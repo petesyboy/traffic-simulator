@@ -3,6 +3,8 @@ import type { CustomNode } from '../store/store';
 import type { Edge } from '@xyflow/react';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveNodeSkus } from './skuResolver';
+import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import opticRules from '../constants/opticRules.json';
 
 const skus: Record<string, string> = skusData as Record<string, string>;
 
@@ -116,6 +118,36 @@ export function generateBom(
       if (!opt.optic) return;
       const opticSku = resolveOpticSku(opt.optic, model);
       addRow(opticSku, opt.qty, 'Optic');
+    });
+
+    // Automatically suggest baseline optics for connected TAPs (Simple and Advanced)
+    const incomingEdges = edges.filter(e => e.target === node.id);
+    incomingEdges.forEach(e => {
+      const sourceNode = nodes.find(n => n.id === e.source);
+      if (sourceNode) {
+        const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
+        const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
+        if (isHardwareTap || isInputTap) {
+          const isSMTap = isHardwareTap 
+            ? (String(sourceNode.data?.sku || '').includes('253') || 
+               String(sourceNode.data?.sku || '').includes('273') || 
+               String(sourceNode.data?.sku || '').includes('453') || 
+               String(sourceNode.data?.model || '').toLowerCase().includes('single-mode') || 
+               String(sourceNode.data?.model || '').toLowerCase().includes('sm') || 
+               String(sourceNode.data?.model || '').includes('253T') || 
+               String(sourceNode.data?.model || '').includes('273T') || 
+               String(sourceNode.data?.model || '').includes('453T'))
+            : (sourceNode.data?.tapFiberMode === 'Singlemode');
+          
+          const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
+          const selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+          const numLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
+          const requiredQty = numLinks * 2;
+          
+          const opticSku = resolveOpticSku(selectedOpticVal, model);
+          addRow(opticSku, requiredQty, 'Optic');
+        }
+      }
     });
 
     // Trace downstream paths to find GigaSMART action nodes connected to this HC chassis
@@ -247,10 +279,87 @@ export function generateBom(
     }
   }
 
+  // Helper functions for TA-to-HC aggregation link optic suggestions
+  const getChassisMaxOpticSpeed = (chassisModel: string): '100G' | '40G' | '10G' => {
+    const rules = (opticRules as any)[chassisModel];
+    if (!rules) return '10G';
+    let has100G = false;
+    let has40G = false;
+    for (const group of Object.values(rules)) {
+      if (Array.isArray(group)) {
+        for (const opt of group) {
+          if (opt.includes('100G')) has100G = true;
+          if (opt.includes('40G')) has40G = true;
+        }
+      }
+    }
+    if (has100G) return '100G';
+    if (has40G) return '40G';
+    return '10G';
+  };
+
+  const findOpticSkuForSpeed = (chassisModel: string, speed: '100G' | '40G' | '10G'): string | null => {
+    const rules = (opticRules as any)[chassisModel];
+    if (!rules) return null;
+    for (const group of Object.values(rules)) {
+      if (Array.isArray(group)) {
+        for (const opt of group) {
+          if (opt.includes(speed) && (opt.includes('SR') || opt.includes('SX') || opt.includes('SR4'))) {
+            return opt.split(' ')[0];
+          }
+        }
+      }
+    }
+    for (const group of Object.values(rules)) {
+      if (Array.isArray(group)) {
+        for (const opt of group) {
+          if (opt.includes(speed)) {
+            return opt.split(' ')[0];
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  // Scan edges for TA-to-HC high-speed links and suggest appropriate optics
+  edges.forEach(edge => {
+    const sourceNode = nodes.find(n => n.id === edge.source);
+    const targetNode = nodes.find(n => n.id === edge.target);
+    if (sourceNode?.type === NODE_TYPES.HARDWARE && targetNode?.type === NODE_TYPES.HARDWARE) {
+      const srcModel = String(sourceNode.data?.model || '');
+      const dstModel = String(targetNode.data?.model || '');
+      const isSrcTA = srcModel.includes('TA') && !srcModel.includes('TAP');
+      const isDstHC = dstModel.includes('HC');
+      const isSrcHC = srcModel.includes('HC');
+      const isDstTA = dstModel.includes('TA') && !dstModel.includes('TAP');
+
+      if ((isSrcTA && isDstHC) || (isSrcHC && isDstTA)) {
+        const srcSpeed = getChassisMaxOpticSpeed(srcModel);
+        const dstSpeed = getChassisMaxOpticSpeed(dstModel);
+
+        let mutualSpeed: '100G' | '40G' | '10G' = '10G';
+        if (srcSpeed === '100G' && dstSpeed === '100G') {
+          mutualSpeed = '100G';
+        } else if (srcSpeed === '100G' && dstSpeed === '40G' || srcSpeed === '40G' && dstSpeed === '100G' || srcSpeed === '40G' && dstSpeed === '40G') {
+          mutualSpeed = '40G';
+        }
+
+        const srcOpticSku = findOpticSkuForSpeed(srcModel, mutualSpeed);
+        const dstOpticSku = findOpticSkuForSpeed(dstModel, mutualSpeed);
+
+        if (srcOpticSku) {
+          addRow(srcOpticSku, 1, 'Optic');
+        }
+        if (dstOpticSku) {
+          addRow(dstOpticSku, 1, 'Optic');
+        }
+      }
+    }
+  });
+
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
 }
-
-import { NODE_TYPES } from '../constants/nodeTypes';
 
 // Helper to get physical cage capacities for HC nodes and modules
 function getBoardCages(boardName: string, isPlus: boolean, model: string): { sfp: number; qsfp: number } {

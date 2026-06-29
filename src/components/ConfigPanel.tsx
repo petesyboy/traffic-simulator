@@ -54,6 +54,10 @@ const ConfigPanel: React.FC = () => {
       updates.sliceSize = parseInt(val, 10) || 128;
     }
 
+    if (key === 'tappedLinksCount') {
+      updates.tappedLinksCount = parseInt(val, 10) || 1;
+    }
+
     if (key === 'portSpeed') {
       let speedMbps = 10000; // default 10G
       if (val === '1G') speedMbps = 1000;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { matchesVlan, matchesIp, matchesPort, evaluateMapConditions, calculateSimulationStep } from './simulation';
 import { type TrafficStream, type CustomNode } from '../store/store';
+import { generateBom } from './bomEngine';
 
 describe('Simulation Utils', () => {
   describe('matchesVlan', () => {
@@ -209,6 +210,85 @@ describe('Simulation Utils', () => {
       
       // Vectra (Packet Tool) should receive only raw packets (10G = 10000 Mbps)
       expect(result.edgeMetrics['e-hc-vectra']).toBe(10000);
+    });
+  });
+
+  describe('BOM Engine Baseline Optics', () => {
+    it('should automatically suggest SFP-532 for MM TAP connected to GigaVUE-HC1', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TAP-M251T',
+            configType: 'TAP',
+            model: 'TAP-M251T',
+            sku: 'TAP-M251T',
+            tappedLinksCount: 3,
+            tappedLinkOptic: 'SFP-532 (10G SFP+ SR)',
+          },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'HC1 Chassis',
+            configType: 'HC',
+            model: 'GigaVUE-HC1',
+          },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
+      ];
+
+      const bom = generateBom(nodes, edges, 'Perpetual', '36');
+      
+      // Should suggest SFP-532 with quantity = 3 links * 2 = 6
+      const sfp532Row = bom.find(row => row.sku === 'SFP-532');
+      expect(sfp532Row).toBeDefined();
+      expect(sfp532Row?.qty).toBe(6);
+    });
+
+    it('should suggest Q28-502T for TA25E linked to HC1 Plus', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'ta-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TA25E',
+            configType: 'TA',
+            model: 'GigaVUE-TA25E',
+          },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'HC1 Plus',
+            configType: 'HC',
+            model: 'GigaVUE-HC1-Plus',
+          },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-ta-hc', source: 'ta-1', target: 'hc-1' },
+      ];
+
+      const bom = generateBom(nodes, edges, 'Perpetual', '36');
+
+      // Both support 100G, so should suggest Q28-502T (or Q28-502)
+      // Since TA25E rules list Q28-502T (100G QSFP28 SR4), and HC1-Plus rules list Q28-502T as well:
+      const q28502tRow = bom.find(row => row.sku === 'Q28-502T' || row.sku === 'Q28-502');
+      expect(q28502tRow).toBeDefined();
+      // Should suggest 1 for TA25E and 1 for HC1-Plus = 2 total
+      expect(q28502tRow?.qty).toBe(2);
     });
   });
 });
