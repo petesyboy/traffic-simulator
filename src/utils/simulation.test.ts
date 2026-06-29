@@ -321,6 +321,47 @@ describe('Simulation Utils', () => {
       expect(result.metrics['s3-1']).toBeDefined();
       expect(result.metrics['s3-1'].rxBps).toBe(300);
     });
+
+    it('should forward packet streams to ExtraHop Tool when configured as ExtraHop configType', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'extrahop-1',
+          type: 'toolNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'ExtraHop Tool', configType: 'ExtraHop', toolName: 'ExtraHop' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-eh', source: 'tap-1', target: 'extrahop-1' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          bandwidth: 10000,
+          active: true,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '12345',
+          portDst: '80',
+          protocol: 'tcp'
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      expect(result.metrics['extrahop-1']).toBeDefined();
+      expect(result.metrics['extrahop-1'].rxBps).toBe(10000);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {
