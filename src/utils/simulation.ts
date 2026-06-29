@@ -384,7 +384,7 @@ const processGigaSmartNode = (
 };
 
 const processGigaStreamNode = (
-  _node: CustomNode,
+  node: CustomNode,
   item: QueueItem,
   nodeMetric: NodeMetrics,
   outboundEdges: Edge[],
@@ -396,17 +396,40 @@ const processGigaStreamNode = (
     nodeMetric.txBps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     
-    const splitBandwidth = item.stream.bandwidth / outboundEdges.length;
-    
-    outboundEdges.forEach((edge) => {
-      activeEdgeSet.add(edge.id);
-      edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
+    const algorithm = (node.data?.algorithm as string) || 'Round Robin';
+
+    if (algorithm.toLowerCase().includes('hash')) {
+      // L4 Hash (Five-Tuple hash): route the entire stream to exactly one target link
+      const str = `${item.stream.ipSrc || ''}-${item.stream.ipDst || ''}-${item.stream.portSrc || ''}-${item.stream.portDst || ''}-${item.stream.protocol || ''}-${item.stream.vlan || ''}`;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      const selectedIndex = Math.abs(hash) % outboundEdges.length;
+      const selectedEdge = outboundEdges[selectedIndex];
+
+      activeEdgeSet.add(selectedEdge.id);
+      edgeTraffic[selectedEdge.id] = (edgeTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
       queue.push({
-        nodeId: edge.target,
-        stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
-        edgePath: [...item.edgePath, edge.id],
+        nodeId: selectedEdge.target,
+        stream: { ...item.stream, firstEdgeId: item.stream.firstEdgeId || selectedEdge.id },
+        edgePath: [...item.edgePath, selectedEdge.id],
       });
-    });
+    } else {
+      // Round Robin (Even Split): split stream bandwidth evenly across all outbound links
+      const splitBandwidth = item.stream.bandwidth / outboundEdges.length;
+      
+      outboundEdges.forEach((edge) => {
+        activeEdgeSet.add(edge.id);
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
+        queue.push({
+          nodeId: edge.target,
+          stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
+          edgePath: [...item.edgePath, edge.id],
+        });
+      });
+    }
     return { forwardStream: null, handledQueueExternally: true };
   }
   return { forwardStream: null, dropBandwidth: item.stream.bandwidth };

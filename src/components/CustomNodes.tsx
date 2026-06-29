@@ -387,11 +387,12 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const algorithm = (data.algorithm as string) || 'Round Robin';
+  const isActive = isRunning && (metrics?.rxBps || 0) > 0;
 
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${isActive ? 'gigastream-active' : ''}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

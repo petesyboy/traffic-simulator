@@ -453,7 +453,7 @@ describe('Simulation Utils', () => {
           id: 'gs-1',
           type: 'gigaStreamNode',
           position: { x: 200, y: 0 },
-          data: { label: 'Load Balancer', algorithm: 'Round Robin' },
+          data: { label: 'Load Balancer', configType: 'Load Balancing', algorithm: 'Round Robin' },
         },
         {
           id: 'tool-1',
@@ -483,6 +483,11 @@ describe('Simulation Utils', () => {
           bandwidth: 6000,
           vlan: '100',
           active: true,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '1234',
+          portDst: '80',
+          protocol: 'tcp',
         }
       ];
 
@@ -498,6 +503,70 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-in-gs']).toBe(6000);
       expect(result.edgeMetrics['e-gs-t1']).toBe(3000);
       expect(result.edgeMetrics['e-gs-t2']).toBe(3000);
+    });
+
+    it('should route stream fully to one edge when algorithm is L4 Hash', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'input-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'Port 1', configType: 'Network Port', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-1',
+          type: 'gigaStreamNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'Load Balancer', configType: 'Load Balancing', algorithm: 'L4 Hash' },
+        },
+        {
+          id: 'tool-1',
+          type: 'toolNode',
+          position: { x: 400, y: -50 },
+          data: { label: 'Tool 1', configType: 'Packet Tool' },
+        },
+        {
+          id: 'tool-2',
+          type: 'toolNode',
+          position: { x: 400, y: 50 },
+          data: { label: 'Tool 2', configType: 'Packet Tool' },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-in-gs', source: 'input-1', target: 'gs-1' },
+        { id: 'e-gs-t1', source: 'gs-1', target: 'tool-1' },
+        { id: 'e-gs-t2', source: 'gs-1', target: 'tool-2' },
+      ];
+
+      const streams = [
+        {
+          id: 'stream-1',
+          name: 'Test Stream',
+          sourceNodeId: 'input-1',
+          bandwidth: 6000,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '1234',
+          portDst: '80',
+          protocol: 'tcp',
+          vlan: '100',
+          active: true,
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      expect(result.metrics['gs-1'].rxBps).toBe(6000);
+
+      // Verify that one tool gets the full 6000 Mbps and the other gets 0
+      const rx1 = result.metrics['tool-1'].rxBps;
+      const rx2 = result.metrics['tool-2'].rxBps;
+      expect((rx1 === 6000 && rx2 === 0) || (rx1 === 0 && rx2 === 6000)).toBe(true);
+
+      // Check corresponding edge metrics
+      const edge1 = result.edgeMetrics['e-gs-t1'] || 0;
+      const edge2 = result.edgeMetrics['e-gs-t2'] || 0;
+      expect((edge1 === 6000 && edge2 === 0) || (edge1 === 0 && edge2 === 6000)).toBe(true);
     });
   });
 
