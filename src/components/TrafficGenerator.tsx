@@ -223,40 +223,40 @@ const TrafficGenerator: React.FC = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: `${drawerHeight - 60}px` }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
+            <table style={{ width: '100%', minWidth: '1220px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
                   <th style={{ padding: '6px 4px', width: '180px' }}>Name</th>
-                  <th style={{ padding: '6px 4px' }}>Ingress Port</th>
-                  <th style={{ padding: '6px 4px', width: '70px' }}>VLAN</th>
-                  <th style={{ padding: '6px 4px', width: '70px' }}>Proto</th>
-                  <th style={{ padding: '6px 4px' }}>Source IP</th>
-                  <th style={{ padding: '6px 4px' }}>Dest IP</th>
+                  <th style={{ padding: '6px 4px', width: '260px' }}>Ingress Port</th>
+                  <th style={{ padding: '6px 4px', width: '65px' }}>VLAN</th>
+                  <th style={{ padding: '6px 4px', width: '75px' }}>Proto</th>
+                  <th style={{ padding: '6px 4px', width: '120px' }}>Source IP</th>
+                  <th style={{ padding: '6px 4px', width: '120px' }}>Dest IP</th>
                   <th style={{ padding: '6px 4px', width: '70px' }}>Dst Port</th>
                   <th style={{ padding: '6px 4px', width: '100px' }}>Rate</th>
-                  <th style={{ padding: '6px 4px', width: '90px' }}>Status</th>
-                  <th style={{ padding: '6px 4px', width: '60px', textAlign: 'center' }}>Active</th>
-                  <th style={{ padding: '6px 4px', width: '60px' }}>Action</th>
+                  <th style={{ padding: '6px 4px', width: '85px' }}>Status</th>
+                  <th style={{ padding: '6px 4px', width: '55px', textAlign: 'center' }}>Active</th>
+                  <th style={{ padding: '6px 4px', width: '70px', textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {trafficStreams.map((stream) => (
                   <tr key={stream.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '180px' }}>
                       <input
                         type="text"
                         value={stream.name}
                         onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', width: '175px', borderBottom: '1px solid transparent' }}
+                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', width: '170px', borderBottom: '1px solid transparent' }}
                         onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
                         onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '260px' }}>
                       <select
                         value={stream.sourceNodeId}
                         onChange={(e) => handleFieldChange(stream.id, 'sourceNodeId', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '120px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '250px' }}
                       >
                         {inputPorts.map((port) => (
                           <option key={port.id} value={port.id}>
@@ -265,66 +265,66 @@ const TrafficGenerator: React.FC = () => {
                         ))}
                       </select>
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '65px' }}>
                       <input
                         type="text"
                         value={stream.vlan}
                         onChange={(e) => handleFieldChange(stream.id, 'vlan', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '50px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '55px' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '75px' }}>
                       <select
                         value={stream.protocol}
                         onChange={(e) => handleFieldChange(stream.id, 'protocol', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '60px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '65px' }}
                       >
                         <option value="tcp">TCP</option>
                         <option value="udp">UDP</option>
                         <option value="icmp">ICMP</option>
                       </select>
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '120px' }}>
                       <input
                         type="text"
                         value={stream.ipSrc}
                         onChange={(e) => handleFieldChange(stream.id, 'ipSrc', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '120px' }}>
                       <input
                         type="text"
                         value={stream.ipDst}
                         onChange={(e) => handleFieldChange(stream.id, 'ipDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '70px' }}>
                       <input
                         type="text"
                         value={stream.portDst}
                         onChange={(e) => handleFieldChange(stream.id, 'portDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '50px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '60px' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '100px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <select
-                          value={stream.bandwidth}
-                          onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
-                          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
+                           value={stream.bandwidth}
+                           onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
+                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
                         >
-                          {![1000, 10000, 25000, 40000, 100000].includes(stream.bandwidth) && (
-                            <option value={stream.bandwidth}>
-                              {stream.bandwidth >= 1000 ? `${(stream.bandwidth / 1000).toFixed(1).replace('.0', '')} Gbps` : `${stream.bandwidth} Mbps`}
-                            </option>
-                          )}
-                          <option value={1000}>1 Gbps</option>
-                          <option value={10000}>10 Gbps</option>
-                          <option value={25000}>25 Gbps</option>
-                          <option value={40000}>40 Gbps</option>
-                          <option value={100000}>100 Gbps</option>
+                           {![1000, 10000, 25000, 40000, 100000].includes(stream.bandwidth) && (
+                             <option value={stream.bandwidth}>
+                               {stream.bandwidth >= 1000 ? `${(stream.bandwidth / 1000).toFixed(1).replace('.0', '')} Gbps` : `${stream.bandwidth} Mbps`}
+                             </option>
+                           )}
+                           <option value={1000}>1 Gbps</option>
+                           <option value={10000}>10 Gbps</option>
+                           <option value={25000}>25 Gbps</option>
+                           <option value={40000}>40 Gbps</option>
+                           <option value={100000}>100 Gbps</option>
                         </select>
                         {/* Live drifted rate (shown while simulation is running) */}
                         {isRunning && stream.active && (
@@ -334,7 +334,7 @@ const TrafficGenerator: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '85px' }}>
                       {/* Status badge: Idle / Inactive / ✓ Passed / ❌ Filtered */}
                       {!isRunning ? (
                         <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', fontSize: '10px', color: '#888', display: 'inline-block' }}>
@@ -354,7 +354,7 @@ const TrafficGenerator: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '4px 2px', textAlign: 'center' }}>
+                    <td style={{ padding: '4px 2px', width: '55px', textAlign: 'center' }}>
                       <input
                         type="checkbox"
                         checked={stream.active}
@@ -362,7 +362,7 @@ const TrafficGenerator: React.FC = () => {
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px' }}>
+                    <td style={{ padding: '4px 2px', width: '70px', textAlign: 'center' }}>
                       <button className="danger" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => deleteTrafficStream(stream.id)}>
                         Delete
                       </button>
