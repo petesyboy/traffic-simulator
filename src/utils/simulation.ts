@@ -695,8 +695,10 @@ export const calculateSimulationStep = (
 
         activeEdgeSet.add(edge.id);
         
-        // Forward the main packet stream if the target is NOT a metadata-only tool
-        if (hasForwardStream && !isTargetMetadataTool) {
+        // Forward the main packet stream if the target is NOT a metadata-only tool (unless the stream itself is metadata, in which case forward to metadata tools)
+        const isMetadataStream = forwardStream!.trafficType === 'metadata';
+        const shouldForward = isMetadataStream ? !isTargetPacketTool : !isTargetMetadataTool;
+        if (hasForwardStream && shouldForward) {
           edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
           queue.push({
             nodeId: edge.target,

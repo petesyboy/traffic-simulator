@@ -124,7 +124,8 @@ export function generateBom(
   nodes: CustomNode[],
   edges: Edge[],
   globalLicenseMode: 'HTL' | 'Perpetual',
-  globalTermDuration: string
+  globalTermDuration: string,
+  globalRegion: 'US' | 'EU' | 'UK' = 'US'
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -188,6 +189,23 @@ export function generateBom(
     addRow(resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) {
       addRow(resolved.swSku, 1, 'Chassis', termOverride);
+    }
+
+    // Suggest power supply cables for TA and HC chassis nodes
+    const isPoweredChassis = model.includes('TA') || model.includes('HC');
+    if (isPoweredChassis) {
+      const isDC = node.data?.powerSupply === 'DC';
+      if (isDC) {
+        addRow('PCD-00051', 2, 'Dependency');
+      } else {
+        let acSku = 'PCD-00001'; // Default US
+        if (globalRegion === 'EU') {
+          acSku = 'PCD-00003';
+        } else if (globalRegion === 'UK') {
+          acSku = 'PCD-00005';
+        }
+        addRow(acSku, 2, 'Dependency');
+      }
     }
 
     if (resolved.advSku) {

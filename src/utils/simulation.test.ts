@@ -211,6 +211,62 @@ describe('Simulation Utils', () => {
       // Vectra (Packet Tool) should receive only raw packets (10G = 10000 Mbps)
       expect(result.edgeMetrics['e-hc-vectra']).toBe(10000);
     });
+
+    it('should forward metadata from standalone GigaSMART Application Metadata node to metadata tool', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-1',
+          type: 'gigaSmartNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Application Metadata',
+            configType: 'GigaSMART',
+            actionType: 'Application Metadata',
+            metadataFormat: 'CEF',
+            metadataRate: 3
+          },
+        },
+        {
+          id: 'splunk-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: { label: 'Splunk', configType: 'Metadata Tool', toolName: 'Splunk' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-gs', source: 'tap-1', target: 'gs-1' },
+        { id: 'e-gs-splunk', source: 'gs-1', target: 'splunk-1' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          bandwidth: 10000, // 10G
+          active: true,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '12345',
+          portDst: '80',
+          protocol: 'tcp'
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      
+      // Splunk (Metadata Tool) should receive 10000 * 3% = 300 Mbps of CEF metadata
+      expect(result.metrics['splunk-1']).toBeDefined();
+      expect(result.metrics['splunk-1'].rxBps).toBe(300);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {
@@ -289,6 +345,50 @@ describe('Simulation Utils', () => {
       expect(q28502tRow).toBeDefined();
       // Should suggest 1 for TA25E and 1 for HC1-Plus = 2 total
       expect(q28502tRow?.qty).toBe(2);
+    });
+
+    it('should suggest region-based power supply cords (US, EU, UK) and DC cords', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'HC1',
+            configType: 'HC',
+            model: 'GigaVUE-HC1',
+            powerSupply: 'AC'
+          },
+        },
+        {
+          id: 'ta-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'TA25E',
+            configType: 'TA',
+            model: 'GigaVUE-TA25E',
+            powerSupply: 'DC'
+          },
+        }
+      ];
+
+      // US Region
+      const bomUS = generateBom(nodes, [], 'HTL', '36', 'US');
+      const usCord = bomUS.find(r => r.sku === 'PCD-00001');
+      const dcCordUS = bomUS.find(r => r.sku === 'PCD-00051');
+      expect(usCord?.qty).toBe(2);
+      expect(dcCordUS?.qty).toBe(2);
+
+      // EU Region
+      const bomEU = generateBom(nodes, [], 'HTL', '36', 'EU');
+      const euCord = bomEU.find(r => r.sku === 'PCD-00003');
+      expect(euCord?.qty).toBe(2);
+
+      // UK Region
+      const bomUK = generateBom(nodes, [], 'HTL', '36', 'UK');
+      const ukCord = bomUK.find(r => r.sku === 'PCD-00005');
+      expect(ukCord?.qty).toBe(2);
     });
   });
 });
