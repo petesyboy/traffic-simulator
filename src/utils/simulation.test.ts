@@ -563,5 +563,33 @@ describe('Simulation Utils', () => {
       const ukCord = bomUK.find(r => r.sku === 'PCD-00005');
       expect(ukCord?.qty).toBe(2);
     });
+
+    it('should suggest upgrade license for TA400 when capacity is set to Upgrade', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'ta-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TA400E',
+            configType: 'TA',
+            model: 'GigaVUE-TA400E',
+            portCapacity: 'Upgrade'
+          },
+        }
+      ];
+
+      // Perpetual
+      const bomPerpetual = generateBom(nodes, [], 'Perpetual', '36');
+      const upgradeRowPerp = bomPerpetual.find(r => r.sku === 'UPG-TAC40EA');
+      expect(upgradeRowPerp).toBeDefined();
+      expect(upgradeRowPerp?.qty).toBe(1);
+
+      // HTL Term
+      const bomHTL = generateBom(nodes, [], 'HTL', '36');
+      const upgradeRowHTL = bomHTL.find(r => r.sku === 'UPG-TAC40EA-SW-TM');
+      expect(upgradeRowHTL).toBeDefined();
+      expect(upgradeRowHTL?.qty).toBe(1);
+    });
   });
 });

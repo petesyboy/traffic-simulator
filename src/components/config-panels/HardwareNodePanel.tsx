@@ -119,8 +119,9 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     ? availableOpticBoards[0] 
     : availableOpticBoards.find(b => b.board === selectedOpticBoard);
 
-  const getOpticSpeed = (opticName: string): '1G' | '10G' | '25G' | '40G' | '100G' | 'Unknown' => {
+  const getOpticSpeed = (opticName: string): '1G' | '10G' | '25G' | '40G' | '100G' | '400G' | 'Unknown' => {
     const name = opticName.toUpperCase();
+    if (name.includes('400G') || name.startsWith('QDD-')) return '400G';
     if (name.includes('100G') || name.startsWith('Q28-')) return '100G';
     if (name.includes('40G') || name.startsWith('QSF-')) return '40G';
     if (name.includes('25G') || name.startsWith('SFP-55')) return '25G';
@@ -398,6 +399,85 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   const resolved = resolveNodeSkus({ ...node.data, model, sku }, projectLicenseMode);
 
+  // License Exceeded Validation
+  const getTaLicenseLimits = (modelName: string, capacity: string): { sfp: number, qsfp: number } => {
+    const isTA25 = modelName.includes('TA25');
+    const cap = capacity || 'Full';
+    if (isTA25) {
+      if (cap === 'Quarter') return { sfp: 12, qsfp: 2 };
+      if (cap === 'Half') return { sfp: 24, qsfp: 4 };
+      return { sfp: 48, qsfp: 8 };
+    } else {
+      if (cap === 'Quarter' || cap === '100G') return { sfp: 2, qsfp: 32 };
+      if (cap === 'Half') return { sfp: 0, qsfp: 16 };
+      return { sfp: 2, qsfp: 32 };
+    }
+  };
+
+  const capVal = (node.data?.portCapacity as string) || 'Full';
+  const limits = getTaLicenseLimits(model || '', capVal);
+
+  let usedSfp = 0;
+  let usedQsfp = 0;
+  let used400G = 0;
+
+  installedOptics.forEach(opt => {
+    const speed = getOpticSpeed(opt.optic);
+    if (speed === '100G' || speed === '40G') {
+      usedQsfp += opt.qty;
+    } else if (speed === '400G') {
+      usedQsfp += opt.qty;
+      used400G += opt.qty;
+    } else if (speed !== 'Unknown') {
+      usedSfp += opt.qty;
+    }
+  });
+
+  let isLicenseExceeded = false;
+  let exceedMessage = '';
+  let nextLicenseVal: string | null = null;
+  let nextLicenseLabel = '';
+
+  if (model?.includes('TA')) {
+    if (model.includes('TA25')) {
+      if (usedSfp > limits.sfp || usedQsfp > limits.qsfp) {
+        isLicenseExceeded = true;
+        exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the licensed port count (${limits.sfp} SFP / ${limits.qsfp} QSFP cages).`;
+        if (capVal === 'Quarter') {
+          nextLicenseVal = 'Half';
+          nextLicenseLabel = '24 / 4 Ports License';
+        } else if (capVal === 'Half') {
+          nextLicenseVal = 'Full';
+          nextLicenseLabel = '48 / 8 Ports License';
+        }
+      }
+    } else if (model.includes('TA200')) {
+      if (usedQsfp > limits.qsfp) {
+        isLicenseExceeded = true;
+        exceedMessage = `Configured optics (${usedQsfp} QSFP) exceed the licensed port count (${limits.qsfp} QSFP cages).`;
+        if (capVal === 'Half') {
+          nextLicenseVal = 'Full';
+          nextLicenseLabel = '32 Ports (QSFP) License';
+        }
+      }
+    } else if (model.includes('TA400')) {
+      if (usedSfp > limits.sfp || usedQsfp > limits.qsfp) {
+        isLicenseExceeded = true;
+        exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the physical chassis limits (2 SFP / 32 QSFP).`;
+      } else if (capVal === '100G' && used400G > 0) {
+        isLicenseExceeded = true;
+        exceedMessage = `Configured 400G optics exceed the 100G Software Port License limit (0 x 400G ports enabled).`;
+        nextLicenseVal = 'Upgrade';
+        nextLicenseLabel = '16 x 100Gb & 16 x 400Gb ports + 2 x 10Gb SFP Cages';
+      } else if (capVal === 'Upgrade' && used400G > 16) {
+        isLicenseExceeded = true;
+        exceedMessage = `Configured 400G optics (${used400G}) exceed the upgrade license limit (max 16 x 400G ports enabled).`;
+        nextLicenseVal = 'Full';
+        nextLicenseLabel = '32 x 400Gb ports + 2 x 10Gb SFP Cages';
+      }
+    }
+  }
+
   const tabStyle = { padding: '6px 12px', fontSize: '11px', fontWeight: 'bold' as const, border: 'none', borderRadius: '4px', cursor: 'pointer' };
 
   return (
@@ -409,6 +489,42 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           <button onClick={() => setActiveTab('apps')} style={{ ...tabStyle, background: activeTab === 'apps' ? '#333' : 'transparent', color: activeTab === 'apps' ? '#fff' : '#888' }}>GigaSMART Apps</button>
         )}
       </div>
+
+      {isLicenseExceeded && (
+        <div style={{
+          background: 'rgba(239, 83, 80, 0.08)',
+          border: '1px solid rgba(239, 83, 80, 0.25)',
+          borderRadius: '6px',
+          padding: '12px',
+          marginBottom: '16px',
+          fontSize: '12px',
+          color: '#ff8a80',
+          lineHeight: '1.4'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', color: '#ff5252' }}>
+            ⚠️ License Port Count Exceeded
+          </div>
+          <div>{exceedMessage}</div>
+          {nextLicenseVal && (
+            <button
+              onClick={() => updateNodeData(node.id, { portCapacity: nextLicenseVal })}
+              style={{
+                marginTop: '8px',
+                background: '#ef5350',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Upgrade License to {nextLicenseLabel}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── GENERAL TAB ── */}
       <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}>
@@ -473,18 +589,41 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 <>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Software Port Capacity</label>
-                    {model.includes('TA400') ? (
-                      <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                        <option value="Full">32 x 400Gb ports</option>
-                        <option value="100G">32 x 100Gb ports</option>
-                      </select>
-                    ) : (
-                      <select value={(node.data?.portCapacity as string) || 'Full'} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                        <option value="Full">Full Capacity</option>
-                        <option value="Half">Half Capacity</option>
-                        <option value="Quarter">Quarter Capacity</option>
-                      </select>
-                    )}
+                    {(() => {
+                      const val = (node.data?.portCapacity as string) || 'Full';
+                      if (model.includes('TA400')) {
+                        return (
+                          <select value={val} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                            <option value="Full">32 x 400Gb ports + 2 x 10Gb SFP Cages</option>
+                            <option value="Upgrade">16 x 100Gb & 16 x 400Gb ports + 2 x 10Gb SFP Cages</option>
+                            <option value="100G">32 x 100Gb ports + 2 x 10Gb SFP Cages</option>
+                          </select>
+                        );
+                      } else if (model.includes('TA200')) {
+                        return (
+                          <select value={val === 'Quarter' ? 'Half' : val} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                            <option value="Full">32 Ports (QSFP) License</option>
+                            <option value="Half">16 Ports (QSFP) License</option>
+                          </select>
+                        );
+                      } else if (model.includes('TA25')) {
+                        return (
+                          <select value={val} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                            <option value="Full">48 / 8 Ports License</option>
+                            <option value="Half">24 / 4 Ports License</option>
+                            <option value="Quarter">12 / 2 Ports License</option>
+                          </select>
+                        );
+                      } else {
+                        return (
+                          <select value={val} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
+                            <option value="Full">Full Capacity</option>
+                            <option value="Half">Half Capacity</option>
+                            <option value="Quarter">Quarter Capacity</option>
+                          </select>
+                        );
+                      }
+                    })()}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
                     <input
