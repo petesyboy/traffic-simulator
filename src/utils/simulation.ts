@@ -785,7 +785,14 @@ export const calculateSimulationStep = (
         // Forward the main stream if target tool supports its traffic type
         if (hasForwardStream) {
           const isMetadata = forwardStream!.trafficType === 'metadata';
-          const canAccept = isMetadata ? supportsMetadata : supportsPackets;
+          let canAccept = isMetadata ? supportsMetadata : supportsPackets;
+          
+          // If this is a storage tool and we are generating metadata (like AMI), 
+          // do not send the raw packet stream over to the storage tool.
+          if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) {
+            canAccept = false;
+          }
+
           if (canAccept) {
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
             queue.push({
