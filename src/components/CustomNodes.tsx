@@ -386,7 +386,12 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
+  const edges = useStore((state) => state.edges);
   const algorithm = (data.algorithm as string) || 'Round Robin';
+  const linkCount = (data.linkCount as number) || 2;
+  
+  const actualLinks = edges.filter((e) => e.source === id).length;
+  const isMismatch = actualLinks !== linkCount;
   const isActive = isRunning && (metrics?.rxBps || 0) > 0;
 
   return (
@@ -402,6 +407,25 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         </div>
         <div className="node-type-label">GigaStream Load Balancer</div>
         <div className="node-meta">Method: {algorithm}</div>
+        <div className="node-meta" style={{ color: '#00e5ff', fontWeight: 'bold' }}>
+          Configured Links: {linkCount} (Connected: {actualLinks})
+        </div>
+
+        {isMismatch && (
+          <div className="node-warning-badge" style={{
+            marginTop: '6px',
+            padding: '4px 6px',
+            fontSize: '9.5px',
+            color: '#ffd54f',
+            background: 'rgba(255, 213, 79, 0.12)',
+            border: '1px solid rgba(255, 213, 79, 0.35)',
+            borderRadius: '3px',
+            lineHeight: '1.2',
+            fontWeight: 'bold'
+          }}>
+            ⚠️ Port mismatch: expected {linkCount}, connected {actualLinks}
+          </div>
+        )}
 
         {isRunning && (
           <div className="node-metrics">
