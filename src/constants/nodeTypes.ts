@@ -78,7 +78,7 @@ export const CONFIG_TYPES = {
   // Tool classes
   PACKET_TOOL:   'Packet Tool',
   METADATA_TOOL: 'Metadata Tool',
-  STORAGE_TOOL:  'Storage Tool',
+  STORAGE_TOOL:  'Objects',
 
   // Port group
   PORT_GROUP: 'Port Group',

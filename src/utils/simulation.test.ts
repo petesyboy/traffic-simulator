@@ -362,6 +362,84 @@ describe('Simulation Utils', () => {
       expect(result.metrics['extrahop-1']).toBeDefined();
       expect(result.metrics['extrahop-1'].rxBps).toBe(10000);
     });
+
+    it('should forward traffic correctly to custom tools with different input formats', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-1',
+          type: 'gigaSmartNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Application Metadata',
+            configType: 'GigaSMART',
+            actionType: 'Application Metadata',
+            metadataFormat: 'JSON',
+            metadataRate: 5
+          },
+        },
+        {
+          id: 'custom-packet-1',
+          type: 'toolNode',
+          position: { x: 200, y: 100 },
+          data: { label: 'Custom Packet Consumer', configType: 'Packet Tool', toolName: 'Custom Packet Consumer', expectedType: 'packet' },
+        },
+        {
+          id: 'custom-metadata-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: { label: 'Custom AMI Consumer', configType: 'Metadata Tool', toolName: 'Custom AMI Consumer', expectedType: 'metadata' },
+        },
+        {
+          id: 'custom-objects-1',
+          type: 'toolNode',
+          position: { x: 400, y: 100 },
+          data: { label: 'Custom Objects Store', configType: 'Objects', toolName: 'Custom Objects Store', expectedType: 'objects' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-gs', source: 'tap-1', target: 'gs-1' },
+        { id: 'e-tap-pkt', source: 'tap-1', target: 'custom-packet-1' },
+        { id: 'e-gs-meta', source: 'gs-1', target: 'custom-metadata-1' },
+        { id: 'e-gs-obj', source: 'gs-1', target: 'custom-objects-1' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          bandwidth: 10000,
+          active: true,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '1234',
+          portDst: '80',
+          protocol: 'tcp'
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      
+      // Custom packet tool gets the packet stream (10000 Mbps)
+      expect(result.metrics['custom-packet-1']).toBeDefined();
+      expect(result.metrics['custom-packet-1'].rxBps).toBe(10000);
+
+      // Custom metadata tool gets the metadata stream (5% of 10000 = 500 Mbps)
+      expect(result.metrics['custom-metadata-1']).toBeDefined();
+      expect(result.metrics['custom-metadata-1'].rxBps).toBe(500);
+
+      // Custom objects tool gets the metadata stream (5% of 10000 = 500 Mbps)
+      expect(result.metrics['custom-objects-1']).toBeDefined();
+      expect(result.metrics['custom-objects-1'].rxBps).toBe(500);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {

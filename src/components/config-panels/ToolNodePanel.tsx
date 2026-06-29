@@ -31,7 +31,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
         >
           <option value={CONFIG_TYPES.PACKET_TOOL}>Packet Consuming Tool</option>
           <option value={CONFIG_TYPES.METADATA_TOOL}>Metadata Consuming Tool</option>
-          <option value={CONFIG_TYPES.STORAGE_TOOL}>S3 / Object Storage</option>
+          <option value={CONFIG_TYPES.STORAGE_TOOL}>Objects</option>
         </select>
       </FormGroup>
 

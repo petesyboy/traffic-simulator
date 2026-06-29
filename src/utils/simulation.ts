@@ -57,7 +57,8 @@ const isStorageToolConfig = (configType: string): boolean => {
   const norm = configType.trim();
   return norm === 'Storage Tool' || 
          norm === 'AWS S3 Storage' || 
-         norm === 'S3';
+         norm === 'S3' ||
+         norm === 'Objects';
 };
 
 // ─── IP matching helpers ──────────────────────────────────────────────────────
@@ -229,13 +230,15 @@ const processToolNode = (
 ): NodeProcessingResult => {
   const data = node.data as ToolNodeData;
   const configType = data.configType || '';
-  const isPacketTool = isPacketToolConfig(configType);
-  const isMetadataTool = isMetadataToolConfig(configType);
+  const isPacketTool = isPacketToolConfig(configType) || data.expectedType === 'packet';
+  const isMetadataTool = isMetadataToolConfig(configType) || data.expectedType === 'metadata';
+  const isStorageTool = isStorageToolConfig(configType) || data.expectedType === 'objects';
   const rType = item.stream.trafficType || 'packet';
   
   let isValidForTool = true;
   if (isPacketTool && rType !== 'packet') isValidForTool = false;
   if (isMetadataTool && rType !== 'metadata') isValidForTool = false;
+  if (isStorageTool && rType !== 'metadata' && rType !== 'packet') isValidForTool = false;
 
   if (!toolReceivedStreams[node.id]) {
     toolReceivedStreams[node.id] = [];
@@ -795,8 +798,8 @@ export const calculateSimulationStep = (
       const configType = data.configType || '';
       const expectedFormat = data.expectedFormat || 'CEF';
       
-      const isPacketTool = isPacketToolConfig(configType);
-      const isMetadataTool = isMetadataToolConfig(configType);
+      const isPacketTool = isPacketToolConfig(configType) || data.expectedType === 'packet';
+      const isMetadataTool = isMetadataToolConfig(configType) || data.expectedType === 'metadata';
       
       const received = toolReceivedStreams[node.id] || [];
       
