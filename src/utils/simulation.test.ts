@@ -267,6 +267,60 @@ describe('Simulation Utils', () => {
       expect(result.metrics['splunk-1']).toBeDefined();
       expect(result.metrics['splunk-1'].rxBps).toBe(300);
     });
+
+    it('should forward metadata from standalone GigaSMART node to S3 Storage Tool', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-1',
+          type: 'gigaSmartNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Application Metadata',
+            configType: 'GigaSMART',
+            actionType: 'Application Metadata',
+            metadataFormat: 'CEF',
+            metadataRate: 3
+          },
+        },
+        {
+          id: 's3-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: { label: 'S3 Storage', configType: 'Storage Tool', toolName: 'S3' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-gs', source: 'tap-1', target: 'gs-1' },
+        { id: 'e-gs-s3', source: 'gs-1', target: 's3-1' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          bandwidth: 10000,
+          active: true,
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '12345',
+          portDst: '80',
+          protocol: 'tcp'
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      expect(result.metrics['s3-1']).toBeDefined();
+      expect(result.metrics['s3-1'].rxBps).toBe(300);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {
@@ -303,8 +357,8 @@ describe('Simulation Utils', () => {
 
       const bom = generateBom(nodes, edges, 'Perpetual', '36');
       
-      // Should suggest SFP-532 with quantity = 3 links * 2 = 6
-      const sfp532Row = bom.find(row => row.sku === 'SFP-532');
+      // Should suggest SFP-532T (or SFP-532) with quantity = 3 links * 2 = 6
+      const sfp532Row = bom.find(row => row.sku === 'SFP-532T' || row.sku === 'SFP-532');
       expect(sfp532Row).toBeDefined();
       expect(sfp532Row?.qty).toBe(6);
     });

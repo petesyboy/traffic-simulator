@@ -18,6 +18,10 @@ function resolveOpticSku(opticStr: string, chassisModel: string): string {
     }
     return 'CBL-205';
   }
+  const taaSku = firstWord + 'T';
+  if (skus[taaSku]) {
+    return taaSku;
+  }
   return firstWord;
 }
 
