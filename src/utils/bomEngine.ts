@@ -21,6 +21,82 @@ function resolveOpticSku(opticStr: string, chassisModel: string): string {
   return firstWord;
 }
 
+export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
+  return nodes.map(node => {
+    if (node.type !== NODE_TYPES.HARDWARE || String(node.data?.model || '').includes('TAP')) {
+      return node;
+    }
+
+    const connectedEdges = edges.filter(e => e.target === node.id || e.source === node.id);
+    const tapOpticsNeeded: Record<string, number> = {};
+
+    connectedEdges.forEach(e => {
+      const otherId = e.source === node.id ? e.target : e.source;
+      const sourceNode = nodes.find(n => n.id === otherId);
+      if (sourceNode) {
+        const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
+        const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
+        if (isHardwareTap || isInputTap) {
+          const isSMTap = isHardwareTap 
+            ? (String(sourceNode.data?.sku || '').includes('253') || 
+               String(sourceNode.data?.sku || '').includes('273') || 
+               String(sourceNode.data?.sku || '').includes('453') || 
+               String(sourceNode.data?.model || '').toLowerCase().includes('single-mode') || 
+               String(sourceNode.data?.model || '').toLowerCase().includes('sm') || 
+               String(sourceNode.data?.model || '').includes('253T') || 
+               String(sourceNode.data?.model || '').includes('273T') || 
+               String(sourceNode.data?.model || '').includes('453T'))
+            : (sourceNode.data?.tapFiberMode === 'Singlemode');
+          
+          const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
+          const selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+          const numLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
+          const requiredQty = numLinks * 2;
+
+          tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + requiredQty;
+        }
+      }
+    });
+
+    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
+    let changed = false;
+
+    const nextOptics = currentOptics.map(opt => {
+      const needed = tapOpticsNeeded[opt.optic];
+      if (needed !== undefined) {
+        if (opt.qty < needed) {
+          changed = true;
+          delete tapOpticsNeeded[opt.optic];
+          return { ...opt, qty: needed };
+        }
+        delete tapOpticsNeeded[opt.optic];
+      }
+      return opt;
+    });
+
+    Object.entries(tapOpticsNeeded).forEach(([optic, qty]) => {
+      nextOptics.push({
+        board: 'Base Ports',
+        optic,
+        qty
+      });
+      changed = true;
+    });
+
+    if (changed) {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          optics: nextOptics
+        }
+      };
+    }
+
+    return node;
+  });
+}
+
 export interface BomRow {
   sku: string;
   qty: number;
@@ -35,6 +111,7 @@ export function generateBom(
   globalLicenseMode: 'HTL' | 'Perpetual',
   globalTermDuration: string
 ): BomRow[] {
+  const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
   let totalTapModules = 0;
 
@@ -72,7 +149,7 @@ export function generateBom(
     }
   };
 
-  nodes.forEach(node => {
+  syncedNodes.forEach(node => {
     if (node.type !== 'hardwareNode') return;
     
     const model = (node.data?.model as string) || '';
@@ -118,36 +195,6 @@ export function generateBom(
       if (!opt.optic) return;
       const opticSku = resolveOpticSku(opt.optic, model);
       addRow(opticSku, opt.qty, 'Optic');
-    });
-
-    // Automatically suggest baseline optics for connected TAPs (Simple and Advanced)
-    const incomingEdges = edges.filter(e => e.target === node.id);
-    incomingEdges.forEach(e => {
-      const sourceNode = nodes.find(n => n.id === e.source);
-      if (sourceNode) {
-        const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
-        const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
-        if (isHardwareTap || isInputTap) {
-          const isSMTap = isHardwareTap 
-            ? (String(sourceNode.data?.sku || '').includes('253') || 
-               String(sourceNode.data?.sku || '').includes('273') || 
-               String(sourceNode.data?.sku || '').includes('453') || 
-               String(sourceNode.data?.model || '').toLowerCase().includes('single-mode') || 
-               String(sourceNode.data?.model || '').toLowerCase().includes('sm') || 
-               String(sourceNode.data?.model || '').includes('253T') || 
-               String(sourceNode.data?.model || '').includes('273T') || 
-               String(sourceNode.data?.model || '').includes('453T'))
-            : (sourceNode.data?.tapFiberMode === 'Singlemode');
-          
-          const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
-          const selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
-          const numLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
-          const requiredQty = numLinks * 2;
-          
-          const opticSku = resolveOpticSku(selectedOpticVal, model);
-          addRow(opticSku, requiredQty, 'Optic');
-        }
-      }
     });
 
     // Trace downstream paths to find GigaSMART action nodes connected to this HC chassis
@@ -324,8 +371,8 @@ export function generateBom(
 
   // Scan edges for TA-to-HC high-speed links and suggest appropriate optics
   edges.forEach(edge => {
-    const sourceNode = nodes.find(n => n.id === edge.source);
-    const targetNode = nodes.find(n => n.id === edge.target);
+    const sourceNode = syncedNodes.find(n => n.id === edge.source);
+    const targetNode = syncedNodes.find(n => n.id === edge.target);
     if (sourceNode?.type === NODE_TYPES.HARDWARE && targetNode?.type === NODE_TYPES.HARDWARE) {
       const srcModel = String(sourceNode.data?.model || '');
       const dstModel = String(targetNode.data?.model || '');
@@ -540,10 +587,11 @@ export function validateConfiguration(
     }
 
     // Calculate TAP link requirements
-    const incomingTapEdges = edges.filter((e) => e.target === chassis.id);
+    const connectedEdges = edges.filter((e) => e.target === chassis.id || e.source === chassis.id);
     let tappedLinks = 0;
-    incomingTapEdges.forEach((e) => {
-      const sourceNode = nodes.find((n) => n.id === e.source);
+    connectedEdges.forEach((e) => {
+      const otherId = e.target === chassis.id ? e.source : e.target;
+      const sourceNode = nodes.find((n) => n.id === otherId);
       if (sourceNode?.data?.model?.includes('TAP')) {
         tappedLinks += (sourceNode.data.tappedLinksCount as number) ?? 1;
       }

@@ -53,7 +53,7 @@ const appsList = [
 // ─── Sidebar component ────────────────────────────────────────────────────────
 
 const Sidebar: React.FC = () => {
-  const { advancedMode, setDraggedNodeType } = useStore();
+  const { advancedMode, setDraggedNodeType, sidebarMessage, setSidebarMessage } = useStore();
   const [openSections, setOpenSections] = useState({
     demo: true,  // "Demonstration" section — expanded by default
     apps: true,  // "Applications" section — shows all 15 GigaSMART apps
@@ -80,13 +80,13 @@ const Sidebar: React.FC = () => {
     if (!isResizing) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Constrain sidebar width between 200px and 450px
+      const newWidth = Math.max(200, Math.min(450, e.clientX));
+      setWidth(newWidth);
+      
       const aside = document.querySelector('.sidebar-elements');
       if (aside) {
-        const rect = aside.getBoundingClientRect();
-        const newWidth = e.clientX - rect.left;
-        if (newWidth >= 200 && newWidth <= 500) {
-          setWidth(newWidth);
-        }
+        (aside as HTMLElement).style.width = `${newWidth}px`;
       }
     };
 
@@ -344,6 +344,31 @@ const Sidebar: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Sidebar message panel */}
+        {sidebarMessage && (
+          <div style={{ 
+            padding: '10px 12px', 
+            background: 'rgba(76, 175, 80, 0.08)', 
+            borderTop: '1px solid rgba(76, 175, 80, 0.25)', 
+            borderLeft: '4px solid #4caf50',
+            fontSize: '11px', 
+            color: '#c8e6c9', 
+            position: 'relative',
+            flexShrink: 0
+          }}>
+            <div style={{ fontWeight: 'bold', color: '#4caf50', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📢 Inventory Auto-configured</span>
+              <button 
+                onClick={() => setSidebarMessage(null)} 
+                style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+              >
+                ✕
+              </button>
+            </div>
+            {sidebarMessage}
           </div>
         )}
 

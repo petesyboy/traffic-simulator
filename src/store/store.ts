@@ -13,6 +13,7 @@ import {
 } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
 import { NODE_TYPES } from '../constants/nodeTypes';
+import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 
 export interface TrafficStream {
   id: string;
@@ -119,6 +120,8 @@ export type RFState = {
   deliveredStreams: string[];
   uniqueEgressBps: number;
   fitViewTrigger: number;
+  sidebarMessage: string | null;
+  setSidebarMessage: (msg: string | null) => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -209,9 +212,7 @@ export function syncSplunkLabels(nodes: CustomNode[], edges: Edge[]): CustomNode
   });
 }
 
-export function syncOpticsOnTapConnection(nodes: CustomNode[], _edges: Edge[]): CustomNode[] {
-  return nodes;
-}
+
 
 // Create a default topology
 
@@ -547,6 +548,8 @@ export const useStore = create<RFState>((set, get) => ({
   deliveredStreams: [],
   uniqueEgressBps: 0,
   fitViewTrigger: 0,
+  sidebarMessage: null,
+  setSidebarMessage: (msg) => set({ sidebarMessage: msg }),
   
   onNodesChange: (changes: NodeChange<CustomNode>[]) => {
     let nextNodes = applyNodeChanges<CustomNode>(changes, get().nodes);
@@ -632,24 +635,41 @@ export const useStore = create<RFState>((set, get) => ({
       const tappedLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
       const requiredOptics = tappedLinks * 2;
 
+      const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
+      const selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+
+      let addedOpticsMsg = '';
+      let updatedOptics = [...installedOptics];
+
       if (tapFiber === 'Multimode') {
-        if (smCount > 0 && mmCount === 0) {
-          alert(`Connection rejected: Linking a multi-mode tap to single-mode optics is not allowed.`);
-          return;
-        }
         if (mmCount < requiredOptics) {
-          alert(`Connection rejected: The multi-mode tap requires ${requiredOptics} multi-mode optic ports (2 per tapped link) on ${targetNode.data.model}, but only ${mmCount} are installed. You need ${requiredOptics - mmCount} more multi-mode optics.`);
-          return;
+          const needed = requiredOptics - mmCount;
+          const idx = updatedOptics.findIndex(opt => opt.optic === selectedOpticVal);
+          if (idx >= 0) {
+            updatedOptics[idx] = { ...updatedOptics[idx], qty: updatedOptics[idx].qty + needed };
+          } else {
+            updatedOptics.push({ board: 'Base Ports', optic: selectedOpticVal, qty: needed });
+          }
+          addedOpticsMsg = `Suggested and installed ${needed} x ${selectedOpticVal} multi-mode optics in ${targetNode.data.model} to support the connection from ${sourceNode.data.label || 'TAP'}.`;
         }
       } else if (tapFiber === 'Singlemode') {
-        if (mmCount > 0 && smCount === 0) {
-          alert(`Connection rejected: Linking a single-mode tap to multi-mode optics is not allowed.`);
-          return;
-        }
         if (smCount < requiredOptics) {
-          alert(`Connection rejected: The single-mode tap requires ${requiredOptics} single-mode optic ports (2 per tapped link) on ${targetNode.data.model}, but only ${smCount} are installed. You need ${requiredOptics - smCount} more single-mode optics.`);
-          return;
+          const needed = requiredOptics - smCount;
+          const idx = updatedOptics.findIndex(opt => opt.optic === selectedOpticVal);
+          if (idx >= 0) {
+            updatedOptics[idx] = { ...updatedOptics[idx], qty: updatedOptics[idx].qty + needed };
+          } else {
+            updatedOptics.push({ board: 'Base Ports', optic: selectedOpticVal, qty: needed });
+          }
+          addedOpticsMsg = `Suggested and installed ${needed} x ${selectedOpticVal} single-mode optics in ${targetNode.data.model} to support the connection from ${sourceNode.data.label || 'TAP'}.`;
         }
+      }
+
+      if (addedOpticsMsg) {
+        set({
+          nodes: get().nodes.map(n => n.id === targetNode.id ? { ...n, data: { ...n.data, optics: updatedOptics } } : n),
+          sidebarMessage: addedOpticsMsg
+        });
       }
     }
 
