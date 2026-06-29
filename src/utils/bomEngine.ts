@@ -121,7 +121,7 @@ export interface BomRow {
   qty: number;
   description: string;
   term?: string;
-  type: 'Chassis' | 'Module' | 'Optic' | 'Dependency' | 'TAP';
+  type: 'Chassis' | 'Module' | 'Optic' | 'Dependency' | 'TAP' | 'License';
 }
 
 export function generateBom(
@@ -192,7 +192,12 @@ export function generateBom(
 
     addRow(resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) {
-      addRow(resolved.swSku, 1, 'Chassis', termOverride);
+      addRow(resolved.swSku, 1, 'License', termOverride);
+    }
+
+    if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') {
+      const upgradeSku = globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA';
+      addRow(upgradeSku, 1, 'License', termOverride);
     }
 
     // Suggest power supply cables for TA and HC chassis nodes
@@ -213,7 +218,7 @@ export function generateBom(
     }
 
     if (resolved.advSku) {
-      addRow(resolved.advSku, 1, 'Dependency', termOverride);
+      addRow(resolved.advSku, 1, 'License', termOverride);
     }
 
     const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};
@@ -221,7 +226,7 @@ export function generateBom(
       if (!boardSku) return;
       if (licenseMode === 'HTL') {
          addRow(boardSku + '-HW', 1, 'Module');
-         addRow(boardSku + '-SW-TM', 1, 'Module', termOverride);
+         addRow(boardSku + '-SW-TM', 1, 'License', termOverride);
       } else {
          addRow(boardSku, 1, 'Module');
       }
@@ -337,7 +342,7 @@ export function generateBom(
 
         if (gsSku) {
           if (isHtl) gsTerm = termOverride;
-          addRow(gsSku, 1, 'Module', gsTerm);
+          addRow(gsSku, 1, 'License', gsTerm);
         }
       });
     }
