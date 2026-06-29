@@ -440,6 +440,65 @@ describe('Simulation Utils', () => {
       expect(result.metrics['custom-objects-1']).toBeDefined();
       expect(result.metrics['custom-objects-1'].rxBps).toBe(500);
     });
+
+    it('should split/load balance traffic evenly across connected tools', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'input-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'Port 1', configType: 'Network Port', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-1',
+          type: 'gigaStreamNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'Load Balancer', algorithm: 'Round Robin' },
+        },
+        {
+          id: 'tool-1',
+          type: 'toolNode',
+          position: { x: 400, y: -50 },
+          data: { label: 'Tool 1', configType: 'Packet Tool' },
+        },
+        {
+          id: 'tool-2',
+          type: 'toolNode',
+          position: { x: 400, y: 50 },
+          data: { label: 'Tool 2', configType: 'Packet Tool' },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-in-gs', source: 'input-1', target: 'gs-1' },
+        { id: 'e-gs-t1', source: 'gs-1', target: 'tool-1' },
+        { id: 'e-gs-t2', source: 'gs-1', target: 'tool-2' },
+      ];
+
+      const streams = [
+        {
+          id: 'stream-1',
+          name: 'Test Stream',
+          sourceNodeId: 'input-1',
+          bandwidth: 6000,
+          vlan: '100',
+          active: true,
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+      expect(result.metrics['gs-1'].rxBps).toBe(6000);
+      expect(result.metrics['gs-1'].txBps).toBe(6000);
+
+      // Tool 1 and Tool 2 should get 3000 Mbps each
+      expect(result.metrics['tool-1'].rxBps).toBe(3000);
+      expect(result.metrics['tool-2'].rxBps).toBe(3000);
+
+      // Verify edge metrics
+      expect(result.edgeMetrics['e-in-gs']).toBe(6000);
+      expect(result.edgeMetrics['e-gs-t1']).toBe(3000);
+      expect(result.edgeMetrics['e-gs-t2']).toBe(3000);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {
