@@ -132,5 +132,6 @@ export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
   { value: 'QSF-502 (40G QSFP+ SR4)', label: '40G SR4 Multimode (QSFP+)', isSM: false },
   { value: 'QSF-503T (40G QSFP+ LR4)', label: '40G LR4 Singlemode (QSFP+)', isSM: true },
   { value: 'Q28-502T (100G QSFP28 SR4)', label: '100G SR4 Multimode (QSFP28)', isSM: false },
-  { value: 'Q28-503 (100G QSFP28 LR4)', label: '100G LR4 Singlemode (QSFP28)', isSM: true }
+  { value: 'Q28-503 (100G QSFP28 LR4)', label: '100G LR4 Singlemode (QSFP28)', isSM: true },
+  { value: 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)', label: '40/100G BiDi Multimode (QSFP28)', isSM: false }
 ];
