@@ -53,7 +53,7 @@ const appsList = [
 // ─── Sidebar component ────────────────────────────────────────────────────────
 
 const Sidebar: React.FC = () => {
-  const { advancedMode, setDraggedNodeType, sidebarMessage, setSidebarMessage } = useStore();
+  const { advancedMode, setDraggedNodeType, sidebarMessage, setSidebarMessage, customTools, addCustomTool, deleteCustomTool } = useStore();
   const [openSections, setOpenSections] = useState({
     demo: true,  // "Demonstration" section — expanded by default
     apps: true,  // "Applications" section — shows all 15 GigaSMART apps
@@ -66,6 +66,9 @@ const Sidebar: React.FC = () => {
   const [width, setWidth] = useState(260); // increased default width to fit grid
   const [isResizing, setIsResizing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddTool, setShowAddTool] = useState(false);
+  const [newToolName, setNewToolName] = useState('');
+  const [newToolFormat, setNewToolFormat] = useState<'packets' | 'AMI' | 'objects'>('packets');
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -170,6 +173,42 @@ const Sidebar: React.FC = () => {
           {openSections.demo && (
             <div className="tree-content">
               {(() => {
+                const packetCustom = (customTools || [])
+                  .filter(t => t.inputFormat === 'packets')
+                  .map(t => ({
+                    label: t.label,
+                    desc: `${t.label} (Custom Tool)`,
+                    type: NODE_TYPES.TOOL,
+                    icon: PacketToolIcon,
+                    isCustom: true,
+                    id: t.id,
+                    initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: t.label, expectedType: 'packet' }
+                  }));
+
+                const metadataCustom = (customTools || [])
+                  .filter(t => t.inputFormat === 'AMI')
+                  .map(t => ({
+                    label: t.label,
+                    desc: `${t.label} (Custom Tool)`,
+                    type: NODE_TYPES.TOOL,
+                    icon: MetadataToolIcon,
+                    isCustom: true,
+                    id: t.id,
+                    initial: { configType: CONFIG_TYPES.METADATA_TOOL, toolName: t.label, expectedType: 'metadata', expectedFormat: 'Any' }
+                  }));
+
+                const objectsCustom = (customTools || [])
+                  .filter(t => t.inputFormat === 'objects')
+                  .map(t => ({
+                    label: t.label,
+                    desc: `${t.label} (Custom Tool)`,
+                    type: NODE_TYPES.TOOL,
+                    icon: S3StorageIcon,
+                    isCustom: true,
+                    id: t.id,
+                    initial: { configType: CONFIG_TYPES.STORAGE_TOOL, toolName: t.label, expectedType: 'objects' }
+                  }));
+
                 const demoGroups = [
                   {
                     label: 'Sources',
@@ -198,6 +237,7 @@ const Sidebar: React.FC = () => {
                       { label: 'Wireshark', desc: 'Wireshark Tool', type: NODE_TYPES.TOOL, icon: WiresharkIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Wireshark', expectedType: 'packet' } },
                       { label: 'ForeScout', desc: 'ForeScout Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ForeScout', expectedType: 'packet' } },
                       { label: 'Nozomi', desc: 'Nozomi Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Nozomi', expectedType: 'packet' } },
+                      ...packetCustom
                     ]
                   },
                   {
@@ -207,12 +247,14 @@ const Sidebar: React.FC = () => {
                       { label: 'Elastic', desc: 'Elastic Search', type: NODE_TYPES.TOOL, icon: MetadataToolIcon, initial: { configType: CONFIG_TYPES.METADATA_TOOL, toolName: 'Elastic', expectedType: 'metadata', expectedFormat: 'JSON' } },
                       { label: 'Dynatrace', desc: 'Dynatrace APM', type: NODE_TYPES.TOOL, icon: MetadataToolIcon, initial: { configType: CONFIG_TYPES.METADATA_TOOL, toolName: 'Dynatrace', expectedType: 'metadata', expectedFormat: 'JSON' } },
                       { label: 'Sentinel', desc: 'Microsoft Sentinel SIEM', type: NODE_TYPES.TOOL, icon: MetadataToolIcon, initial: { configType: CONFIG_TYPES.METADATA_TOOL, toolName: 'Microsoft Sentinel', expectedType: 'metadata', expectedFormat: 'CEF' } },
+                      ...metadataCustom
                     ]
                   },
                   {
-                    label: 'Storage Tools',
+                    label: 'Objects',
                     items: [
-                      { label: 'S3 / Object Storage', desc: 'S3 / Object Storage', type: NODE_TYPES.TOOL, icon: S3StorageIcon, initial: { configType: CONFIG_TYPES.STORAGE_TOOL, toolName: 'S3 Object Storage', expectedType: 'any' } },
+                      { label: 'S3 / Object Storage', desc: 'S3 Object Storage', type: NODE_TYPES.TOOL, icon: S3StorageIcon, initial: { configType: CONFIG_TYPES.STORAGE_TOOL, toolName: 'S3 Object Storage', expectedType: 'objects' } },
+                      ...objectsCustom
                     ]
                   }
                 ];
@@ -225,15 +267,150 @@ const Sidebar: React.FC = () => {
                     <React.Fragment key={gIdx}>
                       <div className="demo-group-label" style={{ padding: '8px 12px 2px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{group.label}</div>
                       {filteredItems.map((item, iIdx) => (
-                        <div key={iIdx} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, item.type, item.desc, (item as any).initial)}>
-                          <item.icon size={18} />
-                          <span>{item.label}</span>
+                        <div key={iIdx} className="tree-draggable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '8px' }} draggable onDragStart={(e) => onDragStart(e, item.type, item.desc, (item as any).initial)}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <item.icon size={18} />
+                            <span>{item.label}</span>
+                          </div>
+                          {(item as any).isCustom && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteCustomTool((item as any).id);
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#ff5555',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                padding: '2px 4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="Delete custom tool"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
                       ))}
                     </React.Fragment>
                   );
                 });
               })()}
+
+              {/* Add Custom Tool Section */}
+              <div style={{ padding: '12px 12px 6px 12px', borderTop: '1px solid #2d2d2d', marginTop: '10px' }}>
+                {!showAddTool ? (
+                  <button 
+                    onClick={() => setShowAddTool(true)}
+                    style={{
+                      width: '100%',
+                      padding: '6px',
+                      background: '#2b2b2b',
+                      border: '1px dashed #555',
+                      borderRadius: '4px',
+                      color: '#ddd',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    ➕ Add Custom Tool
+                  </button>
+                ) : (
+                  <div style={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: '4px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#ff9800' }}>Create Custom Tool</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Tool Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. My Custom Tool"
+                        value={newToolName}
+                        onChange={(e) => setNewToolName(e.target.value)}
+                        style={{
+                          padding: '4px 6px',
+                          background: '#121212',
+                          border: '1px solid #444',
+                          borderRadius: '3px',
+                          color: '#fff',
+                          fontSize: '11px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Input Data Format</label>
+                      <select
+                        value={newToolFormat}
+                        onChange={(e) => setNewToolFormat(e.target.value as any)}
+                        style={{
+                          padding: '4px 6px',
+                          background: '#121212',
+                          border: '1px solid #444',
+                          borderRadius: '3px',
+                          color: '#fff',
+                          fontSize: '11px',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="packets">Packets (Packet Consuming)</option>
+                        <option value="AMI">AMI / Metadata (Metadata Consuming)</option>
+                        <option value="objects">Objects (Object Consuming)</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                      <button
+                        onClick={() => {
+                          if (!newToolName.trim()) return;
+                          addCustomTool({
+                            label: newToolName.trim(),
+                            inputFormat: newToolFormat
+                          });
+                          setNewToolName('');
+                          setShowAddTool(false);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '5px',
+                          background: '#ff9800',
+                          border: 'none',
+                          borderRadius: '3px',
+                          color: '#000',
+                          fontWeight: 'bold',
+                          fontSize: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setNewToolName('');
+                          setShowAddTool(false);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '5px',
+                          background: '#444',
+                          border: 'none',
+                          borderRadius: '3px',
+                          color: '#ccc',
+                          fontSize: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -48,6 +48,13 @@ export interface MapCondition {
   action?: 'pass' | 'drop';
 }
 
+export interface CustomTool {
+  id: string;
+  label: string;
+  inputFormat: 'packets' | 'AMI' | 'objects';
+  description?: string;
+}
+
 export type NodeType = 
   | 'inputNode' 
   | 'mapNode' 
@@ -114,6 +121,7 @@ export type RFState = {
   projectRegion: 'US' | 'EU' | 'UK';
   disableDcWarnings: boolean;
   trafficStreams: TrafficStream[];
+  customTools: CustomTool[];
   nodeMetrics: Record<string, NodeMetrics>;
   edgeMetrics: Record<string, number>;
   activeEdges: string[];
@@ -149,6 +157,8 @@ export type RFState = {
   addTrafficStream: (stream: TrafficStream) => void;
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
   deleteTrafficStream: (id: string) => void;
+  addCustomTool: (tool: Omit<CustomTool, 'id'>) => void;
+  deleteCustomTool: (id: string) => void;
   resetMetrics: () => void;
   updateSimulationTick: (
     metrics: Record<string, NodeMetrics>,
@@ -193,7 +203,7 @@ export function syncSplunkLabels(nodes: CustomNode[], edges: Edge[]): CustomNode
           if (edge.source === node.id || edge.target === node.id) {
             const otherNodeId = edge.source === node.id ? edge.target : edge.source;
             const otherNode = nodes.find(n => n.id === otherNodeId);
-            return otherNode?.data?.configType === 'Storage Tool'; // Storage Tool is CONFIG_TYPES.STORAGE_TOOL
+            return otherNode?.data?.configType === 'Objects' || otherNode?.data?.configType === 'Storage Tool';
           }
           return false;
         });
@@ -544,6 +554,14 @@ export const useStore = create<RFState>((set, get) => ({
   showGrid: true,
   snapToGrid: false,
   trafficStreams: initialTraffic,
+  customTools: (() => {
+    try {
+      const saved = localStorage.getItem('fm_simulator_custom_tools');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  })(),
   nodeMetrics: {},
   edgeMetrics: {},
   activeEdges: [],
@@ -795,6 +813,19 @@ export const useStore = create<RFState>((set, get) => ({
     set({
       trafficStreams: get().trafficStreams.filter((s) => s.id !== id),
     });
+  },
+
+  addCustomTool: (tool) => {
+    const newTool = { ...tool, id: `custom-tool-${Date.now()}` };
+    const nextTools = [...get().customTools, newTool];
+    set({ customTools: nextTools });
+    localStorage.setItem('fm_simulator_custom_tools', JSON.stringify(nextTools));
+  },
+
+  deleteCustomTool: (id) => {
+    const nextTools = get().customTools.filter((t) => t.id !== id);
+    set({ customTools: nextTools });
+    localStorage.setItem('fm_simulator_custom_tools', JSON.stringify(nextTools));
   },
 
   resetMetrics: () => {

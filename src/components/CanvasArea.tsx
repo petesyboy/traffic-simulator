@@ -79,10 +79,10 @@ const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges,
       let splunkNode: CustomNode | null = null;
       let s3Node: CustomNode | null = null;
 
-      if (srcTool === 'Splunk' && tgtConfig === 'Storage Tool') {
+      if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
         splunkNode = sourceNode;
         s3Node = targetNode;
-      } else if (srcConfig === 'Storage Tool' && tgtTool === 'Splunk') {
+      } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
         splunkNode = targetNode;
         s3Node = sourceNode;
       }
@@ -226,7 +226,7 @@ const CanvasArea: React.FC = () => {
           app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI'
         );
         if (hasMetadataApp && targetNode?.type === 'toolNode' && 
-            (targetNode.data?.configType === 'Metadata Tool' || targetNode.data?.configType === 'Storage Tool')) {
+            (targetNode.data?.configType === 'Metadata Tool' || targetNode.data?.configType === 'Objects' || targetNode.data?.configType === 'Storage Tool')) {
           return true;
         }
       }
@@ -274,7 +274,7 @@ const CanvasArea: React.FC = () => {
       return (hasMetadataOrigin && !hasPacketOrigin) || 
              (targetNode?.type === 'toolNode' && 
               (targetNode.data?.configType === 'Metadata Tool' || 
-               (targetNode.data?.configType === 'Storage Tool' && hasMetadataOrigin)));
+               ((targetNode.data?.configType === 'Objects' || targetNode.data?.configType === 'Storage Tool') && hasMetadataOrigin)));
     })();
 
     let className = '';
@@ -306,11 +306,11 @@ const CanvasArea: React.FC = () => {
     const srcConfig = (srcNode?.data?.configType as string) || '';
     const tgtConfig = (targetNode?.data?.configType as string) || '';
 
-    if (srcTool === 'Splunk' && tgtConfig === 'Storage Tool') {
+    if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
       // Flow from target (S3) back to source (Splunk)
       className = isMetadata ? 'reverse-metadata-flow' : 'reverse-flow';
       animated = true;
-    } else if (srcConfig === 'Storage Tool' && tgtTool === 'Splunk') {
+    } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
       // Flow from source (S3) to target (Splunk)
       className = isMetadata ? 'metadata-flow' : 'active-flow';
       animated = true;
