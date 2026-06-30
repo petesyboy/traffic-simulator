@@ -112,6 +112,7 @@ export type RFState = {
   nodes: CustomNode[];
   edges: Edge[];
   selectedNodeId: string | null;
+  glowingNodeId: string | null;
   isRunning: boolean;
   simulationSpeed: number; // multiplier, e.g. 1
   advancedMode: boolean;
@@ -139,6 +140,7 @@ export type RFState = {
   setDraggedNodeType: (type: string | null) => void;
   addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
+  setGlowingNodeId: (nodeId: string | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
   restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => void;
   toggleSimulation: () => void;
@@ -542,6 +544,7 @@ export const useStore = create<RFState>((set, get) => ({
   nodes: initialNodes,
   edges: initialEdges,
   selectedNodeId: null,
+  glowingNodeId: null,
   isRunning: false,
   simulationSpeed: 1,
   advancedMode: false,
@@ -723,6 +726,10 @@ export const useStore = create<RFState>((set, get) => ({
   
   setSelectedNodeId: (nodeId: string | null) => {
     set({ selectedNodeId: nodeId });
+  },
+  
+  setGlowingNodeId: (nodeId: string | null) => {
+    set({ glowingNodeId: nodeId });
   },
   
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => {

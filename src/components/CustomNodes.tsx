@@ -27,6 +27,11 @@ import { resolveNodeSkus } from '../utils/skuResolver';
 import skusData from '../constants/skus.json';
 const skus = skusData as Record<string, string>;
 
+const useGlowClass = (id: string): string => {
+  const glowingNodeId = useStore((state) => state.glowingNodeId);
+  return glowingNodeId === id ? 'node-presentation-glow' : '';
+};
+
 const getTapDetails = (sku: string, model: string) => {
   const isULT = sku.includes('ULT') || model.includes('ULT');
   const isMM = sku.includes('251') || sku.includes('271') || sku.includes('451') || model.toLowerCase().includes('multi-mode') || model.toLowerCase().includes('mm');
@@ -101,10 +106,12 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     ? 'VMWare Virtual Estate'
     : 'Network Input';
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node input-node ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node input-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {renderIcon()}
@@ -141,10 +148,12 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const conditions = (data.conditions as MapCondition[]) || [];
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node map-node ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node map-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -200,10 +209,12 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node filter-node ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node filter-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -270,10 +281,12 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   else if (isMetadataTool) nodeClass = 'tool-node metadata-tool-node';
   if (status === 'warning') nodeClass += ' node-warning';
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
@@ -394,10 +407,12 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isMismatch = actualLinks !== linkCount;
   const isActive = isRunning && (metrics?.rxBps || 0) > 0;
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${isActive ? 'gigastream-active' : ''}`}>
+      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${isActive ? 'gigastream-active' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -477,10 +492,12 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     if (hasConnectedHc) break;
   }
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''}`}>
+      <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -636,11 +653,13 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     tooltipText += `\n\nLicense SKU: ${resolved.advSku}\nDescription: ${advDesc}`;
   }
 
+  const glowClass = useGlowClass(id);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div 
-        className={`custom-node hardware-node ${selected ? 'selected-node' : ''}`} 
+        className={`custom-node hardware-node ${selected ? 'selected-node' : ''} ${glowClass}`} 
         style={{ borderLeft: '4px solid #ff9800' }}
         title={tooltipText}
       >

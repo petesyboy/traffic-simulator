@@ -796,6 +796,17 @@ const CanvasArea: React.FC = () => {
         onDragOver={onDragOver}
         onDragLeave={() => setHoveredEdgeId(null)}
         onSelectionChange={onSelectionChange}
+        onNodeDoubleClick={(_, node) => {
+          const state = useStore.getState();
+          if (state.glowingNodeId === node.id) {
+            state.setGlowingNodeId(null);
+          } else {
+            state.setGlowingNodeId(node.id);
+          }
+        }}
+        onPaneClick={() => {
+          useStore.getState().setGlowingNodeId(null);
+        }}
         deleteKeyCode={['Backspace', 'Delete']}
         nodeOrigin={[0.5, 0.5]}
         snapToGrid={snapToGrid}

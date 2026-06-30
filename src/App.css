@@ -659,6 +659,24 @@
   }
 }
 
+.node-presentation-glow {
+  outline: 4px solid #ff9100 !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 35px #ff9100, 0 0 15px rgba(255, 145, 0, 0.6) !important;
+  animation: presentation-glowing-pulse 1.5s infinite alternate ease-in-out !important;
+}
+
+@keyframes presentation-glowing-pulse {
+  0% {
+    box-shadow: 0 0 20px rgba(255, 145, 0, 0.6), 0 0 8px rgba(255, 145, 0, 0.4) !important;
+    outline-color: rgba(255, 145, 0, 0.8) !important;
+  }
+  100% {
+    box-shadow: 0 0 45px rgba(255, 145, 0, 1), 0 0 20px rgba(255, 145, 0, 0.8) !important;
+    outline-color: rgba(255, 145, 0, 1) !important;
+  }
+}
+
 /* React Flow Handles Styling */
 .react-flow__handle {
   width: 10px !important;
