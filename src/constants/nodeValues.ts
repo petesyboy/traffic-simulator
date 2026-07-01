@@ -76,7 +76,7 @@ export const getNodeValueProposition = (
       return "Stores long-term network traffic archives cost-effectively in S3/Object Storage, enabling direct federated search queries.";
     }
     if (configType === 'Splunk') {
-      return "Index and query log intelligence. Connecting Splunk to S3 storage sets up a visual federated search boundary to lower ingest fees.";
+      return "Transforms raw data into searchable events, indexes it, and stores the results in an index. Connecting Splunk to S3 storage sets up a visual federated search boundary to lower ingest fees.";
     }
     return "Monitors and analyzes network packets to detect threats or measure performance. Gigamon ensures it receives optimized, clean traffic.";
   }
