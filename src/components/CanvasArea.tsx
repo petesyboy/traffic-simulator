@@ -390,11 +390,12 @@ const CanvasArea: React.FC = () => {
     }
 
     if (hoveredEdgeId === edge.id) {
+      const isInsertHover = draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM;
       style = {
         ...style,
-        stroke: '#00e5ff',
-        strokeWidth: '4px',
-        filter: 'drop-shadow(0px 0px 8px #00e5ff)',
+        stroke: isInsertHover ? '#ff9800' : '#00e5ff',
+        strokeWidth: isInsertHover ? '5px' : '4px',
+        filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)',
       };
     }
     
@@ -427,12 +428,13 @@ const CanvasArea: React.FC = () => {
         if (!srcNode || !targetNode) continue;
 
         const srcW = srcNode.measured?.width || srcNode.width || 170;
-        const ax = srcNode.position.x + srcW / 2;
-        const ay = srcNode.position.y;
+        const srcH = srcNode.measured?.height || srcNode.height || 75;
+        const ax = srcNode.position.x + srcW;
+        const ay = srcNode.position.y + srcH / 2;
 
-        const targetW = targetNode.measured?.width || targetNode.width || 170;
-        const bx = targetNode.position.x - targetW / 2;
-        const by = targetNode.position.y;
+        const targetH = targetNode.measured?.height || targetNode.height || 75;
+        const bx = targetNode.position.x;
+        const by = targetNode.position.y + targetH / 2;
 
         const px = position.x;
         const py = position.y;
