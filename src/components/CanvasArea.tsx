@@ -357,13 +357,34 @@ const CanvasArea: React.FC = () => {
       return 10000; // default 10 Gbps (10000 Mbps)
     };
 
-    let style: React.CSSProperties = {};
+    let stroke = '#007cff'; // default blue
+    if (isRunning) {
+      if (isActive) {
+        stroke = isMetadata ? '#ff9800' : '#00e5ff';
+      } else if (isBlocked) {
+        stroke = '#ef5350';
+      }
+    }
+    // Reverse flows
+    if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
+      stroke = isMetadata ? '#ff9800' : '#00e5ff';
+    } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
+      stroke = isMetadata ? '#ff9800' : '#00e5ff';
+    }
+
+    let style: React.CSSProperties = {
+      stroke,
+      strokeWidth: hoveredEdgeId === edge.id ? '4px' : '1.5px',
+      strokeDasharray: '4, 3',
+    };
+
     if (isRunning && bps !== undefined && bps > 0) {
       const capacity = getCapacity();
       const utilization = Math.min(1.0, bps / capacity);
       // Map utilization (0 to 1) to animation duration (2.0s down to 0.2s)
       const duration = 2.0 - 1.8 * utilization;
       style = {
+        ...style,
         animationDuration: `${duration.toFixed(2)}s`
       };
     }
@@ -372,7 +393,7 @@ const CanvasArea: React.FC = () => {
       style = {
         ...style,
         stroke: '#00e5ff',
-        strokeWidth: 4,
+        strokeWidth: '4px',
         filter: 'drop-shadow(0px 0px 8px #00e5ff)',
       };
     }

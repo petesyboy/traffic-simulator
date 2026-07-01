@@ -63,7 +63,7 @@ export const getNodeValueProposition = (
       return "Strips protocol headers (like VxLAN/VLAN tags) before forwarding, ensuring legacy analysis tools can read modern encapsulated packets.";
     }
     if (actionType === ACTION_TYPES.APP_METADATA) {
-      return "Extracts L4-L7 intelligence (NetFlow, JSON) offloading tool CPU capacity by 95% while retaining visibility for security and analytics.";
+      return "Application metadata captures who, what, where and how apps are used, helping organizations improve visibility, strengthen security, speed troubleshooting, and make smarter decisions about performance, risk, cost, and compliance overall.";
     }
     if (actionType === ACTION_TYPES.SSL_DECRYPT) {
       return "Decrypts SSL/TLS traffic once and forwards the cleartext to multiple security tools, eliminating duplicate decryption overhead.";
