@@ -53,7 +53,7 @@ const appsList = [
 // ─── Sidebar component ────────────────────────────────────────────────────────
 
 const Sidebar: React.FC = () => {
-  const { advancedMode, setDraggedNodeType, sidebarMessage, setSidebarMessage, customTools, addCustomTool, deleteCustomTool } = useStore();
+  const { advancedMode, setDraggedNodeType, sidebarMessage, setSidebarMessage, customTools, addCustomTool, deleteCustomTool, panelTextScale } = useStore();
   const [openSections, setOpenSections] = useState({
     demo: true,  // "Demonstration" section — expanded by default
     apps: true,  // "Applications" section — shows all 15 GigaSMART apps
@@ -133,7 +133,7 @@ const Sidebar: React.FC = () => {
   return (
     <>
       {/* Inner Elements Tree Sidebar */}
-      <aside className="sidebar-elements" style={{ width: `${width}px`, position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <aside className="sidebar-elements" style={{ width: `${width}px`, position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', zoom: panelTextScale }}>
         <div className="elements-header" style={{ flexShrink: 0 }}>
           <span>TRAFFIC ELEMENTS</span>
           <span style={{ color: '#555', fontSize: '10px' }}>◄ ►</span>

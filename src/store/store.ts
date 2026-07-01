@@ -121,6 +121,7 @@ export type RFState = {
   defaultTermDuration: string;
   projectRegion: 'US' | 'EU' | 'UK';
   disableDcWarnings: boolean;
+  panelTextScale: number; // e.g. 1.0 (ranges from 0.75 to 1.5)
   trafficStreams: TrafficStream[];
   customTools: CustomTool[];
   nodeMetrics: Record<string, NodeMetrics>;
@@ -151,6 +152,7 @@ export type RFState = {
   setDefaultTermDuration: (duration: string) => void;
   setProjectRegion: (region: 'US' | 'EU' | 'UK') => void;
   setDisableDcWarnings: (disable: boolean) => void;
+  setPanelTextScale: (scale: number) => void;
   showGrid: boolean;
   snapToGrid: boolean;
   setShowGrid: (show: boolean) => void;
@@ -553,6 +555,7 @@ export const useStore = create<RFState>((set, get) => ({
   defaultTermDuration: '36',
   projectRegion: 'US',
   disableDcWarnings: false,
+  panelTextScale: 1.0,
   draggedNodeType: null,
   showGrid: true,
   snapToGrid: false,
@@ -730,6 +733,10 @@ export const useStore = create<RFState>((set, get) => ({
   
   setGlowingNodeId: (nodeId: string | null) => {
     set({ glowingNodeId: nodeId });
+  },
+
+  setPanelTextScale: (scale: number) => {
+    set({ panelTextScale: scale });
   },
   
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => {

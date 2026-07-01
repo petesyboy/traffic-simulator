@@ -139,8 +139,10 @@ const TrafficGenerator: React.FC = () => {
     updateTrafficStream(id, { [field]: value });
   };
 
+  const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
+
   return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
+    <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
       {/* ── Drag handle ──────────────────────────────────────────────────────── */}
       {/*
         A thin stripe at the top of the drawer.  When the user clicks and

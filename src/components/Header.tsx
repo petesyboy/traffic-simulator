@@ -356,6 +356,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const setAdvancedModeUnlocked = useStore((state) => state.setAdvancedModeUnlocked);
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
+  const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
+  const setPanelTextScale = useStore((state) => state.setPanelTextScale);
 
   // Local UI state for the toast and confirm modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -447,6 +449,24 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
                   <option value={10}>10x Speed</option>
                 </select>
               )}
+            </div>
+
+            {/* Panel Text Scaling selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderRight: '1px solid var(--border-color)', paddingRight: '12px', marginRight: '12px' }}>
+              <span style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap' }}>Text Size:</span>
+              <select
+                value={panelTextScale}
+                onChange={(e) => setPanelTextScale(Number(e.target.value))}
+                className="sim-speed-select"
+                style={{ width: '70px', padding: '4px 6px', fontSize: '11px' }}
+              >
+                <option value={0.75}>75%</option>
+                <option value={0.85}>85%</option>
+                <option value={1.0}>100%</option>
+                <option value={1.15}>115%</option>
+                <option value={1.3}>130%</option>
+                <option value={1.5}>150%</option>
+              </select>
             </div>
 
             {advancedMode && (() => {

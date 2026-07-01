@@ -18,6 +18,7 @@ const ConfigPanel: React.FC = () => {
   const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
   const isRunning      = useStore((state) => state.isRunning);
+  const panelTextScale = useStore((state) => state.panelTextScale);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -136,6 +137,7 @@ const ConfigPanel: React.FC = () => {
           overflow: 'visible',
           transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
           flexShrink: 0,
+          zoom: panelTextScale,
         }}
       >
         {collapseToggle}
@@ -158,6 +160,7 @@ const ConfigPanel: React.FC = () => {
         overflow: 'visible',
         transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
         flexShrink: 0,
+        zoom: panelTextScale,
       }}
     >
       {collapseToggle}
