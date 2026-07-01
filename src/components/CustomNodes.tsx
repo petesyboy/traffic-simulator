@@ -327,7 +327,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div className="node-value-tooltip-container">
               <span className="node-info-icon">ⓘ</span>
-              <div className="node-value-tooltip">{getNodeValueProposition('toolNode', configType)}</div>
+              <div className="node-value-tooltip">{getNodeValueProposition('toolNode', configType, undefined, toolName)}</div>
             </div>
             {!isStorageTool && <span style={{ fontSize: '12px', color: '#666' }}>⋮</span>}
           </div>

@@ -388,6 +388,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
     
     toPng(element, {
       backgroundColor: '#121212',
+      cacheBust: true,
       filter: (node) => {
         if (
           node.classList?.contains('react-flow__controls') || 

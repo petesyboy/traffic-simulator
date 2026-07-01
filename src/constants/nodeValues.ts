@@ -10,7 +10,8 @@ import { CONFIG_TYPES, ACTION_TYPES } from './nodeTypes';
 export const getNodeValueProposition = (
   type: string,
   configType?: string,
-  actionType?: string
+  actionType?: string,
+  toolName?: string
 ): string => {
   // 1. Input Ports & TAPs
   if (type === 'inputNode' || configType === 'TAP' || configType === 'SPAN') {
@@ -72,11 +73,11 @@ export const getNodeValueProposition = (
 
   // 6. Target Tools & Storage
   if (type === 'toolNode') {
-    if (configType === 'Objects') {
-      return "Stores long-term network traffic archives cost-effectively in S3/Object Storage, enabling direct federated search queries.";
-    }
-    if (configType === 'Splunk') {
+    if (toolName === 'Splunk') {
       return "Transforms raw data into searchable events, indexes it, and stores the results in an index. Connecting Splunk to S3 storage sets up a visual federated search boundary to lower ingest fees.";
+    }
+    if (configType === 'Objects' || toolName === 'Objects' || toolName === 'S3 / Object Storage') {
+      return "Stores long-term network traffic archives cost-effectively in S3/Object Storage, enabling direct federated search queries.";
     }
     return "Monitors and analyzes network packets to detect threats or measure performance. Gigamon ensures it receives optimized, clean traffic.";
   }
