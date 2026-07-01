@@ -405,6 +405,18 @@ const CanvasArea: React.FC = () => {
       animated: hoveredEdgeId === edge.id ? true : animated,
       label,
       style,
+      labelStyle: {
+        fill: isMetadata ? '#ff9800' : '#00e5ff',
+        fontSize: '9px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontWeight: 'bold',
+      },
+      labelBgStyle: {
+        fill: '#121212',
+        fillOpacity: 0.95,
+        stroke: '#2a2a2a',
+        strokeWidth: 1,
+      },
     };
   });
 
