@@ -18,26 +18,11 @@ This application allows sales teams to quickly build flow maps, simulate live tr
 
 ---
 
-## Local Setup & Development
+## How to Run the Simulator
 
-To run the simulator locally:
+To run the simulator, simply locate the file named **`dop_illustration.html`** (found inside the `dist` directory of this folder or on your desktop) and double-click to open it in any web browser. 
 
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Run Development Server**:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:5173` in your web browser.
-
-3. **Build Standalone Output**:
-   ```bash
-   npm run build
-   ```
-   Generates a standalone, inline-single-file build at `dist/dop_illustration.html`.
+This standalone HTML file requires no server setup, installation, or internet access to run.
 
 ---
 
