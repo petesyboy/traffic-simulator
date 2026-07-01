@@ -1,7 +1,7 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.169",
+    "version": "1.0.170",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@xyflow/react": "^12.11.0",
+        "html-to-image": "^1.11.13",
         "react": "^19.2.6",
         "react-dom": "^19.2.6",
         "uuid": "^14.0.0",

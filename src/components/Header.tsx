@@ -17,6 +17,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import pkg from '../../package.json';
+import { toPng } from 'html-to-image';
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
@@ -381,6 +382,34 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const handleClearConfirm  = () => { clearCanvas(); setShowClearConfirm(false); };
   const handleClearCancel   = () => setShowClearConfirm(false);
 
+  const handleExportScreenshot = () => {
+    const element = document.querySelector('.react-flow') as HTMLElement;
+    if (!element) return;
+    
+    toPng(element, {
+      backgroundColor: '#121212',
+      filter: (node) => {
+        if (
+          node.classList?.contains('react-flow__controls') || 
+          node.classList?.contains('react-flow__panel') ||
+          node.classList?.contains('config-panel-toggle')
+        ) {
+          return false;
+        }
+        return true;
+      }
+    })
+      .then((dataUrl) => {
+        const a = document.createElement('a');
+        a.setAttribute('download', 'gigamon-flow-map.png');
+        a.setAttribute('href', dataUrl);
+        a.click();
+      })
+      .catch((err) => {
+        console.error('oops, something went wrong!', err);
+      });
+  };
+
   return (
     <>
       {showClearConfirm && (
@@ -486,6 +515,18 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
                 </button>
               );
             })()}
+
+            <button 
+              className="header-btn" 
+              style={{ 
+                background: 'rgba(76, 175, 80, 0.15)', 
+                color: '#81c784', 
+                borderColor: 'rgba(76, 175, 80, 0.4)' 
+              }} 
+              onClick={handleExportScreenshot}
+            >
+              📸 Export Diagram
+            </button>
 
             {/* Save button now opens the multi-slot modal in App.tsx */}
             <button className="header-btn primary" onClick={onSaveClick}>

@@ -26,6 +26,7 @@ import { CONFIG_TYPES, ACTION_TYPES, isMetadataAction, isDedupAction } from '../
 import { resolveNodeSkus } from '../utils/skuResolver';
 import skusData from '../constants/skus.json';
 const skus = skusData as Record<string, string>;
+import { getNodeValueProposition } from '../constants/nodeValues';
 
 const useGlowClass = (id: string): string => {
   const glowingNodeId = useStore((state) => state.glowingNodeId);
@@ -112,10 +113,14 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node input-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
-        <div className="node-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}
             <span className="node-title">{data.label as string}</span>
+          </div>
+          <div className="node-value-tooltip-container">
+            <span className="node-info-icon">ⓘ</span>
+            <div className="node-value-tooltip">{getNodeValueProposition('inputNode', configType)}</div>
           </div>
         </div>
         <div className="node-type-label" style={{ display: 'block' }}>{nodeTypeLabel}</div>
@@ -155,12 +160,18 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node map-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
-        <div className="node-header">
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapIcon size={20} />
             <span className="node-title">{data.label as string}</span>
           </div>
-          <span style={{ fontSize: '12px', color: '#666', cursor: 'pointer' }}>⋮</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="node-value-tooltip-container">
+              <span className="node-info-icon">ⓘ</span>
+              <div className="node-value-tooltip">{getNodeValueProposition('mapNode')}</div>
+            </div>
+            <span style={{ fontSize: '12px', color: '#666', cursor: 'pointer' }}>⋮</span>
+          </div>
         </div>
         <div className="node-meta-small">
           {conditions.length} rule(s)
@@ -216,10 +227,14 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node filter-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
-        <div className="node-header">
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <SmartIcon size={20} />
             <span className="node-title">{data.label as string}</span>
+          </div>
+          <div className="node-value-tooltip-container">
+            <span className="node-info-icon">ⓘ</span>
+            <div className="node-value-tooltip">{getNodeValueProposition('filterNode', data.configType as string)}</div>
           </div>
         </div>
         <div className="node-type-label">Transformation / Filter</div>
@@ -288,13 +303,13 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
-        <div className="node-header">
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}
             <span className="node-title">{data.label as string}</span>
             {isStorageTool && (
               <span style={{
-                marginLeft: 'auto',
+                marginLeft: '6px',
                 fontSize: '8px',
                 background: 'rgba(0, 150, 136, 0.25)',
                 color: '#1de9b6',
@@ -309,7 +324,13 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               </span>
             )}
           </div>
-          {!isStorageTool && <span style={{ fontSize: '12px', color: '#666', marginLeft: '6px' }}>⋮</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="node-value-tooltip-container">
+              <span className="node-info-icon">ⓘ</span>
+              <div className="node-value-tooltip">{getNodeValueProposition('toolNode', configType)}</div>
+            </div>
+            {!isStorageTool && <span style={{ fontSize: '12px', color: '#666' }}>⋮</span>}
+          </div>
         </div>
         <div className="node-meta-small" style={{ fontSize: '9px', fontWeight: 600 }}>
           {toolName ? `${toolName}` : `Type: ${configType}`}
@@ -499,17 +520,18 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
         <Handle type="target" position={Position.Left} id="in" />
-        <div className="node-header">
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {/*
-              The AppIcon for Deduplication renders the live deduplication rate
-              as a percentage (e.g. "34%") directly inside the icon square.
-              This requires passing `rate` from node data.
-            */}
             <AppIcon type={actionType} size={22} rate={data.dedupRate as number} />
             <span className="node-title">{data.label as string}</span>
           </div>
-          <span style={{ fontSize: '12px', color: '#666' }}>⋮</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="node-value-tooltip-container">
+              <span className="node-info-icon">ⓘ</span>
+              <div className="node-value-tooltip">{getNodeValueProposition('gigaSmartNode', undefined, actionType)}</div>
+            </div>
+            <span style={{ fontSize: '12px', color: '#666' }}>⋮</span>
+          </div>
         </div>
 
         {/* Action summary line — shows what this GigaSMART engine is doing */}
@@ -664,10 +686,14 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         title={tooltipText}
       >
         <Handle type="target" position={Position.Left} id="in" />
-        <div className="node-header">
+        <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {iconComponent}
             <span className="node-title">{data.label as string}</span>
+          </div>
+          <div className="node-value-tooltip-container">
+            <span className="node-info-icon">ⓘ</span>
+            <div className="node-value-tooltip">{getNodeValueProposition('hardwareNode')}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', marginTop: '2px' }}>
