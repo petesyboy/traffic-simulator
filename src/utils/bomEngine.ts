@@ -182,8 +182,9 @@ export function generateBom(
   syncedNodes.forEach(node => {
     if (node.type === 'toolNode') {
       const isPacketTool = node.data?.configType === 'Packet Tool';
-      if (!isPacketTool) {
-        const optic = (node.data?.ingestOptic as string) || '';
+      const optic = (node.data?.ingestOptic as string) || '';
+      const isCustomerSupplied = optic.includes('Customer Supplied');
+      if (!isPacketTool && !isCustomerSupplied) {
         const qty = parseInt(node.data?.ingestOpticQty as string || '0');
         if (optic && qty > 0) {
           const opticSku = resolveOpticSku(optic, '');
@@ -870,8 +871,9 @@ export function generateSingleNodeBom(
     
   if (node.type === 'toolNode') {
     const isPacketTool = node.data?.configType === 'Packet Tool';
-    if (!isPacketTool) {
-      const optic = (node.data?.ingestOptic as string) || '';
+    const optic = (node.data?.ingestOptic as string) || '';
+    const isCustomerSupplied = optic.includes('Customer Supplied');
+    if (!isPacketTool && !isCustomerSupplied) {
       const qty = parseInt(node.data?.ingestOpticQty as string || '0');
       if (optic && qty > 0) {
         const opticSku = resolveOpticSku(optic, '');

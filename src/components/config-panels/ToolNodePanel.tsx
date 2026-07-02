@@ -63,6 +63,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
           <option value="Q28-502 (100G QSFP28 SR4)">Q28-502 (100G QSFP28 SR4)</option>
           <option value="Q28-503 (100G QSFP28 LR4)">Q28-503 (100G QSFP28 LR4)</option>
           <option value="Q28-506 (100G QSFP28 PLR4)">Q28-506 (100G QSFP28 PLR4)</option>
+          <option value="Customer Supplied Optic">Customer Supplied Optic</option>
         </select>
       </FormGroup>
 
