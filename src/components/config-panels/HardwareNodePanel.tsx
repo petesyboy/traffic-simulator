@@ -495,7 +495,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         exceedMessage = `Configured optics (${usedQsfp} QSFP) exceed the licensed port count (${limits.qsfp} QSFP cages).`;
         if (capVal === 'Half') {
           nextLicenseVal = 'Full';
-          nextLicenseLabel = '32 Ports (QSFP) License';
+          nextLicenseLabel = '64 Ports (QSFP) License';
         }
       }
     } else if (model.includes('TA400')) {
@@ -962,12 +962,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <div>
                 <span style={{ color: '#888' }}>Tapped Links (In):</span>
                 <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{tappedLinks}</strong>
-                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {tappedLinks * 2} SFPs)</span>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {tappedLinks * 2} optics)</span>
               </div>
               <div>
                 <span style={{ color: '#888' }}>Tool Links (Out):</span>
                 <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{outgoingToolLinks}</strong>
-                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {outgoingToolLinks} SFPs)</span>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {outgoingToolLinks} optics)</span>
               </div>
               <div>
                 <span style={{ color: '#888' }}>Optics Needed:</span>
