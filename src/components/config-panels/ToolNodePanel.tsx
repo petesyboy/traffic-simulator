@@ -54,15 +54,17 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
           onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
         >
           <option value="">-- No Optic (Direct Cable) --</option>
-          <option value="SFP-532 (10G SFP+ SR)">SFP-532 (10G SFP+ SR)</option>
-          <option value="SFP-533 (10G SFP+ LR)">SFP-533 (10G SFP+ LR)</option>
-          <option value="SFP-552 (25G SFP28 SR)">SFP-552 (25G SFP28 SR)</option>
-          <option value="SFP-553T (25G SFP28 LR)">SFP-553T (25G SFP28 LR)</option>
-          <option value="QSF-502 (40G QSFP+ SR4)">QSF-502 (40G QSFP+ SR4)</option>
-          <option value="QSF-503 (40G QSFP+ LR4)">QSF-503 (40G QSFP+ LR4)</option>
-          <option value="Q28-502 (100G QSFP28 SR4)">Q28-502 (100G QSFP28 SR4)</option>
-          <option value="Q28-503 (100G QSFP28 LR4)">Q28-503 (100G QSFP28 LR4)</option>
-          <option value="Q28-506 (100G QSFP28 PLR4)">Q28-506 (100G QSFP28 PLR4)</option>
+          <option value="1G Copper">1G Copper</option>
+          <option value="1G Multimode SX">1G Multimode SX</option>
+          <option value="1G Singlemode LX">1G Singlemode LX</option>
+          <option value="10G Multimode SR">10G Multimode SR</option>
+          <option value="10G Singlemode LR">10G Singlemode LR</option>
+          <option value="25G Multimode SR">25G Multimode SR</option>
+          <option value="25G Singlemode LR">25G Singlemode LR</option>
+          <option value="40G Multimode SR4">40G Multimode SR4</option>
+          <option value="40G Singlemode LR4">40G Singlemode LR4</option>
+          <option value="100G Multimode SR4">100G Multimode SR4</option>
+          <option value="100G Singlemode LR4">100G Singlemode LR4</option>
           <option value="Customer Supplied Optic">Customer Supplied Optic</option>
         </select>
       </FormGroup>
