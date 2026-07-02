@@ -132,7 +132,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   else if (model?.includes('TA')) details = hardwareCatalogue.ta_series.find(t => t.sku === sku);
   else if (model?.includes('HC')) details = hardwareCatalogue.hc_series.find(t => t.sku === sku);
 
-  const supportedBoards = getSupportedBoards(model || '', node.data?.portCapacity as string);
+  const supportedBoards = getSupportedBoards(model || '', node.data?.portCapacity as string, installedOptics);
   
   const availableOpticBoards = supportedBoards.filter(b => 
     b.board.toLowerCase().includes('main') || 
@@ -299,7 +299,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       setErrorMsg('Please select a board and an optic.');
       return;
     }
-    const validation = validateOptic(model, targetBoard, selectedOptic, node.data?.portCapacity as string);
+    const validation = validateOptic(model, targetBoard, selectedOptic, node.data?.portCapacity as string, installedOptics);
     if (!validation.valid) {
       setErrorMsg(validation.message || 'Invalid optic combination.');
       return;
