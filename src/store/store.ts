@@ -171,8 +171,10 @@ export type RFState = {
   setPanelTextScale: (scale: number) => void;
   showGrid: boolean;
   snapToGrid: boolean;
+  exportDiagramMode: boolean;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
+  setExportDiagramMode: (val: boolean) => void;
   snapAllNodesToGrid: () => void;
   addTrafficStream: (stream: TrafficStream) => void;
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
@@ -575,6 +577,7 @@ export const useStore = create<RFState>((set, get) => ({
   draggedNodeType: null,
   showGrid: true,
   snapToGrid: false,
+  exportDiagramMode: false,
   trafficStreams: initialTraffic,
   customTools: (() => {
     try {
@@ -847,6 +850,7 @@ export const useStore = create<RFState>((set, get) => ({
   setDisableDcWarnings: (disable) => set({ disableDcWarnings: disable }),
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
+  setExportDiagramMode: (val) => set({ exportDiagramMode: val }),
 
   snapAllNodesToGrid: () => {
     const snapped = get().nodes.map((node) => {

@@ -385,6 +385,7 @@
   "GVS-TAC01-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA100 (GVS-TAC01-HW). Includes Bundled Elite-Plus Software Support.  (EOS Feb 28, 2022)",
   "GVS-TAC02-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA100 (GVS-TAC02-HW). Includes Bundled Elite-Plus Software Support.  (EOS Feb 28, 2022)",
   "GVS-TAC20-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA200; 32 ports enabled (GVS-TAC[21/22]-HW). Includes Bundled Elite-Plus Software Support.",
+  "GVS-TAC20A-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA200; 32 ports enabled (GVS-TAC[21/22]-HW). Includes Bundled Elite-Plus Software Support.",
   "GVS-TAC20E-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA200E; 32 ports enabled (GVS-TAC[21E/22E]-HW). Includes Bundled Elite-Plus Software Support.",
   "GVS-TAC21": "GigaVUE-TA200 node, 64 100G QSFP28 cages, 2 power supplies, 4 fan trays, AC power; 32 ports enabled",
   "GVS-TAC21-HW": "GigaVUE-TA200 node, 64 100G QSFP28 cages, 2 power supplies, 4 fan trays, AC power;  Hardware only. Must pair with appropriate GigaVUE-OS Software License.",

@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import { generateSingleNodeBom } from '../utils/bomEngine';
 import dashboardImg from '../assets/dashboard-mock.webp';
 
 /**
@@ -182,6 +183,8 @@ const CanvasArea: React.FC = () => {
   const showGrid = useStore((state) => state.showGrid);
   const snapToGrid = useStore((state) => state.snapToGrid);
   const snapAllNodesToGrid = useStore((state) => state.snapAllNodesToGrid);
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
+  const setExportDiagramMode = useStore((state) => state.setExportDiagramMode);
   
   const onNodesChange = useStore((state) => state.onNodesChange);
   const onEdgesChange = useStore((state) => state.onEdgesChange);
@@ -359,8 +362,25 @@ const CanvasArea: React.FC = () => {
         if (installedOptics.length > 0) {
           // Construct the pool of speeds from all installed transceivers
           const pool: number[] = [];
+          let parent100GToDeduct = 0;
+          let parent40GToDeduct = 0;
+          
           for (const opt of installedOptics) {
             if (!opt.optic) continue;
+            if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
+              const has100G = installedOptics.some(o => (o.optic.includes('100G') || o.optic.startsWith('Q28-')) && !o.optic.includes('PNL-M34'));
+              if (has100G) {
+                parent100GToDeduct += opt.qty;
+              } else {
+                parent40GToDeduct += opt.qty;
+              }
+            }
+          }
+
+          for (const opt of installedOptics) {
+            if (!opt.optic) continue;
+            if (opt.optic.includes('PNL-M34')) continue;
+
             const name = opt.optic.toUpperCase();
             let speed = 0;
             if (name.includes('400G') || name.startsWith('QDD-')) speed = 400000;
@@ -375,6 +395,15 @@ const CanvasArea: React.FC = () => {
                 pool.push(speed);
               }
             }
+          }
+
+          for (let i = 0; i < parent100GToDeduct; i++) {
+            const idx = pool.indexOf(100000);
+            if (idx > -1) pool.splice(idx, 1);
+          }
+          for (let i = 0; i < parent40GToDeduct; i++) {
+            const idx = pool.indexOf(40000);
+            if (idx > -1) pool.splice(idx, 1);
           }
 
           // Sort the pool descending (highest speed first)
@@ -962,7 +991,7 @@ const CanvasArea: React.FC = () => {
       >
         {showGrid && <Background variant={BackgroundVariant.Lines} color="rgba(255,255,255,0.06)" gap={15} size={1} />}
         <Controls />
-        <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px' }}>
+        <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={snapAllNodesToGrid}
             title="Align all nodes to the nearest grid points"
@@ -992,7 +1021,103 @@ const CanvasArea: React.FC = () => {
           >
             <span>🧲</span> Snap All to Grid
           </button>
+
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: '#1e1e1e',
+            border: '1px solid #333',
+            borderRadius: '4px',
+            padding: '6px 12px',
+            fontSize: '11px',
+            fontWeight: 600,
+            color: exportDiagramMode ? '#00e5ff' : '#ccc',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            userSelect: 'none',
+            transition: 'all 0.2s ease',
+          }}>
+            <input
+              type="checkbox"
+              checked={exportDiagramMode}
+              onChange={(e) => setExportDiagramMode(e.target.checked)}
+              style={{ cursor: 'pointer', accentColor: '#00e5ff' }}
+            />
+            Export Diagram Ready Mode
+          </label>
         </Panel>
+
+        {exportDiagramMode && (
+          <Panel position="top-right" style={{
+            background: 'rgba(20, 20, 20, 0.95)',
+            border: '2px solid #00e5ff',
+            borderRadius: '8px',
+            padding: '16px',
+            maxWidth: '380px',
+            color: '#fff',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            maxHeight: '75vh',
+            overflowY: 'auto',
+            margin: '10px 10px 0 0',
+            pointerEvents: 'auto'
+          }}>
+            <h3 style={{ margin: '0 0 12px 0', color: '#00e5ff', fontSize: '13px', borderBottom: '1px solid rgba(0,229,255,0.3)', paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Topology Configuration Summary
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Hardware Nodes */}
+              <div>
+                <h4 style={{ margin: '0 0 6px 0', color: '#ffb74d', fontSize: '11px', textTransform: 'uppercase' }}>Hardware Components</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {nodes.filter(n => n.type === 'hardwareNode').map(node => {
+                    const nodeBom = generateSingleNodeBom(node, useStore.getState().projectLicenseMode, useStore.getState().defaultTermDuration || '12', useStore.getState().projectRegion || 'US', edges, nodes);
+                    const opticsDesc = nodeBom.filter(r => r.type === 'Optic' || r.type === 'TAP' || r.type === 'Module')
+                      .map(r => `${r.qty}x ${r.sku}`)
+                      .join(', ');
+                    return (
+                      <div key={node.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
+                        <div style={{ fontWeight: 'bold', color: '#fff' }}>{node.data?.label as string} ({node.data?.model})</div>
+                        <div style={{ color: '#aaa', fontSize: '10px', marginTop: '2px' }}>
+                          {opticsDesc || 'No modules or optics installed.'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Destination / Ingest Tools */}
+              <div>
+                <h4 style={{ margin: '0 0 6px 0', color: '#ffb74d', fontSize: '11px', textTransform: 'uppercase' }}>Ingest Tools & Connectivity</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {nodes.filter(n => n.type === 'toolNode').map(node => {
+                    const incoming = edges.filter(e => e.target === node.id);
+                    const connDesc = incoming.map(e => {
+                      const src = nodes.find(n => n.id === e.source);
+                      const optic = (node.data?.ingestOptic as string) || '';
+                      const qty = node.data?.ingestOpticQty || 1;
+                      const opticLabel = optic ? `${qty}x ${optic}` : 'Direct Cable';
+                      return `Ingests from ${src?.data?.label || src?.data?.model || 'Chassis'} via ${opticLabel}`;
+                    }).join(' | ') || 'No connection';
+
+                    return (
+                      <div key={node.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #4caf50' }}>
+                        <div style={{ fontWeight: 'bold', color: '#fff' }}>{node.data?.label as string}</div>
+                        <div style={{ color: '#aaa', fontSize: '10px', marginTop: '2px' }}>
+                          {connDesc}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </Panel>
+        )}
       </ReactFlow>
 
       {/* ── Federated Search Enclosures ── */}
