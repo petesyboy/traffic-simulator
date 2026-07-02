@@ -327,16 +327,24 @@ const CanvasArea: React.FC = () => {
         if (model.includes('TAP')) {
           const sku = String(srcNode.data?.sku || '').toUpperCase();
           const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || model.toLowerCase().includes('single-mode') || model.toLowerCase().includes('sm') || model.includes('253T') || model.includes('273T') || model.includes('453T');
-          const isM506T = model.includes('TAP-M506T') || sku.includes('TAP-M506T');
-          const selectedOpticVal = isM506T 
-            ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
-            : ((srcNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
           
-          const match = selectedOpticVal.match(/(1|10|25|40|100|400)G/i);
-          if (match) {
-            return parseInt(match[1], 10) * 1000; // Gbps to Mbps
+          const allocations = (srcNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+            { 
+              qty: (srcNode.data?.tappedLinksCount as number) ?? 1, 
+              optic: (srcNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+            }
+          ];
+
+          let totalCap = 0;
+          for (const alloc of allocations) {
+            let speed = 10000;
+            const match = alloc.optic.match(/(1|10|25|40|100|400)G/i);
+            if (match) {
+              speed = parseInt(match[1], 10) * 1000;
+            }
+            totalCap += speed * alloc.qty;
           }
-          return 10000; // default 10G
+          return totalCap;
         }
 
         if (model.includes('TA400') || model.includes('HC3')) return 400000;
@@ -375,35 +383,45 @@ const CanvasArea: React.FC = () => {
             const tapNode = nodes.find(n => n.id === incoming.source);
             if (!tapNode) continue;
             
-            let tapSpeed = 10000; // default 10G
-            let numLinks = 1;
             if (tapNode.type === 'inputNode') {
-              tapSpeed = (tapNode.data?.linkSpeed as number || 10) * 1000;
+              const tapSpeed = (tapNode.data?.linkSpeed as number || 10) * 1000;
+              const numLinks = 1;
+              const opticsToDeduct = numLinks * 2;
+              for (let d = 0; d < opticsToDeduct; d++) {
+                const index = pool.indexOf(tapSpeed);
+                if (index > -1) {
+                  pool.splice(index, 1);
+                } else {
+                  pool.splice(0, 1);
+                }
+              }
             } else if (tapNode.type === 'hardwareNode' && String(tapNode.data?.model || '').toUpperCase().includes('TAP')) {
               const sku = String(tapNode.data?.sku || '').toUpperCase();
               const tapModel = String(tapNode.data?.model || '').toUpperCase();
               const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
-              const isM506T = tapModel.includes('TAP-M506T') || sku.includes('TAP-M506T');
-              const selectedOpticVal = isM506T 
-                ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
-                : ((tapNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
               
-              const match = selectedOpticVal.match(/(1|10|25|40|100|400)G/i);
-              if (match) {
-                tapSpeed = parseInt(match[1], 10) * 1000;
-              }
-              numLinks = (tapNode.data?.tappedLinksCount as number) ?? 1;
-            }
+              const allocations = (tapNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+                { 
+                  qty: (tapNode.data?.tappedLinksCount as number) ?? 1, 
+                  optic: (tapNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+                }
+              ];
 
-            // Each tapped link consumes 2 optics of the same speed!
-            const opticsToDeduct = numLinks * 2;
-            for (let d = 0; d < opticsToDeduct; d++) {
-              const index = pool.indexOf(tapSpeed);
-              if (index > -1) {
-                pool.splice(index, 1);
-              } else {
-                // If exact match not found, remove the closest available speed
-                pool.splice(0, 1);
+              for (const alloc of allocations) {
+                let allocSpeed = 10000;
+                const match = alloc.optic.match(/(1|10|25|40|100|400)G/i);
+                if (match) {
+                  allocSpeed = parseInt(match[1], 10) * 1000;
+                }
+                const opticsToDeduct = alloc.qty * 2;
+                for (let d = 0; d < opticsToDeduct; d++) {
+                  const index = pool.indexOf(allocSpeed);
+                  if (index > -1) {
+                    pool.splice(index, 1);
+                  } else {
+                    pool.splice(0, 1);
+                  }
+                }
               }
             }
           }
