@@ -496,9 +496,45 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   return (
     <>
+      <style>{`
+        @keyframes pulse-orange {
+          0% { opacity: 0.4; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.1); }
+          100% { opacity: 0.4; transform: scale(0.9); }
+        }
+        .optics-alert-dot {
+          animation: pulse-orange 1.5s infinite ease-in-out;
+        }
+      `}</style>
       <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '8px', flexWrap: 'wrap' }}>
         <button onClick={() => setActiveTab('general')} style={{ ...tabStyle, background: activeTab === 'general' ? '#333' : 'transparent', color: activeTab === 'general' ? '#fff' : '#888' }}>General</button>
-        <button onClick={() => setActiveTab('optics')} style={{ ...tabStyle, background: activeTab === 'optics' ? '#333' : 'transparent', color: activeTab === 'optics' ? '#fff' : '#888' }}>Optics</button>
+        <button 
+          onClick={() => setActiveTab('optics')} 
+          style={{ 
+            ...tabStyle, 
+            background: activeTab === 'optics' ? '#333' : 'transparent', 
+            color: activeTab === 'optics' ? '#fff' : '#888',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>Optics</span>
+          {!model?.includes('TAP') && (missingMM > 0 || missingSM > 0) && (
+            <span 
+              className="optics-alert-dot" 
+              style={{ 
+                display: 'inline-block',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#ffa726',
+                boxShadow: '0 0 6px #ffa726'
+              }} 
+              title="Optics configuration invalid. Click to rectify."
+            />
+          )}
+        </button>
         {node.data.gigaSmartApps && Array.isArray(node.data.gigaSmartApps) && node.data.gigaSmartApps.length > 0 && (
           <button onClick={() => setActiveTab('apps')} style={{ ...tabStyle, background: activeTab === 'apps' ? '#333' : 'transparent', color: activeTab === 'apps' ? '#fff' : '#888' }}>GigaSMART Apps</button>
         )}
@@ -540,60 +576,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         </div>
       )}
 
-      {/* Dynamic Link and Optic Verification Panel */}
-      {!model?.includes('TAP') && (
-        <div style={{
-          background: (missingMM > 0 || missingSM > 0) ? 'rgba(255, 152, 0, 0.05)' : 'rgba(76, 175, 80, 0.05)',
-          border: (missingMM > 0 || missingSM > 0) ? '1px dashed rgba(255, 152, 0, 0.3)' : '1px dashed rgba(76, 175, 80, 0.3)',
-          borderRadius: '6px',
-          padding: '12px',
-          marginBottom: '16px',
-          fontSize: '11px',
-          color: '#ccc',
-          lineHeight: '1.4'
-        }}>
-          <div style={{
-            fontWeight: 'bold',
-            marginBottom: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: (missingMM > 0 || missingSM > 0) ? '#ffa726' : '#66bb6a',
-            fontSize: '12px'
-          }}>
-            {(missingMM > 0 || missingSM > 0) ? '⚠️ Optics Allocation Required' : '✅ Optics Configuration Valid'}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
-            <div>
-              <span style={{ color: '#888' }}>Tapped Links:</span>
-              <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{tappedLinks}</strong>
-            </div>
-            <div>
-              <span style={{ color: '#888' }}>Optics Needed:</span>
-              <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{requiredMMOptics + requiredSMOptics}</strong>
-              <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics})</span>
-            </div>
-            <div>
-              <span style={{ color: '#888' }}>Optics Allocated:</span>
-              <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ffb74d' : '#81c784', marginLeft: '4px', fontFamily: 'monospace' }}>
-                {installedMMOptics + installedSMOptics}
-              </strong>
-              <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {installedMMOptics}, SM: {installedSMOptics})</span>
-            </div>
-            <div>
-              <span style={{ color: '#888' }}>Status:</span>
-              <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
-                {(missingMM > 0 || missingSM > 0) ? 'Missing Optics' : 'Complete'}
-              </strong>
-            </div>
-          </div>
-          {(missingMM > 0 || missingSM > 0) && (
-            <div style={{ marginTop: '8px', color: '#ffb74d', fontSize: '10px' }}>
-              💡 Add the required transceivers in the <strong>Optics</strong> tab under the correct board cages to complete the deployment.
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* ── GENERAL TAB ── */}
       <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}>
@@ -913,6 +896,55 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
       {/* ── OPTICS TAB ── */}
       <div style={{ display: activeTab === 'optics' ? 'block' : 'none' }}>
+        {/* Dynamic Link and Optic Verification Panel */}
+        {!model?.includes('TAP') && (
+          <div style={{
+            background: (missingMM > 0 || missingSM > 0) ? 'rgba(255, 152, 0, 0.05)' : 'rgba(76, 175, 80, 0.05)',
+            border: (missingMM > 0 || missingSM > 0) ? '1px dashed rgba(255, 152, 0, 0.3)' : '1px dashed rgba(76, 175, 80, 0.3)',
+            borderRadius: '6px',
+            padding: '12px',
+            marginBottom: '16px',
+            fontSize: '11px',
+            color: '#ccc',
+            lineHeight: '1.4'
+          }}>
+            <div style={{
+              fontWeight: 'bold',
+              marginBottom: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: (missingMM > 0 || missingSM > 0) ? '#ffa726' : '#66bb6a',
+              fontSize: '12px'
+            }}>
+              {(missingMM > 0 || missingSM > 0) ? '⚠️ Optics Allocation Required' : '✅ Optics Configuration Valid'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
+              <div>
+                <span style={{ color: '#888' }}>Tapped Links:</span>
+                <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{tappedLinks}</strong>
+              </div>
+              <div>
+                <span style={{ color: '#888' }}>Optics Needed:</span>
+                <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{requiredMMOptics + requiredSMOptics}</strong>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics})</span>
+              </div>
+              <div>
+                <span style={{ color: '#888' }}>Optics Allocated:</span>
+                <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ffb74d' : '#81c784', marginLeft: '4px', fontFamily: 'monospace' }}>
+                  {installedMMOptics + installedSMOptics}
+                </strong>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {installedMMOptics}, SM: {installedSMOptics})</span>
+              </div>
+              <div>
+                <span style={{ color: '#888' }}>Status:</span>
+                <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
+                  {(missingMM > 0 || missingSM > 0) ? 'Missing Optics' : 'Complete'}
+                </strong>
+              </div>
+            </div>
+          </div>
+        )}
         {renderModuleSlots()}
 
         {!model?.includes('TAP') && (total100G > 0 || total40G > 0 || total25G > 0 || total10G > 0 || total1G > 0) && (
