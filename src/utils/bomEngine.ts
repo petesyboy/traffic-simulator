@@ -3,7 +3,7 @@ import type { CustomNode } from '../store/store';
 import type { Edge } from '@xyflow/react';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveNodeSkus } from './skuResolver';
-import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import { NODE_TYPES, CONFIG_TYPES, SUPPORTED_TAP_OPTICS } from '../constants/nodeTypes';
 import opticRules from '../constants/opticRules.json';
 
 const skus: Record<string, string> = skusData as Record<string, string>;
@@ -90,17 +90,18 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     let changed = consolidatedOptics.length !== currentOptics.length;
 
     const nextOptics = consolidatedOptics.map(opt => {
-      const needed = tapOpticsNeeded[opt.optic];
-      if (needed !== undefined) {
-        if (opt.qty < needed) {
+      const isTapOpticType = SUPPORTED_TAP_OPTICS.some(o => o.value === opt.optic);
+      if (isTapOpticType) {
+        const needed = tapOpticsNeeded[opt.optic] || 0;
+        if (opt.qty !== needed) {
           changed = true;
           delete tapOpticsNeeded[opt.optic];
-          return { ...opt, qty: needed };
+          return needed > 0 ? { ...opt, qty: needed } : null;
         }
         delete tapOpticsNeeded[opt.optic];
       }
       return opt;
-    });
+    }).filter((opt): opt is { board: string, optic: string, qty: number } => opt !== null);
 
     Object.entries(tapOpticsNeeded).forEach(([optic, qty]) => {
       nextOptics.push({
