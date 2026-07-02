@@ -364,6 +364,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
   const currentScenarioName = useStore((state) => state.currentScenarioName);
+  const projectRegion = useStore((state) => state.projectRegion);
 
   // Local UI state for the toast and confirm modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -440,7 +441,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
                 style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
                 onClick={handleLogoClick}
               />
-              <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px' }}>Flow Mapping Example{currentScenarioName ? ` - ${currentScenarioName}` : ''}</span>
+              <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>Flow Mapping Example{currentScenarioName ? ` - ${currentScenarioName}` : ''}</span>
+                <img 
+                  src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'} 
+                  alt={projectRegion}
+                  title={`Region: ${projectRegion}`}
+                  style={{ height: '11px', width: 'auto', borderRadius: '1px', marginLeft: '4px', border: '1px solid rgba(255,255,255,0.15)', display: 'block' }}
+                />
+              </span>
               <span className="build-number">
                 <a 
                   href="https://github.com/petesyboy/traffic-simulator/commits" 
