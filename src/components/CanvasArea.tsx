@@ -316,13 +316,6 @@ const CanvasArea: React.FC = () => {
       animated = true;
     }
     
-    // Append throughput if available
-    const bps = edgeMetrics[edge.id];
-    if (isRunning && bps !== undefined && bps > 0) {
-      const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
-      label = label ? `${label} | ${throughputLabel}` : throughputLabel;
-    }
-
     // Calculate dynamic animation speed based on link utilization
     const getCapacity = (): number => {
       if (!srcNode) return 10000;
@@ -356,6 +349,19 @@ const CanvasArea: React.FC = () => {
       }
       return 10000; // default 10 Gbps (10000 Mbps)
     };
+
+    const capacityVal = getCapacity();
+    const capGbps = capacityVal / 1000;
+    const capacityString = `[${capGbps >= 1 ? capGbps.toFixed(0) + 'G' : capacityVal + 'M'}]`;
+
+    // Append throughput if available
+    const bps = edgeMetrics[edge.id];
+    if (isRunning && bps !== undefined && bps > 0) {
+      const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
+      label = label ? `${label} ${capacityString} | ${throughputLabel}` : `${capacityString} | ${throughputLabel}`;
+    } else {
+      label = label ? `${label} ${capacityString}` : capacityString;
+    }
 
     let stroke = '#007cff'; // default blue
     if (isRunning) {

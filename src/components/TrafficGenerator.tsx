@@ -79,14 +79,7 @@ const TrafficGenerator: React.FC = () => {
     }
     setNoPortError(false);
 
-    const totalTappedLinks = nodes.reduce((sum, n) => {
-      if (n.type === 'hardwareNode' && String(n.data?.model || '').includes('TAP')) {
-        return sum + ((n.data?.tappedLinksCount as number) ?? 1);
-      }
-      return sum;
-    }, 0);
-
-    if (trafficStreams.length >= totalTappedLinks) {
+    if (trafficStreams.length >= 20) {
       setStreamLimitError(true);
       setTimeout(() => setStreamLimitError(false), 4000);
       return;
@@ -122,10 +115,10 @@ const TrafficGenerator: React.FC = () => {
       id: `t-${Date.now()}`,
       name: `Traffic Stream ${trafficStreams.length + 1} (${defaultBandwidth >= 1000 ? defaultBandwidth/1000 + ' Gbps' : defaultBandwidth + ' Mbps'})`,
       sourceNodeId: sourceNode.id,
-      vlan: '100',
-      ipSrc: '192.168.1.50',
+      vlan: String(100 + trafficStreams.length * 100),
+      ipSrc: `192.168.1.${50 + trafficStreams.length}`,
       ipDst: '10.0.0.100',
-      portSrc: '50231',
+      portSrc: String(50231 + trafficStreams.length),
       portDst: '443',
       protocol: 'tcp',
       bandwidth: defaultBandwidth,
@@ -182,19 +175,11 @@ const TrafficGenerator: React.FC = () => {
                 ⚠️ Add a Network Input port first
               </span>
             )}
-            {streamLimitError && (() => {
-              const totalTappedLinks = nodes.reduce((sum, n) => {
-                if (n.type === 'hardwareNode' && String(n.data?.model || '').includes('TAP')) {
-                  return sum + ((n.data?.tappedLinksCount as number) ?? 1);
-                }
-                return sum;
-              }, 0);
-              return (
-                <span style={{ fontSize: '11px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', border: '1px solid rgba(239,83,80,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
-                  ⚠️ Cannot exceed total tapped links in solution ({totalTappedLinks})
-                </span>
-              );
-            })()}
+            {streamLimitError && (
+              <span style={{ fontSize: '11px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', border: '1px solid rgba(239,83,80,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
+                ⚠️ Maximum limit of 20 active traffic streams reached
+              </span>
+            )}
             <button
               className={`sim-btn ${isRunning ? 'running' : ''}`}
               style={{
