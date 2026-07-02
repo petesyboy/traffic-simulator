@@ -65,8 +65,8 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     ]
   },
   {
-    name: "2. GigaSMART Optimization",
-    description: "Incoming TAP traffic optimized using Deduplication and Packet Slicing to reduce downstream tool licensing costs.",
+    name: "2. GigaSMART Optimisation",
+    description: "Incoming TAP traffic optimised using Deduplication and Packet Slicing to reduce downstream tool licensing costs.",
     nodes: [
       {
         id: "p2-tap",

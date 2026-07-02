@@ -12,3 +12,6 @@
 
 ## React Number Inputs
 - **CRITICAL RULE**: Do not aggressively validate integer bounds inside `onChange` handlers for React `<input type="number">` fields. When a user deletes a number, the value temporarily becomes an empty string, which evaluates to `NaN` and triggers a fallback reset if validated immediately. Instead, track the input state as a raw string and defer `parseInt()` and bounds validation to form submission (e.g., button clicks) or use a `<select>` dropdown for small bounded ranges.
+
+## British English Spelling
+- **CRITICAL RULE**: For all tooltips on the nodes and anywhere else in this project, use British English spelling conventions (e.g., "analyse" instead of "analyze", "optimise" instead of "optimize", "colour" instead of "color", etc.).
