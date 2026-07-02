@@ -133,6 +133,8 @@ export type RFState = {
   fitViewTrigger: number;
   sidebarMessage: string | null;
   setSidebarMessage: (msg: string | null) => void;
+  currentScenarioName: string | null;
+  setCurrentScenarioName: (name: string | null) => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -591,6 +593,8 @@ export const useStore = create<RFState>((set, get) => ({
   fitViewTrigger: 0,
   sidebarMessage: null,
   setSidebarMessage: (msg) => set({ sidebarMessage: msg }),
+  currentScenarioName: null,
+  setCurrentScenarioName: (name) => set({ currentScenarioName: name }),
   
   onNodesChange: (changes: NodeChange<CustomNode>[]) => {
     let nextNodes = applyNodeChanges<CustomNode>(changes, get().nodes);

@@ -77,6 +77,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
   const edges         = useStore((s) => s.edges);
   const trafficStreams = useStore((s) => s.trafficStreams);
   const restoreState  = useStore((s) => s.restoreState);
+  const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
 
   // Settings
   const advancedMode        = useStore((s) => s.advancedMode);
@@ -107,6 +108,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
     };
     localStorage.setItem(`${SLOT_PREFIX}${name}`, JSON.stringify(flow));
     setSlots(getSavedSlots());
+    setCurrentScenarioName(name);
     onSaved(name);
   };
 
@@ -136,6 +138,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
     downloadAnchor.click();
     downloadAnchor.remove();
     URL.revokeObjectURL(url);
+    setCurrentScenarioName(name);
     onSaved(name);
     onClose();
   };
@@ -151,6 +154,8 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
         const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
         if (n && e_list) {
           restoreState(n, e_list, t || [], s_obj);
+          const scenarioName = file.name.replace(/\.json$/i, '');
+          setCurrentScenarioName(scenarioName);
           onLoaded();
           onClose();
         } else {
@@ -171,6 +176,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
       const { nodes: n, edges: e, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
       if (n && e) {
         restoreState(n, e, t, s_obj);
+        setCurrentScenarioName(name);
         onLoaded();
       }
     } catch (err) {
@@ -181,6 +187,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
 
   const handleLoadPreset = (preset: typeof PRESET_SCENARIOS[number]) => {
     restoreState(preset.nodes, preset.edges, preset.trafficStreams);
+    setCurrentScenarioName(preset.name);
     onLoaded();
     onClose();
   };

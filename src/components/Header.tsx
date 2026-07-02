@@ -257,6 +257,7 @@ const BomModal: React.FC<{
   const globalLicenseMode = useStore((state) => state.projectLicenseMode);
   const globalTermDuration = useStore((state) => state.defaultTermDuration);
   const globalRegion = useStore((state) => state.projectRegion);
+  const currentScenarioName = useStore((state) => state.currentScenarioName);
   
   const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion);
   const validationErrors = validateConfiguration(nodes, edges);
@@ -321,7 +322,10 @@ const BomModal: React.FC<{
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'bom.csv';
+            const cleanName = currentScenarioName 
+              ? currentScenarioName.toLowerCase().replace(/[^a-z0-9_-]/g, '_')
+              : 'bom';
+            a.download = `${cleanName}.csv`;
             a.click();
           }} style={{ padding: '7px 16px', background: 'rgba(0,229,255,0.2)', border: '1px solid rgba(0,229,255,0.5)', color: '#00e5ff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>
             Export CSV
