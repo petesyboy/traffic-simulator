@@ -468,6 +468,12 @@ function getBoardCages(boardName: string, isPlus: boolean, model: string): { sfp
   if (modelLower.includes('ta25')) {
     return { sfp: 48, qsfp: 8 };
   }
+  if (modelLower.includes('ta200')) {
+    return { sfp: 0, qsfp: 64 };
+  }
+  if (modelLower.includes('ta400')) {
+    return { sfp: 0, qsfp: 32 };
+  }
   
   if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
     if (isPlus) {
@@ -610,8 +616,12 @@ export function validateConfiguration(
     // Check installed optics counts against physical cage limits
     let installedSfp = 0;
     let installedQsfp = 0;
+    let numBreakouts = 0;
     installedOptics.forEach((opt) => {
       const upper = opt.optic.toUpperCase();
+      if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) {
+        numBreakouts += opt.qty;
+      }
       const isQsfp = upper.includes('QSFP') || upper.includes('Q28') || upper.includes('QSF-') || upper.startsWith('Q28-') || upper.includes('40G') || upper.includes('100G') || upper.includes('400G');
       if (isQsfp) {
         installedQsfp += opt.qty;
@@ -619,6 +629,8 @@ export function validateConfiguration(
         installedSfp += opt.qty;
       }
     });
+
+    totalSfpCages += numBreakouts * 4;
 
     if (installedSfp > totalSfpCages) {
       errors.push({
