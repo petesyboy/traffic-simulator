@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { getSupportedBoards, validateOptic } from '../../utils/opticValidation';
 import { resolveNodeSkus } from '../../utils/skuResolver';
@@ -92,6 +92,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const [addOptic, setAddOptic] = useState('');
   
   const disableDcWarnings = useStore(state => state.disableDcWarnings);
+
+  useEffect(() => {
+    if (model?.includes('TAP')) {
+      setActiveTab('general');
+    }
+  }, [node.id, model]);
 
   const handleTermBlur = () => {
     if (!termDurationStr) {
@@ -507,39 +513,41 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           animation: pulse-orange 1.5s infinite ease-in-out;
         }
       `}</style>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '8px', flexWrap: 'wrap' }}>
-        <button onClick={() => setActiveTab('general')} style={{ ...tabStyle, background: activeTab === 'general' ? '#333' : 'transparent', color: activeTab === 'general' ? '#fff' : '#888' }}>General</button>
-        <button 
-          onClick={() => setActiveTab('optics')} 
-          style={{ 
-            ...tabStyle, 
-            background: activeTab === 'optics' ? '#333' : 'transparent', 
-            color: activeTab === 'optics' ? '#fff' : '#888',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <span>Optics</span>
-          {!model?.includes('TAP') && (missingMM > 0 || missingSM > 0) && (
-            <span 
-              className="optics-alert-dot" 
-              style={{ 
-                display: 'inline-block',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#ffa726',
-                boxShadow: '0 0 6px #ffa726'
-              }} 
-              title="Optics configuration invalid. Click to rectify."
-            />
+      {!model?.includes('TAP') && (
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '8px', flexWrap: 'wrap' }}>
+          <button onClick={() => setActiveTab('general')} style={{ ...tabStyle, background: activeTab === 'general' ? '#333' : 'transparent', color: activeTab === 'general' ? '#fff' : '#888' }}>General</button>
+          <button 
+            onClick={() => setActiveTab('optics')} 
+            style={{ 
+              ...tabStyle, 
+              background: activeTab === 'optics' ? '#333' : 'transparent', 
+              color: activeTab === 'optics' ? '#fff' : '#888',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>Optics</span>
+            {(missingMM > 0 || missingSM > 0) && (
+              <span 
+                className="optics-alert-dot" 
+                style={{ 
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#ffa726',
+                  boxShadow: '0 0 6px #ffa726'
+                }} 
+                title="Optics configuration invalid. Click to rectify."
+              />
+            )}
+          </button>
+          {node.data.gigaSmartApps && Array.isArray(node.data.gigaSmartApps) && node.data.gigaSmartApps.length > 0 && (
+            <button onClick={() => setActiveTab('apps')} style={{ ...tabStyle, background: activeTab === 'apps' ? '#333' : 'transparent', color: activeTab === 'apps' ? '#fff' : '#888' }}>GigaSMART Apps</button>
           )}
-        </button>
-        {node.data.gigaSmartApps && Array.isArray(node.data.gigaSmartApps) && node.data.gigaSmartApps.length > 0 && (
-          <button onClick={() => setActiveTab('apps')} style={{ ...tabStyle, background: activeTab === 'apps' ? '#333' : 'transparent', color: activeTab === 'apps' ? '#fff' : '#888' }}>GigaSMART Apps</button>
-        )}
-      </div>
+        </div>
+      )}
 
       {isLicenseExceeded && (
         <div style={{
