@@ -85,6 +85,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [termDurationStr, setTermDurationStr] = useState((node.data?.termDurationOverride as string) || '');
   const [activeTab, setActiveTab] = useState<'general'|'optics'|'apps'>('general');
+  const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
 
   // Allocation local states
   const [addQty, setAddQty] = useState(1);
@@ -580,37 +581,58 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
       {/* ── GENERAL TAB ── */}
       <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}>
-        <div className="config-card">
-          <h3>⚙️ Hardware Specifications</h3>
+        <div className="config-card" style={{ paddingBottom: isSpecsExpanded ? '16px' : '10px' }}>
+          <div 
+            onClick={() => setIsSpecsExpanded(!isSpecsExpanded)} 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              cursor: 'pointer',
+              userSelect: 'none'
+            }}
+          >
+            <h3 style={{ margin: 0 }}>⚙️ Hardware Specifications</h3>
+            <span style={{ fontSize: '10px', color: '#888' }}>{isSpecsExpanded ? '▲ Collapse' : '▼ Expand'}</span>
+          </div>
+          
           {details ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
-              <div><strong>Model:</strong> {details.model}</div>
-              <div><strong>Hardware SKU:</strong> {resolved.hwSku}</div>
-              {skusData[resolved.hwSku as keyof typeof skusData] && (
-                <div style={{ background: 'rgba(255, 152, 0, 0.08)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255, 152, 0, 0.2)', marginTop: '4px', marginBottom: '6px', fontSize: '11px', color: '#ffe0b2', lineHeight: '1.4' }}>
-                  <strong>Hardware Description:</strong> {skusData[resolved.hwSku as keyof typeof skusData]}
+            <div style={{ marginTop: '8px' }}>
+              {!isSpecsExpanded ? (
+                <div style={{ fontSize: '11px', color: '#aaa', background: '#111', padding: '6px 8px', borderRadius: '4px', border: '1px solid #222' }}>
+                  Model: <strong style={{ color: '#fff' }}>{details.model}</strong> | SKU: <strong style={{ color: '#fff' }}>{resolved.hwSku}</strong>
                 </div>
-              )}
-              {resolved.swSku && (
-                <>
-                  <div style={{ marginTop: '4px' }}><strong>Software SKU:</strong> {resolved.swSku}</div>
-                  {skusData[resolved.swSku as keyof typeof skusData] && (
-                    <div style={{ background: 'rgba(0, 229, 255, 0.08)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.2)', marginTop: '4px', marginBottom: '6px', fontSize: '11px', color: '#e0f7fa', lineHeight: '1.4' }}>
-                      <strong>Software Description:</strong> {skusData[resolved.swSku as keyof typeof skusData]}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', borderTop: '1px solid #222', paddingTop: '8px', marginTop: '8px' }}>
+                  <div><strong>Model:</strong> {details.model}</div>
+                  <div><strong>Hardware SKU:</strong> {resolved.hwSku}</div>
+                  {skusData[resolved.hwSku as keyof typeof skusData] && (
+                    <div style={{ background: 'rgba(255, 152, 0, 0.08)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255, 152, 0, 0.2)', marginTop: '4px', marginBottom: '6px', fontSize: '11px', color: '#ffe0b2', lineHeight: '1.4' }}>
+                      <strong>Hardware Description:</strong> {skusData[resolved.hwSku as keyof typeof skusData]}
                     </div>
                   )}
-                </>
+                  {resolved.swSku && (
+                    <>
+                      <div style={{ marginTop: '4px' }}><strong>Software SKU:</strong> {resolved.swSku}</div>
+                      {skusData[resolved.swSku as keyof typeof skusData] && (
+                        <div style={{ background: 'rgba(0, 229, 255, 0.08)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.2)', marginTop: '4px', marginBottom: '6px', fontSize: '11px', color: '#e0f7fa', lineHeight: '1.4' }}>
+                          <strong>Software Description:</strong> {skusData[resolved.swSku as keyof typeof skusData]}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {details.ru && <div><strong>Form Factor:</strong> {details.ru} RU</div>}
+                  {details.power && <div><strong>Power:</strong> {details.power}</div>}
+                  {details.fans !== undefined && <div><strong>Fans:</strong> {details.fans}</div>}
+                  {details.airflow && <div><strong>Airflow:</strong> {details.airflow}</div>}
+                  {!model?.includes('TAP') && details.ports !== undefined && <div><strong>Base Ports:</strong> {details.ports}</div>}
+                  {!model?.includes('TAP') && details.base_ports !== undefined && <div><strong>Base Ports:</strong> {details.base_ports}</div>}
+                  {details.module_slots !== undefined && <div><strong>Module Slots:</strong> {details.module_slots}</div>}
+                </div>
               )}
-              {details.ru && <div><strong>Form Factor:</strong> {details.ru} RU</div>}
-              {details.power && <div><strong>Power:</strong> {details.power}</div>}
-              {details.fans !== undefined && <div><strong>Fans:</strong> {details.fans}</div>}
-              {details.airflow && <div><strong>Airflow:</strong> {details.airflow}</div>}
-              {!model?.includes('TAP') && details.ports !== undefined && <div><strong>Base Ports:</strong> {details.ports}</div>}
-              {!model?.includes('TAP') && details.base_ports !== undefined && <div><strong>Base Ports:</strong> {details.base_ports}</div>}
-              {details.module_slots !== undefined && <div><strong>Module Slots:</strong> {details.module_slots}</div>}
             </div>
           ) : (
-            <div style={{ fontSize: '12px', color: '#aaa' }}>Specs not found for {sku}.</div>
+            <div style={{ fontSize: '12px', color: '#aaa', marginTop: '8px' }}>Specs not found for {sku}.</div>
           )}
         </div>
 
