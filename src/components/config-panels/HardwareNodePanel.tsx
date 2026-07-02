@@ -433,11 +433,18 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   // License Exceeded Validation
   const getTaLicenseLimits = (modelName: string, capacity: string): { sfp: number, qsfp: number } => {
     const isTA25 = modelName.includes('TA25');
+    const isTA200 = modelName.includes('TA200');
+    const isTA400 = modelName.includes('TA400');
     const cap = capacity || 'Full';
     if (isTA25) {
       if (cap === 'Quarter') return { sfp: 12, qsfp: 2 };
       if (cap === 'Half') return { sfp: 24, qsfp: 4 };
       return { sfp: 48, qsfp: 8 };
+    } else if (isTA200) {
+      if (cap === 'Half') return { sfp: 0, qsfp: 32 };
+      return { sfp: 0, qsfp: 64 };
+    } else if (isTA400) {
+      return { sfp: 2, qsfp: 32 };
     } else {
       if (cap === 'Quarter' || cap === '100G') return { sfp: 2, qsfp: 32 };
       if (cap === 'Half') return { sfp: 0, qsfp: 16 };
@@ -694,8 +701,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                       } else if (model.includes('TA200')) {
                         return (
                           <select value={val === 'Quarter' ? 'Half' : val} onChange={(e) => updateNodeData(node.id, { portCapacity: e.target.value })} style={{ width: '100%' }}>
-                            <option value="Full">32 Ports (QSFP) License</option>
-                            <option value="Half">16 Ports (QSFP) License</option>
+                            <option value="Full">64 Ports (QSFP) License</option>
+                            <option value="Half">32 Ports (QSFP) License</option>
                           </select>
                         );
                       } else if (model.includes('TA25')) {
