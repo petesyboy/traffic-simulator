@@ -271,6 +271,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const globalRegion = useStore((state) => state.projectRegion || 'US');
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
 
   const isPacketTool = configType === CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
@@ -429,6 +430,36 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           <Handle type="source" position={Position.Right} id="out" />
         )}
       </div>
+
+      {exportDiagramMode && (
+        <div style={{
+          background: 'rgba(20, 20, 20, 0.95)',
+          border: '1px solid #4caf50',
+          borderRadius: '4px',
+          padding: '6px 8px',
+          width: '170px',
+          boxSizing: 'border-box',
+          color: '#fff',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-wrap',
+          marginTop: '6px'
+        }}>
+          {(() => {
+            const incoming = edges.filter(e => e.target === id);
+            const connDesc = incoming.map(e => {
+              const src = nodes.find(n => n.id === e.source);
+              const optic = (data.ingestOptic as string) || '';
+              const qty = data.ingestOpticQty || 1;
+              const opticLabel = optic ? `${qty}x ${optic}` : 'Direct Cable';
+              return `Ingests from ${src?.data?.label || src?.data?.model || 'Chassis'} via ${opticLabel}`;
+            }).join('\n') || 'No connection';
+            return connDesc;
+          })()}
+        </div>
+      )}
     </>
   );
 };
@@ -638,6 +669,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const globalRegion = useStore((state) => state.projectRegion || 'US');
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
   
   let displaySku = resolved.hwSku;
@@ -857,6 +889,61 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         <Handle type="source" position={Position.Right} id="out" />
       </div>
+
+      {exportDiagramMode && (
+        <div style={{
+          background: 'rgba(20, 20, 20, 0.95)',
+          border: '1px solid #ff9800',
+          borderRadius: '4px',
+          padding: '6px 8px',
+          width: '180px',
+          boxSizing: 'border-box',
+          color: '#fff',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-wrap',
+          marginTop: '6px'
+        }}>
+          {(() => {
+            if (isTap) {
+              const linksCount = data.tappedLinksCount ?? 1;
+              const optic = (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+              const match = optic.match(/(1|10|25|40|100|400)G/i);
+              const speed = match ? match[0] : '10G';
+              return `Tapping ${linksCount} network link(s) at ${speed} using ${optic} to mirror traffic.`;
+            } else {
+              // Find incoming TAP links
+              const incoming = edges.filter(e => e.target === id);
+              const tapConns = incoming.map(e => {
+                const src = nodes.find(n => n.id === e.source);
+                if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
+                  const linksCount = src.data?.tappedLinksCount ?? 1;
+                  const optic = (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)';
+                  const match = optic.match(/(1|10|25|40|100|400)G/i);
+                  const speed = match ? match[0] : '10G';
+                  return { label: src.data?.label || 'TAP', linksCount, optic, speed };
+                }
+                return null;
+              }).filter(Boolean) as { label: string, linksCount: number, optic: string, speed: string }[];
+
+              let desc = '';
+              if (tapConns.length > 0) {
+                desc += tapConns.map(c => `Terminating ${c.linksCount * 2} TAP ports from ${c.label} using ${c.optic} at ${c.speed}.`).join('\n') + '\n\n';
+              }
+
+              const opticsDesc = nodeBom.filter(r => r.type === 'Optic' || r.type === 'TAP' || r.type === 'Module')
+                .map(r => `${r.qty}x ${r.sku}`)
+                .join(', ');
+              
+              desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}\n\n`;
+              desc += `Aggregating, filtering, and distributing network traffic to destination tools.`;
+              return desc;
+            }
+          })()}
+        </div>
+      )}
     </>
   );
 };

@@ -181,11 +181,14 @@ export function generateBom(
 
   syncedNodes.forEach(node => {
     if (node.type === 'toolNode') {
-      const optic = (node.data?.ingestOptic as string) || '';
-      const qty = parseInt(node.data?.ingestOpticQty as string || '0');
-      if (optic && qty > 0) {
-        const opticSku = resolveOpticSku(optic, '');
-        addRow(opticSku, qty, 'Optic');
+      const isPacketTool = node.data?.configType === 'Packet Tool';
+      if (!isPacketTool) {
+        const optic = (node.data?.ingestOptic as string) || '';
+        const qty = parseInt(node.data?.ingestOpticQty as string || '0');
+        if (optic && qty > 0) {
+          const opticSku = resolveOpticSku(optic, '');
+          addRow(opticSku, qty, 'Optic');
+        }
       }
       return;
     }
@@ -866,11 +869,14 @@ export function generateSingleNodeBom(
     : globalLicenseMode;
     
   if (node.type === 'toolNode') {
-    const optic = (node.data?.ingestOptic as string) || '';
-    const qty = parseInt(node.data?.ingestOpticQty as string || '0');
-    if (optic && qty > 0) {
-      const opticSku = resolveOpticSku(optic, '');
-      addRow(opticSku, qty, 'Optic');
+    const isPacketTool = node.data?.configType === 'Packet Tool';
+    if (!isPacketTool) {
+      const optic = (node.data?.ingestOptic as string) || '';
+      const qty = parseInt(node.data?.ingestOpticQty as string || '0');
+      if (optic && qty > 0) {
+        const opticSku = resolveOpticSku(optic, '');
+        addRow(opticSku, qty, 'Optic');
+      }
     }
     return Object.values(rowMap);
   }
