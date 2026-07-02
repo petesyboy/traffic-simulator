@@ -526,6 +526,61 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         </div>
       )}
 
+      {/* Dynamic Link and Optic Verification Panel */}
+      {!model?.includes('TAP') && (
+        <div style={{
+          background: (missingMM > 0 || missingSM > 0) ? 'rgba(255, 152, 0, 0.05)' : 'rgba(76, 175, 80, 0.05)',
+          border: (missingMM > 0 || missingSM > 0) ? '1px dashed rgba(255, 152, 0, 0.3)' : '1px dashed rgba(76, 175, 80, 0.3)',
+          borderRadius: '6px',
+          padding: '12px',
+          marginBottom: '16px',
+          fontSize: '11px',
+          color: '#ccc',
+          lineHeight: '1.4'
+        }}>
+          <div style={{
+            fontWeight: 'bold',
+            marginBottom: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: (missingMM > 0 || missingSM > 0) ? '#ffa726' : '#66bb6a',
+            fontSize: '12px'
+          }}>
+            {(missingMM > 0 || missingSM > 0) ? '⚠️ Optics Allocation Required' : '✅ Optics Configuration Valid'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
+            <div>
+              <span style={{ color: '#888' }}>Tapped Links:</span>
+              <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{tappedLinks}</strong>
+            </div>
+            <div>
+              <span style={{ color: '#888' }}>Optics Needed:</span>
+              <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{requiredMMOptics + requiredSMOptics}</strong>
+              <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics})</span>
+            </div>
+            <div>
+              <span style={{ color: '#888' }}>Optics Allocated:</span>
+              <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ffb74d' : '#81c784', marginLeft: '4px', fontFamily: 'monospace' }}>
+                {installedMMOptics + installedSMOptics}
+              </strong>
+              <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {installedMMOptics}, SM: {installedSMOptics})</span>
+            </div>
+            <div>
+              <span style={{ color: '#888' }}>Status:</span>
+              <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
+                {(missingMM > 0 || missingSM > 0) ? 'Missing Optics' : 'Complete'}
+              </strong>
+            </div>
+          </div>
+          {(missingMM > 0 || missingSM > 0) && (
+            <div style={{ marginTop: '8px', color: '#ffb74d', fontSize: '10px' }}>
+              💡 Add the required transceivers in the <strong>Optics</strong> tab under the correct board cages to complete the deployment.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── GENERAL TAB ── */}
       <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}>
         <div className="config-card">
