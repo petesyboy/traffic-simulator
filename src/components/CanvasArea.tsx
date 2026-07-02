@@ -324,15 +324,30 @@ const CanvasArea: React.FC = () => {
       }
       if (srcNode.type === 'hardwareNode') {
         const model = String(srcNode.data?.model || '').toUpperCase();
+        if (model.includes('TAP')) {
+          const sku = String(srcNode.data?.sku || '').toUpperCase();
+          const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || model.toLowerCase().includes('single-mode') || model.toLowerCase().includes('sm') || model.includes('253T') || model.includes('273T') || model.includes('453T');
+          const isM506T = model.includes('TAP-M506T') || sku.includes('TAP-M506T');
+          const selectedOpticVal = isM506T 
+            ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
+            : ((srcNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
+          
+          const match = selectedOpticVal.match(/(1|10|25|40|100|400)G/i);
+          if (match) {
+            return parseInt(match[1], 10) * 1000; // Gbps to Mbps
+          }
+          return 10000; // default 10G
+        }
+
         if (model.includes('TA400') || model.includes('HC3')) return 400000;
         if (model.includes('TA200') || model.includes('HC1-PLUS')) return 100000;
-        if (model.includes('HC1') || model.includes('TAP')) return 10000;
         
-        // If there's optics defined
-        const optics = (srcNode.data?.optics as { optic: string, qty: number }[]) || [];
-        if (optics.length > 0) {
-          let cap = 0;
-          for (const opt of optics) {
+        // If it's a GigaVUE HC/TA appliance, it has an inventory of installed optics
+        const installedOptics = (srcNode.data?.optics as { optic: string, qty: number }[]) || [];
+        if (installedOptics.length > 0) {
+          // Construct the pool of speeds from all installed transceivers
+          const pool: number[] = [];
+          for (const opt of installedOptics) {
             if (!opt.optic) continue;
             const name = opt.optic.toUpperCase();
             let speed = 0;
@@ -342,10 +357,68 @@ const CanvasArea: React.FC = () => {
             else if (name.includes('25G') || name.startsWith('SFP-55')) speed = 25000;
             else if (name.includes('10G') || name.startsWith('SFP-53')) speed = 10000;
             else if (name.includes('1G') || name.startsWith('SFP-50')) speed = 1000;
-            cap += speed * opt.qty;
+            
+            if (speed > 0) {
+              for (let i = 0; i < opt.qty; i++) {
+                pool.push(speed);
+              }
+            }
           }
-          if (cap > 0) return cap;
+
+          // Sort the pool descending (highest speed first)
+          pool.sort((a, b) => b - a);
+
+          // Find all incoming edges connected to this node that are from TAP/input nodes,
+          // because these TAP/input links allocate their target speeds from the pool.
+          const incomingEdges = edges.filter(e => e.target === srcNode.id);
+          for (const incoming of incomingEdges) {
+            const tapNode = nodes.find(n => n.id === incoming.source);
+            if (!tapNode) continue;
+            
+            let tapSpeed = 10000; // default 10G
+            let numLinks = 1;
+            if (tapNode.type === 'inputNode') {
+              tapSpeed = (tapNode.data?.linkSpeed as number || 10) * 1000;
+            } else if (tapNode.type === 'hardwareNode' && String(tapNode.data?.model || '').toUpperCase().includes('TAP')) {
+              const sku = String(tapNode.data?.sku || '').toUpperCase();
+              const tapModel = String(tapNode.data?.model || '').toUpperCase();
+              const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
+              const isM506T = tapModel.includes('TAP-M506T') || sku.includes('TAP-M506T');
+              const selectedOpticVal = isM506T 
+                ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
+                : ((tapNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
+              
+              const match = selectedOpticVal.match(/(1|10|25|40|100|400)G/i);
+              if (match) {
+                tapSpeed = parseInt(match[1], 10) * 1000;
+              }
+              numLinks = (tapNode.data?.tappedLinksCount as number) ?? 1;
+            }
+
+            // Each tapped link consumes 2 optics of the same speed!
+            const opticsToDeduct = numLinks * 2;
+            for (let d = 0; d < opticsToDeduct; d++) {
+              const index = pool.indexOf(tapSpeed);
+              if (index > -1) {
+                pool.splice(index, 1);
+              } else {
+                // If exact match not found, remove the closest available speed
+                pool.splice(0, 1);
+              }
+            }
+          }
+
+          // For the current edge: we want to allocate one of the remaining optics in the pool.
+          const outgoingEdges = edges.filter(e => e.source === srcNode.id);
+          const currentEdgeIndex = outgoingEdges.findIndex(e => e.id === edge.id);
+          if (currentEdgeIndex > -1 && currentEdgeIndex < pool.length) {
+            return pool[currentEdgeIndex];
+          }
+
+          if (pool.length > 0) return pool[0];
         }
+
+        if (model.includes('HC1')) return 10000;
       }
       return 10000; // default 10 Gbps (10000 Mbps)
     };
