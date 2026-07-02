@@ -266,6 +266,16 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     total1G += caps.ports1G;
   });
 
+  const numBreakouts = installedOptics.reduce((sum, opt) => {
+    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
+      return sum + opt.qty;
+    }
+    return sum;
+  }, 0);
+  total25G += numBreakouts * 4;
+  total10G += numBreakouts * 4;
+  total1G += numBreakouts * 4;
+
   let used100G = 0, used40G = 0, used25G = 0, used10G = 0, used1G = 0;
   installedOptics.forEach(opt => {
     const speed = getOpticSpeed(opt.optic);
@@ -332,8 +342,15 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         return;
       }
     } else {
-      if (currentSfp + qty > cages.sfp) {
-        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${cages.sfp} SFP cage(s) (currently using ${currentSfp}, attempting to add ${qty}).`);
+      const numBreakoutPanels = installedOptics.reduce((sum, opt) => {
+        if (opt.board === targetBoard && (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343'))) {
+          return sum + opt.qty;
+        }
+        return sum;
+      }, 0);
+      const allowedSfp = cages.sfp + numBreakoutPanels * 4;
+      if (currentSfp + qty > allowedSfp) {
+        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${allowedSfp} SFP cage(s) (currently using ${currentSfp}, attempting to add ${qty}).`);
         return;
       }
     }
