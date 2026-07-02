@@ -443,11 +443,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
               />
               <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>Flow Mapping Example{currentScenarioName ? ` - ${currentScenarioName}` : ''}</span>
-                <img 
+                 <img 
                   src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'} 
                   alt={projectRegion}
-                  title={`Region: ${projectRegion}`}
-                  style={{ height: '11px', width: 'auto', borderRadius: '1px', marginLeft: '4px', border: '1px solid rgba(255,255,255,0.15)', display: 'block' }}
+                  title={`Region: ${projectRegion} (Click to change Settings)`}
+                  onClick={() => setShowSettings(true)}
+                  style={{ height: '11px', width: 'auto', borderRadius: '1px', marginLeft: '4px', border: '1px solid rgba(255,255,255,0.15)', display: 'block', cursor: 'pointer' }}
                 />
               </span>
               <span className="build-number">
