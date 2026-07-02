@@ -181,6 +181,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     if (modelLower.includes('ta25')) {
       return { sfp: 48, qsfp: 8 };
     }
+    if (modelLower.includes('ta200')) {
+      return { sfp: 0, qsfp: 64 };
+    }
+    if (modelLower.includes('ta400')) {
+      return { sfp: 0, qsfp: 32 };
+    }
     
     if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
       if (isPlus) {
@@ -777,14 +783,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
           const handleRemoveAllocation = (index: number) => {
             let newAllocations = allocations.filter((_, idx) => idx !== index);
-            if (newAllocations.length === 0) {
-              newAllocations = [
-                { 
-                  qty: 1, 
-                  optic: isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'
-                }
-              ];
-            }
             const totalLinks = newAllocations.reduce((sum, a) => sum + a.qty, 0);
             updateNodeData(node.id, {
               tappedLinkAllocations: newAllocations,
