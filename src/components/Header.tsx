@@ -408,7 +408,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
     })
       .then((dataUrl) => {
         const a = document.createElement('a');
-        a.setAttribute('download', 'gigamon-flow-map.png');
+        const filename = currentScenarioName 
+          ? `${currentScenarioName} - export.png`
+          : 'Flow Mapping Example - export.png';
+        a.setAttribute('download', filename);
         a.setAttribute('href', dataUrl);
         a.click();
       })

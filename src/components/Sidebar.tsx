@@ -478,7 +478,7 @@ const Sidebar: React.FC = () => {
                 {openSections.hwTaps && hardwareCatalogue.taps
                   .filter(item => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku) && item.model.toLowerCase().includes(searchQuery))
                   .map((item) => (
-                  <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku, image: (item as any).image })} title={skus[item.sku] || ''}>
+                  <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku, image: (item as any).image, tappedLinksCount: 0, tappedLinkAllocations: [] })} title={skus[item.sku] || ''}>
                     <TapIcon size={18} />
                     <span>{item.model} {item.ru ? `(${item.ru < 1 ? '1/2' : item.ru} RU)` : ''}</span>
                   </div>
