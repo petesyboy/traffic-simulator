@@ -52,17 +52,21 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
                String(sourceNode.data?.model || '').includes('453T'))
             : (sourceNode.data?.tapFiberMode === 'Singlemode');
           
-          const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
-          let selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
-          
-          if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
-            selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
+          const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+            { 
+              qty: (sourceNode.data?.tappedLinksCount as number) ?? 1, 
+              optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+            }
+          ];
+
+          for (const alloc of allocations) {
+            let selectedOpticVal = alloc.optic;
+            if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
+              selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
+            }
+            const requiredQty = alloc.qty * 2;
+            tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + requiredQty;
           }
-
-          const numLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
-          const requiredQty = numLinks * 2;
-
-          tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + requiredQty;
         }
       }
     });

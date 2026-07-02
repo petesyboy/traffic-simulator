@@ -44,12 +44,22 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       const tapModel = String(sourceNode.data?.model || '');
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
-      const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
-      tappedLinks += numLinks;
-      if (isSMTap) {
-        requiredSMOptics += numLinks * 2;
-      } else {
-        requiredMMOptics += numLinks * 2;
+      const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+        { 
+          qty: (sourceNode.data?.tappedLinksCount as number) ?? 1, 
+          optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+        }
+      ];
+
+      for (const alloc of allocations) {
+        const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === alloc.optic);
+        const isSM = matched ? matched.isSM : isSMTap;
+        tappedLinks += alloc.qty;
+        if (isSM) {
+          requiredSMOptics += alloc.qty * 2;
+        } else {
+          requiredMMOptics += alloc.qty * 2;
+        }
       }
     }
   });
@@ -75,6 +85,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [termDurationStr, setTermDurationStr] = useState((node.data?.termDurationOverride as string) || '');
   const [activeTab, setActiveTab] = useState<'general'|'optics'|'apps'>('general');
+
+  // Allocation local states
+  const [addQty, setAddQty] = useState(1);
+  const [addOptic, setAddOptic] = useState('');
   
   const disableDcWarnings = useStore(state => state.disableDcWarnings);
 
@@ -703,67 +717,185 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const tapSku = String(node.data?.sku || '');
           const tapModel = String(node.data?.model || '');
           const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
-          
           const isM506T = tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
-          const selectedOpticVal = isM506T 
-            ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
-            : (node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
-          const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
-          const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
+          const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+            { 
+              qty: node.data.tappedLinksCount ?? 1, 
+              optic: node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+            }
+          ];
+
+          const currentAllocatedCount = allocations.reduce((sum, a) => sum + a.qty, 0);
+          const remainingLinks = maxLinks - currentAllocatedCount;
+
+          // Set default addOptic value if empty
+          const activeAddOptic = addOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+
+          // Check if any allocation has a mismatch
+          const mismatchedAllocations = allocations.filter(a => {
+            if (isM506T) return false;
+            const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === a.optic);
+            return matched ? matched.isSM !== isSMTap : false;
+          });
+
+          const handleAddAllocation = (qty: number, opticVal: string) => {
+            if (qty <= 0 || qty > remainingLinks) return;
+            const existingIndex = allocations.findIndex(a => a.optic === opticVal);
+            let newAllocations = [...allocations];
+            if (existingIndex > -1) {
+              newAllocations[existingIndex] = {
+                ...newAllocations[existingIndex],
+                qty: newAllocations[existingIndex].qty + qty
+              };
+            } else {
+              newAllocations.push({ qty, optic: opticVal });
+            }
+            const totalLinks = newAllocations.reduce((sum, a) => sum + a.qty, 0);
+            updateNodeData(node.id, {
+              tappedLinkAllocations: newAllocations,
+              tappedLinksCount: totalLinks
+            });
+            setAddQty(1);
+          };
+
+          const handleRemoveAllocation = (index: number) => {
+            let newAllocations = allocations.filter((_, idx) => idx !== index);
+            if (newAllocations.length === 0) {
+              newAllocations = [
+                { 
+                  qty: 1, 
+                  optic: isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'
+                }
+              ];
+            }
+            const totalLinks = newAllocations.reduce((sum, a) => sum + a.qty, 0);
+            updateNodeData(node.id, {
+              tappedLinkAllocations: newAllocations,
+              tappedLinksCount: totalLinks
+            });
+          };
 
           return (
             <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '16px', marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>TAP Settings</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '11px', color: '#ccc', width: '90px' }}>Tapped Links:</label>
-                  <select value={node.data.tappedLinksCount ?? 1} onChange={e => updateNodeData(node.id, { tappedLinksCount: parseInt(e.target.value) })} style={{ width: '80px', fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
-                    {Array.from({ length: maxLinks }, (_, i) => i + 1).map(num => <option key={num} value={num}>{num}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '11px', color: '#ccc', width: '90px' }}>Target Optic:</label>
-                  <select 
-                    value={selectedOpticVal} 
-                    onChange={e => updateNodeData(node.id, { tappedLinkOptic: e.target.value })} 
-                    disabled={isM506T}
-                    style={{ flex: 1, fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px', opacity: isM506T ? 0.7 : 1 }}
-                  >
-                    {SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
+              
+              {/* Existing Allocations List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: 600 }}>Active link allocations ({currentAllocatedCount}/{maxLinks} links)</span>
+                {allocations.map((alloc, idx) => {
+                  const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === alloc.optic);
+                  const hasAllocMismatch = !isM506T && matched ? matched.isSM !== isSMTap : false;
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#111', padding: '6px 8px', borderRadius: '4px', border: '1px solid #333', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ fontSize: '11px', color: '#fff', fontWeight: 'bold' }}>
+                          {alloc.qty} link{alloc.qty > 1 ? 's' : ''} &mdash; <span style={{ color: '#00e5ff' }}>{matched?.label || alloc.optic}</span>
+                        </div>
+                        {hasAllocMismatch && (
+                          <div style={{ fontSize: '9px', color: '#ef5350' }}>
+                            ⚠️ Fiber mode mismatch (TAP is {isSMTap ? 'Single-mode' : 'Multi-mode'})
+                          </div>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveAllocation(idx)}
+                        style={{ background: 'transparent', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '11px', padding: '2px 6px' }}
+                        title="Remove allocation"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Add Allocation Form */}
+              {remainingLinks > 0 ? (
+                <div style={{ background: '#181818', padding: '8px 10px', borderRadius: '6px', border: '1px dashed #444', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '10px', color: '#ffb74d', fontWeight: 'bold' }}>Add link allocation</div>
+                  
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '70px' }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Links</label>
+                      <select 
+                        value={addQty} 
+                        onChange={e => setAddQty(parseInt(e.target.value))} 
+                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                      >
+                        {Array.from({ length: remainingLinks }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>{num}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Optic Speed / Type</label>
+                      <select 
+                        value={activeAddOptic} 
+                        onChange={e => setAddOptic(e.target.value)} 
+                        disabled={isM506T}
+                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                      >
+                        {SUPPORTED_TAP_OPTICS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleAddAllocation(addQty, activeAddOptic)}
+                    style={{ background: '#ff9800', color: '#000', border: 'none', borderRadius: '3px', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}
+                  >
+                    + Add Links
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: '10px', color: '#81c784', background: 'rgba(76, 175, 80, 0.05)', padding: '6px', borderRadius: '4px', border: '1px solid rgba(76, 175, 80, 0.2)', marginBottom: '12px', textAlign: 'center' }}>
+                  ✓ All {maxLinks} available link slots allocated.
+                </div>
+              )}
+
               <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>
                 {isM506T 
                   ? 'Note: TAP-M506T requires termination with QSB-523T optics in the TA/HC unit.' 
-                  : `Specifies the number of links this TAP is monitoring (1-${maxLinks}) and target optic speed/fiber type.`}
+                  : `Specifies link allocations for this TAP (up to a maximum of ${maxLinks} links for this model).`}
               </div>
               
-              {hasMismatch && (
+              {mismatchedAllocations.length > 0 && (
                 <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '10px' }}>
-                  ⚠️ Fiber mode mismatch: TAP is {isSMTap ? 'Single-mode' : 'Multi-mode'} but target optic is {matchedOptic?.isSM ? 'Single-mode' : 'Multi-mode'}.
+                  ⚠️ Fiber mode mismatch: TAP is {isSMTap ? 'Single-mode' : 'Multi-mode'} but some allocations use conflicting fiber mode transceivers.
                 </div>
               )}
 
               {(() => {
                 const outgoingEdges = edges.filter(e => e.source === node.id || e.target === node.id);
                 if (outgoingEdges.length === 0) return null;
-                const otherId = outgoingEdges[0].source === node.id ? outgoingEdges[0].target : outgoingEdges[0].source;
-                const targetNode = nodes.find(n => n.id === otherId);
-                if (!targetNode) return null;
                 
-                const match = selectedOpticVal.match(/(1|10|25|40|100|400)G/i);
-                if (!match) return null;
+                let totalSpeed = 0;
+                const rows: React.ReactNode[] = [];
+                allocations.forEach((alloc, idx) => {
+                  const match = alloc.optic.match(/(1|10|25|40|100|400)G/i);
+                  if (match) {
+                    const speedVal = parseInt(match[1]);
+                    totalSpeed += speedVal * alloc.qty;
+                    rows.push(
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#ccc', marginTop: '2px' }}>
+                        <span>&bull; {alloc.qty} link{alloc.qty > 1 ? 's' : ''} × {match[1]}G</span>
+                        <span style={{ fontFamily: 'monospace' }}>{alloc.qty * speedVal}G</span>
+                      </div>
+                    );
+                  }
+                });
 
-                const speedVal = parseInt(match[1]);
-                const speedStr = match[1] + 'G';
-                const numLinks = (node.data.tappedLinksCount as number) ?? 1;
-                const totalSpeed = numLinks * speedVal;
                 return (
                   <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(37, 179, 75, 0.1)', border: '1px solid rgba(37, 179, 75, 0.3)', borderRadius: '4px' }}>
                     <div style={{ fontSize: '11px', color: '#4caf50', fontWeight: 'bold' }}>Derived Input Capacity</div>
-                    <div style={{ fontSize: '11px', color: '#fff', marginTop: '4px' }}>{numLinks} link(s) × {speedStr} = <strong>{totalSpeed}G Total</strong></div>
-                    <div style={{ fontSize: '9px', color: '#aaa', marginTop: '2px' }}>(Based on target optic: {selectedOpticVal})</div>
+                    <div style={{ marginTop: '4px' }}>{rows}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#fff', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px', marginTop: '4px', fontWeight: 'bold' }}>
+                      <span>Total Capacity</span>
+                      <span style={{ fontFamily: 'monospace' }}>{totalSpeed}G</span>
+                    </div>
                   </div>
                 );
               })()}
