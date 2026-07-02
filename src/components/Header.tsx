@@ -363,6 +363,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
   const edges          = useStore((state) => state.edges);
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
+  const currentScenarioName = useStore((state) => state.currentScenarioName);
 
   // Local UI state for the toast and confirm modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -439,7 +440,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
                 style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
                 onClick={handleLogoClick}
               />
-              <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px' }}>Flow Mapping Example</span>
+              <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px' }}>Flow Mapping Example{currentScenarioName ? ` - ${currentScenarioName}` : ''}</span>
               <span className="build-number">
                 <a 
                   href="https://github.com/petesyboy/traffic-simulator/commits" 
@@ -503,7 +504,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
               </select>
             </div>
 
-            {advancedMode && (() => {
+            {(advancedMode || nodes.some(n => n.type === 'hardwareNode')) && (() => {
               const validationErrors = validateConfiguration(nodes, edges);
               const hasErrors = validationErrors.length > 0;
               return (
