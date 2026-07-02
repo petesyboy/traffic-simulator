@@ -247,6 +247,9 @@ export function generateBom(
       if (!opt.optic) return;
       const opticSku = resolveOpticSku(opt.optic, model);
       addRow(opticSku, opt.qty, 'Optic');
+      if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) {
+        totalTapModules += opt.qty;
+      }
     });
 
     // Trace downstream paths to find GigaSMART action nodes connected to this HC chassis
