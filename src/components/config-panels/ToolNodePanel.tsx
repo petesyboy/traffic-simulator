@@ -48,6 +48,40 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
         </FormGroup>
       )}
 
+      <FormGroup label="Ingest Optic Type">
+        <select
+          value={(node.data?.ingestOptic as string) || ''}
+          onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
+        >
+          <option value="">-- No Optic (Direct Cable) --</option>
+          <option value="SFP-532 (10G SFP+ SR)">SFP-532 (10G SFP+ SR)</option>
+          <option value="SFP-533 (10G SFP+ LR)">SFP-533 (10G SFP+ LR)</option>
+          <option value="SFP-552 (25G SFP28 SR)">SFP-552 (25G SFP28 SR)</option>
+          <option value="SFP-553T (25G SFP28 LR)">SFP-553T (25G SFP28 LR)</option>
+          <option value="QSF-502 (40G QSFP+ SR4)">QSF-502 (40G QSFP+ SR4)</option>
+          <option value="QSF-503 (40G QSFP+ LR4)">QSF-503 (40G QSFP+ LR4)</option>
+          <option value="Q28-502 (100G QSFP28 SR4)">Q28-502 (100G QSFP28 SR4)</option>
+          <option value="Q28-503 (100G QSFP28 LR4)">Q28-503 (100G QSFP28 LR4)</option>
+          <option value="Q28-506 (100G QSFP28 PLR4)">Q28-506 (100G QSFP28 PLR4)</option>
+        </select>
+      </FormGroup>
+
+      {(node.data?.ingestOptic as string) && (
+        <FormGroup label="Ingest Optic Quantity">
+          <select
+            value={(node.data?.ingestOpticQty as string) || '1'}
+            onChange={(e) => onGenericChange('ingestOpticQty', e.target.value)}
+          >
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="12">12</option>
+            <option value="16">16</option>
+          </select>
+        </FormGroup>
+      )}
+
       {configType === CONFIG_TYPES.METADATA_TOOL && (
         <FormGroup label="Expected Format">
           <select

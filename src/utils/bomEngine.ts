@@ -180,6 +180,16 @@ export function generateBom(
   };
 
   syncedNodes.forEach(node => {
+    if (node.type === 'toolNode') {
+      const optic = (node.data?.ingestOptic as string) || '';
+      const qty = parseInt(node.data?.ingestOpticQty as string || '0');
+      if (optic && qty > 0) {
+        const opticSku = resolveOpticSku(optic, '');
+        addRow(opticSku, qty, 'Optic');
+      }
+      return;
+    }
+
     if (node.type !== 'hardwareNode') return;
     
     const model = (node.data?.model as string) || '';
@@ -855,6 +865,16 @@ export function generateSingleNodeBom(
     ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual'
     : globalLicenseMode;
     
+  if (node.type === 'toolNode') {
+    const optic = (node.data?.ingestOptic as string) || '';
+    const qty = parseInt(node.data?.ingestOpticQty as string || '0');
+    if (optic && qty > 0) {
+      const opticSku = resolveOpticSku(optic, '');
+      addRow(opticSku, qty, 'Optic');
+    }
+    return Object.values(rowMap);
+  }
+
   const resolved = resolveNodeSkus(node.data || {}, globalLicenseMode);
 
   if (model.includes('TAP')) {

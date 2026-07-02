@@ -266,6 +266,11 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const configType = (data.configType as string) || '';
   const toolName = (data.toolName as string) || '';
+  const projectLicenseMode = useStore((state) => state.projectLicenseMode);
+  const globalTermDuration = useStore((state) => state.defaultTermDuration || '12');
+  const globalRegion = useStore((state) => state.projectRegion || 'US');
+  const nodes = useStore((state) => state.nodes);
+  const edges = useStore((state) => state.edges);
 
   const isPacketTool = configType === CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
@@ -298,10 +303,23 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const glowClass = useGlowClass(id);
 
+  const nodeObj = { id, type: 'toolNode', data } as any;
+  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes);
+  
+  let tooltipText = `${data.label} Configuration BOM:\n`;
+  if (nodeBom.length > 0) {
+    tooltipText += nodeBom.map(row => `• ${row.qty}x ${row.sku} (${row.description})${row.term ? ` [${row.term} mo]` : ''}`).join('\n');
+  } else {
+    tooltipText += 'No ingest components configured.';
+  }
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
-      <div className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''} ${glowClass}`}>
+      <div 
+        className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''} ${glowClass}`}
+        title={tooltipText}
+      >
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
