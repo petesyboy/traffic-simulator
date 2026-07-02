@@ -64,6 +64,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     }
   });
 
+  const outgoingToolLinks = edges.filter(e => e.source === node.id && nodes.find(n => n.id === e.target)?.type === 'toolNode').length;
+
   let installedMMOptics = 0;
   let installedSMOptics = 0;
   installedOptics.forEach(opt => {
@@ -78,6 +80,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const missingSM = Math.max(0, requiredSMOptics - installedSMOptics);
 
   const totalOptics = installedOptics.reduce((sum, opt) => sum + opt.qty, 0);
+  const totalOpticsNeeded = (requiredMMOptics + requiredSMOptics) + outgoingToolLinks;
+  const isOpticsInvalid = (totalOptics < totalOpticsNeeded) || (missingMM > 0) || (missingSM > 0);
 
   const [selectedOpticBoard, setSelectedOpticBoard] = useState('');
   const [selectedOptic, setSelectedOptic] = useState('');
@@ -528,7 +532,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             }}
           >
             <span>Optics</span>
-            {(missingMM > 0 || missingSM > 0) && (
+            {isOpticsInvalid && (
               <span 
                 className="optics-alert-dot" 
                 style={{ 
@@ -929,8 +933,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         {/* Dynamic Link and Optic Verification Panel */}
         {!model?.includes('TAP') && (
           <div style={{
-            background: (missingMM > 0 || missingSM > 0) ? 'rgba(255, 152, 0, 0.05)' : 'rgba(76, 175, 80, 0.05)',
-            border: (missingMM > 0 || missingSM > 0) ? '1px dashed rgba(255, 152, 0, 0.3)' : '1px dashed rgba(76, 175, 80, 0.3)',
+            background: isOpticsInvalid ? 'rgba(255, 152, 0, 0.05)' : 'rgba(76, 175, 80, 0.05)',
+            border: isOpticsInvalid ? '1px dashed rgba(255, 152, 0, 0.3)' : '1px dashed rgba(76, 175, 80, 0.3)',
             borderRadius: '6px',
             padding: '12px',
             marginBottom: '16px',
@@ -944,34 +948,41 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              color: (missingMM > 0 || missingSM > 0) ? '#ffa726' : '#66bb6a',
+              color: isOpticsInvalid ? '#ffa726' : '#66bb6a',
               fontSize: '12px'
             }}>
-              {(missingMM > 0 || missingSM > 0) ? '⚠️ Optics Allocation Required' : '✅ Optics Configuration Valid'}
+              {isOpticsInvalid ? '⚠️ Optics Sanity Alert' : '✅ Optics Configuration Valid'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '6px' }}>
               <div>
-                <span style={{ color: '#888' }}>Tapped Links:</span>
+                <span style={{ color: '#888' }}>Tapped Links (In):</span>
                 <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{tappedLinks}</strong>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {tappedLinks * 2} SFPs)</span>
+              </div>
+              <div>
+                <span style={{ color: '#888' }}>Tool Links (Out):</span>
+                <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{outgoingToolLinks}</strong>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(needs {outgoingToolLinks} SFPs)</span>
               </div>
               <div>
                 <span style={{ color: '#888' }}>Optics Needed:</span>
-                <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{requiredMMOptics + requiredSMOptics}</strong>
-                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics})</span>
+                <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{totalOpticsNeeded}</strong>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics}, Tool: {outgoingToolLinks})</span>
               </div>
               <div>
-                <span style={{ color: '#888' }}>Optics Allocated:</span>
-                <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ffb74d' : '#81c784', marginLeft: '4px', fontFamily: 'monospace' }}>
-                  {installedMMOptics + installedSMOptics}
-                </strong>
-                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {installedMMOptics}, SM: {installedSMOptics})</span>
+                <span style={{ color: '#888' }}>Optics Deployed:</span>
+                <strong style={{ color: isOpticsInvalid ? '#ffb74d' : '#81c784', marginLeft: '4px', fontFamily: 'monospace' }}>{totalOptics}</strong>
               </div>
-              <div>
-                <span style={{ color: '#888' }}>Status:</span>
-                <strong style={{ color: (missingMM > 0 || missingSM > 0) ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
-                  {(missingMM > 0 || missingSM > 0) ? 'Missing Optics' : 'Complete'}
-                </strong>
-              </div>
+            </div>
+            <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+              <span style={{ color: '#888' }}>Sanity Check Status:</span>
+              <strong style={{ color: isOpticsInvalid ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
+                {totalOptics < totalOpticsNeeded 
+                  ? `Insufficient transceivers: Missing ${totalOpticsNeeded - totalOptics} optics`
+                  : (missingMM > 0 || missingSM > 0)
+                    ? 'Fiber type or speed mismatch on TAP links'
+                    : 'All links fully allocated and verified'}
+              </strong>
             </div>
           </div>
         )}
