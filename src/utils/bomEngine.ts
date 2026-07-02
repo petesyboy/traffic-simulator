@@ -804,3 +804,157 @@ export function validateConfiguration(
 
   return errors;
 }
+
+export function generateSingleNodeBom(
+  node: CustomNode,
+  globalLicenseMode: 'HTL' | 'Perpetual',
+  globalTermDuration: string,
+  globalRegion: 'US' | 'EU' | 'UK' = 'US',
+  edges: Edge[] = [],
+  nodes: CustomNode[] = []
+): BomRow[] {
+  const rowMap: Record<string, BomRow> = {};
+  
+  const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
+    const description = skus[sku] || 'Unknown SKU';
+    const reqMatch = description.match(/(?:requires|Must also add)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
+    
+    if (rowMap[sku]) {
+      rowMap[sku].qty += qty;
+    } else {
+      rowMap[sku] = { sku, qty, description, term, type };
+    }
+
+    if (reqMatch && reqMatch[1]) {
+      const depSku = reqMatch[1];
+      if (depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E')) {
+        let depTerm = undefined;
+        if (depSku.endsWith('-SW-TM')) depTerm = term || globalTermDuration;
+        
+        if (rowMap[depSku]) {
+          rowMap[depSku].qty += qty;
+        } else {
+          rowMap[depSku] = { 
+            sku: depSku, 
+            qty, 
+            description: skus[depSku] || 'Required Dependency', 
+            term: depTerm, 
+            type: 'Dependency' 
+          };
+        }
+      }
+    }
+  };
+
+  const model = (node.data?.model as string) || '';
+  const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
+  const licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') 
+    ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual'
+    : globalLicenseMode;
+    
+  const resolved = resolveNodeSkus(node.data || {}, globalLicenseMode);
+
+  if (model.includes('TAP')) {
+    addRow(resolved.hwSku, 1, 'TAP');
+    return Object.values(rowMap);
+  }
+
+  addRow(resolved.hwSku, 1, 'Chassis');
+  if (resolved.swSku) {
+    addRow(resolved.swSku, 1, 'License', termOverride);
+  }
+
+  if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') {
+    const upgradeSku = globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA';
+    addRow(upgradeSku, 1, 'License', termOverride);
+  }
+
+  const isPoweredChassis = model.includes('TA') || model.includes('HC');
+  if (isPoweredChassis) {
+    const isDC = node.data?.powerSupply === 'DC';
+    if (isDC) {
+      addRow('PCD-00051', 2, 'Dependency');
+    } else {
+      let acSku = 'PCD-00001';
+      if (globalRegion === 'EU') {
+        acSku = 'PCD-00003';
+      } else if (globalRegion === 'UK') {
+        acSku = 'PCD-00005';
+      }
+      addRow(acSku, 2, 'Dependency');
+    }
+  }
+
+  if (resolved.advSku) {
+    addRow(resolved.advSku, 1, 'License', termOverride);
+  }
+
+  const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};
+  Object.values(installedBoards).forEach(boardSku => {
+    if (!boardSku) return;
+    if (licenseMode === 'HTL') {
+       addRow(boardSku + '-HW', 1, 'Module');
+       addRow(boardSku + '-SW-TM', 1, 'License', termOverride);
+    } else {
+       addRow(boardSku, 1, 'Module');
+    }
+  });
+
+  const optics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
+  optics.forEach(opt => {
+    if (!opt.optic) return;
+    const opticSku = resolveOpticSku(opt.optic, model);
+    addRow(opticSku, opt.qty, 'Optic');
+  });
+
+  if (model.includes('HC')) {
+    const gsActions = new Set<string>();
+    if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
+      node.data.gigaSmartApps.forEach((app: any) => {
+        const action = (app.actionType as string) || '';
+        if (action) gsActions.add(action);
+      });
+    }
+
+    const visited = new Set<string>();
+    const queue = [node.id];
+    visited.add(node.id);
+    
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      const outbound = edges.filter(e => e.source === currentId);
+      outbound.forEach(e => {
+        if (!visited.has(e.target)) {
+          visited.add(e.target);
+          const targetNode = nodes.find(n => n.id === e.target);
+          if (targetNode) {
+            if (targetNode.type === 'gigaSmartNode') {
+              const action = (targetNode.data?.actionType as string) || '';
+              if (action) gsActions.add(action);
+            } else if (targetNode.type === 'filterNode' || targetNode.type === 'mapNode') {
+              queue.push(targetNode.id);
+            }
+          }
+        }
+      });
+    }
+
+    gsActions.forEach(action => {
+      let appSku = '';
+      if (action === 'dedup') appSku = 'CLS-HC1-DEDUP';
+      else if (action === 'slicing') appSku = 'CLS-HC1-SLICE';
+      else if (action === 'masking') appSku = 'CLS-HC1-MASK';
+      else if (action === 'header_stripping') appSku = 'CLS-HC1-STRIP';
+
+      if (appSku) {
+        if (model.includes('HC3')) appSku = appSku.replace('HC1', 'HC3');
+        if (licenseMode === 'HTL') {
+          appSku += '-SW-TM';
+        }
+        addRow(appSku, 1, 'License', termOverride);
+      }
+    });
+  }
+
+  return Object.values(rowMap);
+}

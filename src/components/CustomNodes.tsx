@@ -24,9 +24,9 @@ import {
 } from './Icons';
 import { CONFIG_TYPES, ACTION_TYPES, isMetadataAction, isDedupAction } from '../constants/nodeTypes';
 import { resolveNodeSkus } from '../utils/skuResolver';
-import skusData from '../constants/skus.json';
-const skus = skusData as Record<string, string>;
+
 import { getNodeValueProposition } from '../constants/nodeValues';
+import { generateSingleNodeBom } from '../utils/bomEngine';
 
 const useGlowClass = (id: string): string => {
   const glowingNodeId = useStore((state) => state.glowingNodeId);
@@ -616,6 +616,10 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const model = (data.model as string) || 'Hardware';
   const projectLicenseMode = useStore((state) => state.projectLicenseMode);
+  const globalTermDuration = useStore((state) => state.defaultTermDuration || '12');
+  const globalRegion = useStore((state) => state.projectRegion || 'US');
+  const nodes = useStore((state) => state.nodes);
+  const edges = useStore((state) => state.edges);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
   
   let displaySku = resolved.hwSku;
@@ -663,16 +667,14 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
-  const hwDesc = skus[resolved.hwSku] || '';
-  const swDesc = resolved.swSku ? skus[resolved.swSku] : '';
-  const advDesc = resolved.advSku ? skus[resolved.advSku] : '';
+  const nodeObj = { id, type: 'hardwareNode', data } as any;
+  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes);
   
-  let tooltipText = `Hardware SKU: ${resolved.hwSku}\nDescription: ${hwDesc}`;
-  if (resolved.swSku) {
-    tooltipText += `\n\nSoftware SKU: ${resolved.swSku}\nDescription: ${swDesc}`;
-  }
-  if (resolved.advSku) {
-    tooltipText += `\n\nLicense SKU: ${resolved.advSku}\nDescription: ${advDesc}`;
+  let tooltipText = `${model} Configuration BOM:\n`;
+  if (nodeBom.length > 0) {
+    tooltipText += nodeBom.map(row => `• ${row.qty}x ${row.sku} (${row.description})${row.term ? ` [${row.term} mo]` : ''}`).join('\n');
+  } else {
+    tooltipText += 'No components configured.';
   }
 
   const glowClass = useGlowClass(id);

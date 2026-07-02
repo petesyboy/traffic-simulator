@@ -278,6 +278,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   let used100G = 0, used40G = 0, used25G = 0, used10G = 0, used1G = 0;
   installedOptics.forEach(opt => {
+    if (opt.optic.includes('PNL-M34')) return;
     const speed = getOpticSpeed(opt.optic);
     if (speed === '100G') used100G += opt.qty;
     else if (speed === '40G') used40G += opt.qty;
@@ -324,6 +325,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     let currentQsfp = 0;
     installedOptics.forEach(opt => {
       if (opt.board === targetBoard) {
+        if (opt.optic.includes('PNL-M34')) return;
         const speed = getOpticSpeed(opt.optic);
         if (speed === '100G' || speed === '40G') {
           currentQsfp += opt.qty;
@@ -356,16 +358,42 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     }
 
     const existingOpticIdx = installedOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic);
-    let newOptics;
+    let newOptics = [...installedOptics];
     if (existingOpticIdx >= 0) {
-      newOptics = [...installedOptics];
       newOptics[existingOpticIdx] = {
         ...newOptics[existingOpticIdx],
         qty: newOptics[existingOpticIdx].qty + qty
       };
     } else {
-      newOptics = [...installedOptics, { board: targetBoard, optic: selectedOptic, qty }];
+      newOptics.push({ board: targetBoard, optic: selectedOptic, qty });
     }
+
+    // Auto-add corresponding parent optic if a breakout panel is added
+    if (selectedOptic.includes('PNL-M341') || selectedOptic.includes('PNL-M343')) {
+      let parentOptic = '';
+      if (selectedOptic.includes('PNL-M341')) {
+        const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
+        const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-502T'));
+        parentOptic = supports100G ? 'Q28-502T (100G QSFP28 SR4)' : 'QSF-502T (40G QSFP+ SR4)';
+      } else {
+        const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
+        const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-506'));
+        parentOptic = supports100G ? 'Q28-506 (100G QSFP28 PLR4)' : 'QSF-506T (40G QSFP+ PSM4)';
+      }
+      
+      if (parentOptic) {
+        const parentIdx = newOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === parentOptic);
+        if (parentIdx >= 0) {
+          newOptics[parentIdx] = {
+            ...newOptics[parentIdx],
+            qty: newOptics[parentIdx].qty + qty
+          };
+        } else {
+          newOptics.push({ board: targetBoard, optic: parentOptic, qty });
+        }
+      }
+    }
+
     updateNodeData(node.id, { optics: newOptics });
     setSelectedOptic('');
     setQtyStr('1');
