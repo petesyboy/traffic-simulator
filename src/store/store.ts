@@ -143,7 +143,21 @@ export type RFState = {
   setSelectedNodeId: (nodeId: string | null) => void;
   setGlowingNodeId: (nodeId: string | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
-  restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => void;
+  restoreState: (
+    nodes: CustomNode[],
+    edges: Edge[],
+    trafficStreams?: TrafficStream[],
+    settings?: {
+      advancedMode?: boolean;
+      projectLicenseMode?: 'HTL' | 'Perpetual';
+      defaultTermDuration?: string;
+      projectRegion?: 'US' | 'EU' | 'UK';
+      disableDcWarnings?: boolean;
+      panelTextScale?: number;
+      showGrid?: boolean;
+      snapToGrid?: boolean;
+    }
+  ) => void;
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
   setAdvancedMode: (mode: boolean) => void;
@@ -752,15 +766,43 @@ export const useStore = create<RFState>((set, get) => ({
     });
   },
   
-  restoreState: (nodes: CustomNode[], edges: Edge[], trafficStreams?: TrafficStream[]) => {
+  restoreState: (
+    nodes: CustomNode[],
+    edges: Edge[],
+    trafficStreams?: TrafficStream[],
+    settings?: {
+      advancedMode?: boolean;
+      projectLicenseMode?: 'HTL' | 'Perpetual';
+      defaultTermDuration?: string;
+      projectRegion?: 'US' | 'EU' | 'UK';
+      disableDcWarnings?: boolean;
+      panelTextScale?: number;
+      showGrid?: boolean;
+      snapToGrid?: boolean;
+    }
+  ) => {
     let syncedNodes = syncSplunkLabels(nodes, edges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, edges);
-    set({
+    
+    const updateObj: any = {
       nodes: syncedNodes,
       edges,
       trafficStreams: trafficStreams || get().trafficStreams,
       fitViewTrigger: get().fitViewTrigger + 1
-    });
+    };
+
+    if (settings) {
+      if (settings.advancedMode !== undefined) updateObj.advancedMode = settings.advancedMode;
+      if (settings.projectLicenseMode !== undefined) updateObj.projectLicenseMode = settings.projectLicenseMode;
+      if (settings.defaultTermDuration !== undefined) updateObj.defaultTermDuration = settings.defaultTermDuration;
+      if (settings.projectRegion !== undefined) updateObj.projectRegion = settings.projectRegion;
+      if (settings.disableDcWarnings !== undefined) updateObj.disableDcWarnings = settings.disableDcWarnings;
+      if (settings.panelTextScale !== undefined) updateObj.panelTextScale = settings.panelTextScale;
+      if (settings.showGrid !== undefined) updateObj.showGrid = settings.showGrid;
+      if (settings.snapToGrid !== undefined) updateObj.snapToGrid = settings.snapToGrid;
+    }
+
+    set(updateObj);
   },
   
   toggleSimulation: () => {
