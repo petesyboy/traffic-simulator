@@ -78,9 +78,33 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
   const trafficStreams = useStore((s) => s.trafficStreams);
   const restoreState  = useStore((s) => s.restoreState);
 
+  // Settings
+  const advancedMode        = useStore((s) => s.advancedMode);
+  const projectLicenseMode  = useStore((s) => s.projectLicenseMode);
+  const defaultTermDuration = useStore((s) => s.defaultTermDuration);
+  const projectRegion       = useStore((s) => s.projectRegion);
+  const disableDcWarnings   = useStore((s) => s.disableDcWarnings);
+  const panelTextScale      = useStore((s) => s.panelTextScale);
+  const showGrid            = useStore((s) => s.showGrid);
+  const snapToGrid          = useStore((s) => s.snapToGrid);
+
   const handleSave = () => {
     const name = slotName.trim() || 'default';
-    const flow = { nodes, edges, trafficStreams };
+    const flow = {
+      nodes,
+      edges,
+      trafficStreams,
+      settings: {
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        disableDcWarnings,
+        panelTextScale,
+        showGrid,
+        snapToGrid
+      }
+    };
     localStorage.setItem(`${SLOT_PREFIX}${name}`, JSON.stringify(flow));
     setSlots(getSavedSlots());
     onSaved(name);
@@ -88,7 +112,21 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
 
   const handleExportFile = () => {
     const name = slotName.trim() || 'my-topology';
-    const flow = { nodes, edges, trafficStreams };
+    const flow = {
+      nodes,
+      edges,
+      trafficStreams,
+      settings: {
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        disableDcWarnings,
+        panelTextScale,
+        showGrid,
+        snapToGrid
+      }
+    };
     const blob = new Blob([JSON.stringify(flow, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
@@ -110,9 +148,9 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
     reader.onload = (e) => {
       try {
         const raw = e.target?.result as string;
-        const { nodes: n, edges: e_list, trafficStreams: t } = JSON.parse(raw);
+        const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
         if (n && e_list) {
-          restoreState(n, e_list, t || []);
+          restoreState(n, e_list, t || [], s_obj);
           onLoaded();
           onClose();
         } else {
@@ -130,9 +168,9 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
     try {
       const raw = localStorage.getItem(`${SLOT_PREFIX}${name}`);
       if (!raw) return;
-      const { nodes: n, edges: e, trafficStreams: t } = JSON.parse(raw);
+      const { nodes: n, edges: e, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
       if (n && e) {
-        restoreState(n, e, t);
+        restoreState(n, e, t, s_obj);
         onLoaded();
       }
     } catch (err) {
