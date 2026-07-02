@@ -320,7 +320,11 @@ const CanvasArea: React.FC = () => {
     const getCapacity = (): number => {
       if (!srcNode) return 10000;
       if (srcNode.type === 'inputNode') {
-        return (srcNode.data?.linkSpeed as number || 10) * 1000; // Gbps to Mbps
+        const val = srcNode.data?.linkSpeed as number;
+        if (val !== undefined) {
+          return val >= 1000 ? val : val * 1000;
+        }
+        return 10000;
       }
       if (srcNode.type === 'hardwareNode') {
         const model = String(srcNode.data?.model || '').toUpperCase();
@@ -384,7 +388,8 @@ const CanvasArea: React.FC = () => {
             if (!tapNode) continue;
             
             if (tapNode.type === 'inputNode') {
-              const tapSpeed = (tapNode.data?.linkSpeed as number || 10) * 1000;
+              const tapSpeedVal = tapNode.data?.linkSpeed as number;
+              const tapSpeed = tapSpeedVal !== undefined ? (tapSpeedVal >= 1000 ? tapSpeedVal : tapSpeedVal * 1000) : 10000;
               const numLinks = 1;
               const opticsToDeduct = numLinks * 2;
               for (let d = 0; d < opticsToDeduct; d++) {
@@ -446,7 +451,11 @@ const CanvasArea: React.FC = () => {
     const bps = edgeMetrics[edge.id];
 
     if (!advancedMode && isSourceHwOrTapOrTool && isTargetHwOrTapOrTool) {
-      // In simple mode, do not append link speed/throughput labels between TAPs, hardware nodes, and tools
+      // In simple mode, do not append link speed (capacity), only append throughput if running
+      if (isRunning && bps !== undefined && bps > 0) {
+        const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
+        label = label ? `${label} ${throughputLabel}` : throughputLabel;
+      }
     } else {
       const capacityVal = getCapacity();
       const capGbps = capacityVal / 1000;
