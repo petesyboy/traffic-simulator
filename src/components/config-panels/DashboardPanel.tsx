@@ -83,9 +83,9 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
           </div>
 
           <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', marginTop: '10px' }}>
-            💡 <b>Security Optimization Tip:</b>
+            💡 <b>Security Optimisation Tip:</b>
             <p style={{ margin: '4px 0 0 0' }}>
-              Filtering out non-malicious duplicate and background protocol traffic before sending it to analysis tools reduces tool CPU utilization and prevents packet drops at high traffic volumes.
+              Filtering out non-malicious duplicate and background protocol traffic before sending it to analysis tools reduces tool CPU utilisation and prevents packet drops at high traffic volumes.
             </p>
           </div>
         </div>

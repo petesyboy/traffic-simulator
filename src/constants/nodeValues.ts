@@ -32,7 +32,7 @@ export const getNodeValueProposition = (
 
   // 2. Traffic Maps
   if (type === 'mapNode') {
-    return "Gigamon Flow Maps intelligently forward only the specific network traffic that target tools need to analyze, shielding them from noise.";
+    return "Gigamon Flow Maps intelligently forward only the specific network traffic that target tools need to analyse, shielding them from noise.";
   }
 
   // 3. Transformations / Filters
@@ -68,7 +68,7 @@ export const getNodeValueProposition = (
     if (actionType === ACTION_TYPES.SSL_DECRYPT) {
       return "Decrypts SSL/TLS traffic once and forwards the cleartext to multiple security tools, eliminating duplicate decryption overhead.";
     }
-    return `Applies GigaSMART ${actionType || 'processing'} to optimize, protect, and scale downstream monitoring tools.`;
+    return `Applies GigaSMART ${actionType || 'processing'} to optimise, protect, and scale downstream monitoring tools.`;
   }
 
   // 6. Target Tools & Storage
@@ -79,7 +79,7 @@ export const getNodeValueProposition = (
     if (configType === 'Objects' || toolName === 'Objects' || toolName === 'S3 / Object Storage') {
       return "Stores long-term network traffic archives cost-effectively in S3/Object Storage, enabling direct federated search queries.";
     }
-    return "Monitors and analyzes network packets to detect threats or measure performance. Gigamon ensures it receives optimized, clean traffic.";
+    return "Monitors and analyses network packets to detect threats or measure performance. Gigamon ensures it receives optimised, clean traffic.";
   }
 
   // 7. Hardware Chassis (Advanced Mode)
@@ -87,5 +87,5 @@ export const getNodeValueProposition = (
     return "Physical Gigamon node providing high-density traffic aggregation, optical media translation, and hardware-accelerated flow mapping.";
   }
 
-  return "A visibility pipeline node designed to collect, optimize, route, or inspect network intelligence.";
+  return "A visibility pipeline node designed to collect, optimise, route, or inspect network intelligence.";
 };
