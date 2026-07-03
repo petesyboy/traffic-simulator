@@ -502,8 +502,6 @@ const CanvasArea: React.FC = () => {
       return 10000; // default 10 Gbps (10000 Mbps)
     };
 
-    const isSourceHwOrTapOrTool = srcNode?.type === 'hardwareNode' || srcNode?.type === 'toolNode' || (srcNode?.type === 'inputNode' && srcNode?.data?.configType === 'TAP');
-    const isTargetHwOrTapOrTool = targetNode?.type === 'hardwareNode' || targetNode?.type === 'toolNode' || (targetNode?.type === 'inputNode' && targetNode?.data?.configType === 'TAP');
     const bps = edgeMetrics[edge.id];
 
     // Only append link speed (capacity) if in advanced mode
