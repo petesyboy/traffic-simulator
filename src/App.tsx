@@ -381,9 +381,88 @@ import React from 'react';
 function App() {
   const restoreState     = useStore((state) => state.restoreState);
   const toggleSimulation = useStore((state) => state.toggleSimulation);
+  const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
+
+  // State for export, moved up from SaveSlotModal
+  const nodes               = useStore((s) => s.nodes);
+  const edges               = useStore((s) => s.edges);
+  const trafficStreams      = useStore((s) => s.trafficStreams);
+  const advancedMode        = useStore((s) => s.advancedMode);
+  const projectLicenseMode  = useStore((s) => s.projectLicenseMode);
+  const defaultTermDuration = useStore((s) => s.defaultTermDuration);
+  const projectRegion       = useStore((s) => s.projectRegion);
+  const disableDcWarnings   = useStore((s) => s.disableDcWarnings);
+  const panelTextScale      = useStore((s) => s.panelTextScale);
+  const showGrid            = useStore((s) => s.showGrid);
+  const snapToGrid          = useStore((s) => s.snapToGrid);
+  const currentScenarioName = useStore((s) => s.currentScenarioName);
 
   const [modalMode, setModalMode] = useState<'save' | 'load' | null>(null);
-  const [saveToast, setSaveToast]           = useState('');
+  const [saveToast, setSaveToast] = useState('');
+
+  const handleExportStateToFile = useCallback(() => {
+    const name = currentScenarioName || 'fm-scenario';
+    const flow = {
+      nodes,
+      edges,
+      trafficStreams,
+      settings: {
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        disableDcWarnings,
+        panelTextScale,
+        showGrid,
+        snapToGrid
+      }
+    };
+    const blob = new Blob([JSON.stringify(flow, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', url);
+    downloadAnchor.setAttribute('download', `${name}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    URL.revokeObjectURL(url);
+
+    setSaveToast(`Saved topology to "${name}.json"`);
+    setTimeout(() => setSaveToast(''), 2000);
+  }, [
+    nodes, edges, trafficStreams, advancedMode, projectLicenseMode, defaultTermDuration, 
+    projectRegion, disableDcWarnings, panelTextScale, showGrid, snapToGrid, 
+    currentScenarioName
+  ]);
+
+  const handleImportStateFromFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const raw = e.target?.result as string;
+        const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+        if (n && e_list) {
+          restoreState(n, e_list, t || [], s_obj);
+          const scenarioName = file.name.replace(/\.json$/i, '');
+          setCurrentScenarioName(scenarioName);
+          setSaveToast(`Loaded "${scenarioName}"`);
+          setTimeout(() => setSaveToast(''), 2000);
+        } else {
+          alert("Invalid topology file structure.");
+        }
+      } catch (err) {
+        alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input value to allow loading the same file again
+    if(event.target) event.target.value = '';
+  }, [restoreState, setCurrentScenarioName]);
+
 
   // ── Auto-restore on first mount ──────────────────────────────────────────
 
@@ -458,6 +537,8 @@ function App() {
       <Header
         onSaveClick={() => setModalMode('save')}
         onLoadClick={() => setModalMode('load')}
+        onSaveFileClick={handleExportStateToFile}
+        onLoadFileChange={handleImportStateFromFile}
       />
 
       <div className="main-content">

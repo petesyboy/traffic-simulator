@@ -84,6 +84,7 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const configType = (data.configType as string) || '';
+  const advancedMode = useStore((state) => state.advancedMode);
 
   /** Pick the correct icon based on the port class. */
   const renderIcon = () => {
@@ -124,10 +125,12 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         </div>
         <div className="node-type-label" style={{ display: 'block' }}>{nodeTypeLabel}</div>
-        <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, display: 'flex', justifyContent: 'space-between' }}>
-          <span>Type: {configType}</span>
-          {Boolean(data.linkSpeed) && <span>Speed: {formatBandwidth(data.linkSpeed as number)}</span>}
-        </div>
+        {advancedMode && (
+          <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>Type: {configType}</span>
+            {Boolean(data.linkSpeed) && <span>Speed: {formatBandwidth(data.linkSpeed as number)}</span>}
+          </div>
+        )}
 
         {/* Only show live metrics while simulation is running */}
         {isRunning && (
@@ -152,6 +155,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const conditions = (data.conditions as MapCondition[]) || [];
+  const advancedMode = useStore((state) => state.advancedMode);
 
   const glowClass = useGlowClass(id);
 
@@ -187,7 +191,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         </div>
 
-        {conditions.length > 0 && (
+        {advancedMode && conditions.length > 0 && (
           <div style={{
             fontSize: '9px',
             color: '#b2dfdb',
@@ -219,6 +223,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
+  const advancedMode = useStore((state) => state.advancedMode);
 
   const glowClass = useGlowClass(id);
 
@@ -240,11 +245,13 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <div className="node-type-label">Transformation / Filter</div>
 
         {/* Show the relevant filter value (VLAN, subnet, or port) */}
-        <div className="node-meta">
-          {data.configType === CONFIG_TYPES.VLAN_FILTER && <span>VLANs: {data.vlanIds as string || 'None'}</span>}
-          {data.configType === CONFIG_TYPES.IP_FILTER && <span>Subnet: {data.ipSubnet as string || 'None'}</span>}
-          {data.configType === CONFIG_TYPES.PORT_FILTER && <span>Ports: {data.ports as string || 'None'}</span>}
-        </div>
+        {advancedMode && (
+          <div className="node-meta">
+            {data.configType === CONFIG_TYPES.VLAN_FILTER && <span>VLANs: {data.vlanIds as string || 'None'}</span>}
+            {data.configType === CONFIG_TYPES.IP_FILTER && <span>Subnet: {data.ipSubnet as string || 'None'}</span>}
+            {data.configType === CONFIG_TYPES.PORT_FILTER && <span>Ports: {data.ports as string || 'None'}</span>}
+          </div>
+        )}
 
         {isRunning && (
           <div className="node-metrics">
@@ -272,6 +279,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
   const exportDiagramMode = useStore((state) => state.exportDiagramMode);
+  const advancedMode = useStore((state) => state.advancedMode);
 
   const isPacketTool = configType === CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
@@ -356,7 +364,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         </div>
 
         {/* Show expected format for metadata tools */}
-        {isMetadataTool && !isFederatedSearch && !!data.expectedFormat && (
+        {advancedMode && isMetadataTool && !isFederatedSearch && !!data.expectedFormat && (
           <div className="node-meta-small" style={{ opacity: 0.7, fontSize: '8.5px' }}>
             Expects: {data.expectedFormat as string}
           </div>
@@ -472,6 +480,7 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const edges = useStore((state) => state.edges);
   const algorithm = (data.algorithm as string) || 'Round Robin';
   const linkCount = (data.linkCount as number) || 2;
+  const advancedMode = useStore((state) => state.advancedMode);
   
   const actualLinks = edges.filter((e) => e.source === id).length;
   const isMismatch = actualLinks !== linkCount;
@@ -491,10 +500,14 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         </div>
         <div className="node-type-label">GigaStream Load Balancer</div>
-        <div className="node-meta">Method: {algorithm}</div>
-        <div className="node-meta" style={{ color: '#00e5ff', fontWeight: 'bold' }}>
-          Configured Links: {linkCount} (Connected: {actualLinks})
-        </div>
+        {advancedMode && (
+          <>
+            <div className="node-meta">Method: {algorithm}</div>
+            <div className="node-meta" style={{ color: '#00e5ff', fontWeight: 'bold' }}>
+              Configured Links: {linkCount} (Connected: {actualLinks})
+            </div>
+          </>
+        )}
 
         {isMismatch && (
           <div className="node-warning-badge" style={{
@@ -597,7 +610,7 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         </div>
 
         {/* Metadata output format chip — only shown for AMI/AMX/App Metadata */}
-        {isMetadataAction(actionType) && (
+        {advancedMode && isMetadataAction(actionType) && (
           <div className="node-chip-row" style={{ marginTop: '4px' }}>
             <div className="node-inner-chip" style={{ color: '#00e5ff', borderColor: 'rgba(0, 229, 255, 0.2)', fontSize: '8px', padding: '2px 4px' }}>
               Output: {data.metadataFormat as string || 'CEF'}
@@ -606,7 +619,7 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         )}
 
-        {actionType === ACTION_TYPES.PACKET_SLICING && (
+        {advancedMode && actionType === ACTION_TYPES.PACKET_SLICING && (
           <div className="node-chip-row" style={{ marginTop: '4px' }}>
             <div className="node-inner-chip" style={{ color: '#00e5ff', borderColor: 'rgba(0, 229, 255, 0.2)', fontSize: '8px', padding: '2px 4px' }}>
               Slice: {(data.sliceSize as number) || 128} Bytes
@@ -670,6 +683,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
   const exportDiagramMode = useStore((state) => state.exportDiagramMode);
+  const advancedMode = useStore((state) => state.advancedMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
   
   let displaySku = resolved.hwSku;
@@ -750,7 +764,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', marginTop: '2px' }}>
           <div className="node-type-label" style={{ display: 'block', color: '#ff9800', fontWeight: 'bold', margin: 0 }}>{model}</div>
-          {resolved.advSku && (
+          {advancedMode && resolved.advSku && (
             <span style={{
               fontSize: '8px',
               background: 'rgba(255, 213, 79, 0.15)',
@@ -765,61 +779,65 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             </span>
           )}
         </div>
-        <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
-          <span>SKU: {displaySku}</span>
-        </div>
-        {isTap && tapInfo && (
-          <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: '8px',
-              background: 'rgba(0, 229, 255, 0.15)',
-              color: '#00e5ff',
-              border: '1px solid rgba(0, 229, 255, 0.3)',
-              borderRadius: '3px',
-              padding: '1px 4px',
-              fontWeight: 'bold'
-            }}>
-              ⚖️ {tapInfo.splitRatio}
-            </span>
-            {tapInfo.media && (
-              <span style={{
-                fontSize: '8px',
-                background: tapInfo.media.includes('SMF') ? 'rgba(255, 235, 59, 0.15)' : 'rgba(0, 230, 118, 0.15)',
-                color: tapInfo.media.includes('SMF') ? '#ffd54f' : '#00e676',
-                border: tapInfo.media.includes('SMF') ? '1px solid rgba(255, 235, 59, 0.3)' : '1px solid rgba(0, 230, 118, 0.3)',
-                borderRadius: '3px',
-                padding: '1px 4px',
-                fontWeight: 'bold'
-              }}>
-                {tapInfo.media}
-              </span>
+        {advancedMode && (
+          <>
+            <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
+              <span>SKU: {displaySku}</span>
+            </div>
+            {isTap && tapInfo && (
+              <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: '8px',
+                  background: 'rgba(0, 229, 255, 0.15)',
+                  color: '#00e5ff',
+                  border: '1px solid rgba(0, 229, 255, 0.3)',
+                  borderRadius: '3px',
+                  padding: '1px 4px',
+                  fontWeight: 'bold'
+                }}>
+                  ⚖️ {tapInfo.splitRatio}
+                </span>
+                {tapInfo.media && (
+                  <span style={{
+                    fontSize: '8px',
+                    background: tapInfo.media.includes('SMF') ? 'rgba(255, 235, 59, 0.15)' : 'rgba(0, 230, 118, 0.15)',
+                    color: tapInfo.media.includes('SMF') ? '#ffd54f' : '#00e676',
+                    border: tapInfo.media.includes('SMF') ? '1px solid rgba(255, 235, 59, 0.3)' : '1px solid rgba(0, 230, 118, 0.3)',
+                    borderRadius: '3px',
+                    padding: '1px 4px',
+                    fontWeight: 'bold'
+                  }}>
+                    {tapInfo.media}
+                  </span>
+                )}
+                {tapInfo.wavelength && (
+                  <span style={{
+                    fontSize: '8px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: '#ccc',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '3px',
+                    padding: '1px 4px'
+                  }}>
+                    λ {tapInfo.wavelength}
+                  </span>
+                )}
+                {tapInfo.isULT && (
+                  <span style={{
+                    fontSize: '8px',
+                    background: 'rgba(244, 67, 54, 0.15)',
+                    color: '#ff8a80',
+                    border: '1px solid rgba(244, 67, 54, 0.3)',
+                    borderRadius: '3px',
+                    padding: '1px 4px',
+                    fontWeight: 'bold'
+                  }}>
+                    🔒 ULT
+                  </span>
+                )}
+              </div>
             )}
-            {tapInfo.wavelength && (
-              <span style={{
-                fontSize: '8px',
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: '#ccc',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '3px',
-                padding: '1px 4px'
-              }}>
-                λ {tapInfo.wavelength}
-              </span>
-            )}
-            {tapInfo.isULT && (
-              <span style={{
-                fontSize: '8px',
-                background: 'rgba(244, 67, 54, 0.15)',
-                color: '#ff8a80',
-                border: '1px solid rgba(244, 67, 54, 0.3)',
-                borderRadius: '3px',
-                padding: '1px 4px',
-                fontWeight: 'bold'
-              }}>
-                🔒 ULT
-              </span>
-            )}
-          </div>
+          </>
         )}
 
         {!isTap && conditions.length > 0 && (
@@ -843,7 +861,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
         
         {/* Render internal GigaSMART apps in Advanced Mode */}
-        {!!(data.gigaSmartApps && Array.isArray(data.gigaSmartApps) && data.gigaSmartApps.length > 0) && (
+        {advancedMode && !!(data.gigaSmartApps && Array.isArray(data.gigaSmartApps) && data.gigaSmartApps.length > 0) && (
           <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,152,0,0.3)', paddingTop: '6px' }}>
             <div style={{ fontSize: '9px', color: '#ff9800', marginBottom: '4px', fontWeight: 'bold' }}>GigaSMART Apps:</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
