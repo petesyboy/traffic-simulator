@@ -663,9 +663,13 @@ interface HeaderProps {
   onSaveClick: () => void;
   /** Called when the user clicks "Load Layout" — opens the load slot modal in App.tsx. */
   onLoadClick: () => void;
+  /** Called when the user clicks "Save to File" — directly triggers a file download. */
+  onSaveFileClick: () => void;
+  /** Called when the user selects a file to load. */
+  onLoadFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
+const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileClick, onLoadFileChange }) => {
   // Subscribe to exactly the state slices we need
   const isRunning      = useStore((state) => state.isRunning);
   const simulationSpeed = useStore((state) => state.simulationSpeed);
@@ -865,11 +869,18 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
             </button>
 
             {/* Save button now opens the multi-slot modal in App.tsx */}
-            <button className="header-btn primary" onClick={onSaveClick}>
-              💾 Save Layout
+            <button className="header-btn primary" onClick={onSaveFileClick}>
+              💾 Save to File
+            </button>
+            <label className="header-btn secondary" style={{ cursor: 'pointer', margin: 0 }}>
+              📂 Load from File
+              <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
+            </label>
+            <button className="header-btn secondary" onClick={onSaveClick}>
+              🗂️ Save Slots...
             </button>
             <button className="header-btn secondary" onClick={onLoadClick}>
-              📂 Load Layout
+              🗂️ Load Slots...
             </button>
             <button className="header-btn secondary" onClick={loadDemo}>
               🔄 Reset Demo
@@ -887,5 +898,6 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick }) => {
     </>
   );
 };
+
 
 export default Header;
