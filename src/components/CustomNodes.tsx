@@ -128,7 +128,6 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         {advancedMode && (
           <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, display: 'flex', justifyContent: 'space-between' }}>
             <span>Type: {configType}</span>
-            {Boolean(data.linkSpeed) && <span>Speed: {formatBandwidth(data.linkSpeed as number)}</span>}
           </div>
         )}
 
@@ -156,6 +155,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const conditions = (data.conditions as MapCondition[]) || [];
   const advancedMode = useStore((state) => state.advancedMode);
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
 
   const glowClass = useGlowClass(id);
 
@@ -214,6 +214,42 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
         <Handle type="source" position={Position.Right} id="out" />
       </div>
+
+      {exportDiagramMode && (
+        <div style={{
+          background: 'rgba(20, 20, 20, 0.95)',
+          border: '1px solid #009688',
+          borderRadius: '4px',
+          padding: '6px 8px',
+          width: '170px',
+          boxSizing: 'border-box',
+          color: '#fff',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-wrap',
+          marginTop: '6px'
+        }}>
+          {(() => {
+            if (conditions.length === 0) return 'Traffic Map: Pass All (No filters)';
+            return `Traffic Map (Filtering Rules):\n` + conditions.map((c, i) => {
+              const logicPrefix = i > 0 ? `${c.logic} ` : '';
+              let fieldLabel = c.field.toUpperCase();
+              if (c.field === 'portdst') fieldLabel = 'DST PORT';
+              if (c.field === 'portsrc') fieldLabel = 'SRC PORT';
+              if (c.field === 'ipdst') fieldLabel = 'DST IP';
+              if (c.field === 'ipsrc') fieldLabel = 'SRC IP';
+              if (c.field === 'ipver') fieldLabel = 'IP VER';
+              if (c.field === 'vlan') fieldLabel = 'VLAN';
+              if (c.field === 'protocol') fieldLabel = 'PROTO';
+              
+              const actionLabel = c.action === 'drop' ? 'DROP' : 'PASS';
+              return `• ${logicPrefix}${fieldLabel} = ${c.value} -> ${actionLabel}`;
+            }).join('\n');
+          })()}
+        </div>
+      )}
     </>
   );
 };
@@ -224,6 +260,7 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const advancedMode = useStore((state) => state.advancedMode);
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
 
   const glowClass = useGlowClass(id);
 
@@ -262,6 +299,36 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
         <Handle type="source" position={Position.Right} id="out" />
       </div>
+
+      {exportDiagramMode && (
+        <div style={{
+          background: 'rgba(20, 20, 20, 0.95)',
+          border: '1px solid #e91e63',
+          borderRadius: '4px',
+          padding: '6px 8px',
+          width: '170px',
+          boxSizing: 'border-box',
+          color: '#fff',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-wrap',
+          marginTop: '6px'
+        }}>
+          {(() => {
+            const configType = data.configType;
+            if (configType === CONFIG_TYPES.VLAN_FILTER) {
+              return `VLAN Filter:\n• VLAN IDs: ${data.vlanIds as string || 'None'}\n• Action: PASS matching / DROP others`;
+            } else if (configType === CONFIG_TYPES.IP_FILTER) {
+              return `IP Filter:\n• Subnet: ${data.ipSubnet as string || 'None'}\n• Action: PASS matching / DROP others`;
+            } else if (configType === CONFIG_TYPES.PORT_FILTER) {
+              return `Port Filter:\n• Port numbers: ${data.ports as string || 'None'}\n• Action: PASS matching / DROP others`;
+            }
+            return 'Filter: No criteria set';
+          })()}
+        </div>
+      )}
     </>
   );
 };
@@ -928,9 +995,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             if (isTap) {
               const linksCount = data.tappedLinksCount ?? 1;
               const optic = (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
-              const match = optic.match(/(1|10|25|40|100|400)G/i);
-              const speed = match ? match[0] : '10G';
-              return `Tapping ${linksCount} network link(s) at ${speed} using ${optic} to mirror traffic.`;
+              return `Tapping ${linksCount} network link(s) using ${optic} to mirror traffic.`;
             } else {
               // Find incoming TAP links
               const incoming = edges.filter(e => e.target === id);
@@ -939,16 +1004,14 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
                   const linksCount = src.data?.tappedLinksCount ?? 1;
                   const optic = (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)';
-                  const match = optic.match(/(1|10|25|40|100|400)G/i);
-                  const speed = match ? match[0] : '10G';
-                  return { label: src.data?.label || 'TAP', linksCount, optic, speed };
+                  return { label: src.data?.label || 'TAP', linksCount, optic };
                 }
                 return null;
-              }).filter(Boolean) as { label: string, linksCount: number, optic: string, speed: string }[];
+              }).filter(Boolean) as { label: string, linksCount: number, optic: string }[];
 
               let desc = '';
               if (tapConns.length > 0) {
-                desc += tapConns.map(c => `Terminating ${c.linksCount * 2} TAP ports from ${c.label} using ${c.optic} at ${c.speed}.`).join('\n') + '\n\n';
+                desc += tapConns.map(c => `Terminating ${c.linksCount * 2} TAP ports from ${c.label} using ${c.optic}.`).join('\n') + '\n\n';
               }
 
               const opticsDesc = nodeBom.filter(r => r.type === 'Optic' || r.type === 'TAP' || r.type === 'Module')
@@ -957,6 +1020,24 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               
               desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}\n\n`;
               desc += `Aggregating, filtering, and distributing network traffic to destination tools.`;
+              
+              if (conditions && conditions.length > 0) {
+                desc += `\n\nTraffic Map (Filtering Rules):\n` + conditions.map((c, i) => {
+                  const logicPrefix = i > 0 ? `${c.logic} ` : '';
+                  let fieldLabel = c.field.toUpperCase();
+                  if (c.field === 'portdst') fieldLabel = 'DST PORT';
+                  if (c.field === 'portsrc') fieldLabel = 'SRC PORT';
+                  if (c.field === 'ipdst') fieldLabel = 'DST IP';
+                  if (c.field === 'ipsrc') fieldLabel = 'SRC IP';
+                  if (c.field === 'ipver') fieldLabel = 'IP VER';
+                  if (c.field === 'vlan') fieldLabel = 'VLAN';
+                  if (c.field === 'protocol') fieldLabel = 'PROTO';
+                  
+                  const actionLabel = c.action === 'drop' ? 'DROP' : 'PASS';
+                  return `• ${logicPrefix}${fieldLabel} = ${c.value} -> ${actionLabel}`;
+                }).join('\n');
+              }
+              
               return desc;
             }
           })()}
