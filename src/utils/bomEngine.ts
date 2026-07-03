@@ -10,9 +10,10 @@ const skus: Record<string, string> = skusData as Record<string, string>;
 
 function resolveOpticSku(opticStr: string, chassisModel: string): string {
   const name = opticStr.toUpperCase();
-  if (name.includes('1G COPPER')) return 'SFP-504';
+  if (name.includes('1G COPPER')) return 'SFP-501';
   if (name.includes('1G MULTIMODE SX') || name.includes('1G MM SX')) return 'SFP-502';
   if (name.includes('1G SINGLEMODE LX') || name.includes('1G SM LX')) return 'SFP-503';
+  if (name.includes('10G COPPER')) return 'SFP-531';
   if (name.includes('10G MULTIMODE SR') || name.includes('10G MM SR')) return 'SFP-532';
   if (name.includes('10G SINGLEMODE LR') || name.includes('10G SM LR')) return 'SFP-533';
   if (name.includes('25G MULTIMODE SR') || name.includes('25G MM SR')) return 'SFP-552';

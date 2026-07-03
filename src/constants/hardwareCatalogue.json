@@ -1,6 +1,50 @@
 {
   "taps": [
     {
+      "model": "G-TAP A-TX",
+      "sku": "GTP-ATX",
+      "ru": 1,
+      "type": "active",
+      "max_links": 4,
+      "power": "337W",
+      "fans": 1,
+      "airflow": "Side-to-Side",
+      "image": "./hardware-icons/G-TAP-ATX.png"
+    },
+    {
+      "model": "G-TAP A-SF",
+      "sku": "GTP-ASF",
+      "ru": 1,
+      "type": "active",
+      "max_links": 4,
+      "power": "337W",
+      "fans": 1,
+      "airflow": "Side-to-Side",
+      "image": "./hardware-icons/G-TAP-ASF.png"
+    },
+    {
+      "model": "G-TAP A-TX2",
+      "sku": "GTP-ATX21",
+      "ru": 1,
+      "type": "active",
+      "max_links": 4,
+      "power": "337W",
+      "fans": 1,
+      "airflow": "Side-to-Side",
+      "image": "./hardware-icons/G-TAP-ATX2.png"
+    },
+    {
+      "model": "G-TAP A-SF2",
+      "sku": "GTP-ASF21",
+      "ru": 1,
+      "type": "active",
+      "max_links": 4,
+      "power": "337W",
+      "fans": 1,
+      "airflow": "Side-to-Side",
+      "image": "./hardware-icons/G-TAP-ASF2.png"
+    },
+    {
       "model": "TAP-M100T",
       "sku": "TAP-M100T",
       "ru": 0.5,

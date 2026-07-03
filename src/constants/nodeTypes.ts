@@ -123,8 +123,10 @@ export interface TapOpticOption {
 }
 
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
+  { value: 'SFP-501 (1G Copper SFP)', label: '1G Copper (SFP)', isSM: false },
   { value: 'SFP-502 (1G SFP SX)', label: '1G SX Multimode (SFP)', isSM: false },
   { value: 'SFP-503 (1G SFP LX)', label: '1G LX Singlemode (SFP)', isSM: true },
+  { value: 'SFP-531 (10G Copper SFP+)', label: '10G Copper (SFP+)', isSM: false },
   { value: 'SFP-532 (10G SFP+ SR)', label: '10G SR Multimode (SFP+)', isSM: false },
   { value: 'SFP-533 (10G SFP+ LR)', label: '10G LR Singlemode (SFP+)', isSM: true },
   { value: 'SFP-552 (25G SFP28 SR)', label: '25G SR Multimode (SFP28)', isSM: false },
