@@ -260,7 +260,7 @@ export function generateBom(
         }
 
         if (tapPower === 'Individual Power Brick') {
-          const powerSku = model.includes('A-TX') ? 'GTP-ATX01' : 'GTP-ASF01';
+          const powerSku = model.includes('A-TX') ? 'GTP-ATX01-UN' : 'GTP-ASF01-UN';
           addRow(powerSku, 1, 'Dependency');
         } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
           series1PstAcTaps++;
@@ -1003,7 +1003,7 @@ export function generateSingleNodeBom(
         addRow('RMT-GTA03', 1, 'Dependency');
       }
       if (tapPower === 'Individual Power Brick') {
-        const powerSku = model.includes('A-TX') ? 'GTP-ATX01' : 'GTP-ASF01';
+        const powerSku = model.includes('A-TX') ? 'GTP-ATX01-UN' : 'GTP-ASF01-UN';
         addRow(powerSku, 1, 'Dependency');
       } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
         addRow('PST-GTA01', 1, 'Dependency');
