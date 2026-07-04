@@ -38,7 +38,7 @@
       "sku": "GTP-ASF21",
       "ru": 1,
       "type": "active",
-      "max_links": 1,
+      "max_links": 4,
       "power": "337W",
       "fans": 1,
       "airflow": "Front-to-Rear",

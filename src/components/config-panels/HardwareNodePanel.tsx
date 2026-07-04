@@ -36,6 +36,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   let tappedLinks = 0;
   let requiredMMOptics = 0;
   let requiredSMOptics = 0;
+  let requiredCopperOptics = 0;
 
   incomingTapEdges.forEach(e => {
     const sourceNode = nodes.find(n => n.id === e.source);
@@ -44,7 +45,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       const tapModel = String(sourceNode.data?.model || '');
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
-      const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+      const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
         { 
           qty: (sourceNode.data?.tappedLinksCount as number) ?? 1, 
           optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
@@ -52,10 +53,14 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       ];
 
       for (const alloc of allocations) {
-        const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === alloc.optic);
+        const opticToValidate = alloc.toolOptic || alloc.optic;
+        const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === opticToValidate);
+        const isCopper = matched ? !!matched.isCopper : false;
         const isSM = matched ? matched.isSM : isSMTap;
         tappedLinks += alloc.qty;
-        if (isSM) {
+        if (isCopper) {
+          requiredCopperOptics += alloc.qty * 2;
+        } else if (isSM) {
           requiredSMOptics += alloc.qty * 2;
         } else {
           requiredMMOptics += alloc.qty * 2;
@@ -68,20 +73,24 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   let installedMMOptics = 0;
   let installedSMOptics = 0;
+  let installedCopperOptics = 0;
   installedOptics.forEach(opt => {
     const name = opt.optic.toUpperCase();
-    const isOpticMM = name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX');
-    const isOpticSM = name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR');
-    if (isOpticMM) installedMMOptics += opt.qty;
+    const isOpticCopper = name.includes('COPPER') || name.includes('BASE-T') || name.includes('BASET') || name.endsWith('T') || name.includes('ACTIVE CABLE') || name.includes('DIRECT ATTACH') || name.includes('DAC');
+    const isOpticMM = !isOpticCopper && (name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX') || name.includes('LRM'));
+    const isOpticSM = !isOpticCopper && (name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR'));
+    if (isOpticCopper) installedCopperOptics += opt.qty;
+    else if (isOpticMM) installedMMOptics += opt.qty;
     else if (isOpticSM) installedSMOptics += opt.qty;
   });
 
   const missingMM = Math.max(0, requiredMMOptics - installedMMOptics);
   const missingSM = Math.max(0, requiredSMOptics - installedSMOptics);
+  const missingCopper = Math.max(0, requiredCopperOptics - installedCopperOptics);
 
   const totalOptics = installedOptics.reduce((sum, opt) => sum + opt.qty, 0);
-  const totalOpticsNeeded = (requiredMMOptics + requiredSMOptics) + outgoingToolLinks;
-  const isOpticsInvalid = (totalOptics < totalOpticsNeeded) || (missingMM > 0) || (missingSM > 0);
+  const totalOpticsNeeded = (requiredMMOptics + requiredSMOptics + requiredCopperOptics) + outgoingToolLinks;
+  const isOpticsInvalid = (totalOptics < totalOpticsNeeded) || (missingMM > 0) || (missingSM > 0) || (missingCopper > 0);
 
   const [selectedOpticBoard, setSelectedOpticBoard] = useState('');
   const [selectedOptic, setSelectedOptic] = useState('');
@@ -94,6 +103,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   // Allocation local states
   const [addQty, setAddQty] = useState(1);
   const [addOptic, setAddOptic] = useState('');
+  const [addToolOptic, setAddToolOptic] = useState('');
   
   const disableDcWarnings = useStore(state => state.disableDcWarnings);
 
@@ -803,7 +813,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
           }
 
-          const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+          const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: node.data.tappedLinksCount ?? 1, 
               optic: node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
@@ -815,6 +825,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
           // Set default addOptic value if empty
           const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+          const activeAddToolOptic = addToolOptic || activeAddOptic;
 
           // Check if any allocation has a mismatch
           const mismatchedAllocations = allocations.filter(a => {
@@ -823,9 +834,9 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             return matched ? matched.isSM !== isSMTap : false;
           });
 
-          const handleAddAllocation = (qty: number, opticVal: string) => {
+          const handleAddAllocation = (qty: number, opticVal: string, toolOpticVal: string) => {
             if (qty <= 0 || qty > remainingLinks) return;
-            const existingIndex = allocations.findIndex(a => a.optic === opticVal);
+            const existingIndex = allocations.findIndex(a => a.optic === opticVal && (a.toolOptic || a.optic) === toolOpticVal);
             let newAllocations = [...allocations];
             if (existingIndex > -1) {
               newAllocations[existingIndex] = {
@@ -833,7 +844,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 qty: newAllocations[existingIndex].qty + qty
               };
             } else {
-              newAllocations.push({ qty, optic: opticVal });
+              newAllocations.push({ qty, optic: opticVal, toolOptic: toolOpticVal });
             }
             const totalLinks = newAllocations.reduce((sum, a) => sum + a.qty, 0);
             updateNodeData(node.id, {
@@ -866,7 +877,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#111', padding: '6px 8px', borderRadius: '4px', border: '1px solid #333', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ fontSize: '11px', color: '#fff', fontWeight: 'bold' }}>
-                          {alloc.qty} link{alloc.qty > 1 ? 's' : ''} &mdash; <span style={{ color: '#00e5ff' }}>{matched?.label || alloc.optic}</span>
+                          {alloc.qty} link{alloc.qty > 1 ? 's' : ''} &mdash; <span style={{ color: '#00e5ff' }}>Net: {matched?.label || alloc.optic}</span>
+                          {alloc.toolOptic && alloc.toolOptic !== alloc.optic && (
+                            <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
+                          )}
                         </div>
                         {hasAllocMismatch && (
                           <div style={{ fontSize: '9px', color: '#ef5350' }}>
@@ -906,7 +920,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                      <label style={{ fontSize: '9px', color: '#888' }}>Optic Speed / Type</label>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Network Optic</label>
                       <select 
                         value={activeAddOptic} 
                         onChange={e => setAddOptic(e.target.value)} 
@@ -918,10 +932,25 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                         ))}
                       </select>
                     </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Tool Optic</label>
+                      <select 
+                        value={activeAddToolOptic} 
+                        onChange={e => setAddToolOptic(e.target.value)} 
+                        disabled={isM506T}
+                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                      >
+                        <option value={activeAddOptic}>Match Network Optic</option>
+                        {availableOptics.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <button 
-                    onClick={() => handleAddAllocation(addQty, activeAddOptic)}
+                    onClick={() => handleAddAllocation(addQty, activeAddOptic, activeAddToolOptic)}
                     style={{ background: '#ff9800', color: '#000', border: 'none', borderRadius: '3px', padding: '4px 8px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}
                   >
                     + Add Links
@@ -1039,7 +1068,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <div>
                 <span style={{ color: '#888' }}>Optics Needed:</span>
                 <strong style={{ color: '#fff', marginLeft: '4px', fontFamily: 'monospace' }}>{totalOpticsNeeded}</strong>
-                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics}, Tool: {outgoingToolLinks})</span>
+                <span style={{ color: '#666', fontSize: '9px', marginLeft: '2px' }}>(MM: {requiredMMOptics}, SM: {requiredSMOptics}, CU: {requiredCopperOptics}, Tool: {outgoingToolLinks})</span>
               </div>
               <div>
                 <span style={{ color: '#888' }}>Optics Deployed:</span>
@@ -1051,7 +1080,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <strong style={{ color: isOpticsInvalid ? '#ef5350' : '#81c784', marginLeft: '4px' }}>
                 {totalOptics < totalOpticsNeeded 
                   ? `Insufficient transceivers: Missing ${totalOpticsNeeded - totalOptics} optics`
-                  : (missingMM > 0 || missingSM > 0)
+                  : (missingMM > 0 || missingSM > 0 || missingCopper > 0)
                     ? 'Fiber type or speed mismatch on TAP links'
                     : 'All links fully allocated and verified'}
               </strong>
@@ -1084,7 +1113,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               {tappedLinks > 0 && (() => {
                 const terminatedMM = Math.min(Math.floor(requiredMMOptics / 2), Math.floor(installedMMOptics / 2));
                 const terminatedSM = Math.min(Math.floor(requiredSMOptics / 2), Math.floor(installedSMOptics / 2));
-                const totalTerminated = terminatedMM + terminatedSM;
+                const terminatedCU = Math.min(Math.floor(requiredCopperOptics / 2), Math.floor(installedCopperOptics / 2));
+                const totalTerminated = terminatedMM + terminatedSM + terminatedCU;
                 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #222', paddingTop: '6px', marginTop: '4px' }}>
@@ -1093,13 +1123,18 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                       <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{totalTerminated} / {tappedLinks}</strong>
                     </div>
                     {missingMM > 0 && (
-                      <div style={{ color: '#ef5350', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef5350', fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
                         <span>⚠️ Multi-mode links lack optics: need {missingMM} more Multi-mode optic(s).</span>
                       </div>
                     )}
                     {missingSM > 0 && (
-                      <div style={{ color: '#ef5350', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef5350', fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
                         <span>⚠️ Single-mode links lack optics: need {missingSM} more Single-mode optic(s).</span>
+                      </div>
+                    )}
+                    {missingCopper > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef5350', fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
+                        <span>⚠️ Copper links lack optics: need {missingCopper} more Copper optic(s).</span>
                       </div>
                     )}
                   </div>
@@ -1170,15 +1205,16 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 });
               }
               const numToolLinks = toolsReached.size;
-              const requiredTapOptics = requiredMMOptics + requiredSMOptics;
+              const requiredTapOptics = requiredMMOptics + requiredSMOptics + requiredCopperOptics;
               const totalRequiredOptics = requiredTapOptics + numToolLinks;
 
-              if (missingMM > 0 || missingSM > 0) {
+              if (missingMM > 0 || missingSM > 0 || missingCopper > 0) {
                 return (
-                  <div style={{ marginTop: '12px', padding: '8px', background: 'rgba(255, 152, 0, 0.1)', border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: '4px', color: '#ffb74d', fontSize: '11px' }}>
-                    <strong>⚠️ Attention:</strong> Every tapped link produces two outputs.
+                  <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '6px', color: '#ef5350', fontSize: '11px', lineHeight: '1.5' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px' }}>⚠️ Optic Type Mismatch</div>
                     {missingMM > 0 && <div>• You need <strong>{missingMM}</strong> more Multi-mode optic(s) (e.g. SR/SX).</div>}
                     {missingSM > 0 && <div>• You need <strong>{missingSM}</strong> more Single-mode optic(s) (e.g. LR/LX).</div>}
+                    {missingCopper > 0 && <div>• You need <strong>{missingCopper}</strong> more Copper optic(s).</div>}
                   </div>
                 );
               } else if (numToolLinks > 0 && totalOptics < totalRequiredOptics) {

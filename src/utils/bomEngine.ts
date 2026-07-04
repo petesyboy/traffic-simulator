@@ -66,7 +66,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
                String(sourceNode.data?.model || '').includes('453T'))
             : (sourceNode.data?.tapFiberMode === 'Singlemode');
           
-          const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+          const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: (sourceNode.data?.tappedLinksCount as number) ?? 1, 
               optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
@@ -74,7 +74,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
           ];
 
           for (const alloc of allocations) {
-            let selectedOpticVal = alloc.optic;
+            let selectedOpticVal = alloc.toolOptic || alloc.optic;
             if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
               selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
             }
@@ -223,12 +223,16 @@ export function generateBom(
       
       // Ensure active fiber TAPs always have exactly four of the selected optic
       if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
-        const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [];
+        const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
         if (allocations.length > 0) {
           allocations.forEach(alloc => {
-            const opticSku = resolveOpticSku(alloc.optic, '');
-            // 4 optics per tap link (2 for network ports A/B, 2 for monitor ports)
-            addRow(opticSku, 4 * alloc.qty, 'Optic');
+            const networkOpticSku = resolveOpticSku(alloc.optic, '');
+            const toolOpticSku = resolveOpticSku(alloc.toolOptic || alloc.optic, '');
+            
+            // 2 optics for the network ports (A/B)
+            addRow(networkOpticSku, 2 * alloc.qty, 'Optic');
+            // 2 optics for the monitor ports
+            addRow(toolOpticSku, 2 * alloc.qty, 'Optic');
           });
         } else {
           // Fallback if no allocation exists yet
