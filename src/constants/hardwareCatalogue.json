@@ -5,7 +5,7 @@
       "sku": "GTP-ATX",
       "ru": 1,
       "type": "active",
-      "max_links": 4,
+      "max_links": 1,
       "power": "337W",
       "fans": 1,
       "airflow": "Side-to-Side",
@@ -16,7 +16,7 @@
       "sku": "GTP-ASF",
       "ru": 1,
       "type": "active",
-      "max_links": 4,
+      "max_links": 1,
       "power": "337W",
       "fans": 1,
       "airflow": "Side-to-Side",
@@ -146,7 +146,6 @@
     }
   ],
   "ta_series": [
-
     {
       "model": "GigaVUE-TA25E",
       "sku": "TA25E-BASE",

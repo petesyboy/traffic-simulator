@@ -793,10 +793,20 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const tapModel = String(node.data?.model || '');
           const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
           const isM506T = tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
+          
+          let availableOptics = SUPPORTED_TAP_OPTICS;
+          if (tapModel.includes('G-TAP A-SF2') || tapModel.includes('ASF21')) {
+            const allowed = ['SFP-505T', 'SFP-501T', 'SFP-502T', 'SFP-503T', 'SFP-501', 'SFP-502', 'SFP-503', 'SFP-531', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-531T', 'SFP-532T', 'SFP-533T', 'SFP-534T', 'SFP-532C', 'SFP-535'];
+            availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
+          } else if (tapModel.includes('G-TAP A-SF')) {
+            const allowed = ['SFP-501', 'SFP-502', 'SFP-503', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-535'];
+            availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
+          }
+
           const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string }[]) || [
             { 
               qty: node.data.tappedLinksCount ?? 1, 
-              optic: node.data.tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+              optic: node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
             }
           ];
 
@@ -804,12 +814,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const remainingLinks = maxLinks - currentAllocatedCount;
 
           // Set default addOptic value if empty
-          const activeAddOptic = addOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+          const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
 
           // Check if any allocation has a mismatch
           const mismatchedAllocations = allocations.filter(a => {
             if (isM506T) return false;
-            const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === a.optic);
+            const matched = availableOptics.find(o => o.value === a.optic);
             return matched ? matched.isSM !== isSMTap : false;
           });
 
@@ -850,7 +860,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                 <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: 600 }}>Active link allocations ({currentAllocatedCount}/{maxLinks} links)</span>
                 {allocations.map((alloc, idx) => {
-                  const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === alloc.optic);
+                  const matched = availableOptics.find(o => o.value === alloc.optic);
                   const hasAllocMismatch = !isM506T && matched ? matched.isSM !== isSMTap : false;
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#111', padding: '6px 8px', borderRadius: '4px', border: '1px solid #333', justifyContent: 'space-between' }}>
@@ -903,7 +913,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                         disabled={isM506T}
                         style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
                       >
-                        {SUPPORTED_TAP_OPTICS.map(opt => (
+                        {availableOptics.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
@@ -928,6 +938,18 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                   ? 'Note: TAP-M506T requires termination with QSB-523T optics in the TA/HC unit.' 
                   : `Specifies link allocations for this TAP (up to a maximum of ${maxLinks} links for this model).`}
               </div>
+              
+              {(tapModel.includes('G-TAP A-SF2') || tapModel.includes('ASF21')) && (
+                <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(33, 150, 243, 0.1)', border: '1px solid rgba(33, 150, 243, 0.3)', borderRadius: '4px', color: '#64b5f6', fontSize: '9px', lineHeight: '1.4' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>G-TAP A-SF2 Deployment Rules:</div>
+                  <ul style={{ margin: 0, paddingLeft: '14px' }}>
+                    <li>Network ports in a pair must use the same transceiver type.</li>
+                    <li>Tool ports must match the same speed as the network ports (medium can differ).</li>
+                    <li>For 1G optical tool ports, disable auto-negotiation on the connected tool.</li>
+                    <li>Copper SFPs run only at their native speeds.</li>
+                  </ul>
+                </div>
+              )}
               
               {mismatchedAllocations.length > 0 && (
                 <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '10px' }}>
