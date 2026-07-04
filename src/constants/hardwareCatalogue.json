@@ -8,7 +8,7 @@
       "max_links": 1,
       "power": "337W",
       "fans": 1,
-      "airflow": "Side-to-Side",
+      "airflow": "Front-ro-Rear",
       "image": "./hardware-icons/G-TAP-ATX.png"
     },
     {
@@ -19,7 +19,7 @@
       "max_links": 1,
       "power": "337W",
       "fans": 1,
-      "airflow": "Side-to-Side",
+      "airflow": "Front-to-Rear",
       "image": "./hardware-icons/G-TAP-ASF.png"
     },
     {
@@ -30,7 +30,7 @@
       "max_links": 4,
       "power": "337W",
       "fans": 1,
-      "airflow": "Side-to-Side",
+      "airflow": "Front-ro-Rear",
       "image": "./hardware-icons/G-TAP-ATX2.png"
     },
     {
@@ -41,7 +41,7 @@
       "max_links": 4,
       "power": "337W",
       "fans": 1,
-      "airflow": "Side-to-Side",
+      "airflow": "Front-to-Rear",
       "image": "./hardware-icons/G-TAP-ASF2.png"
     },
     {
