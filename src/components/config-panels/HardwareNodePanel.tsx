@@ -825,7 +825,22 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
           // Set default addOptic value if empty
           const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
-          const activeAddToolOptic = addToolOptic || activeAddOptic;
+
+          // Extract speed from an optic label (e.g. '10G', '1G', '100M')
+          const getOpticSpeed = (opticVal: string): string => {
+            const m = opticVal.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
+            return m ? m[1].toUpperCase() : '';
+          };
+
+          // Filter tool optics to only those matching the selected network optic speed
+          const networkSpeed = getOpticSpeed(activeAddOptic);
+          const speedFilteredToolOptics = networkSpeed
+            ? availableOptics.filter(o => getOpticSpeed(o.value) === networkSpeed)
+            : availableOptics;
+
+          const activeAddToolOptic = (addToolOptic && getOpticSpeed(addToolOptic) === networkSpeed)
+            ? addToolOptic
+            : activeAddOptic;
 
           // Check if any allocation has a mismatch
           const mismatchedAllocations = allocations.filter(a => {
@@ -924,7 +939,11 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                         <label style={{ fontSize: '9px', color: '#888' }}>Network Optic</label>
                         <select 
                           value={activeAddOptic} 
-                          onChange={e => setAddOptic(e.target.value)} 
+                          onChange={e => {
+                            setAddOptic(e.target.value);
+                            // Reset tool optic when network optic changes so it re-defaults to matching speed
+                            setAddToolOptic('');
+                          }} 
                           disabled={isM506T}
                           style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
                         >
@@ -944,10 +963,13 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                         style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
                       >
                         <option value={activeAddOptic}>Match Network Optic</option>
-                        {availableOptics.map(opt => (
+                        {speedFilteredToolOptics.filter(opt => opt.value !== activeAddOptic).map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
+                      {networkSpeed && (
+                        <span style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>Filtered to {networkSpeed} optics (tool must match network speed)</span>
+                      )}
                     </div>
                   </div>
 
