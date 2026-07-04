@@ -270,7 +270,6 @@ export function generateBom(
       } else if (isSeries2) {
         const tapDualPower = !!node.data.tapDualPower;
         const tapBattery = !!node.data.tapBattery;
-        const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
 
         if (tapDualPower) {
           addRow('PBK-GTA21', 1, 'Dependency');
@@ -278,8 +277,8 @@ export function generateBom(
         if (tapBattery) {
           addRow('BAT-GTA20', 1, 'Dependency');
         }
-        if (tapRegionalCord && tapRegionalCord !== 'US') {
-          const cordSku = tapRegionalCord.includes('EU') ? 'PCD-00A23' : 'PCD-00A25';
+        if (globalRegion !== 'US') {
+          const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : 'PCD-00A25';
           addRow(cordSku, 1, 'Dependency');
         }
       }
@@ -1014,7 +1013,6 @@ export function generateSingleNodeBom(
     } else if (isSeries2) {
       const tapDualPower = !!node.data.tapDualPower;
       const tapBattery = !!node.data.tapBattery;
-      const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
 
       if (tapDualPower) {
         addRow('PBK-GTA21', 1, 'Dependency');
@@ -1022,8 +1020,8 @@ export function generateSingleNodeBom(
       if (tapBattery) {
         addRow('BAT-GTA20', 1, 'Dependency');
       }
-      if (tapRegionalCord && tapRegionalCord !== 'US') {
-        const cordSku = tapRegionalCord.includes('EU') ? 'PCD-00A23' : 'PCD-00A25';
+      if (globalRegion !== 'US') {
+        const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : 'PCD-00A25';
         addRow(cordSku, 1, 'Dependency');
       }
     }

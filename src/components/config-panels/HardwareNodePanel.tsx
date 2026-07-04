@@ -1021,7 +1021,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
                 const tapDualPower = !!node.data.tapDualPower;
                 const tapBattery = !!node.data.tapBattery;
-                const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
 
                 return (
                   <div style={{ marginTop: '16px', background: '#181818', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>
@@ -1078,19 +1077,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                           />
                           Add Battery Backup (BAT-GTA20)
                         </label>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-                          <label style={{ fontSize: '10px', color: '#aaa' }}>Regional Power Cord</label>
-                          <select 
-                            value={tapRegionalCord} 
-                            onChange={(e) => updateNodeData(node.id, { tapRegionalCord: e.target.value })}
-                            style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
-                          >
-                            <option value="US">US (Standard)</option>
-                            <option value="PCD-00A23 (EU)">EU (PCD-00A23)</option>
-                            <option value="PCD-00A25 (UK)">UK (PCD-00A25)</option>
-                          </select>
-                        </div>
                       </div>
                     )}
                   </div>
