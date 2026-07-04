@@ -988,6 +988,93 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 </div>
               )}
 
+              {/* Hardware & Power Options */}
+              {(() => {
+                const isSeries2 = tapModel.includes('SF2') || tapModel.includes('TX2');
+                const isSeries1 = !isSeries2 && (tapModel.includes('A-SF') || tapModel.includes('A-TX'));
+                
+                if (!isSeries1 && !isSeries2) return null;
+
+                const tapRackMount = (node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)';
+                const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
+                const tapDualPower = !!node.data.tapDualPower;
+                const tapBattery = !!node.data.tapBattery;
+                const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
+
+                return (
+                  <div style={{ marginTop: '16px', background: '#181818', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>
+                    <div style={{ fontSize: '11px', color: '#ffb74d', fontWeight: 'bold', marginBottom: '8px' }}>Hardware & Power Options</div>
+                    
+                    {isSeries1 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '10px', color: '#aaa' }}>Rack Mount</label>
+                          <select 
+                            value={tapRackMount} 
+                            onChange={(e) => updateNodeData(node.id, { tapRackMount: e.target.value })}
+                            style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                          >
+                            <option value="RMT-GTA03 (3-bay Rack Tray)">RMT-GTA03 (3-bay Rack Tray)</option>
+                            <option value="Standalone">Standalone (No Tray)</option>
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '10px', color: '#aaa' }}>Power Source</label>
+                          <select 
+                            value={tapPower} 
+                            onChange={(e) => updateNodeData(node.id, { tapPower: e.target.value })}
+                            style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                          >
+                            <option value="Individual Power Brick">Individual Power Brick</option>
+                            <option value="PST-GTA01 (AC Power Tray)">PST-GTA01 (AC Power Tray)</option>
+                            <option value="PST-GTA02 (DC Power Tray)">PST-GTA02 (DC Power Tray)</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {isSeries2 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '9px', color: '#888' }}>
+                          Note: Series 2 TAPs ship with a rack mount kit and 1 power brick.
+                        </div>
+                        
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#ddd', cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={tapDualPower} 
+                            onChange={(e) => updateNodeData(node.id, { tapDualPower: e.target.checked })} 
+                          />
+                          Add Dual Power (PBK-GTA21)
+                        </label>
+                        
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#ddd', cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={tapBattery} 
+                            onChange={(e) => updateNodeData(node.id, { tapBattery: e.target.checked })} 
+                          />
+                          Add Battery Backup (BAT-GTA20)
+                        </label>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                          <label style={{ fontSize: '10px', color: '#aaa' }}>Regional Power Cord</label>
+                          <select 
+                            value={tapRegionalCord} 
+                            onChange={(e) => updateNodeData(node.id, { tapRegionalCord: e.target.value })}
+                            style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                          >
+                            <option value="US">US (Standard)</option>
+                            <option value="PCD-00A23 (EU)">EU (PCD-00A23)</option>
+                            <option value="PCD-00A25 (UK)">UK (PCD-00A25)</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {(() => {
                 const outgoingEdges = edges.filter(e => e.source === node.id || e.target === node.id);
                 if (outgoingEdges.length === 0) return null;

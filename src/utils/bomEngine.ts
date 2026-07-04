@@ -159,6 +159,11 @@ export function generateBom(
   const rowMap: Record<string, BomRow> = {};
   let totalTapModules = 0;
 
+  // Track Series 1 TAP accessories
+  let series1RackTaps = 0;
+  let series1PstAcTaps = 0;
+  let series1PstDcTaps = 0;
+
   const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
     const description = skus[sku] || 'Unknown SKU';
     
@@ -239,6 +244,43 @@ export function generateBom(
           const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
           const opticSku = resolveOpticSku(fallbackOptic, '');
           addRow(opticSku, 4, 'Optic');
+        }
+      }
+
+      // Series 1 vs Series 2 Hardware & Power Options
+      const isSeries2 = model.includes('SF2') || model.includes('TX2');
+      const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
+
+      if (isSeries1) {
+        const tapRackMount = (node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)';
+        const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
+
+        if (tapRackMount === 'RMT-GTA03 (3-bay Rack Tray)') {
+          series1RackTaps++;
+        }
+
+        if (tapPower === 'Individual Power Brick') {
+          const powerSku = model.includes('A-TX') ? 'GTP-ATX01' : 'GTP-ASF01';
+          addRow(powerSku, 1, 'Dependency');
+        } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
+          series1PstAcTaps++;
+        } else if (tapPower === 'PST-GTA02 (DC Power Tray)') {
+          series1PstDcTaps++;
+        }
+      } else if (isSeries2) {
+        const tapDualPower = !!node.data.tapDualPower;
+        const tapBattery = !!node.data.tapBattery;
+        const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
+
+        if (tapDualPower) {
+          addRow('PBK-GTA21', 1, 'Dependency');
+        }
+        if (tapBattery) {
+          addRow('BAT-GTA20', 1, 'Dependency');
+        }
+        if (tapRegionalCord && tapRegionalCord !== 'US') {
+          const cordSku = tapRegionalCord.includes('EU') ? 'PCD-00A23' : 'PCD-00A25';
+          addRow(cordSku, 1, 'Dependency');
         }
       }
 
@@ -508,6 +550,17 @@ export function generateBom(
       }
     }
   });
+
+  // Aggregate TAP Accessories
+  if (series1RackTaps > 0) {
+    addRow('RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency');
+  }
+  if (series1PstAcTaps > 0) {
+    addRow('PST-GTA01', Math.ceil(series1PstAcTaps / 24), 'Dependency');
+  }
+  if (series1PstDcTaps > 0) {
+    addRow('PST-GTA02', Math.ceil(series1PstDcTaps / 24), 'Dependency');
+  }
 
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
 }
@@ -922,6 +975,59 @@ export function generateSingleNodeBom(
 
   if (model.includes('TAP')) {
     addRow(resolved.hwSku, 1, 'TAP');
+    
+    // Optic allocations
+    if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
+      const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
+      if (allocations.length > 0) {
+        allocations.forEach(alloc => {
+          const networkOpticSku = resolveOpticSku(alloc.optic, '');
+          const toolOpticSku = resolveOpticSku(alloc.toolOptic || alloc.optic, '');
+          addRow(networkOpticSku, 2 * alloc.qty, 'Optic');
+          addRow(toolOpticSku, 2 * alloc.qty, 'Optic');
+        });
+      } else {
+        const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
+        addRow(resolveOpticSku(fallbackOptic, ''), 4, 'Optic');
+      }
+    }
+
+    // Hardware & Power Options
+    const isSeries2 = model.includes('SF2') || model.includes('TX2');
+    const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
+
+    if (isSeries1) {
+      const tapRackMount = (node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)';
+      const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
+
+      if (tapRackMount === 'RMT-GTA03 (3-bay Rack Tray)') {
+        addRow('RMT-GTA03', 1, 'Dependency');
+      }
+      if (tapPower === 'Individual Power Brick') {
+        const powerSku = model.includes('A-TX') ? 'GTP-ATX01' : 'GTP-ASF01';
+        addRow(powerSku, 1, 'Dependency');
+      } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
+        addRow('PST-GTA01', 1, 'Dependency');
+      } else if (tapPower === 'PST-GTA02 (DC Power Tray)') {
+        addRow('PST-GTA02', 1, 'Dependency');
+      }
+    } else if (isSeries2) {
+      const tapDualPower = !!node.data.tapDualPower;
+      const tapBattery = !!node.data.tapBattery;
+      const tapRegionalCord = (node.data.tapRegionalCord as string) || 'US';
+
+      if (tapDualPower) {
+        addRow('PBK-GTA21', 1, 'Dependency');
+      }
+      if (tapBattery) {
+        addRow('BAT-GTA20', 1, 'Dependency');
+      }
+      if (tapRegionalCord && tapRegionalCord !== 'US') {
+        const cordSku = tapRegionalCord.includes('EU') ? 'PCD-00A23' : 'PCD-00A25';
+        addRow(cordSku, 1, 'Dependency');
+      }
+    }
+
     return Object.values(rowMap);
   }
 
