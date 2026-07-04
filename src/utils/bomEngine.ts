@@ -221,6 +221,23 @@ export function generateBom(
     if (model.includes('TAP')) {
       addRow(resolved.hwSku, 1, 'TAP');
       
+      // Ensure active fiber TAPs always have exactly four of the selected optic
+      if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
+        const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [];
+        if (allocations.length > 0) {
+          allocations.forEach(alloc => {
+            const opticSku = resolveOpticSku(alloc.optic, '');
+            // 4 optics per tap link (2 for network ports A/B, 2 for monitor ports)
+            addRow(opticSku, 4 * alloc.qty, 'Optic');
+          });
+        } else {
+          // Fallback if no allocation exists yet
+          const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
+          const opticSku = resolveOpticSku(fallbackOptic, '');
+          addRow(opticSku, 4, 'Optic');
+        }
+      }
+
       const tapEntry = hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku);
       if (tapEntry && tapEntry.type === 'module') {
         totalTapModules += 1;
