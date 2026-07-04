@@ -905,35 +905,37 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 <div style={{ background: '#181818', padding: '8px 10px', borderRadius: '6px', border: '1px dashed #444', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ fontSize: '10px', color: '#ffb74d', fontWeight: 'bold' }}>Add link allocation</div>
                   
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '70px' }}>
-                      <label style={{ fontSize: '9px', color: '#888' }}>Links</label>
-                      <select 
-                        value={addQty} 
-                        onChange={e => setAddQty(parseInt(e.target.value))} 
-                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
-                      >
-                        {Array.from({ length: remainingLinks }, (_, i) => i + 1).map(num => (
-                          <option key={num} value={num}>{num}</option>
-                        ))}
-                      </select>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '70px' }}>
+                        <label style={{ fontSize: '9px', color: '#888' }}>Links</label>
+                        <select 
+                          value={addQty} 
+                          onChange={e => setAddQty(parseInt(e.target.value))} 
+                          style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                        >
+                          {Array.from({ length: remainingLinks }, (_, i) => i + 1).map(num => (
+                            <option key={num} value={num}>{num}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                        <label style={{ fontSize: '9px', color: '#888' }}>Network Optic</label>
+                        <select 
+                          value={activeAddOptic} 
+                          onChange={e => setAddOptic(e.target.value)} 
+                          disabled={isM506T}
+                          style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                        >
+                          {availableOptics.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                      <label style={{ fontSize: '9px', color: '#888' }}>Network Optic</label>
-                      <select 
-                        value={activeAddOptic} 
-                        onChange={e => setAddOptic(e.target.value)} 
-                        disabled={isM506T}
-                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
-                      >
-                        {availableOptics.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <label style={{ fontSize: '9px', color: '#888' }}>Tool Optic</label>
                       <select 
                         value={activeAddToolOptic} 
