@@ -35,11 +35,12 @@ const useGlowClass = (id: string): string => {
 
 const getTapDetails = (sku: string, model: string) => {
   const isULT = sku.includes('ULT') || model.includes('ULT');
+  const isActiveTap = model.includes('A-TX') || model.includes('A-SF') || sku.startsWith('GTP-A');
   const isMM = sku.includes('251') || sku.includes('271') || sku.includes('451') || model.toLowerCase().includes('multi-mode') || model.toLowerCase().includes('mm');
   const isSM = sku.includes('253') || sku.includes('273') || sku.includes('453') || model.toLowerCase().includes('single-mode') || model.toLowerCase().includes('sm');
   
   let media = '';
-  let splitRatio = '50/50';
+  let splitRatio = '';
   let wavelength = '';
 
   if (isMM) {
@@ -50,10 +51,14 @@ const getTapDetails = (sku: string, model: string) => {
     wavelength = '1310nm';
   }
 
-  if (sku.includes('271') || sku.includes('273')) {
-    splitRatio = '70/30';
-  } else if (sku.includes('451') || sku.includes('453')) {
-    splitRatio = '60/40';
+  // Active TAPs don't have a split ratio — they're electrically powered, not passive optical splitters
+  if (!isActiveTap) {
+    splitRatio = '50/50';
+    if (sku.includes('271') || sku.includes('273')) {
+      splitRatio = '70/30';
+    } else if (sku.includes('451') || sku.includes('453')) {
+      splitRatio = '60/40';
+    }
   }
 
   return { media, splitRatio, wavelength, isULT };
@@ -853,6 +858,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             </div>
             {isTap && tapInfo && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                {tapInfo.splitRatio && (
                 <span style={{
                   fontSize: '8px',
                   background: 'rgba(0, 229, 255, 0.15)',
@@ -864,6 +870,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 }}>
                   ⚖️ {tapInfo.splitRatio}
                 </span>
+                )}
                 {tapInfo.media && (
                   <span style={{
                     fontSize: '8px',
