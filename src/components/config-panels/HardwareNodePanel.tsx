@@ -770,20 +770,24 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           )}
         </div>
 
+        <div className="config-card" style={{ marginTop: '16px' }}>
+          <h3>🌍 Deployment Configuration</h3>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Site Assignment (Optional)</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Datacenter London" 
+              value={(node.data?.site as string) || ''} 
+              onChange={(e) => updateNodeData(node.id, { site: e.target.value })} 
+              style={{ width: '100%', boxSizing: 'border-box' }} 
+            />
+          </div>
+        </div>
+
         {!model?.includes('TAP') && (
           <div className="config-card" style={{ marginTop: '16px' }}>
             <h3>🔧 Appliance Configuration</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Site Assignment (Optional)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Datacenter London" 
-                  value={(node.data?.site as string) || ''} 
-                  onChange={(e) => updateNodeData(node.id, { site: e.target.value })} 
-                  style={{ width: '100%', boxSizing: 'border-box' }} 
-                />
-              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>License Mode Override</label>
                 <select value={(node.data?.licenseModeOverride as string) || 'default'} onChange={(e) => updateNodeData(node.id, { licenseModeOverride: e.target.value })} style={{ width: '100%' }}>
