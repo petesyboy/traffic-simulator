@@ -124,24 +124,30 @@ export interface TapOpticOption {
 }
 
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
-  { value: 'SFP-505T (100M FX)', label: 'SFP-505T — 100M FX Multimode (SFP) (TAA)', isSM: false },
-  { value: 'SFP-501 (1G Copper SFP)', label: 'SFP-501 — 1G Copper (SFP)', isSM: false, isCopper: true },
-  { value: 'SFP-502 (1G SFP SX)', label: 'SFP-502 — 1G SX Multimode (SFP)', isSM: false },
-  { value: 'SFP-503 (1G SFP LX)', label: 'SFP-503 — 1G LX Singlemode (SFP)', isSM: true },
   { value: 'SFP-501T (1G Copper SFP T)', label: 'SFP-501T — 1G Copper (SFP) (TAA)', isSM: false, isCopper: true },
-  { value: 'SFP-502T (1G SFP SX T)', label: 'SFP-502T — 1G SX Multimode (SFP) (TAA)', isSM: false },
-  { value: 'SFP-503T (1G SFP LX T)', label: 'SFP-503T — 1G LX Singlemode (SFP) (TAA)', isSM: true },
+  { value: 'SFP-505T (100M FX)', label: 'SFP-505T — 100M FX Multimode (SFP) (TAA)', isSM: false },
   
-  { value: 'SFP-531 (10G Copper SFP+)', label: 'SFP-531 — 10G Copper (SFP+)', isSM: false, isCopper: true },
-  { value: 'SFP-532 (10G SFP+ SR)', label: 'SFP-532 — 10G SR Multimode (SFP+)', isSM: false },
-  { value: 'SFP-533 (10G SFP+ LR)', label: 'SFP-533 — 10G LR Singlemode (SFP+)', isSM: true },
-  { value: 'SFP-534 (10G SFP+ ER)', label: 'SFP-534 — 10G ER Singlemode (SFP+)', isSM: true },
-  { value: 'SFP-535 (10G SFP+ LRM)', label: 'SFP-535 — 10G LRM Multimode (SFP+)', isSM: false },
+  { value: 'SFP-501 (1G Copper SFP)', label: 'SFP-501 — 1G Copper (SFP)', isSM: false, isCopper: true },
+  
+  { value: 'SFP-502T (1G SFP SX T)', label: 'SFP-502T — 1G SX Multimode (SFP) (TAA)', isSM: false },
+  { value: 'SFP-502 (1G SFP SX)', label: 'SFP-502 — 1G SX Multimode (SFP)', isSM: false },
+  
+  { value: 'SFP-503T (1G SFP LX T)', label: 'SFP-503T — 1G LX Singlemode (SFP) (TAA)', isSM: true },
+  { value: 'SFP-503 (1G SFP LX)', label: 'SFP-503 — 1G LX Singlemode (SFP)', isSM: true },
   
   { value: 'SFP-531T (10G Copper SFP+ T)', label: 'SFP-531T — 10G Copper (SFP+) (TAA)', isSM: false, isCopper: true },
+  { value: 'SFP-531 (10G Copper SFP+)', label: 'SFP-531 — 10G Copper (SFP+)', isSM: false, isCopper: true },
+  
   { value: 'SFP-532T (10G SFP+ SR T)', label: 'SFP-532T — 10G SR Multimode (SFP+) (TAA)', isSM: false },
+  { value: 'SFP-532 (10G SFP+ SR)', label: 'SFP-532 — 10G SR Multimode (SFP+)', isSM: false },
+  
   { value: 'SFP-533T (10G SFP+ LR T)', label: 'SFP-533T — 10G LR Singlemode (SFP+) (TAA)', isSM: true },
+  { value: 'SFP-533 (10G SFP+ LR)', label: 'SFP-533 — 10G LR Singlemode (SFP+)', isSM: true },
+  
   { value: 'SFP-534T (10G SFP+ ER T)', label: 'SFP-534T — 10G ER Singlemode (SFP+) (TAA)', isSM: true },
+  { value: 'SFP-534 (10G SFP+ ER)', label: 'SFP-534 — 10G ER Singlemode (SFP+)', isSM: true },
+  
+  { value: 'SFP-535 (10G SFP+ LRM)', label: 'SFP-535 — 10G LRM Multimode (SFP+)', isSM: false },
   { value: 'SFP-532C (10G SFP+ SR C)', label: 'SFP-532C — 10G SR Multimode C (SFP+)', isSM: false },
 
   { value: 'SFP-552 (25G SFP28 SR)', label: 'SFP-552 — 25G SR Multimode (SFP28)', isSM: false },

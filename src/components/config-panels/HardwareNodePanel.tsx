@@ -822,7 +822,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             const allowed = ['SFP-505T', 'SFP-501T', 'SFP-502T', 'SFP-503T', 'SFP-501', 'SFP-502', 'SFP-503', 'SFP-531', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-531T', 'SFP-532T', 'SFP-533T', 'SFP-534T', 'SFP-532C', 'SFP-535'];
             availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
           } else if (tapModel.includes('G-TAP A-SF')) {
-            const allowed = ['SFP-501', 'SFP-502', 'SFP-503', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-535'];
+            const allowed = ['SFP-501T', 'SFP-502T', 'SFP-503T', 'SFP-532T', 'SFP-533T', 'SFP-534T', 'SFP-501', 'SFP-502', 'SFP-503', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-535'];
             availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
           }
 
