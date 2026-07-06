@@ -291,7 +291,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   }, 0);
   total25G += numBreakouts * 4;
   total10G += numBreakouts * 4;
-  total1G += numBreakouts * 4;
 
   const modelLowerStr = String(model || '').toLowerCase();
   if (modelLowerStr.includes('ta25e')) {
