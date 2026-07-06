@@ -56,7 +56,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       for (const alloc of allocations) {
         const opticToValidate = alloc.toolOptic || alloc.optic;
         const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === opticToValidate);
-        const isCopper = matched ? !!matched.isCopper : false;
+        const isCopper = matched ? !!matched.isCopper : opticToValidate.includes('Copper');
         const isSM = matched ? matched.isSM : isSMTap;
         tappedLinks += alloc.qty;
         if (isCopper) {
