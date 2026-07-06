@@ -34,13 +34,14 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   // Calculate TAP link requirements and total optics by fiber type
   const incomingTapEdges = edges.filter(e => e.target === node.id);
+  const uniqueIncomingTapSources = Array.from(new Set(incomingTapEdges.map(e => e.source)));
   let tappedLinks = 0;
   let requiredMMOptics = 0;
   let requiredSMOptics = 0;
   let requiredCopperOptics = 0;
 
-  incomingTapEdges.forEach(e => {
-    const sourceNode = nodes.find(n => n.id === e.source);
+  uniqueIncomingTapSources.forEach(srcId => {
+    const sourceNode = nodes.find(n => n.id === srcId);
     if (sourceNode?.data?.model?.includes('TAP')) {
       const tapSku = String(sourceNode.data?.sku || '');
       const tapModel = String(sourceNode.data?.model || '');
