@@ -811,7 +811,11 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const isM506T = tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
           const isATX = tapModel.includes('A-TX') && !tapModel.includes('A-TX2');
           const isATX2 = tapModel.includes('A-TX2');
-          const isBuiltInOptics = isATX || isATX2;  // Built-in 1G copper, no selectable optics
+          const isPassiveOpticalTap = tapModel.startsWith('TAP-M') || tapSku.startsWith('TAP-M');  // All M-Series are passive optical — no selectable optics
+          const isBuiltInOptics = isATX || isATX2 || isPassiveOpticalTap;  // Only A-SF and A-SF2 have selectable optics
+          const builtInOpticLabel = isPassiveOpticalTap
+            ? `Passive Optical Splitter (${isSMTap ? 'Singlemode' : 'Multimode'})`
+            : 'Built-in 1G Copper';
           
           let availableOptics = SUPPORTED_TAP_OPTICS;
           if (tapModel.includes('G-TAP A-SF2') || tapModel.includes('ASF21')) {
@@ -825,7 +829,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: node.data.tappedLinksCount ?? 1, 
-              optic: isBuiltInOptics ? 'Built-in 1G Copper' : (node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'))
+              optic: isBuiltInOptics ? builtInOpticLabel : (node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'))
             }
           ];
 
@@ -860,8 +864,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
           const handleAddAllocation = (qty: number, opticVal: string, toolOpticVal: string) => {
             if (qty <= 0 || qty > remainingLinks) return;
-            const effectiveOptic = isBuiltInOptics ? 'Built-in 1G Copper' : opticVal;
-            const effectiveToolOptic = isBuiltInOptics ? 'Built-in 1G Copper' : toolOpticVal;
+            const effectiveOptic = isBuiltInOptics ? builtInOpticLabel : opticVal;
+            const effectiveToolOptic = isBuiltInOptics ? builtInOpticLabel : toolOpticVal;
             const existingIndex = allocations.findIndex(a => a.optic === effectiveOptic && (a.toolOptic || a.optic) === effectiveToolOptic);
             let newAllocations = [...allocations];
             if (existingIndex > -1) {
@@ -964,7 +968,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                           {alloc.toolOptic && alloc.toolOptic !== alloc.optic && (
                             <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
                           )}</>)}
-                          {isBuiltInOptics && <span style={{ color: '#888' }}> &mdash; Built-in 1G Copper</span>}
+                          {isBuiltInOptics && <span style={{ color: '#888' }}> &mdash; {builtInOpticLabel}</span>}
                         </div>
                         {hasAllocMismatch && (
                           <div style={{ fontSize: '9px', color: '#ef5350' }}>
