@@ -177,6 +177,8 @@ const CanvasArea: React.FC = () => {
   const edges = useStore((state) => state.edges);
   const activeEdges = useStore((state) => state.activeEdges);
   const blockedEdges = useStore((state) => state.blockedEdges);
+  const encryptedEdges = useStore((state) => state.encryptedEdges);
+  const decryptedEdges = useStore((state) => state.decryptedEdges);
   const edgeMetrics = useStore((state) => state.edgeMetrics || {});
   const isRunning = useStore((state) => state.isRunning);
   const showGrid = useStore((state) => state.showGrid);
@@ -209,6 +211,8 @@ const CanvasArea: React.FC = () => {
   const styledEdges = edges.map((edge) => {
     const isActive = activeEdges.includes(edge.id);
     const isBlocked = blockedEdges.includes(edge.id);
+    const isEncrypted = encryptedEdges.includes(edge.id);
+    const isDecrypted = decryptedEdges.includes(edge.id);
     
     const srcNode = nodes.find((n) => n.id === edge.source);
     const targetNode = nodes.find((n) => n.id === edge.target);
@@ -283,11 +287,13 @@ const CanvasArea: React.FC = () => {
     let animated = false;
     
     if (isRunning) {
-      if (isActive) {
-        className = isMetadata ? 'metadata-flow' : 'active-flow';
-        animated = true;
-      } else if (isBlocked) {
+      if (isBlocked) {
         className = 'blocked-flow';
+      } else if (isActive) {
+        if (isEncrypted) className = 'active-flow encrypted-flow';
+        else if (isDecrypted) className = 'active-flow decrypted-flow';
+        else className = isMetadata ? 'metadata-flow' : 'active-flow';
+        animated = true;
       }
     }
 

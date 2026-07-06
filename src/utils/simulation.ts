@@ -382,6 +382,10 @@ const processGigaSmartNode = (
     nodeMetric.txMbps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: outputBandwidth };
+    
+    if (actionType === 'SSL Decrypt') {
+      forwardStream.isEncrypted = false;
+    }
   }
   if (dropBandwidth > 0) {
     nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
@@ -496,6 +500,9 @@ const processHardwareNode = (
              nodeMetric.droppedPackets += item.stream.bandwidth * (1 - scale) * 250;
           }
           item.stream.bandwidth = outBandwidth;
+          if (actionType === 'SSL Decrypt') {
+            item.stream.isEncrypted = false;
+          }
         }
       }
       forwardStream = { ...item.stream };
@@ -566,6 +573,8 @@ export interface SimulationStepResult {
   edgeMetrics: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
+  encryptedEdges: string[];
+  decryptedEdges: string[];
   deliveredStreamIds: string[];
   nodeDataPatches: Record<string, Record<string, unknown>>;
   uniqueEgressMbps: number;
@@ -624,6 +633,8 @@ export const calculateSimulationStep = (
 
   const activeEdgeSet = new Set<string>();
   const blockedEdgeSet = new Set<string>();
+  const encryptedEdgeSet = new Set<string>();
+  const decryptedEdgeSet = new Set<string>();
   const edgeTraffic: Record<string, number> = {};
 
   const queue: QueueItem[] = [];
@@ -764,6 +775,8 @@ export const calculateSimulationStep = (
         if (!targetNode || targetNode.type !== 'toolNode') {
           // If the target is not a tool node, always forward both streams
           if (hasForwardStream) {
+            if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+            else decryptedEdgeSet.add(edge.id);
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
             queue.push({
               nodeId: edge.target,
@@ -800,6 +813,8 @@ export const calculateSimulationStep = (
           }
 
           if (canAccept) {
+            if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+            else decryptedEdgeSet.add(edge.id);
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
             queue.push({
               nodeId: edge.target,
@@ -872,7 +887,12 @@ export const calculateSimulationStep = (
 
           if (isPacketTool) {
             if (rType === 'packet') {
-              hasValid = true;
+              if (rStream.isEncrypted) {
+                hasMismatch = true;
+                if (!mismatchMsg) mismatchMsg = '⚠️ Blind Spot: Encrypted Traffic Detected';
+              } else {
+                hasValid = true;
+              }
             } else {
               hasMismatch = true;
               if (!mismatchMsg) mismatchMsg = 'Expected packets, got metadata';
@@ -893,18 +913,17 @@ export const calculateSimulationStep = (
           }
         }
 
-        if (hasValid) {
-          nextStatus = 'optimal';
-          nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`;
-        } else if (hasMismatch) {
+        if (hasMismatch) {
           nextStatus = 'warning';
           nextStatusMessage = mismatchMsg;
+        } else if (hasValid) {
+          nextStatus = 'optimal';
+          nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`;
         }
       } else {
         nextStatus = undefined;
         nextStatusMessage = 'No active traffic streams';
       }
-
       if (
         data.status !== nextStatus || 
         data.statusMessage !== nextStatusMessage ||
@@ -935,6 +954,8 @@ export const calculateSimulationStep = (
     edgeMetrics: edgeTraffic,
     activeEdges: Array.from(activeEdgeSet),
     blockedEdges: Array.from(blockedEdgeSet),
+    encryptedEdges: Array.from(encryptedEdgeSet),
+    decryptedEdges: Array.from(decryptedEdgeSet),
     deliveredStreamIds: Array.from(deliveredStreamIds),
     nodeDataPatches,
     uniqueEgressMbps

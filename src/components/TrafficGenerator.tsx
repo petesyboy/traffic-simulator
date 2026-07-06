@@ -229,6 +229,7 @@ const TrafficGenerator: React.FC = () => {
                   <th style={{ padding: '6px 4px', width: '70px' }}>Dst Port</th>
                   <th style={{ padding: '6px 4px', width: '100px' }}>Rate</th>
                   <th style={{ padding: '6px 4px', width: '85px' }}>Status</th>
+                  <th style={{ padding: '6px 4px', width: '70px', textAlign: 'center' }}>Encrypted</th>
                   <th style={{ padding: '6px 4px', width: '55px', textAlign: 'center' }}>Active</th>
                   <th style={{ padding: '6px 4px', width: '70px', textAlign: 'center' }}>Action</th>
                 </tr>
@@ -347,6 +348,14 @@ const TrafficGenerator: React.FC = () => {
                           ❌ Filtered
                         </span>
                       )}
+                    </td>
+                    <td style={{ padding: '4px 2px', width: '70px', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={stream.isEncrypted || false}
+                        onChange={(e) => handleFieldChange(stream.id, 'isEncrypted', e.target.checked)}
+                        style={{ cursor: 'pointer' }}
+                      />
                     </td>
                     <td style={{ padding: '4px 2px', width: '55px', textAlign: 'center' }}>
                       <input

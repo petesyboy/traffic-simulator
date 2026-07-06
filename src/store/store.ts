@@ -27,6 +27,7 @@ export interface TrafficStream {
   protocol: string;
   bandwidth: number; // in Mbps
   active: boolean;
+  isEncrypted?: boolean;
   drift?: number;
   lastDriftUpdate?: number;
 }
@@ -129,6 +130,8 @@ export type RFState = {
   edgeMetrics: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
+  encryptedEdges: string[];
+  decryptedEdges: string[];
   deliveredStreams: string[];
   uniqueEgressMbps: number;
   fitViewTrigger: number;
@@ -201,6 +204,8 @@ export type RFState = {
      */
     streamPatches?: Record<string, Partial<TrafficStream>>,
     uniqueEgressMbps?: number,
+    encryptedEdges?: string[],
+    decryptedEdges?: string[]
   ) => void;
   clearCanvas: () => void;
   loadDemo: () => void;
@@ -592,6 +597,8 @@ export const useStore = create<RFState>((set, get) => ({
   edgeMetrics: {},
   activeEdges: [],
   blockedEdges: [],
+  encryptedEdges: [],
+  decryptedEdges: [],
   deliveredStreams: [],
   uniqueEgressMbps: 0,
   fitViewTrigger: 0,
@@ -841,6 +848,8 @@ export const useStore = create<RFState>((set, get) => ({
         isRunning: false, 
         activeEdges: [], 
         blockedEdges: [], 
+        encryptedEdges: [],
+        decryptedEdges: [],
         trafficStreams: resetTraffic 
       });
     } else {
@@ -916,7 +925,9 @@ export const useStore = create<RFState>((set, get) => ({
     set({ 
       nodeMetrics: {}, 
       activeEdges: [], 
-      blockedEdges: [], 
+      blockedEdges: [],
+      encryptedEdges: [],
+      decryptedEdges: [],
       deliveredStreams: [],
       uniqueEgressMbps: 0,
       nodes: syncSplunkLabels(resetNodes, get().edges)
@@ -932,6 +943,8 @@ export const useStore = create<RFState>((set, get) => ({
     nodeDataPatches?: Record<string, Record<string, unknown>>,
     streamPatches?: Record<string, Partial<TrafficStream>>,
     uniqueEgressMbps?: number,
+    encryptedEdges?: string[],
+    decryptedEdges?: string[]
   ) => {
     // Apply node-data patches (e.g. dedupRate drift, tool status)
     let nextNodes = get().nodes;
@@ -976,6 +989,8 @@ export const useStore = create<RFState>((set, get) => ({
       edgeMetrics,
       activeEdges,
       blockedEdges,
+      encryptedEdges: encryptedEdges || [],
+      decryptedEdges: decryptedEdges || [],
       deliveredStreams: deliveredStreams || [],
       nodes: nextNodes,
       trafficStreams: nextStreams,
@@ -984,7 +999,7 @@ export const useStore = create<RFState>((set, get) => ({
   },
 
   clearCanvas: () => {
-    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 });
+    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], encryptedEdges: [], decryptedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 });
   },
 
   loadDemo: () => {

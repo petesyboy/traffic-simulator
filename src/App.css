@@ -584,6 +584,22 @@
   animation: edge-flow-dash-reverse 1.2s linear infinite;
 }
 
+/* Active Encrypted Flow */
+.react-flow__edge.encrypted-flow .react-flow__edge-path {
+  stroke: #5e35b1;
+  stroke-dasharray: 2 6 !important;
+  filter: drop-shadow(0 0 2px rgba(94, 53, 177, 0.4)) !important;
+  animation: edge-flow-dash 1.8s linear infinite;
+}
+
+/* Active Decrypted Flow (Bright/Clear Text) */
+.react-flow__edge.decrypted-flow .react-flow__edge-path {
+  stroke: #00e5ff;
+  stroke-dasharray: 15 5 !important;
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.9)) !important;
+  animation: edge-flow-dash 1.0s linear infinite;
+}
+
 
 /* 4. Canvas Node Styles (Charcoal Boxes) */
 .custom-node {
