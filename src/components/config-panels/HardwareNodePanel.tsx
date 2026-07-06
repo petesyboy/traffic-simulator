@@ -848,13 +848,13 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
           // Filter tool optics to only those matching the selected network optic speed
           const networkSpeed = getOpticSpeed(activeAddOptic);
-          const speedFilteredToolOptics = networkSpeed
+          const speedFilteredToolOptics = (networkSpeed && !isPassiveOpticalTap)
             ? availableOptics.filter(o => getOpticSpeed(o.value) === networkSpeed)
-            : availableOptics;
+            : availableOptics.filter(o => o.isSM === isSMTap);
 
-          const activeAddToolOptic = (addToolOptic && getOpticSpeed(addToolOptic) === networkSpeed)
+          const activeAddToolOptic = (addToolOptic && (isPassiveOpticalTap || getOpticSpeed(addToolOptic) === networkSpeed))
             ? addToolOptic
-            : activeAddOptic;
+            : speedFilteredToolOptics[0]?.value || activeAddOptic;
 
           // Check if any allocation has a mismatch
           const mismatchedAllocations = allocations.filter(a => {
@@ -866,7 +866,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const handleAddAllocation = (qty: number, opticVal: string, toolOpticVal: string) => {
             if (qty <= 0 || qty > remainingLinks) return;
             const effectiveOptic = isBuiltInOptics ? builtInOpticLabel : opticVal;
-            const effectiveToolOptic = isBuiltInOptics ? builtInOpticLabel : toolOpticVal;
+            const effectiveToolOptic = toolOpticVal;
             const existingIndex = allocations.findIndex(a => a.optic === effectiveOptic && (a.toolOptic || a.optic) === effectiveToolOptic);
             let newAllocations = [...allocations];
             if (existingIndex > -1) {
@@ -969,7 +969,13 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                           {alloc.toolOptic && alloc.toolOptic !== alloc.optic && (
                             <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
                           )}</>)}
-                          {isBuiltInOptics && <span style={{ color: '#888' }}> &mdash; {builtInOpticLabel}</span>}
+                          {isBuiltInOptics && (
+                            <span style={{ color: '#888' }}> &mdash; {builtInOpticLabel}
+                              {alloc.toolOptic && alloc.toolOptic !== builtInOpticLabel && (
+                                <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
+                              )}
+                            </span>
+                          )}
                         </div>
                         {hasAllocMismatch && (
                           <div style={{ fontSize: '9px', color: '#ef5350' }}>
@@ -1029,25 +1035,23 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                       )}
                     </div>
 
-                    {!isBuiltInOptics && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <label style={{ fontSize: '9px', color: '#888' }}>Tool Optic</label>
-                        <select 
-                          value={activeAddToolOptic} 
-                          onChange={e => setAddToolOptic(e.target.value)} 
-                          disabled={isM506T}
-                          style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
-                        >
-                          <option value={activeAddOptic}>Match Network Optic</option>
-                          {speedFilteredToolOptics.filter(opt => opt.value !== activeAddOptic).map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                        {networkSpeed && (
-                          <span style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>Filtered to {networkSpeed} optics (tool must match network speed)</span>
-                        )}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '9px', color: '#888' }}>Tool Optic</label>
+                      <select 
+                        value={activeAddToolOptic} 
+                        onChange={e => setAddToolOptic(e.target.value)} 
+                        disabled={isM506T}
+                        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                      >
+                        {!isPassiveOpticalTap && <option value={activeAddOptic}>Match Network Optic</option>}
+                        {speedFilteredToolOptics.filter(opt => isPassiveOpticalTap || opt.value !== activeAddOptic).map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      {(networkSpeed && !isPassiveOpticalTap) && (
+                        <span style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>Filtered to {networkSpeed} optics (tool must match network speed)</span>
+                      )}
+                    </div>
                   </div>
 
                   <button 
