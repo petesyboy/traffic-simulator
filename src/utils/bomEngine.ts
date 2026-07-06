@@ -266,10 +266,7 @@ export function generateBom(
           series1RackTaps++;
         }
 
-        if (tapPower === 'Individual Power Brick') {
-          const powerSku = model.includes('A-TX') ? 'GTP-ATX01-UN' : 'GTP-ASF01-UN';
-          addRow(node.id, powerSku, 1, 'Dependency');
-        } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
+        if (tapPower === 'PST-GTA01 (AC Power Tray)') {
           series1PstAcTaps++;
         } else if (tapPower === 'PST-GTA02 (DC Power Tray)') {
           series1PstDcTaps++;
