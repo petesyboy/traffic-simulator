@@ -780,9 +780,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </span>
                 <span style={{ fontSize: '9px', color: '#666', fontWeight: 500, letterSpacing: '0.02em' }}>
                   FLOW MAPPING DESIGNER
-                  <span style={{ marginLeft: '8px', color: '#444' }}>
-                    v{pkg.version.split('.').slice(0,2).join('.')}
-                  </span>
+                  <a 
+                    href={`https://github.com/petesyboy/traffic-simulator/releases/tag/v${pkg.version}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`Build ${pkg.version}`}
+                    style={{ marginLeft: '8px', color: '#444', textDecoration: 'none', cursor: 'pointer' }}
+                  >
+                    v{pkg.version}
+                  </a>
                 </span>
               </div>
             </div>
