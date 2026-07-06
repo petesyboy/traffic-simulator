@@ -201,6 +201,9 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     if (modelLower.includes('ta200')) {
       return { sfp: 0, qsfp: 64 };
     }
+    if (modelLower.includes('ta400e')) {
+      return { sfp: 2, qsfp: 32 };
+    }
     if (modelLower.includes('ta400')) {
       return { sfp: 0, qsfp: 32 };
     }
@@ -302,14 +305,17 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   } else if (modelLowerStr.includes('ta200e') || modelLowerStr.includes('ta200')) {
     total25G = Math.min(total25G, 128);
     total10G = Math.min(total10G, 128);
+    total1G = 0;
   } else if (modelLowerStr.includes('ta400e')) {
     total100G = Math.min(total100G, 128);
     total25G = Math.min(total25G, 130);
     total10G = Math.min(total10G, 130);
+    total1G = 0;
   } else if (modelLowerStr.includes('ta400')) {
     total100G = Math.min(total100G, 128);
     total25G = Math.min(total25G, 128);
     total10G = Math.min(total10G, 128);
+    total1G = 0;
   } else if (modelLowerStr.includes('hct')) {
     total100G = Math.min(total100G, 2);
     total40G = Math.min(total40G, 6);
