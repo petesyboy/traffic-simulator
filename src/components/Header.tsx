@@ -275,66 +275,90 @@ const BomModal: React.FC<{
     name: string;
     qty: number;
     ru: string;
+    ruNum: number;
     dimensions: string;
     weight: string;
+    weightNum: number;
     power: string;
+    powerNum: number;
     heat: string;
+    heatNum: number;
     airflow: string;
+    site: string;
   }[] = [];
 
   const hwNodes = nodes.filter(n => n.type === 'hardwareNode');
-  const tray100 = items.find(i => i.sku === 'TAP-M100T')?.qty || 0;
-  const tray200 = items.find(i => i.sku === 'TAP-M200T' || i.sku === 'TAP-M200')?.qty || 0;
-  const trayUlt = items.find(i => i.sku === 'TAP-M200ULT' || i.sku === 'TAP-M202ULT')?.qty || 0;
 
-  if (tray100 > 0) {
-    physicalItems.push({
-      name: 'TAP-M100T Chassis Tray (1/2 RU)',
-      qty: tray100,
-      ru: `${tray100 * 0.5} RU`,
-      dimensions: '0.81 in x 17.3 in x 6.10 in',
-      weight: `${(tray100 * 3.3).toFixed(1)} lbs (${(tray100 * 1.5).toFixed(1)} kg)`,
-      power: '0 W',
-      heat: '0 BTU/hr',
-      airflow: 'Passive'
-    });
-    totalRU += tray100 * 0.5;
-    totalWeight += tray100 * 3.3;
-  }
+  // Group items by site to calculate physical trays per site
+  const siteTrays: Record<string, { t100: number, t200: number, tUlt: number }> = {};
+  items.forEach(i => {
+    const siteKey = i.site || 'Global / Unassigned';
+    if (!siteTrays[siteKey]) siteTrays[siteKey] = { t100: 0, t200: 0, tUlt: 0 };
+    if (i.sku === 'TAP-M100T') siteTrays[siteKey].t100 += i.qty;
+    if (i.sku === 'TAP-M200T' || i.sku === 'TAP-M200') siteTrays[siteKey].t200 += i.qty;
+    if (i.sku === 'TAP-M200ULT' || i.sku === 'TAP-M202ULT') siteTrays[siteKey].tUlt += i.qty;
+  });
 
-  if (tray200 > 0) {
-    physicalItems.push({
-      name: 'TAP-M200T Chassis Tray (1 RU)',
-      qty: tray200,
-      ru: `${tray200 * 1} RU`,
-      dimensions: '1.72 in x 17.3 in x 6.10 in',
-      weight: `${(tray200 * 3.8).toFixed(1)} lbs (${(tray200 * 1.7).toFixed(1)} kg)`,
-      power: '0 W',
-      heat: '0 BTU/hr',
-      airflow: 'Passive'
-    });
-    totalRU += tray200 * 1;
-    totalWeight += tray200 * 3.8;
-  }
+  Object.entries(siteTrays).forEach(([siteKey, trays]) => {
+    if (trays.t100 > 0) {
+      physicalItems.push({
+        name: 'TAP-M100T Chassis Tray (1/2 RU)',
+        qty: trays.t100,
+        ru: `${trays.t100 * 0.5} RU`,
+        ruNum: trays.t100 * 0.5,
+        dimensions: '0.81 in x 17.3 in x 6.10 in',
+        weight: `${(trays.t100 * 3.3).toFixed(1)} lbs (${(trays.t100 * 1.5).toFixed(1)} kg)`,
+        weightNum: trays.t100 * 3.3,
+        power: '0 W',
+        powerNum: 0,
+        heat: '0 BTU/hr',
+        heatNum: 0,
+        airflow: 'Passive',
+        site: siteKey
+      });
+    }
+    if (trays.t200 > 0) {
+      physicalItems.push({
+        name: 'TAP-M200T Chassis Tray (1 RU)',
+        qty: trays.t200,
+        ru: `${trays.t200 * 1} RU`,
+        ruNum: trays.t200 * 1,
+        dimensions: '1.72 in x 17.3 in x 6.10 in',
+        weight: `${(trays.t200 * 3.8).toFixed(1)} lbs (${(trays.t200 * 1.7).toFixed(1)} kg)`,
+        weightNum: trays.t200 * 3.8,
+        power: '0 W',
+        powerNum: 0,
+        heat: '0 BTU/hr',
+        heatNum: 0,
+        airflow: 'Passive',
+        site: siteKey
+      });
+    }
+    if (trays.tUlt > 0) {
+      physicalItems.push({
+        name: 'TAP-M202ULT Unidirectional Chassis Tray (1 RU)',
+        qty: trays.tUlt,
+        ru: `${trays.tUlt * 1} RU`,
+        ruNum: trays.tUlt * 1,
+        dimensions: '1.72 in x 17.3 in x 6.10 in',
+        weight: `${(trays.tUlt * 3.8).toFixed(1)} lbs (${(trays.tUlt * 1.7).toFixed(1)} kg)`,
+        weightNum: trays.tUlt * 3.8,
+        power: '0 W',
+        powerNum: 0,
+        heat: '0 BTU/hr',
+        heatNum: 0,
+        airflow: 'Passive',
+        site: siteKey
+      });
+    }
+  });
 
-  if (trayUlt > 0) {
-    physicalItems.push({
-      name: 'TAP-M202ULT Unidirectional Chassis Tray (1 RU)',
-      qty: trayUlt,
-      ru: `${trayUlt * 1} RU`,
-      dimensions: '1.72 in x 17.3 in x 6.10 in',
-      weight: `${(trayUlt * 3.8).toFixed(1)} lbs (${(trayUlt * 1.7).toFixed(1)} kg)`,
-      power: '0 W',
-      heat: '0 BTU/hr',
-      airflow: 'Passive'
-    });
-    totalRU += trayUlt * 1;
-    totalWeight += trayUlt * 3.8;
-  }
+
 
   hwNodes.forEach(node => {
     const model = String(node.data?.model || '').toUpperCase();
     const label = (node.data?.label as string) || model;
+    const siteKey = (node.data?.site as string) || 'Global / Unassigned';
     
     if (model.includes('TAP') && !model.includes('TAP-M')) {
       const isAC = !String(node.data?.powerSupply || '').includes('DC');
@@ -344,31 +368,33 @@ const BomModal: React.FC<{
         name: `${label} (${model})`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.72 in x 17.3 in x 6.10 in',
         weight: '4.5 lbs (2.0 kg)',
+        weightNum: 4.5,
         power: `${pwr} W`,
+        powerNum: pwr,
         heat: `${btu} BTU/hr`,
-        airflow: 'Side-to-Side'
+        heatNum: btu,
+        airflow: 'Side-to-Side',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 4.5;
-      totalPower += pwr;
-      totalHeat += btu;
     } else if (model.includes('TA25')) {
       physicalItems.push({
         name: `${label} (TA25E)`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.75 in x 17.32 in x 19.25 in',
         weight: '19.0 lbs (8.62 kg)',
+        weightNum: 19.0,
         power: '400 W',
+        powerNum: 400,
         heat: '1365 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 1365,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 19.0;
-      totalPower += 400;
-      totalHeat += 1365;
     } else if (model.includes('TA200')) {
       const isE = model.includes('TA200E');
       const pwr = isE ? 800 : 1069;
@@ -377,93 +403,113 @@ const BomModal: React.FC<{
         name: `${label} (${isE ? 'TA200E' : 'TA200'})`,
         qty: 1,
         ru: '2 RU',
+        ruNum: 2,
         dimensions: '3.48 in x 17.32 in x 21.25 in',
         weight: '33.6 lbs (15.24 kg)',
+        weightNum: 33.6,
         power: `${pwr} W`,
+        powerNum: pwr,
         heat: `${btu} BTU/hr`,
-        airflow: 'Front-to-Rear'
+        heatNum: btu,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 2;
-      totalWeight += 33.6;
-      totalPower += pwr;
-      totalHeat += btu;
     } else if (model.includes('TA400')) {
       physicalItems.push({
         name: `${label} (TA400E)`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.75 in x 17.32 in x 23.23 in',
         weight: '26.12 lbs (11.85 kg)',
+        weightNum: 26.12,
         power: '1294 W',
+        powerNum: 1294,
         heat: '4412 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 4412,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 26.12;
-      totalPower += 1294;
-      totalHeat += 4412;
     } else if (model.includes('HCT')) {
       physicalItems.push({
         name: `${label} (GigaVUE-HCT)`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.75 in x 8.4 in x 12.5 in',
         weight: '5.8 lbs (2.63 kg)',
+        weightNum: 5.8,
         power: '286 W',
+        powerNum: 286,
         heat: '975 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 975,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 5.8;
-      totalPower += 286;
-      totalHeat += 975;
     } else if (model.includes('HC1-PLUS') || model.includes('HC1P')) {
       physicalItems.push({
         name: `${label} (GigaVUE-HC1-Plus)`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.70 in x 17.0 in x 23.0 in',
         weight: '33.8 lbs (15.36 kg)',
+        weightNum: 33.8,
         power: '650 W',
+        powerNum: 650,
         heat: '2216 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 2216,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 33.8;
-      totalPower += 650;
-      totalHeat += 2216;
     } else if (model.includes('HC1') && !model.includes('HC1-PLUS') && !model.includes('HC1P')) {
       physicalItems.push({
         name: `${label} (GigaVUE-HC1)`,
         qty: 1,
         ru: '1 RU',
+        ruNum: 1,
         dimensions: '1.75 in x 17.26 in x 19.5 in',
         weight: '20.88 lbs (9.47 kg)',
+        weightNum: 20.88,
         power: '360 W',
+        powerNum: 360,
         heat: '1227.6 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 1227.6,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 1;
-      totalWeight += 20.88;
-      totalPower += 360;
-      totalHeat += 1227.6;
     } else if (model.includes('HC3')) {
       physicalItems.push({
         name: `${label} (GigaVUE-HC3)`,
         qty: 1,
         ru: '3 RU',
+        ruNum: 3,
         dimensions: '5.25 in x 17.26 in x 29.1 in',
         weight: '88.0 lbs (40.00 kg)',
+        weightNum: 88.0,
         power: '2000 W',
+        powerNum: 2000,
         heat: '6824.3 BTU/hr',
-        airflow: 'Front-to-Rear'
+        heatNum: 6824.3,
+        airflow: 'Front-to-Rear',
+        site: siteKey
       });
-      totalRU += 3;
-      totalWeight += 88.0;
-      totalPower += 2000;
-      totalHeat += 6824.3;
     }
   });
+
+  // Calculate master totals
+  physicalItems.forEach(item => {
+    totalRU += item.ruNum;
+    totalWeight += item.weightNum;
+    totalPower += item.powerNum;
+    totalHeat += item.heatNum;
+  });
+
+  const physicalSiteGroups = physicalItems.reduce((acc, item) => {
+    if (!acc[item.site]) acc[item.site] = [];
+    acc[item.site].push(item);
+    return acc;
+  }, {} as Record<string, typeof physicalItems>);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
@@ -523,6 +569,38 @@ const BomModal: React.FC<{
         )}
         
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setBomViewMode('site')}
+                style={{
+                  background: bomViewMode === 'site' ? '#ff9800' : '#333',
+                  color: bomViewMode === 'site' ? '#fff' : '#aaa',
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                By Site Breakdown
+              </button>
+              <button 
+                onClick={() => setBomViewMode('master')}
+                style={{
+                  background: bomViewMode === 'master' ? '#ff9800' : '#333',
+                  color: bomViewMode === 'master' ? '#fff' : '#aaa',
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                Master Report (Aggregated)
+              </button>
+            </div>
+
           {activeTab === 'bom' ? (() => {
             if (items.length === 0) {
               return <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No hardware nodes tracked in the current layout.</div>;
@@ -548,37 +626,6 @@ const BomModal: React.FC<{
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <button 
-                    onClick={() => setBomViewMode('site')}
-                    style={{
-                      background: bomViewMode === 'site' ? '#ff9800' : '#333',
-                      color: bomViewMode === 'site' ? '#fff' : '#aaa',
-                      border: 'none',
-                      padding: '6px 16px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    By Site Breakdown
-                  </button>
-                  <button 
-                    onClick={() => setBomViewMode('master')}
-                    style={{
-                      background: bomViewMode === 'master' ? '#ff9800' : '#333',
-                      color: bomViewMode === 'master' ? '#fff' : '#aaa',
-                      border: 'none',
-                      padding: '6px 16px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Master BOM (Aggregated)
-                  </button>
-                </div>
-
                 {bomViewMode === 'master' ? (
                   <div style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
                     <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
@@ -652,45 +699,90 @@ const BomModal: React.FC<{
                       </tbody>
                     </table>
                   </div>
-                )))}
+                  ))
+                )}
+
               </div>
             );
           })() : (
             physicalItems.length === 0 ? (
               <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No physical hardware nodes found on the canvas.</div>
             ) : (
-              <div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #444' }}>
-                      <th style={{ padding: '8px', color: '#888' }}>Hardware Node / Chassis</th>
-                      <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Qty</th>
-                      <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Rack Space</th>
-                      <th style={{ padding: '8px', color: '#888' }}>Dimensions (H x W x D)</th>
-                      <th style={{ padding: '8px', color: '#888' }}>Weight</th>
-                      <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Max Power</th>
-                      <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Heat Output</th>
-                      <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Airflow</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {physicalItems.map((item, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #333' }}>
-                        <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
-                        <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
-                        <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
-                        <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>{item.dimensions}</td>
-                        <td style={{ padding: '8px', color: '#aaa' }}>{item.weight}</td>
-                        <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
-                        <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
-                        <td style={{ padding: '8px', color: '#ccc', textAlign: 'center' }}>{item.airflow}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {bomViewMode === 'master' ? (
+                  <div style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+                      Master Physical Report (All Sites)
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #444' }}>
+                          <th style={{ padding: '8px', color: '#888' }}>Hardware Node / Chassis</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Qty</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Rack Space</th>
+                          <th style={{ padding: '8px', color: '#888' }}>Dimensions (H x W x D)</th>
+                          <th style={{ padding: '8px', color: '#888' }}>Weight</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Max Power</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Heat Output</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Airflow</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {physicalItems.map((item, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #333' }}>
+                            <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
+                            <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
+                            <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>{item.dimensions}</td>
+                            <td style={{ padding: '8px', color: '#aaa' }}>{item.weight}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
+                            <td style={{ padding: '8px', color: '#ccc', textAlign: 'center' }}>{item.airflow}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  Object.entries(physicalSiteGroups).map(([siteKey, items]) => (
+                    <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+                        Site: {siteKey}
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #444' }}>
+                            <th style={{ padding: '8px', color: '#888' }}>Hardware Node / Chassis</th>
+                            <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Qty</th>
+                            <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Rack Space</th>
+                            <th style={{ padding: '8px', color: '#888' }}>Dimensions (H x W x D)</th>
+                            <th style={{ padding: '8px', color: '#888' }}>Weight</th>
+                            <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Max Power</th>
+                            <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Heat Output</th>
+                            <th style={{ padding: '8px', color: '#888', textAlign: 'center' }}>Airflow</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid #333' }}>
+                              <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
+                              <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
+                              <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
+                              <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>{item.dimensions}</td>
+                              <td style={{ padding: '8px', color: '#aaa' }}>{item.weight}</td>
+                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
+                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
+                              <td style={{ padding: '8px', color: '#ccc', textAlign: 'center' }}>{item.airflow}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))
+                )}
 
                 {/* Physical Summary Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '4px' }}>
                   <div style={{ background: '#222', border: '1px solid #333', borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>Total Space Required</div>
                     <div style={{ fontSize: '20px', color: '#00e5ff', fontWeight: 'bold' }}>{totalRU.toFixed(1)} RU</div>
@@ -712,6 +804,7 @@ const BomModal: React.FC<{
               </div>
             )
           )}
+          </div>
         </div>
         
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '8px' }}>
