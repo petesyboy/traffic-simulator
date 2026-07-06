@@ -160,21 +160,19 @@ export function generateBom(
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
-  let totalTapModules = 0;
+  const tapModulesPerSite: Record<string, number> = {};
+  const series1RackTapsPerSite: Record<string, number> = {};
+  const series1PstAcTapsPerSite: Record<string, number> = {};
+  const series1PstDcTapsPerSite: Record<string, number> = {};
 
-  // Track Series 1 TAP accessories
-  let series1RackTaps = 0;
-  let series1PstAcTaps = 0;
-  let series1PstDcTaps = 0;
-
-  const addRow = (nodeId: string | null, sku: string, qty: number, type: BomRow['type'], term?: string) => {
+  const addRow = (nodeId: string | null, sku: string, qty: number, type: BomRow['type'], term?: string, overrideSite?: string) => {
     const description = skus[sku] || 'Unknown SKU';
     
     // Check if there are any prerequisites mentioned in description
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
     const node = nodeId ? nodes.find(n => n.id === nodeId) : null;
-    const site = (node?.data?.site as string) || 'Unassigned';
+    const site = overrideSite || (node?.data?.site as string) || 'Unassigned';
 
     const key = (groupByNode && nodeId) ? `${nodeId}_${sku}` : `${site}_${sku}`;
     
@@ -261,19 +259,20 @@ export function generateBom(
       // Series 1 vs Series 2 Hardware & Power Options
       const isSeries2 = model.includes('SF2') || model.includes('TX2');
       const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
+      const siteKey = (node.data?.site as string) || 'Unassigned';
 
       if (isSeries1) {
         const tapRackMount = (node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)';
         const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
 
         if (tapRackMount === 'RMT-GTA03 (3-bay Rack Tray)') {
-          series1RackTaps++;
+          series1RackTapsPerSite[siteKey] = (series1RackTapsPerSite[siteKey] || 0) + 1;
         }
 
         if (tapPower === 'PST-GTA01 (AC Power Tray)') {
-          series1PstAcTaps++;
+          series1PstAcTapsPerSite[siteKey] = (series1PstAcTapsPerSite[siteKey] || 0) + 1;
         } else if (tapPower === 'PST-GTA02 (DC Power Tray)') {
-          series1PstDcTaps++;
+          series1PstDcTapsPerSite[siteKey] = (series1PstDcTapsPerSite[siteKey] || 0) + 1;
         }
       } else if (isSeries2) {
         const tapDualPower = !!node.data.tapDualPower;
@@ -311,7 +310,8 @@ export function generateBom(
 
       const tapEntry = hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku);
       if (tapEntry && tapEntry.type === 'module') {
-        totalTapModules += 1;
+        const siteKey = (node.data?.site as string) || 'Unassigned';
+        tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + 1;
       }
       return;
     }
@@ -364,7 +364,8 @@ export function generateBom(
       const opticSku = resolveOpticSku(opt.optic, model);
       addRow(node.id, opticSku, opt.qty, 'Optic');
       if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) {
-        totalTapModules += opt.qty;
+        const siteKey = (node.data?.site as string) || 'Unassigned';
+        tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + opt.qty;
       }
     });
 
@@ -477,23 +478,25 @@ export function generateBom(
     }
   });
 
-  if (totalTapModules > 0) {
-    let numM200T = Math.floor(totalTapModules / 6);
-    let remainder = totalTapModules % 6;
-    let numM100T = 0;
-    if (remainder > 0) {
-      if (remainder <= 3) {
-        numM100T = 1;
-      } else {
-        numM200T += 1;
+  for (const [siteKey, totalTapModules] of Object.entries(tapModulesPerSite)) {
+    if (totalTapModules > 0) {
+      let numM200T = Math.floor(totalTapModules / 6);
+      let remainder = totalTapModules % 6;
+      let numM100T = 0;
+      if (remainder > 0) {
+        if (remainder <= 3) {
+          numM100T = 1;
+        } else {
+          numM200T += 1;
+        }
       }
-    }
-    
-    if (numM100T > 0) {
-      addRow(null, 'TAP-M100T', numM100T, 'Dependency');
-    }
-    if (numM200T > 0) {
-      addRow(null, 'TAP-M200T', numM200T, 'Dependency');
+      
+      if (numM100T > 0) {
+        addRow(null, 'TAP-M100T', numM100T, 'Dependency', undefined, siteKey);
+      }
+      if (numM200T > 0) {
+        addRow(null, 'TAP-M200T', numM200T, 'Dependency', undefined, siteKey);
+      }
     }
   }
 
@@ -577,24 +580,36 @@ export function generateBom(
   });
 
   // Aggregate TAP Accessories
-  if (series1RackTaps > 0) {
-    addRow(null, 'RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency');
+  for (const [siteKey, series1RackTaps] of Object.entries(series1RackTapsPerSite)) {
+    if (series1RackTaps > 0) {
+      let numRMT = Math.ceil(series1RackTaps / 3);
+      if (numRMT > 0) addRow(null, 'RMT-GTA03', numRMT, 'Dependency', undefined, siteKey);
+    }
   }
-  if (series1PstAcTaps > 0) {
-    const trayQty = Math.ceil(series1PstAcTaps / 24);
-    addRow(null, 'PST-GTA01', trayQty, 'Dependency');
-    
-    // Each AC Power Tray has 2 power supplies, needs 2 cords
-    let acSku = 'PCD-00001'; // Default US
-    if (globalRegion === 'EU') acSku = 'PCD-00003';
-    else if (globalRegion === 'UK') acSku = 'PCD-00005';
-    addRow(null, acSku, trayQty * 2, 'Dependency');
+
+  for (const [siteKey, series1PstAcTaps] of Object.entries(series1PstAcTapsPerSite)) {
+    if (series1PstAcTaps > 0) {
+      let numPstAC = Math.ceil(series1PstAcTaps / 24);
+      if (numPstAC > 0) {
+        addRow(null, 'PST-GTA01', numPstAC, 'Dependency', undefined, siteKey);
+        
+        let cordSku = 'PCD-00A21';
+        if (globalRegion === 'EU') cordSku = 'PCD-00A23';
+        if (globalRegion === 'UK') cordSku = 'PCD-00A25';
+        
+        addRow(null, cordSku, numPstAC * 2, 'Dependency', undefined, siteKey);
+      }
+    }
   }
-  if (series1PstDcTaps > 0) {
-    const trayQty = Math.ceil(series1PstDcTaps / 24);
-    addRow(null, 'PST-GTA02', trayQty, 'Dependency');
-    // DC trays need DC cords
-    addRow(null, 'PCD-00051', trayQty * 2, 'Dependency');
+
+  for (const [siteKey, series1PstDcTaps] of Object.entries(series1PstDcTapsPerSite)) {
+    if (series1PstDcTaps > 0) {
+      let numPstDC = Math.ceil(series1PstDcTaps / 24);
+      if (numPstDC > 0) {
+        addRow(null, 'PST-GTA02', numPstDC, 'Dependency', undefined, siteKey);
+        addRow(null, 'PCD-00051', numPstDC * 2, 'Dependency', undefined, siteKey);
+      }
+    }
   }
 
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));

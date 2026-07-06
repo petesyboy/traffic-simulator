@@ -664,7 +664,17 @@ export const useStore = create<RFState>((set, get) => ({
     if (sourceNode && targetNode && targetNode.type === 'hardwareNode' && (String(targetNode.data?.model || '').includes('HC') || String(targetNode.data?.model || '').includes('TA'))) {
       const tapSku = String(sourceNode.data?.sku || '');
       const tapModel = String(sourceNode.data?.model || '');
+      const targetModel = String(targetNode.data?.model || '');
       
+      const isCopperTap = tapSku.includes('ATX') || tapModel.toLowerCase().includes('copper') || String(sourceNode.data?.tappedLinkOptic || '').toLowerCase().includes('copper');
+      
+      if (isCopperTap) {
+        if (targetModel.includes('TA200') || targetModel.includes('TA400')) {
+          window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances do not support Copper (10GBASE-T / 1000BASE-T) transceivers due to power and thermal constraints. You can only connect a Copper TAP to a TA25/TA25E or HC-Series appliance.`);
+          return; // Abort connection
+        }
+      }
+
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
       const tapFiber = isSMTap ? 'Singlemode' : 'Multimode';
