@@ -770,6 +770,11 @@ const CanvasArea: React.FC = () => {
         mergedData.lastDedupUpdate = Date.now();
       }
 
+      if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) {
+        mergedData.ingestOptic = 'Customer Supplied Optic';
+        mergedData.ingestOpticQty = '1';
+      }
+
       let edgeToInterpose: Edge | null = null;
       if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
         for (const edge of edges) {
