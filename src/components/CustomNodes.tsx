@@ -1000,25 +1000,43 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         }}>
           {(() => {
             if (isTap) {
-              const linksCount = data.tappedLinksCount ?? 1;
-              const optic = (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
-              return `Tapping ${linksCount} network link(s) using ${optic} to mirror traffic.`;
+              const allocations = (data.tappedLinkAllocations as { qty: number, optic: string }[]) || [
+                { qty: data.tappedLinksCount ?? 1, optic: (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)') }
+              ];
+              const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${a.optic} to mirror traffic.`);
+              return descLines.join('\n');
             } else {
               // Find incoming TAP links
               const incoming = edges.filter(e => e.target === id);
               const tapConns = incoming.map(e => {
                 const src = nodes.find(n => n.id === e.source);
                 if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
-                  const linksCount = src.data?.tappedLinksCount ?? 1;
-                  const optic = (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)';
-                  return { label: src.data?.label || 'TAP', linksCount, optic };
+                  const allocations = (src.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
+                    { qty: src.data?.tappedLinksCount ?? 1, optic: (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)' }
+                  ];
+                  return allocations.map(a => ({
+                    label: src.data?.label || 'TAP',
+                    linksCount: a.qty,
+                    optic: a.toolOptic || a.optic
+                  }));
                 }
                 return null;
-              }).filter(Boolean) as { label: string, linksCount: number, optic: string }[];
+              }).filter(Boolean).flat() as { label: string, linksCount: number, optic: string }[];
 
               let desc = '';
               if (tapConns.length > 0) {
-                desc += tapConns.map(c => `Terminating ${c.linksCount * 2} TAP ports from ${c.label} using ${c.optic}.`).join('\n') + '\n\n';
+                const grouped = tapConns.reduce((acc, curr) => {
+                  if (!acc[curr.optic]) acc[curr.optic] = { links: 0, labels: new Set<string>() };
+                  acc[curr.optic].links += curr.linksCount;
+                  acc[curr.optic].labels.add(curr.label);
+                  return acc;
+                }, {} as Record<string, { links: number, labels: Set<string> }>);
+
+                desc += Object.entries(grouped).map(([optic, data]) => {
+                  const ports = data.links * 2;
+                  const labels = Array.from(data.labels).join(', ');
+                  return `Terminating ${ports} TAP ports (from ${data.links} tapped links) from ${labels} using ${optic}.`;
+                }).join('\n') + '\n\n';
               }
 
               const opticsDesc = nodeBom.filter(r => r.type === 'Optic' || r.type === 'TAP' || r.type === 'Module')
