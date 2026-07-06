@@ -26,7 +26,6 @@ const TrafficGenerator: React.FC = () => {
   const deliveredStreams  = useStore((state) => state.deliveredStreams);
   const isRunning        = useStore((state) => state.isRunning);
   const toggleSimulation = useStore((state) => state.toggleSimulation);
-  const edges            = useStore((state) => state.edges);
 
   // Resizable tray: tracks the current drawer height in pixels.
   const [drawerHeight, setDrawerHeight] = useState(220);
@@ -90,24 +89,32 @@ const TrafficGenerator: React.FC = () => {
     let defaultBandwidth = 10000;
     
     if (sourceNode.type === 'hardwareNode' && typeof sourceNode.data.model === 'string' && sourceNode.data.model.includes('TAP')) {
-      const outgoingEdges = edges.filter(e => e.source === sourceNode.id);
-      if (outgoingEdges.length > 0) {
-        const targetNode = nodes.find(n => n.id === outgoingEdges[0].target);
-        if (targetNode && targetNode.data.optics) {
-          const optics = targetNode.data.optics as any[];
-          let maxSpeedValue = 0;
-          optics.forEach(opt => {
-            const match = opt.optic.match(/(1|10|25|40|100|400)G/i);
-            if (match) {
-              const val = parseInt(match[1]);
-              if (val > maxSpeedValue) maxSpeedValue = val;
-            }
-          });
-          if (maxSpeedValue > 0) {
-            const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
-            defaultBandwidth = numLinks * maxSpeedValue * 1000;
+      const allocations = sourceNode.data.tappedLinkAllocations as any[];
+      let totalLinkBandwidth = 0;
+
+      if (allocations && allocations.length > 0) {
+        allocations.forEach(a => {
+          const opticName = a.toolOptic || a.optic || '';
+          const match = opticName.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
+          if (match) {
+            const speedStr = match[1].toUpperCase();
+            const val = speedStr === '100M' ? 0.1 : parseInt(speedStr);
+            totalLinkBandwidth += val * 1000 * (a.qty || 1);
           }
+        });
+      } else if (sourceNode.data.tappedLinkOptic) {
+        const opticName = sourceNode.data.tappedLinkOptic as string;
+        const match = opticName.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
+        if (match) {
+          const speedStr = match[1].toUpperCase();
+          const val = speedStr === '100M' ? 0.1 : parseInt(speedStr);
+          const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
+          totalLinkBandwidth = numLinks * val * 1000;
         }
+      }
+
+      if (totalLinkBandwidth > 0) {
+        defaultBandwidth = Math.floor(totalLinkBandwidth * 0.5);
       }
     }
 
