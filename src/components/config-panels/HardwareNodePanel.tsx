@@ -293,6 +293,48 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   total10G += numBreakouts * 4;
   total1G += numBreakouts * 4;
 
+  const modelLowerStr = String(model || '').toLowerCase();
+  if (modelLowerStr.includes('ta25e')) {
+    total25G = Math.min(total25G, 80);
+    total10G = Math.min(total10G, 80);
+  } else if (modelLowerStr.includes('ta25')) {
+    total25G = Math.min(total25G, 56);
+    total10G = Math.min(total10G, 56);
+  } else if (modelLowerStr.includes('ta200e') || modelLowerStr.includes('ta200')) {
+    total25G = Math.min(total25G, 128);
+    total10G = Math.min(total10G, 128);
+  } else if (modelLowerStr.includes('ta400e')) {
+    total100G = Math.min(total100G, 128);
+    total25G = Math.min(total25G, 130);
+    total10G = Math.min(total10G, 130);
+  } else if (modelLowerStr.includes('ta400')) {
+    total100G = Math.min(total100G, 128);
+    total25G = Math.min(total25G, 128);
+    total10G = Math.min(total10G, 128);
+  } else if (modelLowerStr.includes('hct')) {
+    total100G = Math.min(total100G, 2);
+    total40G = Math.min(total40G, 6);
+    total25G = Math.min(total25G, 12);
+    total10G = Math.min(total10G, 32);
+    total1G = Math.min(total1G, 12);
+  } else if (modelLowerStr.includes('hc1-plus') || modelLowerStr.includes('hc1 plus')) {
+    total100G = Math.min(total100G, 12);
+    total40G = Math.min(total40G, 12);
+    total25G = Math.min(total25G, 72);
+    total10G = Math.min(total10G, 72);
+    total1G = Math.min(total1G, 32);
+  } else if (modelLowerStr.includes('hc1')) {
+    total40G = Math.min(total40G, 8);
+    total25G = 0;
+    total10G = Math.min(total10G, 60);
+    total1G = Math.min(total1G, 40);
+  } else if (modelLowerStr.includes('hc3')) {
+    total100G = Math.min(total100G, 64);
+    total40G = Math.min(total40G, 64);
+    total25G = Math.min(total25G, 128);
+    total10G = Math.min(total10G, 128);
+  }
+
   let used100G = 0, used40G = 0, used25G = 0, used10G = 0, used1G = 0;
   installedOptics.forEach(opt => {
     if (opt.optic.includes('PNL-M34')) return;
