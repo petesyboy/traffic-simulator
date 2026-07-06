@@ -1006,10 +1006,10 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${a.optic} to mirror traffic.`);
               return descLines.join('\n');
             } else {
-              // Find incoming TAP links
-              const incoming = edges.filter(e => e.target === id);
-              const tapConns = incoming.map(e => {
-                const src = nodes.find(n => n.id === e.source);
+              // Find incoming TAP links (deduplicated by source node to prevent double-counting)
+              const incomingSrcIds = Array.from(new Set(edges.filter(e => e.target === id).map(e => e.source)));
+              const tapConns = incomingSrcIds.map(srcId => {
+                const src = nodes.find(n => n.id === srcId);
                 if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
                   const allocations = (src.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
                     { qty: src.data?.tappedLinksCount ?? 1, optic: (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)' }
