@@ -71,6 +71,7 @@ export interface BaseNodeData {
   statusMessage?: string;
   receivedFormat?: string;
   totalIngestedBytes?: number;
+  site?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // Add index signature
 }
@@ -655,6 +656,10 @@ export const useStore = create<RFState>((set, get) => ({
 
     const sourceNode = (nodeA.type === 'hardwareNode' && String(nodeA.data?.model || '').includes('TAP')) || (nodeA.type === 'inputNode' && nodeA.data?.configType === 'TAP') ? nodeA : ((nodeB.type === 'hardwareNode' && String(nodeB.data?.model || '').includes('TAP')) || (nodeB.type === 'inputNode' && nodeB.data?.configType === 'TAP') ? nodeB : null);
     const targetNode = sourceNode === nodeA ? nodeB : (sourceNode === nodeB ? nodeA : null);
+
+    if (nodeA.data?.site && nodeB.data?.site && nodeA.data.site !== nodeB.data.site) {
+      window.alert(`⚠️ WARNING: You are connecting a node in Site "${nodeA.data.site}" to a node in Site "${nodeB.data.site}". Cross-site links require long-haul optical connections (e.g. dark fiber). Ensure this is intentional.`);
+    }
 
     if (sourceNode && targetNode && targetNode.type === 'hardwareNode' && (String(targetNode.data?.model || '').includes('HC') || String(targetNode.data?.model || '').includes('TA'))) {
       const tapSku = String(sourceNode.data?.sku || '');

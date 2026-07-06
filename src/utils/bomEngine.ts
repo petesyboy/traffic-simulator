@@ -147,8 +147,8 @@ export interface BomRow {
   term?: string;
   type: 'Hardware' | 'Chassis' | 'License' | 'Support' | 'Optic' | 'Accessory' | 'TAP' | 'Module' | 'Dependency';
   nodeId?: string;
+  site?: string;
 }
-
 
 export function generateBom(
   nodes: CustomNode[],
@@ -173,12 +173,15 @@ export function generateBom(
     // Check if there are any prerequisites mentioned in description
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
-    const key = (groupByNode && nodeId) ? `${nodeId}_${sku}` : sku;
+    const node = nodeId ? nodes.find(n => n.id === nodeId) : null;
+    const site = (node?.data?.site as string) || 'Unassigned';
+
+    const key = (groupByNode && nodeId) ? `${nodeId}_${sku}` : `${site}_${sku}`;
     
     if (rowMap[key]) {
       rowMap[key].qty += qty;
     } else {
-      rowMap[key] = { sku, qty, description, term, type, nodeId: groupByNode ? (nodeId || 'global') : undefined };
+      rowMap[key] = { sku, qty, description, term, type, nodeId: groupByNode ? (nodeId || 'global') : undefined, site };
     }
 
     if (reqMatch && reqMatch[1]) {
@@ -188,7 +191,7 @@ export function generateBom(
         let depTerm = undefined;
         if (depSku.endsWith('-SW-TM')) depTerm = term || globalTermDuration;
         
-        const depKey = (groupByNode && nodeId) ? `${nodeId}_${depSku}` : depSku;
+        const depKey = (groupByNode && nodeId) ? `${nodeId}_${depSku}` : `${site}_${depSku}`;
         if (rowMap[depKey]) {
           rowMap[depKey].qty += qty;
         } else {
@@ -198,7 +201,8 @@ export function generateBom(
             description: skus[depSku] || 'Required Dependency', 
             term: depTerm, 
             type: 'Dependency',
-            nodeId: groupByNode ? (nodeId || 'global') : undefined
+            nodeId: groupByNode ? (nodeId || 'global') : undefined,
+            site
           };
         }
       }

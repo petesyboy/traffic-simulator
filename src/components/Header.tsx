@@ -260,6 +260,7 @@ const BomModal: React.FC<{
   const currentScenarioName = useStore((state) => state.currentScenarioName);
   
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
+  const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   
   const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true);
   const validationErrors = validateConfiguration(nodes, edges);
@@ -527,53 +528,132 @@ const BomModal: React.FC<{
               return <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No hardware nodes tracked in the current layout.</div>;
             }
 
-            // Group items by nodeId
-            const groups: Record<string, typeof items> = {};
+            const masterBomItems = Object.values(items.reduce((acc, item) => {
+              if (!acc[item.sku]) {
+                acc[item.sku] = { ...item, qty: 0 };
+              }
+              acc[item.sku].qty += item.qty;
+              return acc;
+            }, {} as Record<string, typeof items[0]>) || {});
+
+            // Group items by site, then by nodeId
+            const siteGroups: Record<string, Record<string, typeof items>> = {};
             items.forEach(item => {
-              const key = item.nodeId || 'global';
-              if (!groups[key]) groups[key] = [];
-              groups[key].push(item);
+              const siteKey = item.site || 'Global / Unassigned';
+              const nodeKey = item.nodeId || 'global';
+              if (!siteGroups[siteKey]) siteGroups[siteKey] = {};
+              if (!siteGroups[siteKey][nodeKey]) siteGroups[siteKey][nodeKey] = [];
+              siteGroups[siteKey][nodeKey].push(item);
             });
 
             return (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #444' }}>
-                    <th style={{ padding: '8px', color: '#888' }}>Type</th>
-                    <th style={{ padding: '8px', color: '#888' }}>SKU</th>
-                    <th style={{ padding: '8px', color: '#888' }}>Description</th>
-                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
-                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(groups).map(([nodeId, groupItems]) => {
-                    const nodeInfo = nodes.find(n => n.id === nodeId);
-                    const nodeLabel = nodeInfo ? `${nodeInfo.data?.label || ''} (${nodeInfo.data?.model || ''})` : (nodeId === 'global' ? 'Global Accessories & Dependencies' : 'System Components');
-                    
-                    return (
-                      <React.Fragment key={nodeId}>
-                        {/* Group Header Row */}
-                        <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
-                          <td colSpan={5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
-                            {nodeLabel}
-                          </td>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <button 
+                    onClick={() => setBomViewMode('site')}
+                    style={{
+                      background: bomViewMode === 'site' ? '#ff9800' : '#333',
+                      color: bomViewMode === 'site' ? '#fff' : '#aaa',
+                      border: 'none',
+                      padding: '6px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    By Site Breakdown
+                  </button>
+                  <button 
+                    onClick={() => setBomViewMode('master')}
+                    style={{
+                      background: bomViewMode === 'master' ? '#ff9800' : '#333',
+                      color: bomViewMode === 'master' ? '#fff' : '#aaa',
+                      border: 'none',
+                      padding: '6px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Master BOM (Aggregated)
+                  </button>
+                </div>
+
+                {bomViewMode === 'master' ? (
+                  <div style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+                      Master BOM (All Sites)
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
+                          <th style={{ padding: '8px', color: '#888' }}>Type</th>
+                          <th style={{ padding: '8px', color: '#888' }}>SKU</th>
+                          <th style={{ padding: '8px', color: '#888' }}>Description</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
                         </tr>
-                        {/* Group Items */}
-                        {groupItems.map((item, i) => (
-                          <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
+                      </thead>
+                      <tbody>
+                        {masterBomItems.map((item, i) => (
+                          <tr key={i} style={{ borderBottom: i === masterBomItems.length - 1 ? 'none' : '1px solid #333' }}>
                             <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
                             <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                            <td style={{ padding: '8px', color: '#aaa', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
+                            <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
                             <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
                           </tr>
                         ))}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  Object.entries(siteGroups).map(([siteKey, nodeGroups]) => (
+                  <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+                      Site: {siteKey}
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
+                          <th style={{ padding: '8px', color: '#888' }}>Type</th>
+                          <th style={{ padding: '8px', color: '#888' }}>SKU</th>
+                          <th style={{ padding: '8px', color: '#888' }}>Description</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
+                          <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(nodeGroups).map(([nodeId, groupItems]) => {
+                          const nodeInfo = nodes.find(n => n.id === nodeId);
+                          const nodeLabel = nodeInfo ? `${nodeInfo.data?.label || ''} (${nodeInfo.data?.model || ''})` : (nodeId === 'global' ? 'Global Accessories & Dependencies' : 'System Components');
+                          
+                          return (
+                            <React.Fragment key={nodeId}>
+                              {/* Group Header Row */}
+                              <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
+                                <td colSpan={5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
+                                  {nodeLabel}
+                                </td>
+                              </tr>
+                              {/* Group Items */}
+                              {groupItems.map((item, i) => (
+                                <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
+                                  <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                                  <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                                  <td style={{ padding: '8px', color: '#aaa', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
+                                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )))}
+              </div>
             );
           })() : (
             physicalItems.length === 0 ? (
@@ -638,8 +718,8 @@ const BomModal: React.FC<{
           {activeTab === 'bom' ? (
             <button onClick={() => {
               const escapeCsv = (str: string) => `"${str.replace(/"/g, '""')}"`;
-              const csv = ['Type,SKU,Description,Term(Months),Qty']
-                .concat(items.map(i => `${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`))
+              const csv = ['Site,Type,SKU,Description,Term(Months),Qty']
+                .concat(items.map(i => `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`))
                 .join('\n');
               const blob = new Blob([csv], { type: 'text/csv' });
               const url = URL.createObjectURL(blob);

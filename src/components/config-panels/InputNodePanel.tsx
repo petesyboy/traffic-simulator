@@ -36,6 +36,16 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
         </select>
       </FormGroup>
 
+      <FormGroup label="Site Assignment (Optional)">
+        <input 
+          type="text" 
+          placeholder="e.g. Datacenter London" 
+          value={(node.data?.site as string) || ''} 
+          onChange={(e) => onGenericChange('site', e.target.value)} 
+          style={{ width: '100%', boxSizing: 'border-box' }} 
+        />
+      </FormGroup>
+
       {(configType === CONFIG_TYPES.SPAN || configType === CONFIG_TYPES.TAP || configType === CONFIG_TYPES.ERSPAN || configType === CONFIG_TYPES.EAST_WEST || configType === CONFIG_TYPES.VMWARE) && (
         <FormGroup label="Port Speed">
           <select
