@@ -77,8 +77,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   let installedCopperOptics = 0;
   installedOptics.forEach(opt => {
     const name = opt.optic.toUpperCase();
-    const isOpticCopper = name.includes('COPPER') || name.includes('BASE-T') || name.includes('BASET') || name.endsWith('T') || name.includes('ACTIVE CABLE') || name.includes('DIRECT ATTACH') || name.includes('DAC');
-    const isOpticMM = !isOpticCopper && (name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX') || name.includes('LRM'));
+    const isOpticCopper = name.includes('COPPER') || name.includes('BASE-T') || name.includes('BASET') || name.includes('ACTIVE CABLE') || name.includes('DIRECT ATTACH') || name.includes('DAC');
+    const isOpticMM = !isOpticCopper && (name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX') || name.includes('LRM') || name.includes('BIDI'));
     const isOpticSM = !isOpticCopper && (name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR'));
     if (isOpticCopper) installedCopperOptics += opt.qty;
     else if (isOpticMM) installedMMOptics += opt.qty;
@@ -168,10 +168,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   const getOpticFiberType = (opticName: string): string => {
     const upper = opticName.toUpperCase();
-    if (upper.includes('COPPER') || upper.includes('BASE-T') || upper.includes('BASET') || upper.endsWith('T') || upper.includes('ACTIVE CABLE') || upper.includes('DIRECT ATTACH') || upper.includes('DAC')) {
+    if (upper.includes('COPPER') || upper.includes('BASE-T') || upper.includes('BASET') || upper.includes('ACTIVE CABLE') || upper.includes('DIRECT ATTACH') || upper.includes('DAC')) {
       return 'Copper';
     }
-    if (/\b(SX|SR\d*|LRM|SWDM\d*)\b/i.test(upper) || upper.includes(' SX') || upper.includes(' SR') || upper.includes(' LRM') || upper.includes(' SWDM')) {
+    if (/\b(SX|SR\d*|LRM|SWDM\d*|BIDI)\b/i.test(upper) || upper.includes(' SX') || upper.includes(' SR') || upper.includes(' LRM') || upper.includes(' SWDM') || upper.includes('BIDI')) {
       return 'MM';
     }
     if (/\b(LX|LR\d*|ER\d*|ZR\d*|LH|DR\d*|FR\d*|CWDM\d*|PLR\d*|PSM\d*)\b/i.test(upper) || upper.includes(' LX') || upper.includes(' LR') || upper.includes(' ER') || upper.includes(' ZR') || upper.includes(' LH') || upper.includes(' DR') || upper.includes(' FR') || upper.includes(' CWDM') || upper.includes(' PLR') || upper.includes(' PSM')) {
