@@ -10,7 +10,7 @@ interface DashboardPanelProps {
 export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => {
   const nodes           = useStore((state) => state.nodes);
   const nodeMetrics     = useStore((state) => state.nodeMetrics);
-  const uniqueEgressBps = useStore((state) => state.uniqueEgressBps);
+  const uniqueEgressMbps = useStore((state) => state.uniqueEgressMbps);
 
   let totalIngest = 0;
   let totalDedupDrops = 0;
@@ -20,18 +20,18 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
     const metric = nodeMetrics[n.id];
     if (!metric) return;
     
-    totalDedupDrops += metric.dedupDroppedBps || 0;
-    totalFilterDrops += metric.filterDroppedBps || 0;
+    totalDedupDrops += metric.dedupDroppedMbps || 0;
+    totalFilterDrops += metric.filterDroppedMbps || 0;
     
     if (
       n.type === NODE_TYPES.INPUT ||
       (n.type === NODE_TYPES.HARDWARE && typeof n.data?.model === 'string' && n.data.model.includes('TAP'))
     ) {
-      totalIngest += metric.txBps;
+      totalIngest += metric.txMbps;
     }
   });
 
-  const totalEgress = uniqueEgressBps;
+  const totalEgress = uniqueEgressMbps;
 
   const reductionRaw     = Math.max(0, totalIngest - totalEgress);
   const reductionPercent = totalIngest > 0 ? (reductionRaw / totalIngest) * 100 : 0;

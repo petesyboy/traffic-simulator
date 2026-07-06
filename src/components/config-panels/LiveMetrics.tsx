@@ -22,7 +22,7 @@ export const LiveMetrics: React.FC<LiveMetricsProps> = ({ nodeType, metrics }) =
       {nodeType !== NODE_TYPES.INPUT && (
         <div className="metric-badge">
           <span className="label">Rx Throughput:</span>
-          <span className="value">{formatBandwidth(metrics.rxBps)}</span>
+          <span className="value">{formatBandwidth(metrics.rxMbps)}</span>
         </div>
       )}
       {nodeType !== NODE_TYPES.INPUT && (
@@ -35,7 +35,7 @@ export const LiveMetrics: React.FC<LiveMetricsProps> = ({ nodeType, metrics }) =
         <div className="metric-badge">
           <span className="label">Tx Throughput:</span>
           <span className="value" style={{ color: 'var(--color-input)' }}>
-            {formatBandwidth(metrics.txBps)}
+            {formatBandwidth(metrics.txMbps)}
           </span>
         </div>
       )}

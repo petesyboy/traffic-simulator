@@ -90,17 +90,71 @@
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.control-group:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-group-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #666;
+  margin-right: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.header-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  background-color: #222222;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-btn:hover {
+  background-color: #333333;
+  border-color: #444;
+}
+
+.header-btn.icon-only {
+  padding: 5px;
+  min-width: 28px;
+  justify-content: center;
 }
 
 .sim-btn {
   background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
   color: white;
   border: 1px solid #388e3c;
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-size: 11px;
   font-weight: bold;
   box-shadow: 0 0 6px rgba(76, 175, 80, 0.2);
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .sim-btn.running {
@@ -109,23 +163,21 @@
 }
 
 .sim-speed-select {
-  background-color: #1e1e1e;
-  border: 1px solid var(--border-color);
-  color: white;
-  font-size: 11px;
-  padding: 4px;
-  border-radius: 3px;
+  background-color: #121212;
+  border: 1px solid #333;
+  color: #ccc;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 4px;
   cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
-.header-btn {
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 3px;
-  background-color: #222222;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+.sim-speed-select:hover {
+  border-color: #444;
+  color: #fff;
 }
 
 .header-btn:hover {

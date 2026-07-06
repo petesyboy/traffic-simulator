@@ -32,13 +32,13 @@ export interface TrafficStream {
 }
 
 export interface NodeMetrics {
-  rxBps: number;
-  txBps: number;
+  rxMbps: number;
+  txMbps: number;
   rxPackets: number;
   txPackets: number;
   droppedPackets: number; // total drops (legacy/catch-all)
-  dedupDroppedBps?: number;
-  filterDroppedBps?: number;
+  dedupDroppedMbps?: number;
+  filterDroppedMbps?: number;
 }
 
 export interface MapCondition {
@@ -129,7 +129,7 @@ export type RFState = {
   activeEdges: string[];
   blockedEdges: string[];
   deliveredStreams: string[];
-  uniqueEgressBps: number;
+  uniqueEgressMbps: number;
   fitViewTrigger: number;
   sidebarMessage: string | null;
   setSidebarMessage: (msg: string | null) => void;
@@ -199,7 +199,7 @@ export type RFState = {
      * Replaces individual updateTrafficStream() calls from SimulationEngine.
      */
     streamPatches?: Record<string, Partial<TrafficStream>>,
-    uniqueEgressBps?: number,
+    uniqueEgressMbps?: number,
   ) => void;
   clearCanvas: () => void;
   loadDemo: () => void;
@@ -592,7 +592,7 @@ export const useStore = create<RFState>((set, get) => ({
   activeEdges: [],
   blockedEdges: [],
   deliveredStreams: [],
-  uniqueEgressBps: 0,
+  uniqueEgressMbps: 0,
   fitViewTrigger: 0,
   sidebarMessage: null,
   setSidebarMessage: (msg) => set({ sidebarMessage: msg }),
@@ -615,18 +615,13 @@ export const useStore = create<RFState>((set, get) => ({
           const parentNode = get().nodes.find((n) => n.id === node.parentId);
           const parentX = parentNode?.position.x || 0;
           const parentY = parentNode?.position.y || 0;
-          const parentWidth = (parentNode?.width as number) || (parentNode?.style?.width as number) || 0;
-          const parentHeight = (parentNode?.height as number) || (parentNode?.style?.height as number) || 0;
-          
-          const parentTopLeftX = parentX - parentWidth / 2;
-          const parentTopLeftY = parentY - parentHeight / 2;
 
           return {
             ...node,
             parentId: undefined,
             position: {
-              x: node.position.x + parentTopLeftX,
-              y: node.position.y + parentTopLeftY,
+              x: node.position.x + parentX,
+              y: node.position.y + parentY,
             },
             extent: undefined,
           };
@@ -902,7 +897,7 @@ export const useStore = create<RFState>((set, get) => ({
       activeEdges: [], 
       blockedEdges: [], 
       deliveredStreams: [],
-      uniqueEgressBps: 0,
+      uniqueEgressMbps: 0,
       nodes: syncSplunkLabels(resetNodes, get().edges)
     });
   },
@@ -915,7 +910,7 @@ export const useStore = create<RFState>((set, get) => ({
     deliveredStreams?: string[],
     nodeDataPatches?: Record<string, Record<string, unknown>>,
     streamPatches?: Record<string, Partial<TrafficStream>>,
-    uniqueEgressBps?: number,
+    uniqueEgressMbps?: number,
   ) => {
     // Apply node-data patches (e.g. dedupRate drift, tool status)
     let nextNodes = get().nodes;
@@ -923,7 +918,7 @@ export const useStore = create<RFState>((set, get) => ({
     // Accumulate total ingested bytes for tool nodes before applying other patches
     nextNodes = nextNodes.map((node) => {
       if (node.type === NODE_TYPES.TOOL) {
-        const rxMbps = metrics[node.id]?.rxBps || 0;
+        const rxMbps = metrics[node.id]?.rxMbps || 0;
         // Each tick represents 0.8 seconds of traffic
         const deltaBytes = (rxMbps * 1000000 / 8) * 0.8;
         const currentTotal = (node.data.totalIngestedBytes as number) || 0;
@@ -963,12 +958,12 @@ export const useStore = create<RFState>((set, get) => ({
       deliveredStreams: deliveredStreams || [],
       nodes: nextNodes,
       trafficStreams: nextStreams,
-      uniqueEgressBps: uniqueEgressBps ?? 0,
+      uniqueEgressMbps: uniqueEgressMbps ?? 0,
     });
   },
 
   clearCanvas: () => {
-    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressBps: 0 });
+    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 });
   },
 
   loadDemo: () => {
@@ -983,7 +978,7 @@ export const useStore = create<RFState>((set, get) => ({
       blockedEdges: [],
       trafficStreams: initialTraffic,
       deliveredStreams: [],
-      uniqueEgressBps: 0,
+      uniqueEgressMbps: 0,
       fitViewTrigger: get().fitViewTrigger + 1
     });
   },
@@ -1053,11 +1048,6 @@ export const useStore = create<RFState>((set, get) => ({
 
     const parentX = parentNode.position.x;
     const parentY = parentNode.position.y;
-    const parentWidth = (parentNode.width as number) || (parentNode.style?.width as number) || 0;
-    const parentHeight = (parentNode.height as number) || (parentNode.style?.height as number) || 0;
-    
-    const parentTopLeftX = parentX - parentWidth / 2;
-    const parentTopLeftY = parentY - parentHeight / 2;
 
     // 1. Un-nest child nodes: remove parentId, restore absolute position
     let updatedNodes = get().nodes.map((node) => {
@@ -1066,8 +1056,8 @@ export const useStore = create<RFState>((set, get) => ({
           ...node,
           parentId: undefined,
           position: {
-            x: node.position.x + parentTopLeftX,
-            y: node.position.y + parentTopLeftY,
+            x: node.position.x + parentX,
+            y: node.position.y + parentY,
           },
           extent: undefined,
         };

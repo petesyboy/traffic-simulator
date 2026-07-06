@@ -118,7 +118,20 @@ export const matchesIp = (streamIp: string | undefined, filterIp: string | undef
   if (isNaN(prefixLen) || prefixLen < 0 || prefixLen > 32) return false;
 
   if (networkStr.includes(':')) {
-    return cleanStream.startsWith(networkStr.split(':').slice(0, 3).join(':'));
+    const streamBlocks = cleanStream.split(':');
+    const networkBlocks = networkStr.split(':');
+    const numBlocksToMatch = Math.floor(prefixLen / 16);
+    for (let i = 0; i < numBlocksToMatch; i++) {
+      if ((streamBlocks[i] || '0') !== (networkBlocks[i] || '0')) return false;
+    }
+    const remainingBits = prefixLen % 16;
+    if (remainingBits > 0 && streamBlocks[numBlocksToMatch] && networkBlocks[numBlocksToMatch]) {
+      const s = parseInt(streamBlocks[numBlocksToMatch], 16) || 0;
+      const n = parseInt(networkBlocks[numBlocksToMatch], 16) || 0;
+      const mask = (0xFFFF << (16 - remainingBits)) & 0xFFFF;
+      return (s & mask) === (n & mask);
+    }
+    return true;
   }
 
   const networkInt = ipv4ToInt(networkStr);
@@ -146,13 +159,20 @@ export const matchesPort = (streamPort: string | undefined, filterPort: string |
 
 // Evaluate map conditions sequentially with logic rules (AND / OR)
 export const evaluateConditionGroup = (stream: TrafficStream, conditions: MapCondition[]): boolean => {
-  let result = false;
+  if (conditions.length === 0) return false;
   
-  for (let i = 0; i < conditions.length; i++) {
-    const cond = conditions[i];
+  const orGroups: MapCondition[][] = [[]];
+  for (const cond of conditions) {
+    if (cond.logic === 'OR') {
+      orGroups.push([cond]);
+    } else {
+      orGroups[orGroups.length - 1].push(cond);
+    }
+  }
+
+  const evaluateSingle = (cond: MapCondition): boolean => {
     const val = String(cond.value || '').toLowerCase().trim();
     const field = cond.field;
-    
     let streamVal = '';
     if (field === 'vlan') streamVal = stream.vlan;
     else if (field === 'ipsrc') streamVal = stream.ipSrc;
@@ -163,32 +183,18 @@ export const evaluateConditionGroup = (stream: TrafficStream, conditions: MapCon
     
     const cleanStreamVal = String(streamVal || '').toLowerCase().trim();
     
-    let isMatch: boolean;
-    if (val === '') {
-      isMatch = true;
-    } else if (field === 'ipver') {
+    if (val === '') return true;
+    if (field === 'ipver') {
       const isIPv6 = !!(stream.ipSrc?.includes(':') || stream.ipDst?.includes(':'));
-      isMatch = (val === 'ipv6') ? isIPv6 : (val === 'ipv4') ? !isIPv6 : false;
-    } else if (field === 'vlan') {
-      isMatch = matchesVlan(cleanStreamVal, val);
-    } else if (['ipsrc', 'ipdst', 'ip6src', 'ip6dst'].includes(field)) {
-      isMatch = matchesIp(cleanStreamVal, val);
-    } else if (['portsrc', 'portdst'].includes(field)) {
-      isMatch = matchesPort(cleanStreamVal, val);
-    } else {
-      isMatch = cleanStreamVal === val;
+      return (val === 'ipv6') ? isIPv6 : (val === 'ipv4') ? !isIPv6 : false;
     }
-    
-    if (i === 0) {
-      result = isMatch;
-    } else if (cond.logic === 'AND') {
-      result = result && isMatch;
-    } else {
-      result = result || isMatch;
-    }
-  }
-  
-  return result;
+    if (field === 'vlan') return matchesVlan(cleanStreamVal, val);
+    if (['ipsrc', 'ipdst', 'ip6src', 'ip6dst'].includes(field)) return matchesIp(cleanStreamVal, val);
+    if (['portsrc', 'portdst'].includes(field)) return matchesPort(cleanStreamVal, val);
+    return cleanStreamVal === val;
+  };
+
+  return orGroups.some(andGroup => andGroup.every(cond => evaluateSingle(cond)));
 };
 
 export const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[] | undefined): boolean => {
@@ -248,7 +254,7 @@ const processToolNode = (
     toolReceivedStreams[node.id].push(item.stream);
     deliveredStreamIds.add(item.stream.id);
   } else {
-    nodeMetric.rxBps -= item.stream.bandwidth;
+    nodeMetric.rxMbps -= item.stream.bandwidth;
     nodeMetric.rxPackets -= item.stream.bandwidth * 250;
   }
   return { forwardStream: null, handledQueueExternally: true };
@@ -274,13 +280,13 @@ const processFilterNode = (
   }
 
   if (isMatch) {
-    nodeMetric.txBps += item.stream.bandwidth;
+    nodeMetric.txMbps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     return { forwardStream: item.stream };
   } else {
     const dropBandwidth = item.stream.bandwidth;
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
+    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
     return { forwardStream: null, dropBandwidth };
   }
 };
@@ -293,13 +299,13 @@ const processMapNode = (
   const data = node.data as MapNodeData;
   const isMatch = evaluateMapConditions(item.stream, data.conditions);
   if (isMatch) {
-    nodeMetric.txBps += item.stream.bandwidth;
+    nodeMetric.txMbps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     return { forwardStream: item.stream };
   } else {
     const dropBandwidth = item.stream.bandwidth;
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
+    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
     return { forwardStream: null, dropBandwidth };
   }
 };
@@ -323,7 +329,7 @@ const processGigaSmartNode = (
     const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.txBps += validBandwidth;
+    nodeMetric.txMbps += validBandwidth;
     nodeMetric.txPackets += validBandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: validBandwidth };
   } 
@@ -336,7 +342,7 @@ const processGigaSmartNode = (
 
     dropBandwidth = item.stream.bandwidth * (1 - scale);
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.txBps += metadataBandwidth;
+    nodeMetric.txMbps += metadataBandwidth;
     nodeMetric.txPackets += metadataBandwidth * 250;
     forwardStream = { 
       ...item.stream, 
@@ -351,7 +357,7 @@ const processGigaSmartNode = (
     const slicedBandwidth = item.stream.bandwidth * ratio;
     dropBandwidth = item.stream.bandwidth * (1 - ratio);
     
-    nodeMetric.txBps += slicedBandwidth;
+    nodeMetric.txMbps += slicedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     nodeMetric.droppedPackets += dropBandwidth * 250;
     
@@ -359,7 +365,7 @@ const processGigaSmartNode = (
   } 
   else if (actionType === 'Header Stripping') {
     const strippedBandwidth = item.stream.bandwidth * 0.95;
-    nodeMetric.txBps += strippedBandwidth;
+    nodeMetric.txMbps += strippedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: strippedBandwidth };
   }
@@ -373,12 +379,12 @@ const processGigaSmartNode = (
       dropBandwidth = item.stream.bandwidth * (1 - scale);
       nodeMetric.droppedPackets += dropBandwidth * 250;
     }
-    nodeMetric.txBps += outputBandwidth;
+    nodeMetric.txMbps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: outputBandwidth };
   }
   if (dropBandwidth > 0) {
-    nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + dropBandwidth;
+    nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
   }
   return { forwardStream, dropBandwidth, generatedMetadataStreams };
 };
@@ -393,7 +399,7 @@ const processGigaStreamNode = (
   queue: QueueItem[]
 ): NodeProcessingResult => {
   if (outboundEdges.length > 0) {
-    nodeMetric.txBps += item.stream.bandwidth;
+    nodeMetric.txMbps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     
     const algorithm = (node.data?.algorithm as string) || 'Round Robin';
@@ -460,7 +466,7 @@ const processHardwareNode = (
           const dropFraction = (app.dedupRate || 20) / 100;
           const drop = item.stream.bandwidth * dropFraction;
           nodeMetric.droppedPackets += drop * 250;
-          nodeMetric.dedupDroppedBps = (nodeMetric.dedupDroppedBps || 0) + drop;
+          nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + drop;
           item.stream.bandwidth -= drop;
         } else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
           const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
@@ -497,13 +503,13 @@ const processHardwareNode = (
 
     const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
     if (!alreadyAddedAtTop) {
-      nodeMetric.txBps += item.stream.bandwidth;
+      nodeMetric.txMbps += item.stream.bandwidth;
       nodeMetric.txPackets += item.stream.bandwidth * 250;
     }
   } else {
     dropBandwidth = item.stream.bandwidth;
     nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedBps = (nodeMetric.filterDroppedBps || 0) + dropBandwidth;
+    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
     forwardStream = null;
   }
 
@@ -517,7 +523,7 @@ const processDefaultNode = (
 ): NodeProcessingResult => {
   const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
   if (!alreadyAddedAtTop) {
-    nodeMetric.txBps += item.stream.bandwidth;
+    nodeMetric.txMbps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
   }
   return { forwardStream: item.stream };
@@ -562,7 +568,7 @@ export interface SimulationStepResult {
   blockedEdges: string[];
   deliveredStreamIds: string[];
   nodeDataPatches: Record<string, Record<string, unknown>>;
-  uniqueEgressBps: number;
+  uniqueEgressMbps: number;
 }
 
 export const calculateSimulationStep = (
@@ -613,7 +619,7 @@ export const calculateSimulationStep = (
   // 1. Initialize metrics for all nodes
   const metrics: Record<string, NodeMetrics> = {};
   nodes.forEach((node) => {
-    metrics[node.id] = { rxBps: 0, txBps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedBps: 0, filterDroppedBps: 0 };
+    metrics[node.id] = { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedMbps: 0, filterDroppedMbps: 0 };
   });
 
   const activeEdgeSet = new Set<string>();
@@ -682,14 +688,14 @@ export const calculateSimulationStep = (
     const packetsPerSecond = item.stream.bandwidth * 250;
 
     if (node.id === item.stream.sourceNodeId && item.edgePath.length === 0) {
-      nodeMetric.txBps += item.stream.bandwidth;
+      nodeMetric.txMbps += item.stream.bandwidth;
       nodeMetric.txPackets += packetsPerSecond;
     } else {
       let allowedBandwidth = item.stream.bandwidth;
       if (node.type === 'hardwareNode') {
         const capacity = getHardwareOpticCapacity(node);
-        if (nodeMetric.rxBps + allowedBandwidth > capacity) {
-          const excess = (nodeMetric.rxBps + allowedBandwidth) - capacity;
+        if (nodeMetric.rxMbps + allowedBandwidth > capacity) {
+          const excess = (nodeMetric.rxMbps + allowedBandwidth) - capacity;
           // Trim the bandwidth, but leave at least 5% of original stream bandwidth or 1 Mbps
           const minPreserved = Math.max(1, item.stream.bandwidth * 0.05);
           const maxDrop = Math.max(0, allowedBandwidth - minPreserved);
@@ -700,7 +706,7 @@ export const calculateSimulationStep = (
         }
       }
 
-      nodeMetric.rxBps += allowedBandwidth;
+      nodeMetric.rxMbps += allowedBandwidth;
       nodeMetric.rxPackets += allowedBandwidth * 250;
       item.stream.bandwidth = allowedBandwidth;
 
@@ -818,7 +824,7 @@ export const calculateSimulationStep = (
       
       // Accumulate transmission stats for the metadata streams
       generatedMetadataStreams.forEach((ms) => {
-        nodeMetric.txBps += ms.bandwidth;
+        nodeMetric.txMbps += ms.bandwidth;
         nodeMetric.txPackets += ms.bandwidth * 250;
       });
     } else if (dropBandwidth > 0 && outboundEdges.length > 0) {
@@ -831,9 +837,9 @@ export const calculateSimulationStep = (
   // Post-traversal: Mark edges active based on connected RX/TX
   edges.forEach((edge) => {
     const sourceMetric = metrics[edge.source];
-    if (sourceMetric && sourceMetric.txBps > 0 && !activeEdgeSet.has(edge.id)) {
+    if (sourceMetric && sourceMetric.txMbps > 0 && !activeEdgeSet.has(edge.id)) {
       const targetMetric = metrics[edge.target];
-      if (targetMetric && targetMetric.rxBps > 0) {
+      if (targetMetric && targetMetric.rxMbps > 0) {
         activeEdgeSet.add(edge.id);
       }
     }
@@ -922,7 +928,7 @@ export const calculateSimulationStep = (
       maxStreamBandwidth[key] = Math.max(maxStreamBandwidth[key] || 0, s.bandwidth);
     });
   });
-  const uniqueEgressBps = Object.values(maxStreamBandwidth).reduce((sum, bw) => sum + bw, 0);
+  const uniqueEgressMbps = Object.values(maxStreamBandwidth).reduce((sum, bw) => sum + bw, 0);
 
   return {
     metrics,
@@ -931,6 +937,6 @@ export const calculateSimulationStep = (
     blockedEdges: Array.from(blockedEdgeSet),
     deliveredStreamIds: Array.from(deliveredStreamIds),
     nodeDataPatches,
-    uniqueEgressBps
+    uniqueEgressMbps
   };
 };

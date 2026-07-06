@@ -162,7 +162,7 @@ const SimulationEngine: React.FC = () => {
         result.deliveredStreamIds,
         finalNodeDataPatches,
         streamPatches,
-        result.uniqueEgressBps
+        result.uniqueEgressMbps
       );
     };
 

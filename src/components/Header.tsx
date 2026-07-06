@@ -757,141 +757,136 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       <div className="header-wrapper">
         {/* ── Top Brand Bar ── */}
         <header className="header-brand">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img 
                 src="./gigamon-logo.png" 
                 alt="Gigamon" 
                 style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
                 onClick={handleLogoClick}
+                title="Gigamon Traffic Simulator"
               />
-              <span className="brand-logo" style={{ color: 'var(--text-secondary)', textShadow: 'none', fontWeight: 500, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>Flow Mapping Example{currentScenarioName ? ` - ${currentScenarioName}` : ''}</span>
-                 <img 
-                  src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'} 
-                  alt={projectRegion}
-                  title={`Region: ${projectRegion} (Click to change Settings)`}
-                  onClick={() => setShowSettings(true)}
-                  style={{ height: '11px', width: 'auto', borderRadius: '1px', marginLeft: '4px', border: '1px solid rgba(255,255,255,0.15)', display: 'block', cursor: 'pointer' }}
-                />
-              </span>
-              <span className="build-number">
-                <a 
-                  href="https://github.com/petesyboy/traffic-simulator/commits" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: 'inherit', textDecoration: 'none' }}
-                >
-                  v{(() => {
-                    const parts = pkg.version.split('.');
-                    if (parts.length >= 3) {
-                      return parts[2] === '0' ? `${parts[0]}.${parts[1]}` : `${parts[0]}.${parts[1]}${parts[2]}`;
-                    }
-                    return pkg.version;
-                  })()}
-                </a>
-              </span>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                <span className="brand-logo" style={{ color: '#fff', textShadow: 'none', fontWeight: 600, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>{currentScenarioName || 'Untitled Project'}</span>
+                  <img 
+                    src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'} 
+                    alt={projectRegion}
+                    title={`Deployment Region: ${projectRegion}`}
+                    onClick={() => setShowSettings(true)}
+                    style={{ height: '10px', width: 'auto', borderRadius: '1px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                  />
+                </span>
+                <span style={{ fontSize: '9px', color: '#666', fontWeight: 500, letterSpacing: '0.02em' }}>
+                  FLOW MAPPING DESIGNER
+                  <span style={{ marginLeft: '8px', color: '#444' }}>
+                    v{pkg.version.split('.').slice(0,2).join('.')}
+                  </span>
+                </span>
+              </div>
             </div>
-            <div className="tab monitoring-session active">Monitoring Session</div>
+            <div className="tab monitoring-session active" style={{ height: '40px', display: 'flex', alignItems: 'center', borderBottom: '2px solid #007cff', color: advancedMode ? '#ff9800' : '#fff' }}>
+              {advancedMode ? 'Expert Designer' : 'Standard View'}
+            </div>
           </div>
 
           <div className="header-controls">
-            {/* Simulation run / pause + speed selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--border-color)', paddingRight: '12px', marginRight: '12px' }}>
+            {/* ── Group 1: Simulation ── */}
+            <div className="control-group">
               <button
                 onClick={toggleSimulation}
                 className={`sim-btn ${isRunning ? 'running' : ''}`}
+                style={{ minWidth: isRunning ? '80px' : '130px' }}
               >
                 {isRunning ? '⏸ Pause' : '▶ Run Simulation'}
               </button>
 
-              {/* Speed selector is only relevant while the simulation is running */}
               {isRunning && (
                 <select
                   value={simulationSpeed}
                   onChange={(e) => setSimulationSpeed(Number(e.target.value))}
                   className="sim-speed-select"
                 >
-                  <option value={1}>1x Speed</option>
-                  <option value={2}>2x Speed</option>
-                  <option value={5}>5x Speed</option>
-                  <option value={10}>10x Speed</option>
+                  <option value={1}>1x</option>
+                  <option value={2}>2x</option>
+                  <option value={5}>5x</option>
+                  <option value={10}>10x</option>
                 </select>
               )}
             </div>
 
-            {/* Panel Text Scaling selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderRight: '1px solid var(--border-color)', paddingRight: '12px', marginRight: '12px' }}>
-              <span style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap' }}>Text Size:</span>
-              <select
-                value={panelTextScale}
-                onChange={(e) => setPanelTextScale(Number(e.target.value))}
-                className="sim-speed-select"
-                style={{ width: '70px', padding: '4px 6px', fontSize: '11px' }}
-              >
-                <option value={0.75}>75%</option>
-                <option value={0.85}>85%</option>
-                <option value={1.0}>100%</option>
-                <option value={1.15}>115%</option>
-                <option value={1.3}>130%</option>
-                <option value={1.5}>150%</option>
-              </select>
+            {/* ── Group 2: Project / View ── */}
+            <div className="control-group">
+              {(advancedMode || nodes.some(n => n.type === 'hardwareNode')) && (() => {
+                const validationErrors = validateConfiguration(nodes, edges);
+                const hasErrors = validationErrors.length > 0;
+                return (
+                  <button 
+                    className="header-btn" 
+                    style={{ 
+                      background: hasErrors ? 'rgba(239, 83, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)', 
+                      color: hasErrors ? '#ef5350' : '#ffb74d', 
+                      borderColor: hasErrors ? 'rgba(239, 83, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)' 
+                    }} 
+                    onClick={() => setShowBom(true)}
+                    title={hasErrors ? 'Configuration errors detected' : 'View Bill of Materials'}
+                  >
+                    📋 BOM{hasErrors ? ' (⚠️)' : ''}
+                  </button>
+                );
+              })()}
+
+              <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
+                📸 Screenshot
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '8px' }}>
+                <span style={{ fontSize: '9px', color: '#666', fontWeight: 700 }}>SIZE</span>
+                <select
+                  value={panelTextScale}
+                  onChange={(e) => setPanelTextScale(Number(e.target.value))}
+                  className="sim-speed-select"
+                  style={{ width: '55px', height: '24px', padding: '0 4px' }}
+                >
+                  <option value={0.75}>75%</option>
+                  <option value={0.85}>85%</option>
+                  <option value={1.0}>100%</option>
+                  <option value={1.15}>115%</option>
+                  <option value={1.3}>130%</option>
+                  <option value={1.5}>150%</option>
+                </select>
+              </div>
             </div>
 
-            {(advancedMode || nodes.some(n => n.type === 'hardwareNode')) && (() => {
-              const validationErrors = validateConfiguration(nodes, edges);
-              const hasErrors = validationErrors.length > 0;
-              return (
-                <button 
-                  className="header-btn" 
-                  style={{ 
-                    background: hasErrors ? 'rgba(239, 83, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)', 
-                    color: hasErrors ? '#ef5350' : '#ffb74d', 
-                    borderColor: hasErrors ? 'rgba(239, 83, 80, 0.5)' : 'rgba(255, 152, 0, 0.5)' 
-                  }} 
-                  onClick={() => setShowBom(true)}
-                >
-                  📋 View BOM{hasErrors ? ' (⚠️ Attention)' : ''}
-                </button>
-              );
-            })()}
+            {/* ── Group 3: File Operations ── */}
+            <div className="control-group">
+              <button className="header-btn" onClick={onSaveFileClick} title="Save project to a .json file">
+                💾 Save
+              </button>
+              <label className="header-btn" style={{ cursor: 'pointer', margin: 0 }} title="Load project from a .json file">
+                📂 Load
+                <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
+              </label>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '6px' }}>
+                <button className="header-btn" onClick={onSaveClick} style={{ padding: '5px 8px' }} title="Save to local browser slots">Slots Save</button>
+                <button className="header-btn" onClick={onLoadClick} style={{ padding: '5px 8px' }} title="Load from local browser slots">Slots Load</button>
+              </div>
+            </div>
 
-            <button 
-              className="header-btn" 
-              style={{ 
-                background: 'rgba(76, 175, 80, 0.15)', 
-                color: '#81c784', 
-                borderColor: 'rgba(76, 175, 80, 0.4)' 
-              }} 
-              onClick={handleExportScreenshot}
-            >
-              📸 Export Diagram
-            </button>
-
-            {/* Save button now opens the multi-slot modal in App.tsx */}
-            <button className="header-btn primary" onClick={onSaveFileClick}>
-              💾 Save to File
-            </button>
-            <label className="header-btn secondary" style={{ cursor: 'pointer', margin: 0 }}>
-              📂 Load from File
-              <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
-            </label>
-            <button className="header-btn secondary" onClick={onSaveClick}>
-              🗂️ Save Slots...
-            </button>
-            <button className="header-btn secondary" onClick={onLoadClick}>
-              🗂️ Load Slots...
-            </button>
-            <button className="header-btn secondary" onClick={loadDemo}>
-              🔄 Reset Demo
-            </button>
-            <button className="header-btn secondary" onClick={() => setShowSettings(true)}>
-              ⚙️ Project Settings
-            </button>
-            {/* Clear opens our custom confirm modal instead of window.confirm() */}
-            <button onClick={handleClearRequest} className="header-btn danger">
-              🗑️ Clear
-            </button>
+            {/* ── Group 4: System / Danger ── */}
+            <div className="control-group">
+              <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
+                ⚙️
+              </button>
+              <button className="header-btn icon-only" onClick={loadDemo} title="Reset to default demo layout">
+                🔄
+              </button>
+              <button onClick={handleClearRequest} className="header-btn danger icon-only" title="Clear canvas">
+                🗑️
+              </button>
+            </div>
           </div>
         </header>
       </div>

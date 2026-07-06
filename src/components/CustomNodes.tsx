@@ -139,7 +139,7 @@ export const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         {/* Only show live metrics while simulation is running */}
         {isRunning && (
           <div className="node-metrics">
-            <span>Tx: {formatBandwidth(metrics?.txBps)}</span>
+            <span>Tx: {formatBandwidth(metrics?.txMbps)}</span>
             {Boolean(data.linkSpeed) && (metrics?.droppedPackets || 0) > 0 && (
               <span className="drop" title="Traffic dropped due to link speed exceeded">
                 (Drops: {formatPackets(metrics!.droppedPackets)})
@@ -213,8 +213,8 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && (
           <div className="node-metrics" style={{ marginTop: '4px' }}>
-            <span>In: {formatBandwidth(metrics?.rxBps)}</span>
-            <span>Out: {formatBandwidth(metrics?.txBps)}</span>
+            <span>In: {formatBandwidth(metrics?.rxMbps)}</span>
+            <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
         <Handle type="source" position={Position.Right} id="out" />
@@ -297,9 +297,9 @@ export const FilterNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && (
           <div className="node-metrics">
-            <span>Tx: {formatBandwidth(metrics?.txBps)}</span>
+            <span>Tx: {formatBandwidth(metrics?.txMbps)}</span>
             {/* "drop" CSS class applies red colour — defined in App.css */}
-            <span className="drop">Drop: {formatBandwidth(metrics?.filterDroppedBps || 0)}</span>
+            <span className="drop">Drop: {formatBandwidth(metrics?.filterDroppedMbps || 0)}</span>
           </div>
         )}
         <Handle type="source" position={Position.Right} id="out" />
@@ -461,7 +461,7 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && !isFederatedSearch && (
           <div className="node-metrics" style={{ marginTop: '8px' }}>
-            <span>Rx: {formatBandwidth(metrics?.rxBps)}</span>
+            <span>Rx: {formatBandwidth(metrics?.rxMbps)}</span>
             {(isMetadataTool || isStorageTool) && (
               <span style={{ color: '#00e5ff', display: 'block', fontSize: '9px', marginTop: '2px' }}>
                 Ingested: {formatBytes(data.totalIngestedBytes as number)}
@@ -556,7 +556,7 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   
   const actualLinks = edges.filter((e) => e.source === id).length;
   const isMismatch = actualLinks !== linkCount;
-  const isActive = isRunning && (metrics?.rxBps || 0) > 0;
+  const isActive = isRunning && (metrics?.rxMbps || 0) > 0;
 
   const glowClass = useGlowClass(id);
 
@@ -599,8 +599,8 @@ export const GigaStreamNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && (
           <div className="node-metrics">
-            <span>Rx: {formatBandwidth(metrics?.rxBps)}</span>
-            <span>Tx: {formatBandwidth(metrics?.txBps)}</span>
+            <span>Rx: {formatBandwidth(metrics?.rxMbps)}</span>
+            <span>Tx: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
         <Handle type="source" position={Position.Right} id="out" style={{ top: '20%' }} />
@@ -702,12 +702,12 @@ export const GigaSmartNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && (
           <div className="node-metrics" style={{ marginTop: '8px' }}>
-            <span>Rx: {formatBandwidth(metrics?.rxBps)}</span>
+            <span>Rx: {formatBandwidth(metrics?.rxMbps)}</span>
             {/* Deduplication shows the dropped volume in red; all others show Tx */}
             <span className={isDedupAction(actionType) ? 'drop' : ''}>
               {isDedupAction(actionType)
-                ? `Drop: ${formatBandwidth(metrics?.dedupDroppedBps || 0)}`
-                : `Tx: ${formatBandwidth(metrics?.txBps)}`}
+                ? `Drop: ${formatBandwidth(metrics?.dedupDroppedMbps || 0)}`
+                : `Tx: ${formatBandwidth(metrics?.txMbps)}`}
             </span>
           </div>
         )}
@@ -974,8 +974,8 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {isRunning && (
           <div className="node-metrics" style={{ marginTop: '8px' }}>
-            <span>In: {formatBandwidth(metrics?.rxBps)}</span>
-            <span>Out: {formatBandwidth(metrics?.txBps)}</span>
+            <span>In: {formatBandwidth(metrics?.rxMbps)}</span>
+            <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
 
@@ -1052,4 +1052,4 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       )}
     </>
   );
-};
+};

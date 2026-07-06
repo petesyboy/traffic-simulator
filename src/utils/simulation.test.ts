@@ -265,7 +265,7 @@ describe('Simulation Utils', () => {
       
       // Splunk (Metadata Tool) should receive 10000 * 3% = 300 Mbps of CEF metadata
       expect(result.metrics['splunk-1']).toBeDefined();
-      expect(result.metrics['splunk-1'].rxBps).toBe(300);
+      expect(result.metrics['splunk-1'].rxMbps).toBe(300);
     });
 
     it('should forward metadata from standalone GigaSMART node to S3 Storage Tool', () => {
@@ -319,7 +319,7 @@ describe('Simulation Utils', () => {
 
       const result = calculateSimulationStep(nodes, edges, streams);
       expect(result.metrics['s3-1']).toBeDefined();
-      expect(result.metrics['s3-1'].rxBps).toBe(300);
+      expect(result.metrics['s3-1'].rxMbps).toBe(300);
     });
 
     it('should forward packet streams to ExtraHop Tool when configured as ExtraHop configType', () => {
@@ -360,7 +360,7 @@ describe('Simulation Utils', () => {
 
       const result = calculateSimulationStep(nodes, edges, streams);
       expect(result.metrics['extrahop-1']).toBeDefined();
-      expect(result.metrics['extrahop-1'].rxBps).toBe(10000);
+      expect(result.metrics['extrahop-1'].rxMbps).toBe(10000);
     });
 
     it('should forward traffic correctly to custom tools with different input formats', () => {
@@ -430,15 +430,15 @@ describe('Simulation Utils', () => {
       
       // Custom packet tool gets the packet stream (10000 Mbps)
       expect(result.metrics['custom-packet-1']).toBeDefined();
-      expect(result.metrics['custom-packet-1'].rxBps).toBe(10000);
+      expect(result.metrics['custom-packet-1'].rxMbps).toBe(10000);
 
       // Custom metadata tool gets the metadata stream (5% of 10000 = 500 Mbps)
       expect(result.metrics['custom-metadata-1']).toBeDefined();
-      expect(result.metrics['custom-metadata-1'].rxBps).toBe(500);
+      expect(result.metrics['custom-metadata-1'].rxMbps).toBe(500);
 
       // Custom objects tool gets the metadata stream (5% of 10000 = 500 Mbps)
       expect(result.metrics['custom-objects-1']).toBeDefined();
-      expect(result.metrics['custom-objects-1'].rxBps).toBe(500);
+      expect(result.metrics['custom-objects-1'].rxMbps).toBe(500);
     });
 
     it('should split/load balance traffic evenly across connected tools', () => {
@@ -492,12 +492,12 @@ describe('Simulation Utils', () => {
       ];
 
       const result = calculateSimulationStep(nodes, edges, streams);
-      expect(result.metrics['gs-1'].rxBps).toBe(6000);
-      expect(result.metrics['gs-1'].txBps).toBe(6000);
+      expect(result.metrics['gs-1'].rxMbps).toBe(6000);
+      expect(result.metrics['gs-1'].txMbps).toBe(6000);
 
       // Tool 1 and Tool 2 should get 3000 Mbps each
-      expect(result.metrics['tool-1'].rxBps).toBe(3000);
-      expect(result.metrics['tool-2'].rxBps).toBe(3000);
+      expect(result.metrics['tool-1'].rxMbps).toBe(3000);
+      expect(result.metrics['tool-2'].rxMbps).toBe(3000);
 
       // Verify edge metrics
       expect(result.edgeMetrics['e-in-gs']).toBe(6000);
@@ -556,11 +556,11 @@ describe('Simulation Utils', () => {
       ];
 
       const result = calculateSimulationStep(nodes, edges, streams);
-      expect(result.metrics['gs-1'].rxBps).toBe(6000);
+      expect(result.metrics['gs-1'].rxMbps).toBe(6000);
 
       // Verify that one tool gets the full 6000 Mbps and the other gets 0
-      const rx1 = result.metrics['tool-1'].rxBps;
-      const rx2 = result.metrics['tool-2'].rxBps;
+      const rx1 = result.metrics['tool-1'].rxMbps;
+      const rx2 = result.metrics['tool-2'].rxMbps;
       expect((rx1 === 6000 && rx2 === 0) || (rx1 === 0 && rx2 === 6000)).toBe(true);
 
       // Check corresponding edge metrics
@@ -621,10 +621,10 @@ describe('Simulation Utils', () => {
       ];
 
       const result = calculateSimulationStep(nodes, edges, streams);
-      expect(result.metrics['chassis-1'].txBps).toBe(10500);
+      expect(result.metrics['chassis-1'].txMbps).toBe(10500);
       
       // S3 should only receive the 5% metadata stream (500 Mbps), not the main 10000 Mbps stream
-      expect(result.metrics['storage-1'].rxBps).toBe(500);
+      expect(result.metrics['storage-1'].rxMbps).toBe(500);
       expect(result.edgeMetrics['e-ch-st']).toBe(500);
     });
   });

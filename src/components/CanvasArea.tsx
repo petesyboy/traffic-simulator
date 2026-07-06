@@ -504,25 +504,10 @@ const CanvasArea: React.FC = () => {
 
     const bps = edgeMetrics[edge.id];
 
-    // Only append link speed (capacity) if in advanced mode
-    if (advancedMode) {
-      const capacityVal = getCapacity();
-      const capGbps = capacityVal / 1000;
-      const capacityString = `[${capGbps >= 1 ? capGbps.toFixed(0) + 'G' : capacityVal + 'M'}]`;
-
-      // Append throughput if available
-      if (isRunning && bps !== undefined && bps > 0) {
-        const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
-        label = label ? `${label} ${capacityString} | ${throughputLabel}` : `${capacityString} | ${throughputLabel}`;
-      } else {
-        label = label ? `${label} ${capacityString}` : capacityString;
-      }
-    } else {
-      // In simple mode, only append throughput if running
-      if (isRunning && bps !== undefined && bps > 0) {
-        const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
-        label = label ? `${label} ${throughputLabel}` : throughputLabel;
-      }
+    // Append throughput if available
+    if (isRunning && bps !== undefined && bps > 0) {
+      const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
+      label = label ? `${label} | ${throughputLabel}` : throughputLabel;
     }
 
     let stroke = '#007cff'; // default blue

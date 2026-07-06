@@ -168,7 +168,7 @@ export function generateBom(
     const description = skus[sku] || 'Unknown SKU';
     
     // Check if there are any prerequisites mentioned in description
-    const reqMatch = description.match(/(?:requires|Must also add)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
+    const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
     if (rowMap[sku]) {
       rowMap[sku].qty += qty;
@@ -277,9 +277,27 @@ export function generateBom(
         if (tapBattery) {
           addRow('BAT-GTA20', 1, 'Dependency');
         }
+
+        let cordSku = 'PCD-00A21'; // Default US
+        if (globalRegion === 'EU') {
+          cordSku = 'PCD-00A23';
+        } else if (globalRegion === 'UK') {
+          cordSku = 'PCD-00A25';
+        }
+        
+        // Series 2 units include 1 NA cord by default.
+        // We add cords to the BOM if:
+        // 1. We are in a non-US region (need regional cords for all bricks)
+        // 2. We have dual power in the US (need 1 extra cord for the second brick)
+        let cordQty = 0;
         if (globalRegion !== 'US') {
-          const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : 'PCD-00A25';
-          addRow(cordSku, 1, 'Dependency');
+          cordQty = tapDualPower ? 2 : 1;
+        } else if (tapDualPower) {
+          cordQty = 1;
+        }
+
+        if (cordQty > 0) {
+          addRow(cordSku, cordQty, 'Dependency');
         }
       }
 
@@ -555,10 +573,20 @@ export function generateBom(
     addRow('RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency');
   }
   if (series1PstAcTaps > 0) {
-    addRow('PST-GTA01', Math.ceil(series1PstAcTaps / 24), 'Dependency');
+    const trayQty = Math.ceil(series1PstAcTaps / 24);
+    addRow('PST-GTA01', trayQty, 'Dependency');
+    
+    // Each AC Power Tray has 2 power supplies, needs 2 cords
+    let acSku = 'PCD-00001'; // Default US
+    if (globalRegion === 'EU') acSku = 'PCD-00003';
+    else if (globalRegion === 'UK') acSku = 'PCD-00005';
+    addRow(acSku, trayQty * 2, 'Dependency');
   }
   if (series1PstDcTaps > 0) {
-    addRow('PST-GTA02', Math.ceil(series1PstDcTaps / 24), 'Dependency');
+    const trayQty = Math.ceil(series1PstDcTaps / 24);
+    addRow('PST-GTA02', trayQty, 'Dependency');
+    // DC trays need DC cords
+    addRow('PCD-00051', trayQty * 2, 'Dependency');
   }
 
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
@@ -731,6 +759,9 @@ export function validateConfiguration(
         installedQsfp += opt.qty;
       } else {
         installedSfp += opt.qty;
+      }
+      if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) {
+        totalQsfpCages -= opt.qty;
       }
     });
 
@@ -921,7 +952,7 @@ export function generateSingleNodeBom(
   
   const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
     const description = skus[sku] || 'Unknown SKU';
-    const reqMatch = description.match(/(?:requires|Must also add)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
+    const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
     if (rowMap[sku]) {
       rowMap[sku].qty += qty;
