@@ -15,3 +15,6 @@
 
 ## British English Spelling
 - **CRITICAL RULE**: For all tooltips on the nodes and anywhere else in this project, use British English spelling conventions (e.g., "analyse" instead of "analyze", "optimise" instead of "optimize", "colour" instead of "color", etc.).
+
+## Breakout Panels
+- **CRITICAL RULE**: A panel, either a single mode or multi mode breakout panel (e.g. PNL-M341, PNL-M343), sits in either an M100T or an M200T tray along with optical TAPs. It consumes one of the slots (3 in M100T, 6 in M200T) within that tray.

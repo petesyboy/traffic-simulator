@@ -1133,11 +1133,35 @@ export function generateSingleNodeBom(
   });
 
   const optics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
+  let totalTapModules = 0;
   optics.forEach(opt => {
     if (!opt.optic) return;
     const opticSku = resolveOpticSku(opt.optic, model);
     addRow(opticSku, opt.qty, 'Optic');
+    if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) {
+      totalTapModules += opt.qty;
+    }
   });
+
+  if (totalTapModules > 0) {
+    let numM200T = Math.floor(totalTapModules / 6);
+    let remainder = totalTapModules % 6;
+    let numM100T = 0;
+    if (remainder > 0) {
+      if (remainder <= 3) {
+        numM100T = 1;
+      } else {
+        numM200T += 1;
+      }
+    }
+    
+    if (numM100T > 0) {
+      addRow('TAP-M100T', numM100T, 'Dependency');
+    }
+    if (numM200T > 0) {
+      addRow('TAP-M200T', numM200T, 'Dependency');
+    }
+  }
 
   if (model.includes('HC')) {
     const gsActions = new Set<string>();
