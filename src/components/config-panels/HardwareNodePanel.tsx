@@ -30,6 +30,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const edges = useStore(state => state.edges);
   const nodes = useStore(state => state.nodes);
   const projectLicenseMode = useStore(state => state.projectLicenseMode);
+  const addTrafficStream = useStore(state => state.addTrafficStream);
 
   // Calculate TAP link requirements and total optics by fiber type
   const incomingTapEdges = edges.filter(e => e.target === node.id);
@@ -877,6 +878,63 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               tappedLinksCount: totalLinks
             });
             setAddQty(1);
+
+            // Auto-create traffic streams for active TAP link allocations
+            const isActiveTapModel = tapModel.includes('A-TX') || tapModel.includes('A-SF');
+            if (isActiveTapModel) {
+              // Determine speed from the optic (active TAPs: 1G or 10G)
+              const opticSpeedMatch = effectiveOptic.match(/(100M|1G|10G)/i);
+              let speedMbps = 10000; // default 10G
+              if (isBuiltInOptics) {
+                speedMbps = 1000; // Built-in 1G copper
+              } else if (opticSpeedMatch) {
+                const sp = opticSpeedMatch[1].toUpperCase();
+                if (sp === '1G') speedMbps = 1000;
+                else if (sp === '100M') speedMbps = 100;
+                else if (sp === '10G') speedMbps = 10000;
+              }
+
+              const profiles = [
+                { name: 'Web Traffic', port: '443', proto: 'tcp' as const },
+                { name: 'DB Sync Flow', port: '5432', proto: 'tcp' as const },
+                { name: 'App Services API', port: '8080', proto: 'tcp' as const },
+                { name: 'DNS Queries', port: '53', proto: 'udp' as const },
+                { name: 'Video Streaming', port: '5004', proto: 'udp' as const },
+                { name: 'VoIP Signalling', port: '5060', proto: 'udp' as const },
+              ];
+
+              const tapLabel = String(node.data?.label || tapModel);
+              for (let i = 0; i < qty; i++) {
+                const profile = profiles[Math.floor(Math.random() * profiles.length)];
+                // ~70% utilisation with ±15% variance
+                const utilisation = 0.55 + Math.random() * 0.30;
+                const bandwidthMbps = Math.floor(speedMbps * utilisation);
+                const randomSubnet = Math.floor(Math.random() * 254) + 1;
+                const randomVlan = String(Math.floor(Math.random() * 900) + 100);
+                const streamGbps = bandwidthMbps >= 1000
+                  ? `${(bandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
+                  : `${bandwidthMbps} Mbps`;
+
+                const linkIdx = currentAllocatedCount + i + 1;
+                const streamName = `${tapLabel} - Link ${linkIdx} - ${profile.name} (${streamGbps})`;
+
+                addTrafficStream({
+                  id: `t-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)}`,
+                  name: streamName,
+                  sourceNodeId: node.id,
+                  vlan: randomVlan,
+                  ipSrc: `192.168.${randomSubnet}.25`,
+                  ipDst: `10.10.${randomSubnet}.5`,
+                  portSrc: String(Math.floor(Math.random() * 50000) + 1024),
+                  portDst: profile.port,
+                  protocol: profile.proto,
+                  bandwidth: bandwidthMbps,
+                  active: true,
+                  drift: 1,
+                  lastDriftUpdate: 0
+                });
+              }
+            }
           };
 
           const handleRemoveAllocation = (index: number) => {
