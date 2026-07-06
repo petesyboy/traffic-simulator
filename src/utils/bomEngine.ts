@@ -145,15 +145,18 @@ export interface BomRow {
   qty: number;
   description: string;
   term?: string;
-  type: 'Chassis' | 'Module' | 'Optic' | 'Dependency' | 'TAP' | 'License';
+  type: 'Hardware' | 'Chassis' | 'License' | 'Support' | 'Optic' | 'Accessory' | 'TAP' | 'Module' | 'Dependency';
+  nodeId?: string;
 }
+
 
 export function generateBom(
   nodes: CustomNode[],
   edges: Edge[],
   globalLicenseMode: 'HTL' | 'Perpetual',
   globalTermDuration: string,
-  globalRegion: 'US' | 'EU' | 'UK' = 'US'
+  globalRegion: 'US' | 'EU' | 'UK' = 'US',
+  groupByNode: boolean = false
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -164,16 +167,18 @@ export function generateBom(
   let series1PstAcTaps = 0;
   let series1PstDcTaps = 0;
 
-  const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
+  const addRow = (nodeId: string | null, sku: string, qty: number, type: BomRow['type'], term?: string) => {
     const description = skus[sku] || 'Unknown SKU';
     
     // Check if there are any prerequisites mentioned in description
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
-    if (rowMap[sku]) {
-      rowMap[sku].qty += qty;
+    const key = (groupByNode && nodeId) ? `${nodeId}_${sku}` : sku;
+    
+    if (rowMap[key]) {
+      rowMap[key].qty += qty;
     } else {
-      rowMap[sku] = { sku, qty, description, term, type };
+      rowMap[key] = { sku, qty, description, term, type, nodeId: groupByNode ? (nodeId || 'global') : undefined };
     }
 
     if (reqMatch && reqMatch[1]) {
@@ -183,15 +188,17 @@ export function generateBom(
         let depTerm = undefined;
         if (depSku.endsWith('-SW-TM')) depTerm = term || globalTermDuration;
         
-        if (rowMap[depSku]) {
-          rowMap[depSku].qty += qty;
+        const depKey = (groupByNode && nodeId) ? `${nodeId}_${depSku}` : depSku;
+        if (rowMap[depKey]) {
+          rowMap[depKey].qty += qty;
         } else {
-          rowMap[depSku] = { 
+          rowMap[depKey] = { 
             sku: depSku, 
             qty, 
             description: skus[depSku] || 'Required Dependency', 
             term: depTerm, 
-            type: 'Dependency' 
+            type: 'Dependency',
+            nodeId: groupByNode ? (nodeId || 'global') : undefined
           };
         }
       }
@@ -207,7 +214,7 @@ export function generateBom(
         const qty = parseInt(node.data?.ingestOpticQty as string || '0');
         if (optic && qty > 0) {
           const opticSku = resolveOpticSku(optic, '');
-          addRow(opticSku, qty, 'Optic');
+          addRow(node.id, opticSku, qty, 'Optic');
         }
       }
       return;
@@ -224,7 +231,7 @@ export function generateBom(
     const resolved = resolveNodeSkus(node.data || {}, globalLicenseMode);
 
     if (model.includes('TAP')) {
-      addRow(resolved.hwSku, 1, 'TAP');
+      addRow(node.id, resolved.hwSku, 1, 'TAP');
       
       // Ensure active fiber TAPs always have exactly four of the selected optic
       if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
@@ -235,15 +242,15 @@ export function generateBom(
             const toolOpticSku = resolveOpticSku(alloc.toolOptic || alloc.optic, '');
             
             // 2 optics for the network ports (A/B)
-            addRow(networkOpticSku, 2 * alloc.qty, 'Optic');
+            addRow(node.id, networkOpticSku, 2 * alloc.qty, 'Optic');
             // 2 optics for the monitor ports
-            addRow(toolOpticSku, 2 * alloc.qty, 'Optic');
+            addRow(node.id, toolOpticSku, 2 * alloc.qty, 'Optic');
           });
         } else {
           // Fallback if no allocation exists yet
           const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
           const opticSku = resolveOpticSku(fallbackOptic, '');
-          addRow(opticSku, 4, 'Optic');
+          addRow(node.id, opticSku, 4, 'Optic');
         }
       }
 
@@ -261,7 +268,7 @@ export function generateBom(
 
         if (tapPower === 'Individual Power Brick') {
           const powerSku = model.includes('A-TX') ? 'GTP-ATX01-UN' : 'GTP-ASF01-UN';
-          addRow(powerSku, 1, 'Dependency');
+          addRow(node.id, powerSku, 1, 'Dependency');
         } else if (tapPower === 'PST-GTA01 (AC Power Tray)') {
           series1PstAcTaps++;
         } else if (tapPower === 'PST-GTA02 (DC Power Tray)') {
@@ -272,10 +279,10 @@ export function generateBom(
         const tapBattery = !!node.data.tapBattery;
 
         if (tapDualPower) {
-          addRow('PBK-GTA21', 1, 'Dependency');
+          addRow(node.id, 'PBK-GTA21', 1, 'Dependency');
         }
         if (tapBattery) {
-          addRow('BAT-GTA20', 1, 'Dependency');
+          addRow(node.id, 'BAT-GTA20', 1, 'Dependency');
         }
 
         let cordSku = 'PCD-00A21'; // Default US
@@ -297,7 +304,7 @@ export function generateBom(
         }
 
         if (cordQty > 0) {
-          addRow(cordSku, cordQty, 'Dependency');
+          addRow(node.id, cordSku, cordQty, 'Dependency');
         }
       }
 
@@ -308,14 +315,14 @@ export function generateBom(
       return;
     }
 
-    addRow(resolved.hwSku, 1, 'Chassis');
+    addRow(node.id, resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) {
-      addRow(resolved.swSku, 1, 'License', termOverride);
+      addRow(node.id, resolved.swSku, 1, 'License', termOverride);
     }
 
     if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') {
       const upgradeSku = globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA';
-      addRow(upgradeSku, 1, 'License', termOverride);
+      addRow(node.id, upgradeSku, 1, 'License', termOverride);
     }
 
     // Suggest power supply cables for TA and HC chassis nodes
@@ -323,7 +330,7 @@ export function generateBom(
     if (isPoweredChassis) {
       const isDC = node.data?.powerSupply === 'DC';
       if (isDC) {
-        addRow('PCD-00051', 2, 'Dependency');
+        addRow(node.id, 'PCD-00051', 2, 'Dependency');
       } else {
         let acSku = 'PCD-00001'; // Default US
         if (globalRegion === 'EU') {
@@ -331,22 +338,22 @@ export function generateBom(
         } else if (globalRegion === 'UK') {
           acSku = 'PCD-00005';
         }
-        addRow(acSku, 2, 'Dependency');
+        addRow(node.id, acSku, 2, 'Dependency');
       }
     }
 
     if (resolved.advSku) {
-      addRow(resolved.advSku, 1, 'License', termOverride);
+      addRow(node.id, resolved.advSku, 1, 'License', termOverride);
     }
 
     const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};
     Object.values(installedBoards).forEach(boardSku => {
       if (!boardSku) return;
       if (licenseMode === 'HTL') {
-         addRow(boardSku + '-HW', 1, 'Module');
-         addRow(boardSku + '-SW-TM', 1, 'License', termOverride);
+         addRow(node.id, boardSku + '-HW', 1, 'Module');
+         addRow(node.id, boardSku + '-SW-TM', 1, 'License', termOverride);
       } else {
-         addRow(boardSku, 1, 'Module');
+         addRow(node.id, boardSku, 1, 'Module');
       }
     });
 
@@ -354,7 +361,7 @@ export function generateBom(
     optics.forEach(opt => {
       if (!opt.optic) return;
       const opticSku = resolveOpticSku(opt.optic, model);
-      addRow(opticSku, opt.qty, 'Optic');
+      addRow(node.id, opticSku, opt.qty, 'Optic');
       if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) {
         totalTapModules += opt.qty;
       }
@@ -463,7 +470,7 @@ export function generateBom(
 
         if (gsSku) {
           if (isHtl) gsTerm = termOverride;
-          addRow(gsSku, 1, 'License', gsTerm);
+          addRow(node.id, gsSku, 1, 'License', gsTerm);
         }
       });
     }
@@ -482,10 +489,10 @@ export function generateBom(
     }
     
     if (numM100T > 0) {
-      addRow('TAP-M100T', numM100T, 'Dependency');
+      addRow(null, 'TAP-M100T', numM100T, 'Dependency');
     }
     if (numM200T > 0) {
-      addRow('TAP-M200T', numM200T, 'Dependency');
+      addRow(null, 'TAP-M200T', numM200T, 'Dependency');
     }
   }
 
@@ -559,10 +566,10 @@ export function generateBom(
         const dstOpticSku = findOpticSkuForSpeed(dstModel, mutualSpeed);
 
         if (srcOpticSku) {
-          addRow(srcOpticSku, 1, 'Optic');
+          addRow(sourceNode.id, srcOpticSku, 1, 'Optic');
         }
         if (dstOpticSku) {
-          addRow(dstOpticSku, 1, 'Optic');
+          addRow(targetNode.id, dstOpticSku, 1, 'Optic');
         }
       }
     }
@@ -570,23 +577,23 @@ export function generateBom(
 
   // Aggregate TAP Accessories
   if (series1RackTaps > 0) {
-    addRow('RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency');
+    addRow(null, 'RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency');
   }
   if (series1PstAcTaps > 0) {
     const trayQty = Math.ceil(series1PstAcTaps / 24);
-    addRow('PST-GTA01', trayQty, 'Dependency');
+    addRow(null, 'PST-GTA01', trayQty, 'Dependency');
     
     // Each AC Power Tray has 2 power supplies, needs 2 cords
     let acSku = 'PCD-00001'; // Default US
     if (globalRegion === 'EU') acSku = 'PCD-00003';
     else if (globalRegion === 'UK') acSku = 'PCD-00005';
-    addRow(acSku, trayQty * 2, 'Dependency');
+    addRow(null, acSku, trayQty * 2, 'Dependency');
   }
   if (series1PstDcTaps > 0) {
     const trayQty = Math.ceil(series1PstDcTaps / 24);
-    addRow('PST-GTA02', trayQty, 'Dependency');
+    addRow(null, 'PST-GTA02', trayQty, 'Dependency');
     // DC trays need DC cords
-    addRow('PCD-00051', trayQty * 2, 'Dependency');
+    addRow(null, 'PCD-00051', trayQty * 2, 'Dependency');
   }
 
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));

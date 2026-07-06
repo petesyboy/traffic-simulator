@@ -261,7 +261,7 @@ const BomModal: React.FC<{
   
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   
-  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion);
+  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true);
   const validationErrors = validateConfiguration(nodes, edges);
 
   // Compute physical stats
@@ -522,10 +522,20 @@ const BomModal: React.FC<{
         )}
         
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
-          {activeTab === 'bom' ? (
-            items.length === 0 ? (
-              <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No hardware nodes tracked in the current layout.</div>
-            ) : (
+          {activeTab === 'bom' ? (() => {
+            if (items.length === 0) {
+              return <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No hardware nodes tracked in the current layout.</div>;
+            }
+
+            // Group items by nodeId
+            const groups: Record<string, typeof items> = {};
+            items.forEach(item => {
+              const key = item.nodeId || 'global';
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(item);
+            });
+
+            return (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #444' }}>
@@ -537,19 +547,35 @@ const BomModal: React.FC<{
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #333' }}>
-                      <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
-                      <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                      <td style={{ padding: '8px', color: '#aaa', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
-                      <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                      <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
-                    </tr>
-                  ))}
+                  {Object.entries(groups).map(([nodeId, groupItems]) => {
+                    const nodeInfo = nodes.find(n => n.id === nodeId);
+                    const nodeLabel = nodeInfo ? `${nodeInfo.data?.label || ''} (${nodeInfo.data?.model || ''})` : (nodeId === 'global' ? 'Global Accessories & Dependencies' : 'System Components');
+                    
+                    return (
+                      <React.Fragment key={nodeId}>
+                        {/* Group Header Row */}
+                        <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
+                          <td colSpan={5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
+                            {nodeLabel}
+                          </td>
+                        </tr>
+                        {/* Group Items */}
+                        {groupItems.map((item, i) => (
+                          <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
+                            <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                            <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                            <td style={{ padding: '8px', color: '#aaa', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                            <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
-            )
-          ) : (
+            );
+          })() : (
             physicalItems.length === 0 ? (
               <div style={{ color: '#aaa', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No physical hardware nodes found on the canvas.</div>
             ) : (
