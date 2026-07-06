@@ -850,7 +850,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const networkSpeed = getOpticSpeed(activeAddOptic);
           const speedFilteredToolOptics = (networkSpeed && !isPassiveOpticalTap)
             ? availableOptics.filter(o => getOpticSpeed(o.value) === networkSpeed)
-            : availableOptics.filter(o => o.isSM === isSMTap);
+            : availableOptics.filter(o => o.isSM === isSMTap && !o.isCopper);
 
           const activeAddToolOptic = (addToolOptic && (isPassiveOpticalTap || getOpticSpeed(addToolOptic) === networkSpeed))
             ? addToolOptic
