@@ -677,6 +677,18 @@ export const useStore = create<RFState>((set, get) => ({
 
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
+      const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
+      let selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
+      if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
+        selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
+      }
+
+      const isSfpOpticVal = selectedOpticVal.includes('SFP');
+      if (isSfpOpticVal && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
+        window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances only feature high-speed QSFP+/QSFP28 cages. They cannot natively accept the 1G/10G SFP+ transceivers (${selectedOpticVal}) required to terminate this TAP link.`);
+        return;
+      }
+      
       const tapFiber = isSMTap ? 'Singlemode' : 'Multimode';
 
       const installedOptics = (targetNode.data?.optics as { board: string, optic: string, qty: number }[]) || [];
@@ -692,12 +704,6 @@ export const useStore = create<RFState>((set, get) => ({
 
       const tappedLinks = (sourceNode.data?.tappedLinksCount as number) ?? 1;
       const requiredOptics = tappedLinks * 2;
-
-      const defaultOptic = isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)';
-      let selectedOpticVal = (sourceNode.data?.tappedLinkOptic as string) || defaultOptic;
-      if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
-        selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
-      }
 
       let addedOpticsMsg = '';
       let updatedOptics = [...installedOptics];
