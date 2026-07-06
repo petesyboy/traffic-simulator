@@ -1043,7 +1043,16 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 .map(r => `${r.qty}x ${r.sku}`)
                 .join(', ');
               
-              desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}\n\n`;
+              const has4x10 = nodeBom.some(r => r.sku.includes('PNL-M341'));
+              const has4x25 = nodeBom.some(r => r.sku.includes('PNL-M343'));
+              let breakoutNote = '';
+              if (has4x10 || has4x25) {
+                breakoutNote += '\nNote: ';
+                if (has4x10) breakoutNote += 'Each 4x10G breakout panel (PNL-M341) requires a 40G QSFP+ optic to supply the 10G ports. ';
+                if (has4x25) breakoutNote += 'Each 4x25G breakout panel (PNL-M343) requires a 100G QSFP28 optic to supply the 25G ports. ';
+              }
+              
+              desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}${breakoutNote}\n\n`;
               desc += `Aggregating, filtering, and distributing network traffic to destination tools.`;
               
               if (conditions && conditions.length > 0) {

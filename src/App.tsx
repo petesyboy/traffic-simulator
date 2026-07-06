@@ -262,14 +262,40 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
                 />
                 <button
                   onClick={handleSave}
-                  style={{ padding: '7px 14px', background: 'var(--color-blue)', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '7px 14px', background: slots.includes(slotName.trim()) ? 'rgba(239,83,80,0.2)' : 'var(--color-blue)', border: slots.includes(slotName.trim()) ? '1px solid rgba(239,83,80,0.5)' : 'none', borderRadius: '4px', color: slots.includes(slotName.trim()) ? '#ef5350' : '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                 >
-                  Save
+                  {slots.includes(slotName.trim()) ? 'Overwrite' : 'Save'}
                 </button>
               </div>
             </div>
 
-            <div style={{ height: '1px', background: '#2d2d2d' }} />
+            {/* List of existing slots for quick overwrite */}
+            <div style={{ marginTop: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#888' }}>Existing Save Slots:</span>
+              {slots.length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>No slots saved yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto', paddingRight: '4px', marginTop: '6px' }}>
+                  {slots.map((name) => (
+                    <div 
+                      key={name} 
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: '#111', borderRadius: '5px', border: '1px solid #222', cursor: 'pointer' }}
+                      onClick={() => setSlotName(name)}
+                    >
+                      <span style={{ flex: 1, fontSize: '12px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSlotName(name); setTimeout(handleSave, 0); }} 
+                        style={{ padding: '3px 10px', background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.3)', borderRadius: '3px', color: '#ef5350', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Overwrite
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ height: '1px', background: '#2d2d2d', marginTop: '8px' }} />
 
             {/* Email / Share Topology File Row */}
             <div>

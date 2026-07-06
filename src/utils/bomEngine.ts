@@ -955,7 +955,31 @@ export function generateSingleNodeBom(
   const rowMap: Record<string, BomRow> = {};
   
   const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
-    const description = skus[sku] || 'Unknown SKU';
+    let description = skus[sku] || 'Unknown SKU';
+    
+    let purpose = '';
+    if (sku.includes('PNL-M341')) {
+      purpose = 'Provides 4x10G LC ports from a single 40G QSFP+ port. (Requires a 40G QSFP+ transceiver).';
+    } else if (sku.includes('PNL-M343')) {
+      purpose = 'Provides 4x25G LC ports from a single 100G QSFP28 port. (Requires a 100G QSFP28 transceiver).';
+    } else if (type === 'Chassis') {
+      purpose = 'Base hardware chassis required to host modules and aggregate traffic.';
+    } else if (type === 'Module') {
+      purpose = 'Hardware line card or module installed in the chassis to provide additional ports or compute resources.';
+    } else if (type === 'Optic') {
+      purpose = 'Transceiver required to connect physical fiber or copper links to the system.';
+    } else if (type === 'TAP') {
+      purpose = 'Network TAP used to passively mirror traffic from live network links without disruption.';
+    } else if (type === 'License') {
+      purpose = 'Software license required to enable features, advanced processing (GigaSMART), or hardware functionality.';
+    } else if (type === 'Dependency') {
+      purpose = 'Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.';
+    }
+
+    if (purpose) {
+      description += ` | Purpose: ${purpose}`;
+    }
+
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     
     if (rowMap[sku]) {
@@ -970,13 +994,16 @@ export function generateSingleNodeBom(
         let depTerm = undefined;
         if (depSku.endsWith('-SW-TM')) depTerm = term || globalTermDuration;
         
+        let depDesc = skus[depSku] || 'Required Dependency';
+        depDesc += ' | Purpose: Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.';
+        
         if (rowMap[depSku]) {
           rowMap[depSku].qty += qty;
         } else {
           rowMap[depSku] = { 
             sku: depSku, 
             qty, 
-            description: skus[depSku] || 'Required Dependency', 
+            description: depDesc, 
             term: depTerm, 
             type: 'Dependency' 
           };
