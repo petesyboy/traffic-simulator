@@ -406,6 +406,11 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         className={`custom-node ${nodeClass} ${selected ? 'selected-node' : ''} ${glowClass}`}
         title={tooltipText}
       >
+        {Boolean(data.site) && (
+          <div style={{ position: 'absolute', top: '-8px', left: '8px', background: '#3b82f6', color: '#fff', fontSize: '9px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', zIndex: 10, border: '1px solid #60a5fa' }}>
+            Site: {data.site as string}
+          </div>
+        )}
         <Handle type="target" position={Position.Left} id="in" />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>

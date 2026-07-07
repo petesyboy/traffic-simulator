@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type CustomNode, type NodeMetrics } from '../../store/store';
+import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { formatBytes } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
@@ -21,9 +21,27 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
   const isStorageTool = configType === CONFIG_TYPES.STORAGE_TOOL;
   const [showEstimates, setShowEstimates] = useState(false);
+  const nodes = useStore((state) => state.nodes);
+  const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
 
   return (
     <>
+      <FormGroup label="Site Assignment (Optional)">
+        <datalist id="tool-existing-sites-list">
+          {uniqueSites.map(site => (
+            <option key={site} value={site} />
+          ))}
+        </datalist>
+        <input 
+          type="text" 
+          list="tool-existing-sites-list"
+          placeholder="e.g. Datacenter London" 
+          value={(node.data?.site as string) || ''} 
+          onChange={(e) => onGenericChange('site', e.target.value)} 
+          style={{ width: '100%', boxSizing: 'border-box' }} 
+        />
+      </FormGroup>
+
       <FormGroup label="Tool Class">
         <select
           value={configType}

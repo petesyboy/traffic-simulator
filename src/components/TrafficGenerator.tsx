@@ -339,7 +339,7 @@ const TrafficGenerator: React.FC = () => {
                         <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', fontSize: '10px', color: '#666', display: 'inline-block' }}>
                           Inactive
                         </span>
-                      ) : deliveredStreams.includes(stream.id) ? (
+                      ) : deliveredStreams.some(id => id === stream.id || id.startsWith(`${stream.id}-`)) ? (
                         <span style={{ padding: '2px 6px', background: 'rgba(76, 175, 80, 0.12)', border: '1px solid rgba(76, 175, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#4caf50', display: 'inline-block', whiteSpace: 'nowrap' }}>
                           ✓ Passed
                         </span>

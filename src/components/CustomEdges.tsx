@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EdgeProps } from '@xyflow/react';
-import { getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react';
+import { getBezierPath, EdgeLabelRenderer } from '@xyflow/react';
 
 export const DoubleEdge: React.FC<EdgeProps> = ({
   id,
@@ -17,7 +17,7 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
   markerEnd,
   className
 }: EdgeProps & { className?: string }) => {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -36,7 +36,7 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
         markerEnd={markerEnd}
         style={{
           ...style,
-          strokeWidth: 6,
+          strokeWidth: 4,
         }}
         fill="none"
       />

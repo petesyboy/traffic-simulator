@@ -329,190 +329,6 @@ const CanvasArea: React.FC = () => {
       animated = true;
     }
     
-    // Calculate dynamic animation speed based on link utilization
-    const getCapacity = (): number => {
-      if (!srcNode) return 10000;
-
-      // If the target is a tool node, determine the capacity based on its ingest optic speed
-      // or the breakout speed of the source node.
-      if (targetNode && targetNode.type === 'toolNode') {
-        const ingestOptic = (targetNode.data?.ingestOptic as string) || '';
-        if (ingestOptic) {
-          const match = ingestOptic.toUpperCase().match(/(1|10|25|40|100|400)G/i);
-          if (match) {
-            return parseInt(match[1], 10) * 1000;
-          }
-        }
-        
-        // If no explicit tool ingest optic is set, check if the source node has a breakout panel.
-        if (srcNode && srcNode.type === 'hardwareNode') {
-          const installedOptics = (srcNode.data?.optics as { optic: string, qty: number }[]) || [];
-          const hasBreakoutPanel = installedOptics.some(opt => opt.optic && opt.optic.toUpperCase().includes('PNL-M34'));
-          if (hasBreakoutPanel) {
-            // Check parent optic speed to determine breakout child speed (100G -> 25G, 40G -> 10G)
-            const has100GParent = installedOptics.some(opt => opt.optic && (opt.optic.toUpperCase().includes('100G') || opt.optic.toUpperCase().startsWith('Q28-')) && !opt.optic.toUpperCase().includes('PNL-M34'));
-            if (has100GParent) {
-              return 25000; // 25G child speed
-            } else {
-              return 10000; // 10G child speed
-            }
-          }
-        }
-      }
-
-      if (srcNode.type === 'inputNode') {
-        const val = srcNode.data?.linkSpeed as number;
-        if (val !== undefined) {
-          return val >= 1000 ? val : val * 1000;
-        }
-        return 10000;
-      }
-      if (srcNode.type === 'hardwareNode') {
-        const model = String(srcNode.data?.model || '').toUpperCase();
-        if (model.includes('TAP')) {
-          const sku = String(srcNode.data?.sku || '').toUpperCase();
-          const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || model.toLowerCase().includes('single-mode') || model.toLowerCase().includes('sm') || model.includes('253T') || model.includes('273T') || model.includes('453T');
-          
-          const allocations = (srcNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
-            { 
-              qty: (srcNode.data?.tappedLinksCount as number) ?? 1, 
-              optic: (srcNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
-            }
-          ];
-
-          let totalCap = 0;
-          for (const alloc of allocations) {
-            let speed = 10000;
-            const match = alloc.optic.match(/(1|10|25|40|100|400)G/i);
-            if (match) {
-              speed = parseInt(match[1], 10) * 1000;
-            }
-            totalCap += speed * alloc.qty;
-          }
-          return totalCap;
-        }
-
-        if (model.includes('TA400') || model.includes('HC3')) return 400000;
-        if (model.includes('TA200') || model.includes('HC1-PLUS')) return 100000;
-        
-        // If it's a GigaVUE HC/TA appliance, it has an inventory of installed optics
-        const installedOptics = (srcNode.data?.optics as { optic: string, qty: number }[]) || [];
-        if (installedOptics.length > 0) {
-          // Construct the pool of speeds from all installed transceivers
-          const pool: number[] = [];
-          let parent100GToDeduct = 0;
-          let parent40GToDeduct = 0;
-          
-          for (const opt of installedOptics) {
-            if (!opt.optic) continue;
-            if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
-              const has100G = installedOptics.some(o => (o.optic.includes('100G') || o.optic.startsWith('Q28-')) && !o.optic.includes('PNL-M34'));
-              if (has100G) {
-                parent100GToDeduct += opt.qty;
-              } else {
-                parent40GToDeduct += opt.qty;
-              }
-            }
-          }
-
-          for (const opt of installedOptics) {
-            if (!opt.optic) continue;
-            if (opt.optic.includes('PNL-M34')) continue;
-
-            const name = opt.optic.toUpperCase();
-            let speed = 0;
-            if (name.includes('400G') || name.startsWith('QDD-')) speed = 400000;
-            else if (name.includes('100G') || name.startsWith('Q28-')) speed = 100000;
-            else if (name.includes('40G') || name.startsWith('QSF-')) speed = 40000;
-            else if (name.includes('25G') || name.startsWith('SFP-55')) speed = 25000;
-            else if (name.includes('10G') || name.startsWith('SFP-53')) speed = 10000;
-            else if (name.includes('1G') || name.startsWith('SFP-50')) speed = 1000;
-            
-            if (speed > 0) {
-              for (let i = 0; i < opt.qty; i++) {
-                pool.push(speed);
-              }
-            }
-          }
-
-          for (let i = 0; i < parent100GToDeduct; i++) {
-            const idx = pool.indexOf(100000);
-            if (idx > -1) pool.splice(idx, 1);
-          }
-          for (let i = 0; i < parent40GToDeduct; i++) {
-            const idx = pool.indexOf(40000);
-            if (idx > -1) pool.splice(idx, 1);
-          }
-
-          // Sort the pool descending (highest speed first)
-          pool.sort((a, b) => b - a);
-
-          // Find all incoming edges connected to this node that are from TAP/input nodes,
-          // because these TAP/input links allocate their target speeds from the pool.
-          const incomingEdges = edges.filter(e => e.target === srcNode.id);
-          for (const incoming of incomingEdges) {
-            const tapNode = nodes.find(n => n.id === incoming.source);
-            if (!tapNode) continue;
-            
-            if (tapNode.type === 'inputNode') {
-              const tapSpeedVal = tapNode.data?.linkSpeed as number;
-              const tapSpeed = tapSpeedVal !== undefined ? (tapSpeedVal >= 1000 ? tapSpeedVal : tapSpeedVal * 1000) : 10000;
-              const numLinks = 1;
-              const opticsToDeduct = numLinks * 2;
-              for (let d = 0; d < opticsToDeduct; d++) {
-                const index = pool.indexOf(tapSpeed);
-                if (index > -1) {
-                  pool.splice(index, 1);
-                } else {
-                  pool.splice(0, 1);
-                }
-              }
-            } else if (tapNode.type === 'hardwareNode' && String(tapNode.data?.model || '').toUpperCase().includes('TAP')) {
-              const sku = String(tapNode.data?.sku || '').toUpperCase();
-              const tapModel = String(tapNode.data?.model || '').toUpperCase();
-              const isSMTap = sku.includes('253') || sku.includes('273') || sku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
-              
-              const allocations = (tapNode.data?.tappedLinkAllocations as { qty: number, optic: string }[]) || [
-                { 
-                  qty: (tapNode.data?.tappedLinksCount as number) ?? 1, 
-                  optic: (tapNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
-                }
-              ];
-
-              for (const alloc of allocations) {
-                let allocSpeed = 10000;
-                const match = alloc.optic.match(/(1|10|25|40|100|400)G/i);
-                if (match) {
-                  allocSpeed = parseInt(match[1], 10) * 1000;
-                }
-                const opticsToDeduct = alloc.qty * 2;
-                for (let d = 0; d < opticsToDeduct; d++) {
-                  const index = pool.indexOf(allocSpeed);
-                  if (index > -1) {
-                    pool.splice(index, 1);
-                  } else {
-                    pool.splice(0, 1);
-                  }
-                }
-              }
-            }
-          }
-
-          // For the current edge: we want to allocate one of the remaining optics in the pool.
-          const outgoingEdges = edges.filter(e => e.source === srcNode.id);
-          const currentEdgeIndex = outgoingEdges.findIndex(e => e.id === edge.id);
-          if (currentEdgeIndex > -1 && currentEdgeIndex < pool.length) {
-            return pool[currentEdgeIndex];
-          }
-
-          if (pool.length > 0) return pool[0];
-        }
-
-        if (model.includes('HC1')) return 10000;
-      }
-      return 10000; // default 10 Gbps (10000 Mbps)
-    };
-
     const bps = edgeMetrics[edge.id];
 
     // Append throughput if available
@@ -551,10 +367,15 @@ const CanvasArea: React.FC = () => {
     };
 
     if (isRunning && bps !== undefined && bps > 0) {
-      const capacity = getCapacity();
-      const utilization = Math.min(1.0, bps / capacity);
-      // Map utilization (0 to 1) to animation duration (2.0s down to 0.2s)
-      const duration = 2.0 - 1.8 * utilization;
+      // Map absolute bandwidth logarithmically to animation speed so that the same volume
+      // always animates at the exact same speed, regardless of physical link capacity.
+      // 10 Mbps -> ~2.0s duration, 100 Gbps (100,000 Mbps) -> 0.2s duration.
+      const minLog = Math.log10(10);
+      const maxLog = Math.log10(100000);
+      const currentLog = Math.log10(Math.max(10, bps));
+      const normalized = Math.min(1.0, Math.max(0, (currentLog - minLog) / (maxLog - minLog)));
+      const duration = 2.0 - 1.8 * normalized;
+      
       style = {
         ...style,
         animationDuration: `${duration.toFixed(2)}s`
