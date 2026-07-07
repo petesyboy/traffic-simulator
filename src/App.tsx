@@ -454,7 +454,7 @@ function App() {
     URL.revokeObjectURL(url);
 
     setSaveToast(`Saved topology to "${name}.json"`);
-    setTimeout(() => setSaveToast(''), 2000);
+    setTimeout(() => setSaveToast(''), 5000);
   }, [
     nodes, edges, trafficStreams, advancedMode, projectLicenseMode, defaultTermDuration, 
     projectRegion, disableDcWarnings, panelTextScale, showGrid, snapToGrid, 
@@ -475,7 +475,7 @@ function App() {
           const scenarioName = file.name.replace(/\.json$/i, '');
           setCurrentScenarioName(scenarioName);
           setSaveToast(`Loaded "${scenarioName}"`);
-          setTimeout(() => setSaveToast(''), 2000);
+          setTimeout(() => setSaveToast(''), 5000);
         } else {
           alert("Invalid topology file structure.");
         }
@@ -551,11 +551,11 @@ function App() {
           onClose={() => setModalMode(null)}
           onSaved={(name) => {
             setSaveToast(`Saved to "${name}"`);
-            setTimeout(() => setSaveToast(''), 2000);
+            setTimeout(() => setSaveToast(''), 5000);
           }}
           onLoaded={() => {
             setSaveToast('Layout loaded');
-            setTimeout(() => setSaveToast(''), 2000);
+            setTimeout(() => setSaveToast(''), 5000);
           }}
         />
       )}

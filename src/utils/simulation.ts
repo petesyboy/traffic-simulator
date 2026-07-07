@@ -313,10 +313,65 @@ const processMapNode = (
 const processGigaSmartNode = (
   node: CustomNode,
   item: QueueItem,
-  nodeMetric: NodeMetrics
+  nodeMetric: NodeMetrics,
+  outboundEdges: Edge[],
+  activeEdgeSet: Set<string>,
+  edgeTraffic: Record<string, number>,
+  queue: QueueItem[]
 ): NodeProcessingResult => {
   const data = node.data as GigaSmartNodeData;
   const actionType = data.actionType || 'Deduplication';
+  
+  if (actionType === 'SSL Decrypt' && item.stream.isEncrypted) {
+    const decryptionRate = (data.decryptionRate ?? 60) / 100;
+    const originalBandwidth = item.stream.bandwidth;
+    
+    const decryptedBandwidth = originalBandwidth * decryptionRate;
+    const encryptedBandwidth = originalBandwidth * (1 - decryptionRate);
+
+    nodeMetric.txMbps += originalBandwidth;
+    nodeMetric.txPackets += originalBandwidth * 250;
+
+    outboundEdges.forEach((edge) => {
+      activeEdgeSet.add(edge.id);
+      
+      // Decrypted Stream
+      if (decryptedBandwidth > 0) {
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + decryptedBandwidth;
+        queue.push({
+          nodeId: edge.target,
+          stream: { 
+            ...item.stream, 
+            id: `${item.stream.id}-dec`,
+            bandwidth: decryptedBandwidth, 
+            isEncrypted: false,
+            firstEdgeId: item.stream.firstEdgeId || edge.id 
+          },
+          edgePath: [...item.edgePath, edge.id],
+        });
+      }
+
+      // Still-Encrypted Stream
+      if (encryptedBandwidth > 0) {
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + encryptedBandwidth;
+        queue.push({
+          nodeId: edge.target,
+          stream: { 
+            ...item.stream, 
+            id: `${item.stream.id}-enc-passthrough`,
+            bandwidth: encryptedBandwidth, 
+            isEncrypted: true,
+            firstEdgeId: item.stream.firstEdgeId || edge.id 
+          },
+          edgePath: [...item.edgePath, edge.id],
+        });
+      }
+    });
+
+    return { forwardStream: null, handledQueueExternally: true };
+  }
+
+  // Fallback to existing logic for other actions or non-encrypted streams
   let forwardStream: TrajectoryStream | null = item.stream;
   let dropBandwidth = 0;
   const generatedMetadataStreams: TrajectoryStream[] = [];
@@ -371,7 +426,8 @@ const processGigaSmartNode = (
   }
   else {
     let scale = 1.0;
-    if (actionType === 'SSL Decrypt' || actionType === 'Masking') {
+    // The new logic handles SSL Decrypt, so we remove it from this generic block
+    if (actionType === 'Masking') { // Removed: actionType === 'SSL Decrypt'
       scale = 0.95;
     }
     const outputBandwidth = item.stream.bandwidth * scale;
@@ -382,10 +438,6 @@ const processGigaSmartNode = (
     nodeMetric.txMbps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: outputBandwidth };
-    
-    if (actionType === 'SSL Decrypt') {
-      forwardStream.isEncrypted = false;
-    }
   }
   if (dropBandwidth > 0) {
     nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
@@ -558,8 +610,8 @@ const PROCESSORS: Record<string, NodeProcessor> = {
   mapNode: (node, item, nodeMetric) => 
     processMapNode(node, item, nodeMetric),
     
-  gigaSmartNode: (node, item, nodeMetric) => 
-    processGigaSmartNode(node, item, nodeMetric),
+  gigaSmartNode: (node, item, nodeMetric, _, __, outboundEdges, activeEdgeSet, edgeTraffic, queue) => 
+    processGigaSmartNode(node, item, nodeMetric, outboundEdges, activeEdgeSet, edgeTraffic, queue),
     
   gigaStreamNode: (node, item, nodeMetric, _, __, outboundEdges, activeEdgeSet, edgeTraffic, queue) => 
     processGigaStreamNode(node, item, nodeMetric, outboundEdges, activeEdgeSet, edgeTraffic, queue),
@@ -663,6 +715,8 @@ export const calculateSimulationStep = (
     
     const totalRequested = nodeStreams.reduce((sum, s) => sum + s.bandwidth, 0);
     
+    let streamsToProcess: TrajectoryStream[] = [];
+
     if (totalRequested > linkSpeed) {
       // Traffic exceeds physical port capacity. Cap it and record ingress drops.
       const droppedBps = totalRequested - linkSpeed;
@@ -674,14 +728,51 @@ export const calculateSimulationStep = (
       nodeStreams.forEach(stream => {
         const scale = linkSpeed / totalRequested;
         stream.bandwidth *= scale;
-        queue.push({ nodeId, stream, edgePath: [] });
+        streamsToProcess.push(stream);
       });
     } else {
-      // Link capacity is sufficient; enqueue streams unmodified
-      nodeStreams.forEach(stream => {
-        queue.push({ nodeId, stream, edgePath: [] });
-      });
+      // Link capacity is sufficient
+      streamsToProcess = nodeStreams;
     }
+
+    streamsToProcess.forEach(stream => {
+      const encryptedTrafficPercentage = (sourceNode?.data as any)?.encryptedTrafficPercentage;
+      const encryptionRatio = encryptedTrafficPercentage !== undefined 
+        ? encryptedTrafficPercentage / 100 
+        : (stream.isEncrypted ? 1 : 0);
+
+      if (encryptionRatio > 0) {
+        // Create encrypted part of the stream
+        if (encryptionRatio < 1) {
+          queue.push({ 
+            nodeId, 
+            stream: { 
+              ...stream, 
+              id: `${stream.id}-clear`,
+              bandwidth: stream.bandwidth * (1 - encryptionRatio),
+              isEncrypted: false,
+            }, 
+            edgePath: [] 
+          });
+        }
+        
+        // Create cleartext part of the stream
+        queue.push({ 
+          nodeId, 
+          stream: { 
+            ...stream,
+            id: `${stream.id}-enc`,
+            bandwidth: stream.bandwidth * encryptionRatio,
+            isEncrypted: true,
+          }, 
+          edgePath: [] 
+        });
+
+      } else {
+        // The whole stream is cleartext
+        queue.push({ nodeId, stream, edgePath: [] });
+      }
+    });
   });
 
   let iterations = 0;

@@ -144,6 +144,28 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           </div>
         </FormGroup>
       )}
+
+      {actionType === ACTION_TYPES.SSL_DECRYPT && (
+        <FormGroup label="Decryption Rate (%)">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={(node.data?.decryptionRate as number) ?? 60}
+              onChange={(e) => onGenericChange('decryptionRate', e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '11px', fontFamily: 'monospace', minWidth: '45px', textAlign: 'right', color: '#00e5ff', fontWeight: 'bold' }}>
+              {((node.data?.decryptionRate as number) ?? 60)}%
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#80cbc4', marginTop: '4px', lineHeight: '1.3' }}>
+            The percentage of encrypted traffic to decrypt. The remainder will pass through still encrypted.
+          </div>
+        </FormGroup>
+      )}
     </>
   );
 };

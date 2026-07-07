@@ -62,6 +62,26 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
         </FormGroup>
       )}
 
+      <FormGroup label="Encrypted Traffic (%)">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={(node.data?.encryptedTrafficPercentage as number) ?? 60}
+            onChange={(e) => onGenericChange('encryptedTrafficPercentage', e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <span style={{ fontSize: '11px', fontFamily: 'monospace', minWidth: '45px', textAlign: 'right', color: '#00e5ff', fontWeight: 'bold' }}>
+            {((node.data?.encryptedTrafficPercentage as number) ?? 60)}%
+          </span>
+        </div>
+        <div style={{ fontSize: '11px', color: '#80cbc4', marginTop: '4px', lineHeight: '1.3' }}>
+          The percentage of traffic from this source that is encrypted.
+        </div>
+      </FormGroup>
+
       {configType === CONFIG_TYPES.TAP && (
         <>
           <FormGroup label="TAP Mode">

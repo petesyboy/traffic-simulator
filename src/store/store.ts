@@ -83,6 +83,7 @@ export interface HardwareNodeData extends BaseNodeData {
 
 export interface InputNodeData extends BaseNodeData {
   configType: 'SPAN Port' | 'Network Tap' | 'Virtual TAP' | 'GigaVUE-VM';
+  encryptedTrafficPercentage?: number;
 }
 
 export interface MapNodeData extends BaseNodeData {
@@ -102,6 +103,7 @@ export interface GigaSmartNodeData extends BaseNodeData {
   dedupRate?: number;
   lastDedupUpdate?: number;
   metadataFormat?: 'CEF' | 'JSON';
+  decryptionRate?: number;
 }
 
 export interface ToolNodeData extends BaseNodeData {
