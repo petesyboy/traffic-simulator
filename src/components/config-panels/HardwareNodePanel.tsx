@@ -774,8 +774,14 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           <h3>🌍 Deployment Configuration</h3>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Site Assignment (Optional)</label>
+            <datalist id="existing-sites-list">
+              {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).map(site => (
+                <option key={site as string} value={site as string} />
+              ))}
+            </datalist>
             <input 
               type="text" 
+              list="existing-sites-list"
               placeholder="e.g. Datacenter London" 
               value={(node.data?.site as string) || ''} 
               onChange={(e) => updateNodeData(node.id, { site: e.target.value })} 

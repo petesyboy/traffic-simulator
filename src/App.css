@@ -586,18 +586,22 @@
 
 /* Active Encrypted Flow */
 .react-flow__edge.encrypted-flow .react-flow__edge-path {
-  stroke: #5e35b1;
+  stroke: #ff1744;
   stroke-dasharray: 2 6 !important;
-  filter: drop-shadow(0 0 2px rgba(94, 53, 177, 0.4)) !important;
+  filter: drop-shadow(0 0 4px rgba(255, 23, 68, 0.7)) !important;
   animation: edge-flow-dash 1.8s linear infinite;
 }
 
-/* Active Decrypted Flow (Bright/Clear Text) */
-.react-flow__edge.decrypted-flow .react-flow__edge-path {
-  stroke: #00e5ff;
+/* Active Decrypted Flow (Bright/Clear Text, Double Line) */
+.react-flow__edge.decrypted-flow .outer-double-edge {
+  stroke: #00e676;
   stroke-dasharray: 15 5 !important;
-  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.9)) !important;
+  filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.9)) !important;
   animation: edge-flow-dash 1.0s linear infinite;
+}
+.react-flow__edge.decrypted-flow .inner-double-edge-mask {
+  stroke: #121212;
+  stroke-width: 2px;
 }
 
 

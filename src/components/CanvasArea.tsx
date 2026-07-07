@@ -12,6 +12,7 @@ import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
+import { DoubleEdge } from './CustomEdges';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import dashboardImg from '../assets/dashboard-mock.webp';
 
@@ -35,6 +36,10 @@ const nodeTypes = {
   [NODE_TYPES.GIGASMART]:  GigaSmartNode,
   [NODE_TYPES.GROUP]:      GroupNode,
   [NODE_TYPES.HARDWARE]:   HardwareNode,
+};
+
+const edgeTypes = {
+  doubleEdge: DoubleEdge,
 };
 
 // ─── Federated Search Enclosure ───────────────────────────────────────────────
@@ -515,11 +520,19 @@ const CanvasArea: React.FC = () => {
       const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
       label = label ? `${label} | ${throughputLabel}` : throughputLabel;
     }
+    
+    // Add padlock indicators
+    if (isRunning && isActive) {
+      if (isEncrypted) label = `🔒 ${label}`;
+      else if (isDecrypted) label = `🔓 ${label}`;
+    }
 
     let stroke = '#007cff'; // default blue
     if (isRunning) {
       if (isActive) {
-        stroke = isMetadata ? '#ff9800' : '#00e5ff';
+        if (isEncrypted) stroke = '#ff1744'; // Crimson Red
+        else if (isDecrypted) stroke = '#00e676'; // Neon Green
+        else stroke = isMetadata ? '#ff9800' : '#00e5ff';
       } else if (isBlocked) {
         stroke = '#ef5350';
       }
@@ -561,11 +574,12 @@ const CanvasArea: React.FC = () => {
     return {
       ...edge,
       className,
+      type: (isRunning && isActive && isDecrypted) ? 'doubleEdge' : (edge.type || 'default'),
       animated: hoveredEdgeId === edge.id ? true : animated,
       label,
       style,
       labelStyle: {
-        fill: isMetadata ? '#ff9800' : '#00e5ff',
+        fill: isEncrypted ? '#ff1744' : (isDecrypted ? '#00e676' : (isMetadata ? '#ff9800' : '#00e5ff')),
         fontSize: '9px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontWeight: 'bold',
@@ -988,6 +1002,7 @@ const CanvasArea: React.FC = () => {
         nodes={nodes}
         edges={styledEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
