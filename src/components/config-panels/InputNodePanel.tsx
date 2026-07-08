@@ -1,5 +1,5 @@
 import React from 'react';
-import { type CustomNode } from '../../store/store';
+import { useStore, type CustomNode } from '../../store/store';
 import { CONFIG_TYPES, SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import { FormGroup } from './LiveMetrics';
 

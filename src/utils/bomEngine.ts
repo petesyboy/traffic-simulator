@@ -3,7 +3,7 @@ import type { CustomNode } from '../store/store';
 import type { Edge } from '@xyflow/react';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveNodeSkus } from './skuResolver';
-import { NODE_TYPES, CONFIG_TYPES, SUPPORTED_TAP_OPTICS } from '../constants/nodeTypes';
+import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import opticRules from '../constants/opticRules.json';
 
 const skus: Record<string, string> = skusData as Record<string, string>;
@@ -17,11 +17,13 @@ function resolveOpticSku(opticStr: string, chassisModel: string): string {
   if (name.includes('10G MULTIMODE SR') || name.includes('10G MM SR')) return 'SFP-532';
   if (name.includes('10G SINGLEMODE LR') || name.includes('10G SM LR')) return 'SFP-533';
   if (name.includes('25G MULTIMODE SR') || name.includes('25G MM SR')) return 'SFP-552';
-  if (name.includes('25G SINGLEMODE LR') || name.includes('25G SM LR')) return 'SFP-553';
+  if (name.includes('25G SINGLEMODE LR') || name.includes('25G SM LR') || name.includes('SFP-553T')) return 'SFP-553T';
   if (name.includes('40G MULTIMODE SR4') || name.includes('40G MM SR4')) return 'QSF-502';
   if (name.includes('40G SINGLEMODE LR4') || name.includes('40G SM LR4')) return 'QSF-503';
   if (name.includes('100G MULTIMODE SR4') || name.includes('100G MM SR4')) return 'Q28-502';
-  if (name.includes('100G SINGLEMODE LR4') || name.includes('100G SM LR4')) return 'Q28-503';
+  if (name.includes('100G SINGLEMODE LR4') || name.includes('100G SM LR4') || name.includes('Q28-503T')) return 'Q28-503T';
+  if (name.includes('Q28-503') || name.includes('QSFP28-503')) return 'Q28-503';
+  if (name.includes('SFP-553')) return 'SFP-553';
 
   const firstWord = opticStr.split(' ')[0];
   if (firstWord === 'Cable') {
