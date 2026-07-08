@@ -12,7 +12,6 @@ import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
-import { DoubleEdge } from './CustomEdges';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import dashboardImg from '../assets/dashboard-mock.webp';
 
@@ -38,9 +37,7 @@ const nodeTypes = {
   [NODE_TYPES.HARDWARE]:   HardwareNode,
 };
 
-const edgeTypes = {
-  doubleEdge: DoubleEdge,
-};
+const edgeTypes = {};
 
 // ─── Federated Search Enclosure ───────────────────────────────────────────────
 /**
@@ -383,7 +380,7 @@ const CanvasArea: React.FC = () => {
     }
 
     if (hoveredEdgeId === edge.id) {
-      const isInsertHover = draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM;
+      const isInsertHover = draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL;
       style = {
         ...style,
         stroke: isInsertHover ? '#ff9800' : '#00e5ff',
@@ -395,7 +392,7 @@ const CanvasArea: React.FC = () => {
     return {
       ...edge,
       className,
-      type: (isRunning && isActive && isDecrypted) ? 'doubleEdge' : (edge.type || 'default'),
+      type: edge.type || 'default',
       animated: hoveredEdgeId === edge.id ? true : animated,
       label,
       style,
@@ -418,7 +415,7 @@ const CanvasArea: React.FC = () => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
 
-    if (draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM) {
+    if (draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL) {
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       if (!reactFlowBounds) return;
 
@@ -432,6 +429,11 @@ const CanvasArea: React.FC = () => {
         const srcNode = nodes.find((n) => n.id === edge.source);
         const targetNode = nodes.find((n) => n.id === edge.target);
         if (!srcNode || !targetNode) continue;
+        
+        // Prevent interposing logical nodes onto physical hardware-to-hardware links
+        if (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE) {
+          continue;
+        }
 
         const srcW = srcNode.measured?.width || srcNode.width || 170;
         const srcH = srcNode.measured?.height || srcNode.height || 75;
@@ -617,11 +619,15 @@ const CanvasArea: React.FC = () => {
       }
 
       let edgeToInterpose: Edge | null = null;
-      if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
+      if (type === NODE_TYPES.MAP || type === NODE_TYPES.FILTER || type === NODE_TYPES.TOOL) {
         for (const edge of edges) {
           const srcNode = nodes.find((n) => n.id === edge.source);
           const targetNode = nodes.find((n) => n.id === edge.target);
           if (!srcNode || !targetNode) continue;
+          
+          if (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE) {
+            continue;
+          }
 
           const srcW = srcNode.measured?.width || srcNode.width || 170;
           const srcH = srcNode.measured?.height || srcNode.height || 75;

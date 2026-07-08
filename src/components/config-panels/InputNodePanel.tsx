@@ -37,13 +37,33 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
       </FormGroup>
 
       <FormGroup label="Site Assignment (Optional)">
-        <input 
-          type="text" 
-          placeholder="e.g. Datacenter London" 
-          value={(node.data?.site as string) || ''} 
-          onChange={(e) => onGenericChange('site', e.target.value)} 
-          style={{ width: '100%', boxSizing: 'border-box' }} 
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {Array.from(new Set(useStore.getState().nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).length > 0 && (
+            <select
+              value={Array.from(new Set(useStore.getState().nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).includes(node.data?.site as string) ? (node.data?.site as string) : 'custom'}
+              onChange={(e) => {
+                if (e.target.value !== 'custom') {
+                  onGenericChange('site', e.target.value);
+                } else {
+                  onGenericChange('site', '');
+                }
+              }}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="custom">-- Type New Site --</option>
+              {Array.from(new Set(useStore.getState().nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).map(s => <option key={s as string} value={s as string}>{s as string}</option>)}
+            </select>
+          )}
+          {(!Array.from(new Set(useStore.getState().nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).includes(node.data?.site as string)) && (
+            <input 
+              type="text" 
+              placeholder="e.g. Datacenter London" 
+              value={(node.data?.site as string) || ''} 
+              onChange={(e) => onGenericChange('site', e.target.value)} 
+              style={{ width: '100%', boxSizing: 'border-box' }} 
+            />
+          )}
+        </div>
       </FormGroup>
 
       {(configType === CONFIG_TYPES.SPAN || configType === CONFIG_TYPES.TAP || configType === CONFIG_TYPES.ERSPAN || configType === CONFIG_TYPES.EAST_WEST || configType === CONFIG_TYPES.VMWARE) && (

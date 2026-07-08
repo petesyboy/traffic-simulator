@@ -104,16 +104,6 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     let changed = consolidatedOptics.length !== currentOptics.length;
 
     const nextOptics = consolidatedOptics.map(opt => {
-      const isTapOpticType = SUPPORTED_TAP_OPTICS.some(o => o.value === opt.optic);
-      if (isTapOpticType) {
-        const needed = tapOpticsNeeded[opt.optic] || 0;
-        if (opt.qty !== needed) {
-          changed = true;
-          delete tapOpticsNeeded[opt.optic];
-          return needed > 0 ? { ...opt, qty: needed } : null;
-        }
-        delete tapOpticsNeeded[opt.optic];
-      }
       return opt;
     }).filter((opt): opt is { board: string, optic: string, qty: number } => opt !== null);
 
