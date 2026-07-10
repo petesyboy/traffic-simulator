@@ -484,6 +484,11 @@ const CanvasArea: React.FC = () => {
 
       const { type, label, initialData } = JSON.parse(rawData);
 
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
       if (advancedMode && type === NODE_TYPES.GIGASMART) {
         const hasHc = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC'));
         const hasTa = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('TA'));
