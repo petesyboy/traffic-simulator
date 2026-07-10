@@ -110,12 +110,18 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     }).filter((opt): opt is { board: string, optic: string, qty: number } => opt !== null);
 
     Object.entries(tapOpticsNeeded).forEach(([optic, qty]) => {
-      nextOptics.push({
-        board: 'Base Ports',
-        optic,
-        qty
-      });
-      changed = true;
+      const existingQty = nextOptics
+        .filter(o => o.optic === optic)
+        .reduce((sum, o) => sum + o.qty, 0);
+      
+      if (existingQty < qty) {
+        nextOptics.push({
+          board: 'Base Ports',
+          optic,
+          qty: qty - existingQty
+        });
+        changed = true;
+      }
     });
 
     if (changed) {
@@ -227,24 +233,42 @@ export function generateBom(
     if (model.includes('TAP')) {
       addRow(node.id, resolved.hwSku, 1, 'TAP');
       
-      // Ensure active fiber TAPs always have exactly four of the selected optic
+      // For active TAPs, add the exact number of user-specified copper and fiber SFPs
+      const tapMode = (node.data?.tapMode as string) || 'Passive';
+      
       if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
-        const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
-        if (allocations.length > 0) {
-          allocations.forEach(alloc => {
-            const networkOpticSku = resolveOpticSku(alloc.optic, '');
-            const toolOpticSku = resolveOpticSku(alloc.toolOptic || alloc.optic, '');
-            
-            // 2 optics for the network ports (A/B)
-            addRow(node.id, networkOpticSku, 2 * alloc.qty, 'Optic');
-            // 2 optics for the monitor ports
-            addRow(node.id, toolOpticSku, 2 * alloc.qty, 'Optic');
-          });
+        if (tapMode === 'Active') {
+          const cuCount = Number(node.data?.activeTapCopperSfpCount) || 0;
+          const fiCount = Number(node.data?.activeTapFiberSfpCount) || 0;
+          
+          if (cuCount > 0) {
+            addRow(node.id, 'SFP-501', cuCount, 'Optic');
+          }
+          if (fiCount > 0) {
+            // Use the selected target optic for the fiber SFPs
+            const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
+            const opticSku = resolveOpticSku(fallbackOptic, '');
+            addRow(node.id, opticSku, fiCount, 'Optic');
+          }
         } else {
-          // Fallback if no allocation exists yet
-          const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
-          const opticSku = resolveOpticSku(fallbackOptic, '');
-          addRow(node.id, opticSku, 4, 'Optic');
+          // Passive logic for active fiber TAPs
+          const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
+          if (allocations.length > 0) {
+            allocations.forEach(alloc => {
+              const networkOpticSku = resolveOpticSku(alloc.optic, '');
+              const toolOpticSku = resolveOpticSku(alloc.toolOptic || alloc.optic, '');
+              
+              // 2 optics for the network ports (A/B)
+              addRow(node.id, networkOpticSku, 2 * alloc.qty, 'Optic');
+              // 2 optics for the monitor ports
+              addRow(node.id, toolOpticSku, 2 * alloc.qty, 'Optic');
+            });
+          } else {
+            // Fallback if no allocation exists yet
+            const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-532';
+            const opticSku = resolveOpticSku(fallbackOptic, '');
+            addRow(node.id, opticSku, 4, 'Optic');
+          }
         }
       }
 

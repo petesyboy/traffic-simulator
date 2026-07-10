@@ -33,6 +33,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import CanvasArea from './components/CanvasArea';
 import ConfigPanel from './components/ConfigPanel';
+import RackElevationView from './components/RackElevationView';
 import SimulationEngine from './components/SimulationEngine';
 import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
@@ -422,6 +423,7 @@ function App() {
   const showGrid            = useStore((s) => s.showGrid);
   const snapToGrid          = useStore((s) => s.snapToGrid);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
+  const activeView          = useStore((s) => s.activeView);
 
   const [modalMode, setModalMode] = useState<'save' | 'load' | null>(null);
   const [saveToast, setSaveToast] = useState('');
@@ -571,7 +573,11 @@ function App() {
         <ReactFlowProvider>
           <Sidebar />
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            <CanvasArea />
+            {activeView === 'rack' ? (
+              <RackElevationView />
+            ) : (
+              <CanvasArea />
+            )}
             <TrafficGenerator />
           </div>
           <ConfigPanel />

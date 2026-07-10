@@ -881,6 +881,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const setAdvancedModeUnlocked = useStore((state) => state.setAdvancedModeUnlocked);
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
+  const activeView     = useStore((state) => state.activeView);
+  const setActiveView  = useStore((state) => state.setActiveView);
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
   const currentScenarioName = useStore((state) => state.currentScenarioName);
@@ -1041,6 +1043,17 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   </button>
                 );
               })()}
+
+              {advancedMode && (
+                <button 
+                  className="header-btn" 
+                  onClick={() => setActiveView(activeView === 'canvas' ? 'rack' : 'canvas')} 
+                  title="Toggle Rack Elevation View"
+                  style={{ background: activeView === 'rack' ? '#007cff' : 'transparent', color: activeView === 'rack' ? '#fff' : '#ccc' }}
+                >
+                  {activeView === 'rack' ? '🎯 Canvas View' : '🗄️ Rack View'}
+                </button>
+              )}
 
               <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
                 📸 Screenshot

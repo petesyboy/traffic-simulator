@@ -78,26 +78,7 @@ const ipv4ToInt = (ip: string): number => {
   return result >>> 0;
 };
 
-const getGigaSmartAppOrder = (actionType: string): number => {
-  const t = actionType.toLowerCase();
-  if (t.includes('lb') && t.includes('stateful')) return 1;
-  if (t.includes('afi')) return 2;
-  if (t.includes('decap')) return 3;
-  if (t.includes('dedup')) return 4;
-  if (t.includes('ssl')) return 5;
-  if (t.includes('sampling')) return 6;
-  if (t.includes('strip')) return 7;
-  if (t.includes('enhanced slicing')) return 9;
-  if (t.includes('slice')) return 8;
-  if (t.includes('masking')) return 10;
-  if (t.includes('trailer')) return 11;
-  if (t.includes('encap')) return 12;
-  if (t.includes('add-header')) return 13;
-  if (t.includes('netflow')) return 14;
-  if (t.includes('lb')) return 15;
-  if (t.includes('ami') || t.includes('amx') || t.includes('metadata')) return 16;
-  return 99;
-};
+
 
 /**
  * CIDR-aware IP subnet matching (IPv4).
@@ -512,10 +493,26 @@ const processHardwareNode = (
   
   if (isMatch) {
     if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
-      const sortedApps = [...node.data.gigaSmartApps].sort((a, b) => 
-        getGigaSmartAppOrder(a.actionType as string) - getGigaSmartAppOrder(b.actionType as string)
-      );
-      for (const app of sortedApps) {
+      // Calculate Engine Load to determine multi-pass loopback
+      const getEngineLoad = (actionType: string) => {
+        if (actionType.includes('Decapsulation')) return 40;
+        if (actionType.includes('Slicing')) return 20;
+        if (actionType.includes('Masking')) return 30;
+        if (actionType.includes('Dedup')) return 50;
+        if (actionType.includes('NetFlow')) return 60;
+        if (actionType.includes('Metadata') || actionType.includes('AMI')) return 80;
+        return 30;
+      };
+      
+      const totalLoad = node.data.gigaSmartApps.reduce((acc: number, app: any) => acc + getEngineLoad(app.actionType as string), 0);
+      const isMultiPass = totalLoad > 100;
+      
+      // If multi-pass is required, we artificially double the rxMbps counted against this node's backplane
+      if (isMultiPass) {
+        nodeMetric.rxMbps += item.stream.bandwidth; // Add loopback penalty bandwidth
+      }
+
+      for (const app of node.data.gigaSmartApps) {
         if (item.stream.bandwidth <= 0) break;
         const actionType = (app.actionType as string) || 'Deduplication';
         if (actionType === 'Deduplication' || actionType === 'Dedup') {

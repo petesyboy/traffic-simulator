@@ -114,6 +114,27 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
             </select>
           </FormGroup>
 
+          {((node.data?.tapMode as string) || 'Passive') === 'Active' && (
+            <>
+              <FormGroup label="Copper SFPs Required">
+                <select
+                  value={(node.data?.activeTapCopperSfpCount as number) ?? 0}
+                  onChange={(e) => onGenericChange('activeTapCopperSfpCount', e.target.value)}
+                >
+                  {[0, 1, 2, 3, 4, 6, 8, 12, 16].map(num => <option key={`cu-${num}`} value={num}>{num}</option>)}
+                </select>
+              </FormGroup>
+              <FormGroup label="Fiber SFPs Required">
+                <select
+                  value={(node.data?.activeTapFiberSfpCount as number) ?? 0}
+                  onChange={(e) => onGenericChange('activeTapFiberSfpCount', e.target.value)}
+                >
+                  {[0, 1, 2, 3, 4, 6, 8, 12, 16].map(num => <option key={`fi-${num}`} value={num}>{num}</option>)}
+                </select>
+              </FormGroup>
+            </>
+          )}
+
           <FormGroup label="Fiber Type">
             <select
               value={tapFiberMode}

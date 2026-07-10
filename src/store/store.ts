@@ -79,6 +79,8 @@ export interface BaseNodeData {
 
 export interface HardwareNodeData extends BaseNodeData {
   gigaSmartApps?: GigaSmartNodeData[];
+  rackId?: string;
+  rackU?: number;
 }
 
 export interface InputNodeData extends BaseNodeData {
@@ -121,6 +123,8 @@ export type RFState = {
   simulationSpeed: number; // multiplier, e.g. 1
   advancedMode: boolean;
   advancedModeUnlocked: boolean;
+  activeView: 'canvas' | 'rack';
+  setActiveView: (view: 'canvas' | 'rack') => void;
   projectLicenseMode: 'HTL' | 'Perpetual';
   defaultTermDuration: string;
   projectRegion: 'US' | 'EU' | 'UK';
@@ -577,6 +581,8 @@ export const useStore = create<RFState>((set, get) => ({
   simulationSpeed: 1,
   advancedMode: false,
   advancedModeUnlocked: false,
+  activeView: 'canvas',
+  setActiveView: (view: 'canvas' | 'rack') => set({ activeView: view }),
   projectLicenseMode: 'HTL',
   defaultTermDuration: '36',
   projectRegion: 'US',
