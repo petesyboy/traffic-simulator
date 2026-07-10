@@ -217,6 +217,7 @@ export type RFState = {
   loadDemo: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
+  duplicateSolution: (newSiteName: string) => void;
 };
 
 /**
@@ -1109,6 +1110,107 @@ export const useStore = create<RFState>((set, get) => ({
       nodes: syncSplunkLabels(updatedNodes, updatedEdges),
       edges: updatedEdges,
       selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId,
+    });
+  },
+
+  duplicateSolution: (newSiteName: string) => {
+    const currentNodes = get().nodes;
+    const currentEdges = get().edges;
+    const currentStreams = get().trafficStreams;
+
+    if (currentNodes.length === 0) return;
+
+    // 1. Calculate X offset/shift based on existing nodes bounding box
+    let minX = Infinity;
+    let maxX = -Infinity;
+    currentNodes.forEach((node) => {
+      let absX = node.position.x;
+      if (node.parentId) {
+        const parentNode = currentNodes.find((n) => n.id === node.parentId);
+        if (parentNode) {
+          absX += parentNode.position.x;
+        }
+      }
+      if (absX < minX) minX = absX;
+      if (absX > maxX) maxX = absX;
+    });
+
+    const width = maxX - minX;
+    const shiftX = Math.max(600, width + 200);
+
+    // 2. Generate unique new IDs mapping
+    const idMap: Record<string, string> = {};
+    currentNodes.forEach((node) => {
+      idMap[node.id] = `${node.type}-${uuidv4()}`;
+    });
+
+    // 3. Duplicate nodes
+    const newNodes = currentNodes.map((node) => {
+      const newId = idMap[node.id];
+      const newParentId = node.parentId ? idMap[node.parentId] : undefined;
+      
+      const dataCopy = { ...node.data };
+      dataCopy.site = newSiteName;
+      if (dataCopy.gigaSmartApps && Array.isArray(dataCopy.gigaSmartApps)) {
+        dataCopy.gigaSmartApps = dataCopy.gigaSmartApps.map((app) => ({
+          ...app,
+          id: `gs-${uuidv4()}`,
+        }));
+      }
+
+      return {
+        ...node,
+        id: newId,
+        parentId: newParentId,
+        position: {
+          x: node.position.x + (node.parentId ? 0 : shiftX),
+          y: node.position.y,
+        },
+        data: dataCopy,
+        selected: false,
+      };
+    });
+
+    // 4. Duplicate edges
+    const newEdges = currentEdges
+      .map((edge) => {
+        const newSource = idMap[edge.source];
+        const newTarget = idMap[edge.target];
+        if (!newSource || !newTarget) return null;
+        return {
+          ...edge,
+          id: `e-${uuidv4()}`,
+          source: newSource,
+          target: newTarget,
+        };
+      })
+      .filter((e): e is Edge => e !== null);
+
+    // 5. Duplicate traffic streams
+    const newStreams = currentStreams
+      .map((stream) => {
+        const newSourceNodeId = idMap[stream.sourceNodeId];
+        if (!newSourceNodeId) return null;
+        return {
+          ...stream,
+          id: `t-${uuidv4()}`,
+          sourceNodeId: newSourceNodeId,
+        };
+      })
+      .filter((s): s is TrafficStream => s !== null);
+
+    // 6. Combine and sync optics & splunk labels
+    const combinedNodes = [...currentNodes, ...newNodes];
+    const combinedEdges = [...currentEdges, ...newEdges];
+    
+    let syncedNodes = syncSplunkLabels(combinedNodes, combinedEdges);
+    syncedNodes = syncOpticsOnTapConnection(syncedNodes, combinedEdges);
+
+    set({
+      nodes: syncedNodes,
+      edges: combinedEdges,
+      trafficStreams: [...currentStreams, ...newStreams],
+      fitViewTrigger: get().fitViewTrigger + 1,
     });
   },
 }));

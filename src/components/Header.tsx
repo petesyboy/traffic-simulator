@@ -72,6 +72,83 @@ const ConfirmModal: React.FC<{
   </div>
 );
 
+const DuplicateModal: React.FC<{
+  defaultName: string;
+  onConfirm: (siteName: string) => void;
+  onCancel: () => void;
+}> = ({ defaultName, onConfirm, onCancel }) => {
+  const [name, setName] = useState(defaultName);
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 10000,
+      background: 'rgba(0,0,0,0.65)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backdropFilter: 'blur(3px)',
+    }}>
+      <div style={{
+        background: '#1a1a1a',
+        border: '1px solid #333',
+        borderRadius: '8px',
+        padding: '24px',
+        width: '320px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>👥 Duplicate Solution</h3>
+        <p style={{ margin: 0, fontSize: '12px', color: '#ccc', lineHeight: '1.4' }}>
+          This will duplicate all nodes, edges, traffic streams, and configurations to a new site.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '10px', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' }}>New Site Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && name.trim()) {
+                onConfirm(name.trim());
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              background: '#121212',
+              border: '1px solid #2d2d2d',
+              borderRadius: '4px',
+              color: '#e0e0e0',
+              fontSize: '12px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+          <button
+            onClick={onCancel}
+            style={{ padding: '7px 16px', background: '#2a2a2a', border: '1px solid #444', color: '#aaa', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { if (name.trim()) onConfirm(name.trim()); }}
+            disabled={!name.trim()}
+            style={{ padding: '7px 16px', background: '#ff9800', border: '1px solid #e65100', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+          >
+            Duplicate
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProjectSettingsModal: React.FC<{
   onClose: () => void;
 }> = ({ onClose }) => {
@@ -887,11 +964,13 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
   const currentScenarioName = useStore((state) => state.currentScenarioName);
   const projectRegion = useStore((state) => state.projectRegion);
+  const duplicateSolution = useStore((state) => state.duplicateSolution);
 
   // Local UI state for the toast and confirm modal
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBom, setShowBom] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
 
   const handleLogoClick = () => {
@@ -954,6 +1033,16 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
+      {showDuplicatePrompt && (
+        <DuplicateModal
+          defaultName="Site B"
+          onConfirm={(siteName) => {
+            duplicateSolution(siteName);
+            setShowDuplicatePrompt(false);
+          }}
+          onCancel={() => setShowDuplicatePrompt(false)}
+        />
+      )}
 
       <div className="header-wrapper">
         {/* ── Top Brand Bar ── */}
@@ -1025,6 +1114,21 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             {/* ── Group 2: Project / View ── */}
             <div className="control-group">
+              {nodes.length > 0 && (
+                <button 
+                  className="header-btn" 
+                  onClick={() => setShowDuplicatePrompt(true)}
+                  title="Duplicate the entire topology to a new site"
+                  style={{
+                    background: 'rgba(0, 124, 255, 0.1)',
+                    color: '#00e5ff',
+                    borderColor: 'rgba(0, 124, 255, 0.3)'
+                  }}
+                >
+                  👥 Duplicate
+                </button>
+              )}
+
               {(advancedMode || nodes.some(n => n.type === 'hardwareNode')) && (() => {
                 const validationErrors = validateConfiguration(nodes, edges);
                 const hasErrors = validationErrors.length > 0;
