@@ -11,8 +11,8 @@ import { calculateSimulationStep } from '../utils/simulation';
 import { NODE_TYPES, isDedupAction } from '../constants/nodeTypes';
 
 const SimulationEngine: React.FC = () => {
-  const isRunning          = useStore((state) => state.isRunning);
-  const simulationSpeed    = useStore((state) => state.simulationSpeed);
+  const isRunning = useStore((state) => state.isRunning);
+  const simulationSpeed = useStore((state) => state.simulationSpeed);
   const updateSimulationTick = useStore((state) => state.updateSimulationTick);
 
   const tickRef = useRef<number | null>(null);
@@ -40,7 +40,7 @@ const SimulationEngine: React.FC = () => {
           node.type === NODE_TYPES.GIGASMART &&
           isDedupAction(node.data?.actionType as string || '')
         ) {
-          const lastUpdate  = (node.data?.lastDedupUpdate as number) || 0;
+          const lastUpdate = (node.data?.lastDedupUpdate as number) || 0;
           const currentRate = node.data?.dedupRate as number;
           const driftProfile = (node.data?.dedupDriftProfile as string) || 'volatile';
 
@@ -110,12 +110,12 @@ const SimulationEngine: React.FC = () => {
               gigaSmartApps: updatedApps,
             };
           }
-          
+
           let hasGigaSmartError = false;
           let gigaSmartErrorMsg = '';
           const chassisModel = String(node.data?.model || '');
           const installedModules = (node.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
-          
+
           if (updatedApps.length === 0) {
             if (node.data.hasGigaSmartError || node.data.gigaSmartErrorMsg) {
               useStore.getState().updateNodeData(node.id, { hasGigaSmartError: false, gigaSmartErrorMsg: '' });
@@ -146,9 +146,9 @@ const SimulationEngine: React.FC = () => {
         const phase = stream.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 0.1;
         const newDrift = 1.0 + 0.08 * Math.sin(timeFactor + phase);
 
-        streamPatches[stream.id] = { 
-          drift: newDrift, 
-          lastDriftUpdate: now 
+        streamPatches[stream.id] = {
+          drift: newDrift,
+          lastDriftUpdate: now
         };
       });
 
