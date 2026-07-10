@@ -411,7 +411,10 @@ export const ToolNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             Site: {data.site as string}
           </div>
         )}
-        <Handle type="target" position={Position.Left} id="in" />
+        <Handle type="target" position={Position.Left} id="in" style={{ top: '20%' }} />
+        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '40%' }} />
+        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '60%' }} />
+        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '80%' }} />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}

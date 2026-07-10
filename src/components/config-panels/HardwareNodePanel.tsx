@@ -1266,6 +1266,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           );
         })()}
 
+        {renderModuleSlots()}
+
         {!model?.includes('TAP') && (
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', marginTop: '16px' }}>
             <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#ffb74d' }}>Traffic Map Filter Rules</h4>
@@ -1332,7 +1334,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             </div>
           </div>
         )}
-        {renderModuleSlots()}
 
         {!model?.includes('TAP') && (total100G > 0 || total40G > 0 || total25G > 0 || total10G > 0 || total1G > 0) && (
           <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>

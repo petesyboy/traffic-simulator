@@ -116,18 +116,24 @@ const SimulationEngine: React.FC = () => {
           const chassisModel = String(node.data?.model || '');
           const installedModules = (node.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
           
-          import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode }) => {
-            for (const app of updatedApps) {
-              if (!isActionSupportedOnNode(app.actionType, chassisModel, installedModules)) {
-                hasGigaSmartError = true;
-                gigaSmartErrorMsg = `Unsupported GigaSMART operation: ${app.actionType}`;
-                break;
+          if (updatedApps.length === 0) {
+            if (node.data.hasGigaSmartError || node.data.gigaSmartErrorMsg) {
+              useStore.getState().updateNodeData(node.id, { hasGigaSmartError: false, gigaSmartErrorMsg: '' });
+            }
+          } else {
+            import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode }) => {
+              for (const app of updatedApps) {
+                if (!isActionSupportedOnNode(app.actionType, chassisModel, installedModules)) {
+                  hasGigaSmartError = true;
+                  gigaSmartErrorMsg = `Unsupported GigaSMART operation: ${app.actionType}`;
+                  break;
+                }
               }
-            }
-            if (node.data.hasGigaSmartError !== hasGigaSmartError || node.data.gigaSmartErrorMsg !== gigaSmartErrorMsg) {
-              useStore.getState().updateNodeData(node.id, { hasGigaSmartError, gigaSmartErrorMsg });
-            }
-          });
+              if (node.data.hasGigaSmartError !== hasGigaSmartError || node.data.gigaSmartErrorMsg !== gigaSmartErrorMsg) {
+                useStore.getState().updateNodeData(node.id, { hasGigaSmartError, gigaSmartErrorMsg });
+              }
+            });
+          }
         }
       });
 
