@@ -53,3 +53,11 @@ code {
 ::-webkit-scrollbar-thumb:hover {
   background: #3e3e3e;
 }
+
+/* Style React Flow selection box as an oval */
+.react-flow__selection {
+  border-radius: 50% !important;
+  border: 1.5px dashed rgba(0, 229, 255, 0.8) !important;
+  background: rgba(0, 229, 255, 0.08) !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.15) !important;
+}

@@ -1114,19 +1114,47 @@ export const useStore = create<RFState>((set, get) => ({
   },
 
   duplicateSolution: (newSiteName: string) => {
-    const currentNodes = get().nodes;
-    const currentEdges = get().edges;
-    const currentStreams = get().trafficStreams;
+    const allNodes = get().nodes;
+    const allEdges = get().edges;
+    const allStreams = get().trafficStreams;
 
-    if (currentNodes.length === 0) return;
+    const selectedNodes = allNodes.filter(n => n.selected);
+    
+    let nodesToDuplicate = [...selectedNodes];
+    if (selectedNodes.length > 0) {
+      // Include nested child nodes of any selected group nodes
+      const selectedGroupIds = new Set(selectedNodes.filter(n => n.type === 'groupNode').map(n => n.id));
+      if (selectedGroupIds.size > 0) {
+        allNodes.forEach(node => {
+          if (node.parentId && selectedGroupIds.has(node.parentId) && !nodesToDuplicate.some(n => n.id === node.id)) {
+            nodesToDuplicate.push(node);
+          }
+        });
+      }
+    } else {
+      nodesToDuplicate = allNodes;
+    }
 
-    // 1. Calculate X offset/shift based on existing nodes bounding box
+    if (nodesToDuplicate.length === 0) return;
+
+    // We only duplicate edges where both source and target are inside nodesToDuplicate
+    const duplicatedNodeIds = new Set(nodesToDuplicate.map(n => n.id));
+    const edgesToDuplicate = allEdges.filter(
+      edge => duplicatedNodeIds.has(edge.source) && duplicatedNodeIds.has(edge.target)
+    );
+
+    // We only duplicate traffic streams whose sourceNodeId is inside nodesToDuplicate
+    const streamsToDuplicate = allStreams.filter(
+      stream => duplicatedNodeIds.has(stream.sourceNodeId)
+    );
+
+    // 1. Calculate X offset/shift based on nodesToDuplicate bounding box
     let minX = Infinity;
     let maxX = -Infinity;
-    currentNodes.forEach((node) => {
+    nodesToDuplicate.forEach((node) => {
       let absX = node.position.x;
       if (node.parentId) {
-        const parentNode = currentNodes.find((n) => n.id === node.parentId);
+        const parentNode = allNodes.find((n) => n.id === node.parentId);
         if (parentNode) {
           absX += parentNode.position.x;
         }
@@ -1140,12 +1168,12 @@ export const useStore = create<RFState>((set, get) => ({
 
     // 2. Generate unique new IDs mapping
     const idMap: Record<string, string> = {};
-    currentNodes.forEach((node) => {
+    nodesToDuplicate.forEach((node) => {
       idMap[node.id] = `${node.type}-${uuidv4()}`;
     });
 
     // 3. Duplicate nodes
-    const newNodes = currentNodes.map((node) => {
+    const newNodes = nodesToDuplicate.map((node) => {
       const newId = idMap[node.id];
       const newParentId = node.parentId ? idMap[node.parentId] : undefined;
       
@@ -1172,7 +1200,7 @@ export const useStore = create<RFState>((set, get) => ({
     });
 
     // 4. Duplicate edges
-    const newEdges = currentEdges
+    const newEdges = edgesToDuplicate
       .map((edge) => {
         const newSource = idMap[edge.source];
         const newTarget = idMap[edge.target];
@@ -1187,7 +1215,7 @@ export const useStore = create<RFState>((set, get) => ({
       .filter((e): e is Edge => e !== null);
 
     // 5. Duplicate traffic streams
-    const newStreams = currentStreams
+    const newStreams = streamsToDuplicate
       .map((stream) => {
         const newSourceNodeId = idMap[stream.sourceNodeId];
         if (!newSourceNodeId) return null;
@@ -1200,8 +1228,9 @@ export const useStore = create<RFState>((set, get) => ({
       .filter((s): s is TrafficStream => s !== null);
 
     // 6. Combine and sync optics & splunk labels
-    const combinedNodes = [...currentNodes, ...newNodes];
-    const combinedEdges = [...currentEdges, ...newEdges];
+    const resetCurrentNodes = allNodes.map(n => ({ ...n, selected: false }));
+    const combinedNodes = [...resetCurrentNodes, ...newNodes];
+    const combinedEdges = [...allEdges.map(e => ({ ...e, selected: false })), ...newEdges];
     
     let syncedNodes = syncSplunkLabels(combinedNodes, combinedEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, combinedEdges);
@@ -1209,7 +1238,7 @@ export const useStore = create<RFState>((set, get) => ({
     set({
       nodes: syncedNodes,
       edges: combinedEdges,
-      trafficStreams: [...currentStreams, ...newStreams],
+      trafficStreams: [...allStreams, ...newStreams],
       fitViewTrigger: get().fitViewTrigger + 1,
     });
   },

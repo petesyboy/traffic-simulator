@@ -74,9 +74,11 @@ const ConfirmModal: React.FC<{
 
 const DuplicateModal: React.FC<{
   defaultName: string;
+  selectedCount: number;
+  totalCount: number;
   onConfirm: (siteName: string) => void;
   onCancel: () => void;
-}> = ({ defaultName, onConfirm, onCancel }) => {
+}> = ({ defaultName, selectedCount, totalCount, onConfirm, onCancel }) => {
   const [name, setName] = useState(defaultName);
   return (
     <div style={{
@@ -102,7 +104,10 @@ const DuplicateModal: React.FC<{
       }}>
         <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>👥 Duplicate Solution</h3>
         <p style={{ margin: 0, fontSize: '12px', color: '#ccc', lineHeight: '1.4' }}>
-          This will duplicate all nodes, edges, traffic streams, and configurations to a new site.
+          {selectedCount > 0 
+            ? `This will duplicate the ${selectedCount} selected node${selectedCount > 1 ? 's' : ''} (and associated edges and traffic flows) to a new site.`
+            : `This will duplicate all ${totalCount} node${totalCount > 1 ? 's' : ''} on the canvas to a new site.`
+          }
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label style={{ fontSize: '10px', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' }}>New Site Name</label>
@@ -1036,6 +1041,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       {showDuplicatePrompt && (
         <DuplicateModal
           defaultName="Site B"
+          selectedCount={nodes.filter(n => n.selected).length}
+          totalCount={nodes.length}
           onConfirm={(siteName) => {
             duplicateSolution(siteName);
             setShowDuplicatePrompt(false);
