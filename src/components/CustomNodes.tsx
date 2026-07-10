@@ -217,8 +217,7 @@ export const MapNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
 
         {isRunning && (
-          <div className="node-metrics" style={{ marginTop: '4px' }}>
-            <span>In: {formatBandwidth(metrics?.rxMbps)}</span>
+          <div className="node-metrics" style={{ marginTop: '4px', justifyContent: 'flex-end' }}>
             <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
@@ -1008,8 +1007,8 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
 
         {isRunning && (
-          <div className="node-metrics" style={{ marginTop: '8px' }}>
-            <span>In: {formatBandwidth(metrics?.rxMbps)}</span>
+          <div className="node-metrics" style={{ marginTop: '8px', justifyContent: isTap ? 'flex-end' : 'space-between' }}>
+            {!isTap && <span>In: {formatBandwidth(metrics?.rxMbps)}</span>}
             <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
@@ -1105,6 +1104,11 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                   const actionLabel = c.action === 'drop' ? 'DROP' : 'PASS';
                   return `• ${logicPrefix}${fieldLabel} = ${c.value} -> ${actionLabel}`;
                 }).join('\n');
+              }
+              
+              if (data.gigaSmartApps && Array.isArray(data.gigaSmartApps) && data.gigaSmartApps.length > 0) {
+                const gsApps = data.gigaSmartApps.map(app => app.label || app.actionType).join(', ');
+                desc += `\n\nActive GigaSMART Functions: ${gsApps}`;
               }
               
               return desc;

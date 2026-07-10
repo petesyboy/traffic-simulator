@@ -8,3 +8,9 @@
 |           | 1310 (LR)                        | 10 km                            | Singlemode                | LC             | -5.2 (OMA)                 | -12.6 (OMA)                | -                     |
 |           | SFP+ Direct Attach (SFP+ Copper) | 1m (30 AWG max) 5 m (26 AWG max) | SFP+ Direct Attach Copper | SFP+           | N/A                        | N/A                        | -                     |
 |           | CAT-6a Copper (SFP+ Copper)      | 100 m                            | UTP CAT-6a or better      | RJ45           | N/A                        | N/A                        | -                     |
+
+| Power Type                | Specifications                                                           |
+| :------------------------ | :----------------------------------------------------------------------- |
+| Alternating Current (AC)  | 100 to 240 V , 47 to 63 Hz , nominal 18 mA @ 120 V                       |
+| Direct Current (DC)       | -36 to -72 V, nominal 350 mA @ -48 V, reverse-polarity protected inputs  |
+| Power over Ethernet (PoE) | Type 1 (802.3af) - CAT3 or higher <br> Type 2 (802.3at) - CAT5 or higher |
