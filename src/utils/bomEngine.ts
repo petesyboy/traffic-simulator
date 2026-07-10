@@ -10,12 +10,12 @@ const skus: Record<string, string> = skusData as Record<string, string>;
 
 function resolveOpticSku(opticStr: string, chassisModel: string): string {
   const name = opticStr.toUpperCase();
-  if (name.includes('1G COPPER')) return 'SFP-501';
-  if (name.includes('1G MULTIMODE SX') || name.includes('1G MM SX')) return 'SFP-502';
-  if (name.includes('1G SINGLEMODE LX') || name.includes('1G SM LX')) return 'SFP-503';
-  if (name.includes('10G COPPER')) return 'SFP-531';
-  if (name.includes('10G MULTIMODE SR') || name.includes('10G MM SR')) return 'SFP-532';
-  if (name.includes('10G SINGLEMODE LR') || name.includes('10G SM LR')) return 'SFP-533';
+  if (name.includes('1G COPPER')) return name.includes('SFP-501T') || name.includes('(TAA)') ? 'SFP-501T' : 'SFP-501';
+  if (name.includes('1G MULTIMODE SX') || name.includes('1G MM SX')) return name.includes('SFP-502T') || name.includes('(TAA)') ? 'SFP-502T' : 'SFP-502';
+  if (name.includes('1G SINGLEMODE LX') || name.includes('1G SM LX')) return name.includes('SFP-503T') || name.includes('(TAA)') ? 'SFP-503T' : 'SFP-503';
+  if (name.includes('10G COPPER')) return name.includes('SFP-531T') || name.includes('(TAA)') ? 'SFP-531T' : 'SFP-531';
+  if (name.includes('10G MULTIMODE SR') || name.includes('10G MM SR')) return name.includes('SFP-532T') || name.includes('(TAA)') ? 'SFP-532T' : 'SFP-532';
+  if (name.includes('10G SINGLEMODE LR') || name.includes('10G SM LR')) return name.includes('SFP-533T') || name.includes('(TAA)') ? 'SFP-533T' : 'SFP-533';
   if (name.includes('25G MULTIMODE SR') || name.includes('25G MM SR')) return 'SFP-552';
   if (name.includes('25G SINGLEMODE LR') || name.includes('25G SM LR') || name.includes('SFP-553T')) return 'SFP-553T';
   if (name.includes('40G MULTIMODE SR4') || name.includes('40G MM SR4')) return 'QSF-502';
@@ -87,11 +87,14 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
       }
     });
 
-    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number }[]) || [];
+    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || [];
+    
+    // First, remove any optics that were previously auto-added by this function
+    const userOptics = currentOptics.filter(opt => !opt.isAutoAdded);
     
     // Consolidate optics of the same type and target board/cage together
-    const consolidatedMap: Record<string, { board: string, optic: string, qty: number }> = {};
-    currentOptics.forEach(opt => {
+    const consolidatedMap: Record<string, { board: string, optic: string, qty: number, isAutoAdded?: boolean }> = {};
+    userOptics.forEach(opt => {
       if (!opt.optic) return;
       const boardKey = opt.board || 'Base Ports';
       const key = `${boardKey}|||${opt.optic}`;
@@ -103,11 +106,14 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     });
     
     const consolidatedOptics = Object.values(consolidatedMap);
-    let changed = consolidatedOptics.length !== currentOptics.length;
+    let changed = false;
+    
+    // If we stripped auto-added optics, the length might have changed
+    if (userOptics.length !== currentOptics.length) {
+      changed = true;
+    }
 
-    const nextOptics = consolidatedOptics.map(opt => {
-      return opt;
-    }).filter((opt): opt is { board: string, optic: string, qty: number } => opt !== null);
+    const nextOptics = [...consolidatedOptics];
 
     Object.entries(tapOpticsNeeded).forEach(([optic, qty]) => {
       const existingQty = nextOptics
@@ -118,7 +124,8 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
         nextOptics.push({
           board: 'Base Ports',
           optic,
-          qty: qty - existingQty
+          qty: qty - existingQty,
+          isAutoAdded: true
         });
         changed = true;
       }
@@ -242,7 +249,11 @@ export function generateBom(
           const fiCount = Number(node.data?.activeTapFiberSfpCount) || 0;
           
           if (cuCount > 0) {
-            addRow(node.id, 'SFP-501', cuCount, 'Optic');
+            // Check if the selected target optic is TAA compliant, and if so, use the TAA copper SFP
+            const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-501';
+            const isTAA = fallbackOptic.includes('TAA') || fallbackOptic.includes('T');
+            const copperSku = isTAA ? 'SFP-501T' : 'SFP-501';
+            addRow(node.id, copperSku, cuCount, 'Optic');
           }
           if (fiCount > 0) {
             // Use the selected target optic for the fiber SFPs

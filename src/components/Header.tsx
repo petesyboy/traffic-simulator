@@ -376,7 +376,7 @@ const BomModal: React.FC<{
         powerNum: pwr,
         heat: `${btu} BTU/hr`,
         heatNum: btu,
-        airflow: 'Side-to-Side',
+        airflow: 'Front-to-Rear',
         site: siteKey
       });
     } else if (model.includes('TA25')) {

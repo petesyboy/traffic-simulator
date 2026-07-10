@@ -726,23 +726,11 @@ export const useStore = create<RFState>((set, get) => ({
       if (tapFiber === 'Multimode') {
         if (mmCount < requiredOptics) {
           const needed = requiredOptics - mmCount;
-          const idx = updatedOptics.findIndex(opt => opt.optic === selectedOpticVal);
-          if (idx >= 0) {
-            updatedOptics[idx] = { ...updatedOptics[idx], qty: updatedOptics[idx].qty + needed };
-          } else {
-            updatedOptics.push({ board: 'Base Ports', optic: selectedOpticVal, qty: needed });
-          }
           addedOpticsMsg = `Suggested and installed ${needed} x ${selectedOpticVal} multi-mode optics in ${targetNode.data.model} to support the connection from ${sourceNode.data.label || 'TAP'}.`;
         }
       } else if (tapFiber === 'Singlemode') {
         if (smCount < requiredOptics) {
           const needed = requiredOptics - smCount;
-          const idx = updatedOptics.findIndex(opt => opt.optic === selectedOpticVal);
-          if (idx >= 0) {
-            updatedOptics[idx] = { ...updatedOptics[idx], qty: updatedOptics[idx].qty + needed };
-          } else {
-            updatedOptics.push({ board: 'Base Ports', optic: selectedOpticVal, qty: needed });
-          }
           addedOpticsMsg = `Suggested and installed ${needed} x ${selectedOpticVal} single-mode optics in ${targetNode.data.model} to support the connection from ${sourceNode.data.label || 'TAP'}.`;
         }
       }

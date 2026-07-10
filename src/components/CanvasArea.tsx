@@ -536,16 +536,30 @@ const CanvasArea: React.FC = () => {
             return;
           }
           
-          const newApp = {
-             id: `gs-${Date.now()}`,
-             label,
-             actionType: initialData?.actionType || 'Deduplication',
-             dedupRate: 20,
-             metadataFormat: 'CEF'
-          };
+          const actionType = initialData?.actionType || 'Deduplication';
+          const chassisModel = String(targetNode.data?.model || '');
+          const installedModules = (targetNode.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
           
-          const apps = targetNode.data.gigaSmartApps || [];
-          updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
+          import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode }) => {
+            if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) {
+              alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`);
+              return;
+            }
+            
+            const newApp = {
+               id: `gs-${Date.now()}`,
+               label,
+               actionType,
+               dedupRate: 20,
+               metadataFormat: 'CEF'
+            };
+            
+            const apps = targetNode.data.gigaSmartApps || [];
+            updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
+          }).catch(err => {
+            console.error('Failed to load gigaSmartRules', err);
+          });
+          
           return;
         } else {
           alert("In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");

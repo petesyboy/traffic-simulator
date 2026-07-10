@@ -829,8 +829,8 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div 
-        className={`custom-node hardware-node ${selected ? 'selected-node' : ''} ${glowClass}`} 
-        style={{ borderLeft: '4px solid #ff9800' }}
+        className={`custom-node hardware-node ${selected ? 'selected-node' : ''} ${glowClass} ${data.hasGigaSmartError ? 'has-error' : ''}`} 
+        style={{ borderLeft: '4px solid #ff9800', ...(data.hasGigaSmartError ? { borderColor: '#f44336', boxShadow: '0 0 10px rgba(244,67,54,0.5)' } : {}) }}
         title={tooltipText}
       >
         {Boolean(data.site) && (
@@ -946,6 +946,23 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div>
               {getConditionsSummary(conditions)}
             </div>
+          </div>
+        )}
+        
+        {/* Render GigaSMART validation errors */}
+        {Boolean(data.hasGigaSmartError) && Boolean(data.gigaSmartErrorMsg) && (
+          <div style={{
+            marginTop: '8px', 
+            padding: '4px',
+            background: 'rgba(244,67,54,0.1)',
+            border: '1px solid #f44336',
+            borderRadius: '4px',
+            color: '#f44336',
+            fontSize: '9px',
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}>
+            ⚠️ {String(data.gigaSmartErrorMsg)}
           </div>
         )}
         
