@@ -886,18 +886,11 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
             : 'Built-in 1G Copper';
           
           let availableOptics = SUPPORTED_TAP_OPTICS;
-          if (tapModel.includes('G-TAP A-SF2') || tapModel.includes('ASF21')) {
-            const allowed = ['SFP-505T', 'SFP-501T', 'SFP-502T', 'SFP-503T', 'SFP-501', 'SFP-502', 'SFP-503', 'SFP-531', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-531T', 'SFP-532T', 'SFP-533T', 'SFP-534T', 'SFP-532C', 'SFP-535'];
-            availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
-          } else if (tapModel.includes('G-TAP A-SF')) {
-            const allowed = ['SFP-501T', 'SFP-502T', 'SFP-503T', 'SFP-532T', 'SFP-533T', 'SFP-534T', 'SFP-501', 'SFP-502', 'SFP-503', 'SFP-532', 'SFP-533', 'SFP-534', 'SFP-535'];
-            availableOptics = SUPPORTED_TAP_OPTICS.filter(o => allowed.some(a => o.value.startsWith(a + ' ')));
-          }
 
           const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: node.data.tappedLinksCount ?? 1, 
-              optic: isBuiltInOptics ? builtInOpticLabel : (node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'))
+              optic: isBuiltInOptics ? builtInOpticLabel : (node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR'))
             }
           ];
 
@@ -905,7 +898,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const remainingLinks = maxLinks - currentAllocatedCount;
 
           // Set default addOptic value if empty
-          const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)');
+          const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR');
 
           // Extract speed from an optic label (e.g. '10G', '1G', '100M')
           const getOpticSpeed = (opticVal: string): string => {

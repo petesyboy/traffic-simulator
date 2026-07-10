@@ -16,8 +16,8 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
   const isSMTap = tapFiberMode === 'Singlemode';
   const isM506T = String(node.data?.model || '').includes('TAP-M506T') || String(node.data?.sku || '').includes('TAP-M506T');
   const selectedOpticVal = isM506T
-    ? 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)'
-    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)'));
+    ? '10G-SFP-SR'
+    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR'));
   const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
   const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
 

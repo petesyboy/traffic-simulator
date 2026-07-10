@@ -153,37 +153,14 @@ export interface TapOpticOption {
 }
 
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
-  { value: 'SFP-501T (1G Copper SFP T)', label: 'SFP-501T — 1G Copper (SFP) (TAA)', isSM: false, isCopper: true },
-  { value: 'SFP-505T (100M FX)', label: 'SFP-505T — 100M FX Multimode (SFP) (TAA)', isSM: false },
+  { value: '1G-SFP-SX', label: '1Gb SFP SX (850nm) — Multimode LC (200-550m)', isSM: false },
+  { value: '1G-SFP-LX', label: '1Gb SFP LX (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: '1G-SFP-ZX', label: '1Gb SFP ZX (1550nm) — Singlemode LC (40km) [Special Order]', isSM: true },
+  { value: '1G-SFP-CU', label: '1Gb SFP Copper (CAT-5) — RJ45 (100m)', isSM: false, isCopper: true },
   
-  { value: 'SFP-501 (1G Copper SFP)', label: 'SFP-501 — 1G Copper (SFP)', isSM: false, isCopper: true },
-  
-  { value: 'SFP-502T (1G SFP SX T)', label: 'SFP-502T — 1G SX Multimode (SFP) (TAA)', isSM: false },
-  { value: 'SFP-502 (1G SFP SX)', label: 'SFP-502 — 1G SX Multimode (SFP)', isSM: false },
-  
-  { value: 'SFP-503T (1G SFP LX T)', label: 'SFP-503T — 1G LX Singlemode (SFP) (TAA)', isSM: true },
-  { value: 'SFP-503 (1G SFP LX)', label: 'SFP-503 — 1G LX Singlemode (SFP)', isSM: true },
-  
-  { value: 'SFP-531T (10G Copper SFP+ T)', label: 'SFP-531T — 10G Copper (SFP+) (TAA)', isSM: false, isCopper: true },
-  { value: 'SFP-531 (10G Copper SFP+)', label: 'SFP-531 — 10G Copper (SFP+)', isSM: false, isCopper: true },
-  
-  { value: 'SFP-532T (10G SFP+ SR T)', label: 'SFP-532T — 10G SR Multimode (SFP+) (TAA)', isSM: false },
-  { value: 'SFP-532 (10G SFP+ SR)', label: 'SFP-532 — 10G SR Multimode (SFP+)', isSM: false },
-  
-  { value: 'SFP-533T (10G SFP+ LR T)', label: 'SFP-533T — 10G LR Singlemode (SFP+) (TAA)', isSM: true },
-  { value: 'SFP-533 (10G SFP+ LR)', label: 'SFP-533 — 10G LR Singlemode (SFP+)', isSM: true },
-  
-  { value: 'SFP-534T (10G SFP+ ER T)', label: 'SFP-534T — 10G ER Singlemode (SFP+) (TAA)', isSM: true },
-  { value: 'SFP-534 (10G SFP+ ER)', label: 'SFP-534 — 10G ER Singlemode (SFP+)', isSM: true },
-  
-  { value: 'SFP-535 (10G SFP+ LRM)', label: 'SFP-535 — 10G LRM Multimode (SFP+)', isSM: false },
-  { value: 'SFP-532C (10G SFP+ SR C)', label: 'SFP-532C — 10G SR Multimode C (SFP+)', isSM: false },
-
-  { value: 'SFP-552 (25G SFP28 SR)', label: 'SFP-552 — 25G SR Multimode (SFP28)', isSM: false },
-  { value: 'SFP-553T (25G SFP28 LR)', label: 'SFP-553T — 25G LR Singlemode (SFP28) (TAA)', isSM: true },
-  { value: 'QSF-502 (40G QSFP+ SR4)', label: 'QSF-502 — 40G SR4 Multimode (QSFP+)', isSM: false },
-  { value: 'QSF-503T (40G QSFP+ LR4)', label: 'QSF-503T — 40G LR4 Singlemode (QSFP+) (TAA)', isSM: true },
-  { value: 'Q28-502T (100G QSFP28 SR4)', label: 'Q28-502T — 100G SR4 Multimode (QSFP28) (TAA)', isSM: false },
-  { value: 'Q28-503 (100G QSFP28 LR4)', label: 'Q28-503 — 100G LR4 Singlemode (QSFP28)', isSM: true },
-  { value: 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)', label: 'QSB-523T — 40/100G BiDi Multimode (QSFP28) (TAA)', isSM: false }
+  { value: '10G-SFP-SR', label: '10Gb SFP+ SR (850nm) — Multimode LC (300m)', isSM: false },
+  { value: '10G-SFP-LR', label: '10Gb SFP+ LR (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: '10G-SFP-DA', label: '10Gb SFP+ Direct Attach Copper (1-5m)', isSM: false, isCopper: true },
+  { value: '10G-SFP-CU6', label: '10Gb SFP+ Copper (CAT-6a) — RJ45 (100m)', isSM: false, isCopper: true }
 ];
+
