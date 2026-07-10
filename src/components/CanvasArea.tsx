@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import { isActionSupportedOnNode } from '../constants/gigaSmartRules';
 import dashboardImg from '../assets/dashboard-mock.webp';
 
 /**
@@ -495,14 +496,7 @@ const CanvasArea: React.FC = () => {
           }
           return;
         }
-      }
 
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      if (advancedMode && type === NODE_TYPES.GIGASMART) {
         // Find the closest HC hardware node that the mouse was dropped on.
         // hw nodes are usually quite large, so we check a wide bounding box.
         const targetNode = nodes.find(n => {
@@ -540,25 +534,21 @@ const CanvasArea: React.FC = () => {
           const chassisModel = String(targetNode.data?.model || '');
           const installedModules = (targetNode.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
           
-          import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode }) => {
-            if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) {
-              alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`);
-              return;
-            }
-            
-            const newApp = {
-               id: `gs-${Date.now()}`,
-               label,
-               actionType,
-               dedupRate: 20,
-               metadataFormat: 'CEF'
-            };
-            
-            const apps = targetNode.data.gigaSmartApps || [];
-            updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
-          }).catch(err => {
-            console.error('Failed to load gigaSmartRules', err);
-          });
+          if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) {
+            alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`);
+            return;
+          }
+          
+          const newApp = {
+             id: `gs-${Date.now()}`,
+             label,
+             actionType,
+             dedupRate: 20,
+             metadataFormat: 'CEF'
+          };
+          
+          const apps = targetNode.data.gigaSmartApps || [];
+          updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
           
           return;
         } else {
