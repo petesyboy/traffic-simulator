@@ -121,7 +121,7 @@ const SimulationEngine: React.FC = () => {
               useStore.getState().updateNodeData(node.id, { hasGigaSmartError: false, gigaSmartErrorMsg: '' });
             }
           } else {
-            import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode }) => {
+            import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode, areActionsCompatible }) => {
               for (const app of updatedApps) {
                 if (!isActionSupportedOnNode(app.actionType, chassisModel, installedModules)) {
                   hasGigaSmartError = true;
@@ -129,6 +129,21 @@ const SimulationEngine: React.FC = () => {
                   break;
                 }
               }
+              
+              if (!hasGigaSmartError && updatedApps.length >= 2) {
+                for (let i = 0; i < updatedApps.length; i++) {
+                  for (let j = i + 1; j < updatedApps.length; j++) {
+                    const comp = areActionsCompatible(updatedApps[i].actionType, updatedApps[j].actionType);
+                    if (!comp.compatible) {
+                      hasGigaSmartError = true;
+                      gigaSmartErrorMsg = comp.reason || 'Incompatible GigaSMART operations';
+                      break;
+                    }
+                  }
+                  if (hasGigaSmartError) break;
+                }
+              }
+
               if (node.data.hasGigaSmartError !== hasGigaSmartError || node.data.gigaSmartErrorMsg !== gigaSmartErrorMsg) {
                 useStore.getState().updateNodeData(node.id, { hasGigaSmartError, gigaSmartErrorMsg });
               }

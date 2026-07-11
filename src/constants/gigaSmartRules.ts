@@ -208,3 +208,199 @@ export function isActionSupportedOnNode(actionType: string, chassisModel: string
   // Return true if AT LEAST ONE installed engine supports it
   return engines.some(engine => rule.supportedOn[engine]);
 }
+
+/**
+ * Maps a given GigaSMART action type to its canonical matrix row/column name.
+ */
+export function getCanonicalGsopName(actionType: string): string | null {
+  switch (actionType) {
+    case 'Masking':
+      return 'Masking';
+    case 'Source ID':
+      return 'Source Port Labelling';
+    case 'Deduplication':
+      return 'De-Dup';
+    case 'Load Balancing (Stateless)':
+    case 'Load Balancing (Stateful)':
+      return 'Load Balance';
+    case 'Adaptive Packet Filtering':
+      return 'APF';
+    case 'Application Session Filtering':
+      return 'A SF';
+    case 'Application Filtering Intelligence':
+      return 'AFI (ASF)';
+    case 'Application Metadata Intelligence':
+      return 'AMI';
+    case 'IP FlowVUE':
+      return 'FlowVUE';
+    case 'GTP Flow Filtering':
+      return 'GTP Flow Filter';
+    case 'GTP Whitelisting':
+      return 'GTP Whitelist';
+    case 'GTP Flow Sampling':
+      return 'GTP Flow Sampling';
+    case 'Header Stripping':
+      return 'Strip Headers';
+    case 'Header Addition':
+      return 'Add Headers';
+    case 'Header/Trailer Remove':
+      return 'Remove H/T';
+    case 'NetFlow Generation (App)':
+      return 'NetFlow 1st level';
+    case 'NetFlow Generation (Traffic)':
+      return 'NetFlow 2nd level';
+    case 'Packet Slicing':
+      return 'Slicing';
+    case 'Advanced Flow Slicing':
+      return 'Advanced Flow Slicing';
+    case 'SSL Decrypt':
+      return 'SSL Decrypt';
+    case 'SSL Decrypt (Inline)':
+      return 'iSSL';
+    case 'L2GRE Tunnel Encapsulation':
+    case 'VXLAN Tunnel Encapsulation':
+      return 'Tunnel Encap';
+    case 'L2GRE Tunnel Decapsulation':
+    case 'VXLAN Tunnel Decapsulation':
+    case 'ERSPAN Tunnel Decapsulation':
+    case 'GRE-In-UDP Tunnel Decapsulation':
+      return 'Tunnel Decap';
+    default:
+      return null;
+  }
+}
+
+// Maps each canonical GSOP name to a list of other canonical names it is compatible with
+export const GSOP_COMPATIBILITY: Record<string, string[]> = {
+  'Masking': [
+    'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 'A SF', 'AFI (ASF)', 
+    'FlowVUE', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'Source Port Labelling': [
+    'Masking', 'De-Dup', 'Load Balance', 'APF', 'A SF', 'FlowVUE', 
+    'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'De-Dup': [
+    'Masking', 'Source Port Labelling', 'Load Balance', 'APF', 'A SF', 'AFI (ASF)', 
+    'AMI', 'FlowVUE', 'Strip Headers', 'Add Headers', 'Remove H/T', 'NetFlow 1st level', 
+    'NetFlow 2nd level', 'Slicing', 'Advanced Flow Slicing', 'SSL Decrypt', 
+    'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'Load Balance': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'APF', 'A SF', 'AFI (ASF)', 
+    'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 
+    'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 'Advanced Flow Slicing', 
+    'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'APF': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'A SF', 
+    'FlowVUE', 'Strip Headers', 'Add Headers', 'Slicing', 'Advanced Flow Slicing', 
+    'Tunnel Encap'
+  ],
+  'A SF': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'AMI', 'FlowVUE', 'Strip Headers', 'Add Headers', 'NetFlow 2nd level', 
+    'Slicing', 'Advanced Flow Slicing', 'Tunnel Encap'
+  ],
+  'AFI (ASF)': [
+    'Masking', 'De-Dup', 'Load Balance', 'AMI', 'FlowVUE', 'Strip Headers', 
+    'Add Headers', 'NetFlow 2nd level', 'Slicing', 'Advanced Flow Slicing', 
+    'Tunnel Encap'
+  ],
+  'AMI': [
+    'De-Dup', 'A SF', 'AFI (ASF)'
+  ],
+  'FlowVUE': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing'
+  ],
+  'GTP Flow Filter': [
+    'Load Balance', 'GTP Whitelist', 'Slicing'
+  ],
+  'GTP Whitelist': [
+    'Load Balance', 'GTP Flow Filter', 'Slicing'
+  ],
+  'GTP Flow Sampling': [
+    'Load Balance', 'Slicing'
+  ],
+  'Strip Headers': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'AFI (ASF)', 'FlowVUE', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'Add Headers': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'AFI (ASF)', 'FlowVUE', 'Strip Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'Remove H/T': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'FlowVUE', 
+    'Strip Headers', 'Add Headers', 'Slicing', 'Advanced Flow Slicing', 
+    'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'NetFlow 1st level': [
+    'De-Dup'
+  ],
+  'NetFlow 2nd level': [
+    'De-Dup', 'A SF', 'AFI (ASF)'
+  ],
+  'Slicing': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'AFI (ASF)', 'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 
+    'GTP Flow Sampling', 'Strip Headers', 'Add Headers', 'Remove H/T', 
+    'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'Advanced Flow Slicing': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'AFI (ASF)', 'Strip Headers', 'Add Headers', 'Remove H/T', 
+    'Slicing', 'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'SSL Decrypt': [
+    'De-Dup'
+  ],
+  'iSSL': [],
+  'ICAP': [],
+  'Tunnel Encap': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
+    'A SF', 'AFI (ASF)', 'Strip Headers', 'Add Headers', 'Remove H/T', 
+    'Slicing', 'Advanced Flow Slicing'
+  ],
+  'Tunnel Decap': [
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 
+    'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing'
+  ]
+};
+
+/**
+ * Validates if two GigaSMART action types can be combined together.
+ */
+export function areActionsCompatible(actionA: string, actionB: string): { compatible: boolean; reason?: string } {
+  if (actionA === actionB) {
+    return { compatible: true };
+  }
+
+  const nameA = getCanonicalGsopName(actionA);
+  const nameB = getCanonicalGsopName(actionB);
+
+  // If one of the actions is not in our combination matrix, we assume they are compatible
+  if (!nameA || !nameB) {
+    return { compatible: true };
+  }
+
+  const listA = GSOP_COMPATIBILITY[nameA] || [];
+  const listB = GSOP_COMPATIBILITY[nameB] || [];
+
+  const isCompatible = listA.includes(nameB) || listB.includes(nameA);
+
+  if (!isCompatible) {
+    return {
+      compatible: false,
+      reason: `GigaSMART operation '${nameA}' cannot be combined with '${nameB}'.`
+    };
+  }
+
+  return { compatible: true };
+}

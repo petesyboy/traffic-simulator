@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
-import { isActionSupportedOnNode } from '../constants/gigaSmartRules';
+import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import dashboardImg from '../assets/dashboard-mock.webp';
 
 /**
@@ -544,6 +544,20 @@ const CanvasArea: React.FC = () => {
             return;
           }
           
+          const apps = targetNode.data.gigaSmartApps || [];
+
+          // Check for combination compatibility
+          const incompatibleApp = apps.find((existingApp: any) => {
+            const comp = areActionsCompatible(actionType, existingApp.actionType);
+            return !comp.compatible;
+          });
+
+          if (incompatibleApp) {
+            const comp = areActionsCompatible(actionType, incompatibleApp.actionType);
+            alert(`🚫 COMBINATION REFUSED: ${comp.reason || 'Incompatible GigaSMART operations.'}`);
+            return;
+          }
+          
           const newApp = {
              id: `gs-${Date.now()}`,
              label,
@@ -551,8 +565,6 @@ const CanvasArea: React.FC = () => {
              dedupRate: 20,
              metadataFormat: 'CEF'
           };
-          
-          const apps = targetNode.data.gigaSmartApps || [];
           updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
           
           return;

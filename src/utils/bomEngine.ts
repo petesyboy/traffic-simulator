@@ -5,6 +5,7 @@ import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveNodeSkus } from './skuResolver';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import opticRules from '../constants/opticRules.json';
+import { areActionsCompatible } from '../constants/gigaSmartRules';
 
 const skus: Record<string, string> = skusData as Record<string, string>;
 
@@ -698,7 +699,7 @@ function getBoardCages(boardName: string, isPlus: boolean, model: string): { sfp
 }
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -833,6 +834,24 @@ export function validateConfiguration(
         nodeLabel: String(chassis.data?.model || 'Chassis'),
         message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") has exceeded its physical QSFP cage capacity. Allowed: ${totalQsfpCages}, Installed: ${installedQsfp}.`,
       });
+    }
+
+    // Validate GigaSMART combinations on this chassis
+    const apps = (chassis.data?.gigaSmartApps as any[]) || [];
+    if (apps.length >= 2) {
+      for (let i = 0; i < apps.length; i++) {
+        for (let j = i + 1; j < apps.length; j++) {
+          const comp = areActionsCompatible(apps[i].actionType, apps[j].actionType);
+          if (!comp.compatible) {
+            errors.push({
+              type: 'gigasmart_combination_unsupported',
+              nodeId: chassis.id,
+              nodeLabel: String(chassis.data?.model || 'Chassis'),
+              message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") GigaSMART configuration error: ${comp.reason || ''}`,
+            });
+          }
+        }
+      }
     }
 
     // Calculate TAP link requirements
