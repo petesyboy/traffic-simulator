@@ -153,26 +153,39 @@ export interface TapOpticOption {
 }
 
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
+  // --- 1G Optics ---
   { value: '1G-SFP-SX', label: '1Gb SFP SX (850nm) — Multimode LC (200-550m)', isSM: false },
   { value: '1G-SFP-LX', label: '1Gb SFP LX (1310nm) — Singlemode LC (10km)', isSM: true },
   { value: '1G-SFP-ZX', label: '1Gb SFP ZX (1550nm) — Singlemode LC (40km) [Special Order]', isSM: true },
   { value: '1G-SFP-CU', label: '1Gb SFP Copper (CAT-5) — RJ45 (100m)', isSM: false, isCopper: true },
   
+  // --- 10G Optics ---
   { value: '10G-SFP-SR', label: '10Gb SFP+ SR (850nm) — Multimode LC (300m)', isSM: false },
   { value: '10G-SFP-LR', label: '10Gb SFP+ LR (1310nm) — Singlemode LC (10km)', isSM: true },
   { value: '10G-SFP-DA', label: '10Gb SFP+ Direct Attach Copper (1-5m)', isSM: false, isCopper: true },
   { value: '10G-SFP-CU6', label: '10Gb SFP+ Copper (CAT-6a) — RJ45 (100m)', isSM: false, isCopper: true },
 
+  // --- 25G Optics ---
   { value: '25G-SFP28-SR', label: '25Gb SFP28 SR (850nm) — Multimode LC (100m)', isSM: false },
   { value: '25G-SFP28-LR', label: '25Gb SFP28 LR (1310nm) — Singlemode LC (10km)', isSM: true },
 
+  // --- 40G Optics ---
   { value: '40G-QSFP-SR4', label: '40Gb QSFP+ SR4 (850nm) — Multimode MPO (100m)', isSM: false },
+  { value: '40G-QSFP-BD', label: '40Gb QSFP+ BiDi (850/900nm) — Multimode LC (100-150m)', isSM: false },
+  { value: '40G-QSFP-SWDM4', label: '40Gb QSFP+ SWDM4 (850-940nm) — Multimode LC (240-440m)', isSM: false },
   { value: '40G-QSFP-LR4', label: '40Gb QSFP+ LR4 (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: '40G-QSFP-PSM4', label: '40Gb QSFP+ PSM4 (1310nm) — Singlemode MPO (1.4km)', isSM: true },
 
+  // --- 100G Optics ---
   { value: '100G-QSFP28-SR4', label: '100Gb QSFP28 SR4 (850nm) — Multimode MPO (100m)', isSM: false },
+  { value: '100G-QSFP28-BD', label: '100Gb QSFP28 BiDi (850/900nm) — Multimode LC (70-150m)', isSM: false },
+  { value: '100G-QSFP28-SWDM4', label: '100Gb QSFP28 SWDM4 (850-940nm) — Multimode LC (75-150m)', isSM: false },
   { value: '100G-QSFP28-LR4', label: '100Gb QSFP28 LR4 (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: '100G-QSFP28-PSM4', label: '100Gb QSFP28 PSM4 (1310nm) — Singlemode MPO (500m-2km)', isSM: true },
 
+  // --- 400G Optics ---
   { value: '400G-QSFP-DD-SR8', label: '400Gb QSFP-DD SR8 (850nm) — Multimode MPO', isSM: false },
-  { value: '400G-QSFP-DD-DR4', label: '400Gb QSFP-DD DR4 (1310nm) — Singlemode MPO/LC', isSM: true }
+  { value: '400G-QSFP-DD-DR4', label: '400Gb QSFP-DD DR4 (1310nm) — Singlemode MPO/LC', isSM: true },
+  { value: '400G-QSFP-DD-FR4', label: '400Gb QSFP-DD FR4 (1310nm) — Singlemode LC', isSM: true }
 ];
 
