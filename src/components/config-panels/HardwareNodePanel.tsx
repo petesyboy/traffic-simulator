@@ -890,7 +890,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const allocations = (node.data.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: node.data.tappedLinksCount ?? 1, 
-              optic: isBuiltInOptics ? builtInOpticLabel : (node.data.tappedLinkOptic || (availableOptics[0]?.value) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR'))
+              optic: isBuiltInOptics ? builtInOpticLabel : (node.data.tappedLinkOptic ? node.data.tappedLinkOptic.split(' ')[0] : (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532'))
             }
           ];
 
@@ -898,12 +898,21 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           const remainingLinks = maxLinks - currentAllocatedCount;
 
           // Set default addOptic value if empty
-          const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR');
+          const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532');
 
-          // Extract speed from an optic label (e.g. '10G', '1G', '100M')
+          // Extract speed from an optic label or SKU
           const getOpticSpeed = (opticVal: string): string => {
             const m = opticVal.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
-            return m ? m[1].toUpperCase() : '';
+            if (m) return m[1].toUpperCase();
+
+            const upper = opticVal.toUpperCase();
+            if (upper.startsWith('QDD-')) return '400G';
+            if (upper.startsWith('Q28-') || upper.startsWith('QSB-51') || upper.startsWith('QSB-52') || upper.startsWith('QSB-53')) return '100G';
+            if (upper.startsWith('QSF-') || upper.startsWith('QSB-50')) return '40G';
+            if (upper.startsWith('SFP-55')) return '25G';
+            if (upper.startsWith('SFP-53')) return '10G';
+            if (upper.startsWith('SFP-50')) return '1G';
+            return '';
           };
 
           // Filter tool optics to only those matching the selected network optic speed
@@ -919,7 +928,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           // Check if any allocation has a mismatch
           const mismatchedAllocations = allocations.filter(a => {
             if (isM506T) return false;
-            const matched = availableOptics.find(o => o.value === a.optic);
+            const cleanOptic = a.optic ? a.optic.split(' ')[0] : '';
+            const matched = availableOptics.find(o => o.value === cleanOptic);
             return matched ? matched.isSM !== isSMTap : false;
           });
 
@@ -1019,20 +1029,23 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                 <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', fontWeight: 600 }}>Active link allocations ({currentAllocatedCount}/{maxLinks} links)</span>
                 {allocations.map((alloc, idx) => {
-                  const matched = availableOptics.find(o => o.value === alloc.optic);
+                  const cleanOptic = alloc.optic ? alloc.optic.split(' ')[0] : '';
+                  const matched = availableOptics.find(o => o.value === cleanOptic);
                   const hasAllocMismatch = !isM506T && matched ? matched.isSM !== isSMTap : false;
+                  const cleanToolOptic = alloc.toolOptic ? alloc.toolOptic.split(' ')[0] : '';
+                  const toolMatched = availableOptics.find(o => o.value === cleanToolOptic);
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#111', padding: '6px 8px', borderRadius: '4px', border: '1px solid #333', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ fontSize: '11px', color: '#fff', fontWeight: 'bold' }}>
                           {alloc.qty} link{alloc.qty > 1 ? 's' : ''}{!isBuiltInOptics && (<> &mdash; <span style={{ color: '#00e5ff' }}>Net: {matched?.label || alloc.optic}</span>
                           {alloc.toolOptic && alloc.toolOptic !== alloc.optic && (
-                            <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
+                            <span> | <span style={{ color: '#ffb74d' }}>Tool: {toolMatched?.label || alloc.toolOptic}</span></span>
                           )}</>)}
                           {isBuiltInOptics && (
                             <span style={{ color: '#888' }}> &mdash; {builtInOpticLabel}
                               {alloc.toolOptic && alloc.toolOptic !== builtInOpticLabel && (
-                                <span> | <span style={{ color: '#ffb74d' }}>Tool: {availableOptics.find(o => o.value === alloc.toolOptic)?.label || alloc.toolOptic}</span></span>
+                                <span> | <span style={{ color: '#ffb74d' }}>Tool: {toolMatched?.label || alloc.toolOptic}</span></span>
                               )}
                             </span>
                           )}

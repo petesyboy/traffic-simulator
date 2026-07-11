@@ -1035,7 +1035,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           {(() => {
             if (isTap) {
               const allocations = (data.tappedLinkAllocations as { qty: number, optic: string }[]) || [
-                { qty: data.tappedLinksCount ?? 1, optic: (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)') }
+                { qty: data.tappedLinksCount ?? 1, optic: (data.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533' : 'SFP-532') }
               ];
               const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${a.optic} to mirror traffic.`);
               return descLines.join('\n');
@@ -1046,7 +1046,7 @@ export const HardwareNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 const src = nodes.find(n => n.id === srcId);
                 if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
                   const allocations = (src.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
-                    { qty: src.data?.tappedLinksCount ?? 1, optic: (src.data?.tappedLinkOptic as string) || 'SFP-532 (10G SFP+ SR)' }
+                    { qty: src.data?.tappedLinksCount ?? 1, optic: (src.data?.tappedLinkOptic as string) || 'SFP-532' }
                   ];
                   return allocations.map(a => ({
                     label: src.data?.label || 'TAP',

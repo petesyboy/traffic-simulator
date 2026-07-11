@@ -16,9 +16,10 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
   const isSMTap = tapFiberMode === 'Singlemode';
   const isM506T = String(node.data?.model || '').includes('TAP-M506T') || String(node.data?.sku || '').includes('TAP-M506T');
   const selectedOpticVal = isM506T
-    ? '10G-SFP-SR'
-    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR'));
-  const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === selectedOpticVal);
+    ? 'SFP-532'
+    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533' : 'SFP-532'));
+  const cleanOpticVal = selectedOpticVal ? selectedOpticVal.split(' ')[0] : '';
+  const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === cleanOpticVal);
   const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
 
   return (
@@ -156,7 +157,7 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
 
           <FormGroup label="Target Optic">
             <select
-              value={selectedOpticVal}
+              value={cleanOpticVal}
               onChange={(e) => onGenericChange('tappedLinkOptic', e.target.value)}
               disabled={isM506T}
               style={{ opacity: isM506T ? 0.7 : 1 }}

@@ -72,14 +72,14 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
           const allocations = (sourceNode.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
             { 
               qty: (sourceNode.data?.tappedLinksCount as number) ?? 1, 
-              optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+              optic: (sourceNode.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533' : 'SFP-532')
             }
           ];
 
           for (const alloc of allocations) {
             let selectedOpticVal = alloc.toolOptic || alloc.optic;
             if (String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T')) {
-              selectedOpticVal = 'QSB-523T (40/100G QSFP28 Dual-Rate BiDi)';
+              selectedOpticVal = 'QSB-523T';
             }
             const requiredQty = alloc.qty * 2;
             tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + requiredQty;
