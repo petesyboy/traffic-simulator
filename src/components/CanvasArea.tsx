@@ -164,7 +164,8 @@ const CanvasArea: React.FC = () => {
                (position.x >= n.position.x && position.x <= n.position.x + w && position.y >= n.position.y && position.y <= n.position.y + h);
       });
       if (targetNode && String(targetNode.data?.model || '').includes('HC')) {
-        const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || ''), installedModules = (targetNode.data?.installedModules as any[])?.map(m => m.sku) || [];
+        const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || '');
+        const installedModules = Object.values((targetNode.data?.installedBoards as Record<string, string>) || {});
         if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) { alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`); return; }
         const apps = targetNode.data.gigaSmartApps || [], incompatibleApp = apps.find((a: any) => !areActionsCompatible(actionType, a.actionType).compatible);
         if (incompatibleApp) { alert(`🚫 COMBINATION REFUSED: ${areActionsCompatible(actionType, incompatibleApp.actionType).reason}`); return; }

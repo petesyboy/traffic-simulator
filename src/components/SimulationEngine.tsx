@@ -114,7 +114,7 @@ const SimulationEngine: React.FC = () => {
           let hasGigaSmartError = false;
           let gigaSmartErrorMsg = '';
           const chassisModel = String(node.data?.model || '');
-          const installedModules = (node.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
+          const installedModules = Object.values((node.data?.installedBoards as Record<string, string>) || {});
 
           if (updatedApps.length === 0) {
             if (node.data.hasGigaSmartError || node.data.gigaSmartErrorMsg) {

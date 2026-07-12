@@ -5,6 +5,7 @@ import { resolveNodeSkus } from '../../utils/skuResolver';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
 import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
+import { getAvailableEngines } from '../../constants/gigaSmartRules';
 
 interface HardwareNodePanelProps {
   node: CustomNode;
@@ -417,6 +418,19 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const breakoutSfpExpansion = usedBreakouts * 4;
   const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
   const remainingSfpPorts = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
+
+  // ─── Calculate GigaSMART Engines ───────────────────────────────────────────
+  const activeEngines = getAvailableEngines(model || '', Object.values(installedBoards));
+  
+  const ENGINE_NAMES: Record<string, string> = {
+    'HC1_GEN2_ONBOARD': 'On-board Gen2 Engine',
+    'HC1_GEN3_SMT_HC1_S': 'Gen3 Engine (SMT-HC1-S Slot Module)',
+    'HC3_GEN2_C05': 'Gen2 Engine (SMT-HC3-C05)',
+    'HC3_GEN3_C08': 'Gen3 Engine (SMT-HC3-C08)',
+    'HC1PLUS_REAR_GEN3_SMT_HC1A_R': 'On-board Rear Gen3 Engine',
+    'HC1PLUS_FRONT_GEN3_SMT_HC1_S': 'Front Gen3 Engine (SMT-HC1-S Slot Module)',
+    'HCT_GEN3_SMT_HC1_S': 'Gen3 Engine (SMT-HC1-S Slot Module)',
+  };
 
   const handleBoardSelect = (slotIndex: number, boardName: string) => {
     const newBoards = { ...installedBoards };
@@ -1455,6 +1469,34 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                   <strong style={{ color: (4 - usedBuiltInCopper) === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
                     {usedBuiltInCopper} / 4 Used ({4 - usedBuiltInCopper} Free)
                   </strong>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!model?.includes('TAP') && (model?.includes('HC') || model?.includes('HCT')) && (
+          <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>GigaSMART Engine Inventory</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#111', padding: '10px', borderRadius: '4px', border: '1px solid #333', fontSize: '11px', color: '#ccc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#aaa' }}>Total Engines Available:</span>
+                <strong style={{ color: activeEngines.length === 0 ? '#ef5350' : '#00e5ff', fontFamily: 'monospace' }}>
+                  {activeEngines.length}
+                </strong>
+              </div>
+              {activeEngines.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #222', paddingTop: '6px', marginTop: '4px' }}>
+                  {activeEngines.map(engine => (
+                    <div key={engine} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px' }}>
+                      <span style={{ color: '#ffb74d' }}>⚡</span>
+                      <span>{ENGINE_NAMES[engine] || engine}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', marginTop: '4px' }}>
+                  No active GigaSMART engines. Install an SMT module to enable GigaSMART.
                 </div>
               )}
             </div>
