@@ -80,9 +80,10 @@ export function validateOptic(
     return { valid: false, message: `No compatibility data found for model: ${model}` };
   }
 
-  const targetBoard = boards.find(b => b.board === board);
+  const cleanBoard = board.split(' (Slot')[0];
+  const targetBoard = boards.find(b => b.board === cleanBoard);
   if (!targetBoard) {
-    return { valid: false, message: `Board/Module "${board}" is not recognized for model ${model}.` };
+    return { valid: false, message: `Board/Module "${cleanBoard}" is not recognized for model ${model}.` };
   }
   
   if (!targetBoard.supportedOptics.includes(optic)) {

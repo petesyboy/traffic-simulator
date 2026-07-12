@@ -146,11 +146,28 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   const supportedBoards = getSupportedBoards(model || '', node.data?.portCapacity as string, installedOptics);
   
-  const availableOpticBoards = supportedBoards.filter(b => 
-    b.board.toLowerCase().includes('main') || 
-    b.board.toLowerCase().includes('base') || 
-    Object.values(installedBoards).includes(b.board)
-  );
+  const availableOpticBoards: { board: string; supportedOptics: string[] }[] = [];
+  
+  // 1. Add Main / Base board if supported
+  const mainBoardObj = supportedBoards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
+  if (mainBoardObj) {
+    availableOpticBoards.push({
+      board: mainBoardObj.board,
+      supportedOptics: mainBoardObj.supportedOptics
+    });
+  }
+
+  // 2. Add each slot board instance
+  Object.entries(installedBoards).forEach(([slotIdx, boardName]) => {
+    if (!boardName) return;
+    const boardTemplate = supportedBoards.find(b => b.board === boardName);
+    if (boardTemplate) {
+      availableOpticBoards.push({
+        board: `${boardName} (Slot ${slotIdx})`,
+        supportedOptics: boardTemplate.supportedOptics
+      });
+    }
+  });
 
   const activeOpticBoardObj = availableOpticBoards.length === 1 
     ? availableOpticBoards[0] 
@@ -408,9 +425,16 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     } else {
       delete newBoards[slotIndex];
     }
-    updateNodeData(node.id, { installedBoards: newBoards });
     
-    if (selectedOpticBoard && !Object.values(newBoards).includes(selectedOpticBoard) && !selectedOpticBoard.toLowerCase().includes('main') && !selectedOpticBoard.toLowerCase().includes('base')) {
+    const slotSuffix = `(Slot ${slotIndex})`;
+    const nextOptics = installedOptics.filter(opt => !opt.board.includes(slotSuffix));
+
+    updateNodeData(node.id, { 
+      installedBoards: newBoards,
+      optics: nextOptics
+    });
+    
+    if (selectedOpticBoard && selectedOpticBoard.includes(slotSuffix)) {
       setSelectedOpticBoard('');
       setSelectedOptic('');
       setErrorMsg('');
