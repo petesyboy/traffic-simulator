@@ -351,6 +351,56 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     else if (speed === '1G') used1G += opt.qty;
   });
 
+  // ─── Calculate physical cages and ports ─────────────────────────────────────
+  let totalSfpCages = 0;
+  let totalQsfpCages = 0;
+  let hasBuiltInCopper = false;
+  let usedBuiltInCopper = 0;
+
+  availableOpticBoards.forEach(b => {
+    const cages = getBoardCages(b.board, isPlus);
+    totalSfpCages += cages.sfp;
+    totalQsfpCages += cages.qsfp;
+    
+    const name = b.board.toLowerCase();
+    const modelLower = String(model || '').toLowerCase();
+    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct') && !modelLower.includes('tap')) {
+      hasBuiltInCopper = true;
+    }
+  });
+
+  let usedSfpOptics = 0;
+  let usedQsfpOptics = 0;
+  let usedBreakouts = 0;
+  
+  installedOptics.forEach(opt => {
+    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
+      usedBreakouts += opt.qty;
+    } else {
+      const speed = getOpticSpeed(opt.optic);
+      const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
+      const isCopper = getOpticFiberType(opt.optic) === 'Copper';
+      
+      if (isQsfp) {
+        usedQsfpOptics += opt.qty;
+      } else {
+        if (hasBuiltInCopper && isCopper && opt.optic.includes('SFP-501')) {
+          const countForBuiltIn = Math.min(opt.qty, 4 - usedBuiltInCopper);
+          usedBuiltInCopper += countForBuiltIn;
+          usedSfpOptics += (opt.qty - countForBuiltIn);
+        } else {
+          usedSfpOptics += opt.qty;
+        }
+      }
+    }
+  });
+
+  const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
+  const remainingQsfpCages = Math.max(0, totalQsfpCages - totalUsedQsfpCages);
+  const breakoutSfpExpansion = usedBreakouts * 4;
+  const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
+  const remainingSfpPorts = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
+
   const handleBoardSelect = (slotIndex: number, boardName: string) => {
     const newBoards = { ...installedBoards };
     if (boardName) {
@@ -1350,6 +1400,39 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               {total25G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>25G</div><div style={{ color: used25G > total25G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used25G}/{total25G}</div></div>}
               {total10G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>10G</div><div style={{ color: used10G > total10G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used10G}/{total10G}</div></div>}
               {total1G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>1G</div><div style={{ color: used1G > total1G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used1G}/{total1G}</div></div>}
+            </div>
+          </div>
+        )}
+
+        {!model?.includes('TAP') && (
+          <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Physical Cages &amp; Ports</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#111', padding: '10px', borderRadius: '4px', border: '1px solid #333', fontSize: '11px', color: '#ccc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#aaa' }}>QSFP Cages (40G/100G/400G):</span>
+                <strong style={{ color: remainingQsfpCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
+                  {totalUsedQsfpCages} / {totalQsfpCages} Used ({remainingQsfpCages} Free)
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#aaa' }}>SFP Cages (1G/10G/25G):</span>
+                <strong style={{ color: remainingSfpPorts === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
+                  {usedSfpOptics} / {totalExpandedSfpPorts} Used ({remainingSfpPorts} Free)
+                </strong>
+              </div>
+              {usedBreakouts > 0 && (
+                <div style={{ color: '#00e5ff', fontSize: '10px', borderTop: '1px solid #222', paddingTop: '4px', marginTop: '2px' }}>
+                  ℹ️ SFP capacity expanded by +{breakoutSfpExpansion} ports from {usedBreakouts} breakout panel{usedBreakouts > 1 ? 's' : ''}.
+                </div>
+              )}
+              {hasBuiltInCopper && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #222', paddingTop: '4px', marginTop: '2px' }}>
+                  <span style={{ color: '#aaa' }}>Built-in 1G RJ45 Ports:</span>
+                  <strong style={{ color: (4 - usedBuiltInCopper) === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
+                    {usedBuiltInCopper} / 4 Used ({4 - usedBuiltInCopper} Free)
+                  </strong>
+                </div>
+              )}
             </div>
           </div>
         )}
