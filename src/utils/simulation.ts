@@ -2,581 +2,26 @@ import { type Edge } from '@xyflow/react';
 import { 
   type TrafficStream, 
   type NodeMetrics, 
-  type MapCondition, 
-  type CustomNode,
-  type FilterNodeData,
-  type MapNodeData,
-  type GigaSmartNodeData,
-  type ToolNodeData
-} from '../store/store';
+  type CustomNode 
+} from '../store/types';
+import { 
+  type TrajectoryStream, 
+  type QueueItem, 
+  type SimulationStepResult, 
+  type NodeProcessor 
+} from './simulation/types';
+import { getHardwareOpticCapacity, isPacketToolConfig, isMetadataToolConfig, isStorageToolConfig } from './simulation/utils';
+import { processToolNode } from './simulation/processors/toolProcessor';
+import { processFilterNode } from './simulation/processors/filterProcessor';
+import { processMapNode } from './simulation/processors/mapProcessor';
+import { processGigaSmartNode } from './simulation/processors/gigaSmartProcessor';
+import { processGigaStreamNode } from './simulation/processors/gigaStreamProcessor';
+import { processHardwareNode } from './simulation/processors/hardwareProcessor';
 
-export interface TrajectoryStream extends TrafficStream {
-  trafficType?: 'packet' | 'metadata';
-  metadataFormat?: 'CEF' | 'JSON';
-  firstEdgeId?: string;
-}
+export { matchesIp, matchesVlan, matchesPort } from './simulation/matching';
+export { evaluateMapConditions } from './simulation/conditions';
 
-const getHardwareOpticCapacity = (node: CustomNode): number => {
-  if (node.type !== 'hardwareNode') return Infinity;
-  const optics = (node.data?.optics as { optic: string, qty: number }[]) || [];
-  if (optics.length === 0) return Infinity;
-  
-  let capacity = 0;
-  for (const opt of optics) {
-    if (!opt.optic) continue;
-    const name = opt.optic.toUpperCase();
-    let speed = 0;
-    if (name.includes('400G') || name.startsWith('QDD-')) speed = 400000;
-    else if (name.includes('100G') || name.startsWith('Q28-')) speed = 100000;
-    else if (name.includes('40G') || name.startsWith('QSF-')) speed = 40000;
-    else if (name.includes('25G') || name.startsWith('SFP-55')) speed = 25000;
-    else if (name.includes('10G') || name.startsWith('SFP-53')) speed = 10000;
-    else if (name.includes('1G') || name.startsWith('SFP-50')) speed = 1000;
-    capacity += speed * opt.qty;
-  }
-  return capacity > 0 ? capacity : Infinity;
-};
-
-const isPacketToolConfig = (configType: string): boolean => {
-  const norm = configType.trim();
-  return norm === 'Packet Tool' || 
-         norm === 'ExtraHop' || 
-         norm === 'Wireshark' || 
-         norm === 'Vectra';
-};
-
-const isMetadataToolConfig = (configType: string): boolean => {
-  const norm = configType.trim();
-  return norm === 'Metadata Tool' || 
-         norm === 'Splunk' || 
-         norm === 'Elastic Search' || 
-         norm === 'Elastic';
-};
-
-const isStorageToolConfig = (configType: string): boolean => {
-  const norm = configType.trim();
-  return norm === 'Storage Tool' || 
-         norm === 'AWS S3 Storage' || 
-         norm === 'S3' ||
-         norm === 'Objects';
-};
-
-// ─── IP matching helpers ──────────────────────────────────────────────────────
-
-/**
- * Convert a dotted-decimal IPv4 string to a 32-bit unsigned integer.
- */
-const ipv4ToInt = (ip: string): number => {
-  const parts = ip.split('.');
-  if (parts.length !== 4) return NaN;
-  let result = 0;
-  for (const part of parts) {
-    const num = parseInt(part, 10);
-    if (isNaN(num) || num < 0 || num > 255) return NaN;
-    result = (result << 8) | num;
-  }
-  return result >>> 0;
-};
-
-
-
-/**
- * CIDR-aware IP subnet matching (IPv4).
- */
-export const matchesIp = (streamIp: string | undefined, filterIp: string | undefined): boolean => {
-  if (!filterIp || !streamIp) return false;
-
-  const cleanFilter = filterIp.trim().toLowerCase();
-  const cleanStream = streamIp.trim().toLowerCase();
-
-  if (!cleanFilter.includes('/')) {
-    return cleanStream === cleanFilter;
-  }
-
-  const [networkStr, prefixStr] = cleanFilter.split('/');
-  const prefixLen = parseInt(prefixStr, 10);
-
-  if (isNaN(prefixLen) || prefixLen < 0 || prefixLen > 32) return false;
-
-  if (networkStr.includes(':')) {
-    const streamBlocks = cleanStream.split(':');
-    const networkBlocks = networkStr.split(':');
-    const numBlocksToMatch = Math.floor(prefixLen / 16);
-    for (let i = 0; i < numBlocksToMatch; i++) {
-      if ((streamBlocks[i] || '0') !== (networkBlocks[i] || '0')) return false;
-    }
-    const remainingBits = prefixLen % 16;
-    if (remainingBits > 0 && streamBlocks[numBlocksToMatch] && networkBlocks[numBlocksToMatch]) {
-      const s = parseInt(streamBlocks[numBlocksToMatch], 16) || 0;
-      const n = parseInt(networkBlocks[numBlocksToMatch], 16) || 0;
-      const mask = (0xFFFF << (16 - remainingBits)) & 0xFFFF;
-      return (s & mask) === (n & mask);
-    }
-    return true;
-  }
-
-  const networkInt = ipv4ToInt(networkStr);
-  const streamInt  = ipv4ToInt(cleanStream.split('/')[0]);
-
-  if (isNaN(networkInt) || isNaN(streamInt)) return false;
-
-  const mask = prefixLen === 0 ? 0 : (~0 << (32 - prefixLen)) >>> 0;
-  return (networkInt & mask) === (streamInt & mask);
-};
-
-/** Match VLAN IDs: filter value is comma-separated, e.g. "100, 200, 300" */
-export const matchesVlan = (streamVlan: string | undefined, filterVlan: string | undefined): boolean => {
-  if (!filterVlan) return false;
-  const allowed = filterVlan.split(',').map((s) => s.trim());
-  return allowed.includes(String(streamVlan || '').trim());
-};
-
-/** Match destination/source ports: filter value is comma-separated, e.g. "80, 443" */
-export const matchesPort = (streamPort: string | undefined, filterPort: string | undefined): boolean => {
-  if (!filterPort) return false;
-  const allowed = filterPort.split(',').map((s) => s.trim());
-  return allowed.includes(String(streamPort || '').trim());
-};
-
-// Evaluate map conditions sequentially with logic rules (AND / OR)
-export const evaluateConditionGroup = (stream: TrafficStream, conditions: MapCondition[]): boolean => {
-  if (conditions.length === 0) return false;
-  
-  const orGroups: MapCondition[][] = [[]];
-  for (const cond of conditions) {
-    if (cond.logic === 'OR') {
-      orGroups.push([cond]);
-    } else {
-      orGroups[orGroups.length - 1].push(cond);
-    }
-  }
-
-  const evaluateSingle = (cond: MapCondition): boolean => {
-    const val = String(cond.value || '').toLowerCase().trim();
-    const field = cond.field;
-    let streamVal = '';
-    if (field === 'vlan') streamVal = stream.vlan;
-    else if (field === 'ipsrc') streamVal = stream.ipSrc;
-    else if (field === 'ipdst') streamVal = stream.ipDst;
-    else if (field === 'portsrc') streamVal = stream.portSrc;
-    else if (field === 'portdst') streamVal = stream.portDst;
-    else if (field === 'protocol') streamVal = stream.protocol;
-    
-    const cleanStreamVal = String(streamVal || '').toLowerCase().trim();
-    
-    if (val === '') return true;
-    if (field === 'ipver') {
-      const isIPv6 = !!(stream.ipSrc?.includes(':') || stream.ipDst?.includes(':'));
-      return (val === 'ipv6') ? isIPv6 : (val === 'ipv4') ? !isIPv6 : false;
-    }
-    if (field === 'vlan') return matchesVlan(cleanStreamVal, val);
-    if (['ipsrc', 'ipdst', 'ip6src', 'ip6dst'].includes(field)) return matchesIp(cleanStreamVal, val);
-    if (['portsrc', 'portdst'].includes(field)) return matchesPort(cleanStreamVal, val);
-    return cleanStreamVal === val;
-  };
-
-  return orGroups.some(andGroup => andGroup.every(cond => evaluateSingle(cond)));
-};
-
-export const evaluateMapConditions = (stream: TrafficStream, conditions: MapCondition[] | undefined): boolean => {
-  if (!conditions || conditions.length === 0) return true;
-  
-  const passConditions = conditions.filter(c => !c.action || c.action === 'pass');
-  const dropConditions = conditions.filter(c => c.action === 'drop');
-  
-  if (dropConditions.length > 0 && evaluateConditionGroup(stream, dropConditions)) {
-    return false;
-  }
-  
-  if (passConditions.length > 0) {
-    return evaluateConditionGroup(stream, passConditions);
-  }
-  
-  return true;
-};
-
-interface QueueItem {
-  nodeId: string;
-  stream: TrajectoryStream;
-  edgePath: string[];
-}
-
-interface NodeProcessingResult {
-  forwardStream: TrajectoryStream | null;
-  dropBandwidth?: number;
-  generatedMetadataStreams?: TrajectoryStream[];
-  handledQueueExternally?: boolean;
-}
-
-const processToolNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics,
-  toolReceivedStreams: Record<string, TrajectoryStream[]>,
-  deliveredStreamIds: Set<string>
-): NodeProcessingResult => {
-  const data = node.data as ToolNodeData;
-  const configType = data.configType || '';
-  const isPacketTool = isPacketToolConfig(configType) || data.expectedType === 'packet';
-  const isMetadataTool = isMetadataToolConfig(configType) || data.expectedType === 'metadata';
-  const isStorageTool = isStorageToolConfig(configType) || data.expectedType === 'objects';
-  const rType = item.stream.trafficType || 'packet';
-  
-  let isValidForTool = true;
-  if (isPacketTool && rType !== 'packet') isValidForTool = false;
-  if (isMetadataTool && rType !== 'metadata') isValidForTool = false;
-  if (isStorageTool && rType !== 'metadata' && rType !== 'packet') isValidForTool = false;
-
-  if (!toolReceivedStreams[node.id]) {
-    toolReceivedStreams[node.id] = [];
-  }
-  
-  if (isValidForTool) {
-    toolReceivedStreams[node.id].push(item.stream);
-    deliveredStreamIds.add(item.stream.id);
-  } else {
-    nodeMetric.rxMbps -= item.stream.bandwidth;
-    nodeMetric.rxPackets -= item.stream.bandwidth * 250;
-  }
-  return { forwardStream: null, handledQueueExternally: true };
-};
-
-const processFilterNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics
-): NodeProcessingResult => {
-  const data = node.data as FilterNodeData;
-  const configType = data.configType;
-  let isMatch = false;
-
-  if (configType === 'VLAN Filter') {
-    isMatch = matchesVlan(item.stream.vlan, data.vlanIds);
-  } else if (configType === 'IP Subnet Filter') {
-    isMatch = matchesIp(item.stream.ipSrc, data.ipSubnet) || 
-              matchesIp(item.stream.ipDst, data.ipSubnet);
-  } else if (configType === 'Port Filter') {
-    isMatch = matchesPort(item.stream.portSrc, data.ports) || 
-              matchesPort(item.stream.portDst, data.ports);
-  }
-
-  if (isMatch) {
-    nodeMetric.txMbps += item.stream.bandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    return { forwardStream: item.stream };
-  } else {
-    const dropBandwidth = item.stream.bandwidth;
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
-    return { forwardStream: null, dropBandwidth };
-  }
-};
-
-const processMapNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics
-): NodeProcessingResult => {
-  const data = node.data as MapNodeData;
-  const isMatch = evaluateMapConditions(item.stream, data.conditions);
-  if (isMatch) {
-    nodeMetric.txMbps += item.stream.bandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    return { forwardStream: item.stream };
-  } else {
-    const dropBandwidth = item.stream.bandwidth;
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
-    return { forwardStream: null, dropBandwidth };
-  }
-};
-
-const processGigaSmartNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics,
-  outboundEdges: Edge[],
-  activeEdgeSet: Set<string>,
-  edgeTraffic: Record<string, number>,
-  queue: QueueItem[]
-): NodeProcessingResult => {
-  const data = node.data as GigaSmartNodeData;
-  const actionType = data.actionType || 'Deduplication';
-  
-  if (actionType === 'SSL Decrypt' && item.stream.isEncrypted) {
-    const decryptionRate = (data.decryptionRate ?? 60) / 100;
-    const originalBandwidth = item.stream.bandwidth;
-    
-    const decryptedBandwidth = originalBandwidth * decryptionRate;
-    const encryptedBandwidth = originalBandwidth * (1 - decryptionRate);
-
-    nodeMetric.txMbps += originalBandwidth;
-    nodeMetric.txPackets += originalBandwidth * 250;
-
-    outboundEdges.forEach((edge) => {
-      activeEdgeSet.add(edge.id);
-      
-      // Decrypted Stream
-      if (decryptedBandwidth > 0) {
-        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + decryptedBandwidth;
-        queue.push({
-          nodeId: edge.target,
-          stream: { 
-            ...item.stream, 
-            id: `${item.stream.id}-dec`,
-            bandwidth: decryptedBandwidth, 
-            isEncrypted: false,
-            firstEdgeId: item.stream.firstEdgeId || edge.id 
-          },
-          edgePath: [...item.edgePath, edge.id],
-        });
-      }
-
-      // Still-Encrypted Stream
-      if (encryptedBandwidth > 0) {
-        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + encryptedBandwidth;
-        queue.push({
-          nodeId: edge.target,
-          stream: { 
-            ...item.stream, 
-            id: `${item.stream.id}-enc-passthrough`,
-            bandwidth: encryptedBandwidth, 
-            isEncrypted: true,
-            firstEdgeId: item.stream.firstEdgeId || edge.id 
-          },
-          edgePath: [...item.edgePath, edge.id],
-        });
-      }
-    });
-
-    return { forwardStream: null, handledQueueExternally: true };
-  }
-
-  // Fallback to existing logic for other actions or non-encrypted streams
-  let forwardStream: TrajectoryStream | null = item.stream;
-  let dropBandwidth = 0;
-  const generatedMetadataStreams: TrajectoryStream[] = [];
-  
-  if (actionType === 'Deduplication' || actionType === 'Dedup') {
-    const dedupRate = data.dedupRate || 20;
-    const dropFraction = dedupRate / 100;
-
-    dropBandwidth = item.stream.bandwidth * dropFraction;
-    const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
-
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.txMbps += validBandwidth;
-    nodeMetric.txPackets += validBandwidth * 250;
-    forwardStream = { ...item.stream, bandwidth: validBandwidth };
-  } 
-  else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
-    const format = data.metadataFormat || 'CEF';
-    const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
-    const ratePercent = data.metadataRate !== undefined ? Number(data.metadataRate) : (defaultScale * 100);
-    const scale = ratePercent / 100;
-    const metadataBandwidth = item.stream.bandwidth * scale;
-
-    dropBandwidth = item.stream.bandwidth * (1 - scale);
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.txMbps += metadataBandwidth;
-    nodeMetric.txPackets += metadataBandwidth * 250;
-    forwardStream = { 
-      ...item.stream, 
-      bandwidth: metadataBandwidth, 
-      trafficType: 'metadata', 
-      metadataFormat: format as 'CEF' | 'JSON'
-    };
-  }
-  else if (actionType === 'Packet Slicing') {
-    const sliceSize = Number(data.sliceSize) || 128;
-    const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
-    const slicedBandwidth = item.stream.bandwidth * ratio;
-    dropBandwidth = item.stream.bandwidth * (1 - ratio);
-    
-    nodeMetric.txMbps += slicedBandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    
-    forwardStream = { ...item.stream, bandwidth: slicedBandwidth };
-  } 
-  else if (actionType === 'Header Stripping') {
-    const strippedBandwidth = item.stream.bandwidth * 0.95;
-    nodeMetric.txMbps += strippedBandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    forwardStream = { ...item.stream, bandwidth: strippedBandwidth };
-  }
-  else {
-    let scale = 1.0;
-    // The new logic handles SSL Decrypt, so we remove it from this generic block
-    if (actionType === 'Masking') { // Removed: actionType === 'SSL Decrypt'
-      scale = 0.95;
-    }
-    const outputBandwidth = item.stream.bandwidth * scale;
-    if (scale < 1.0) {
-      dropBandwidth = item.stream.bandwidth * (1 - scale);
-      nodeMetric.droppedPackets += dropBandwidth * 250;
-    }
-    nodeMetric.txMbps += outputBandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    forwardStream = { ...item.stream, bandwidth: outputBandwidth };
-  }
-  if (dropBandwidth > 0) {
-    nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
-  }
-  return { forwardStream, dropBandwidth, generatedMetadataStreams };
-};
-
-const processGigaStreamNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics,
-  outboundEdges: Edge[],
-  activeEdgeSet: Set<string>,
-  edgeTraffic: Record<string, number>,
-  queue: QueueItem[]
-): NodeProcessingResult => {
-  if (outboundEdges.length > 0) {
-    nodeMetric.txMbps += item.stream.bandwidth;
-    nodeMetric.txPackets += item.stream.bandwidth * 250;
-    
-    const algorithm = (node.data?.algorithm as string) || 'Round Robin';
-
-    if (algorithm.toLowerCase().includes('hash')) {
-      // L4 Hash (Five-Tuple hash): route the entire stream to exactly one target link
-      const str = `${item.stream.ipSrc || ''}-${item.stream.ipDst || ''}-${item.stream.portSrc || ''}-${item.stream.portDst || ''}-${item.stream.protocol || ''}-${item.stream.vlan || ''}`;
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0;
-      }
-      const selectedIndex = Math.abs(hash) % outboundEdges.length;
-      const selectedEdge = outboundEdges[selectedIndex];
-
-      activeEdgeSet.add(selectedEdge.id);
-      edgeTraffic[selectedEdge.id] = (edgeTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
-      queue.push({
-        nodeId: selectedEdge.target,
-        stream: { ...item.stream, firstEdgeId: item.stream.firstEdgeId || selectedEdge.id },
-        edgePath: [...item.edgePath, selectedEdge.id],
-      });
-    } else {
-      // Round Robin (Even Split): split stream bandwidth evenly across all outbound links
-      const splitBandwidth = item.stream.bandwidth / outboundEdges.length;
-      
-      outboundEdges.forEach((edge) => {
-        activeEdgeSet.add(edge.id);
-        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
-        queue.push({
-          nodeId: edge.target,
-          stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
-          edgePath: [...item.edgePath, edge.id],
-        });
-      });
-    }
-    return { forwardStream: null, handledQueueExternally: true };
-  }
-  return { forwardStream: null, dropBandwidth: item.stream.bandwidth };
-};
-
-const processHardwareNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics
-): NodeProcessingResult => {
-  const isTap = String(node.data?.model || '').includes('TAP');
-  const conditions = node.data?.conditions as MapCondition[] | undefined;
-  
-  const isMatch = isTap ? true : evaluateMapConditions(item.stream, conditions);
-  let forwardStream: TrajectoryStream | null = item.stream;
-  let dropBandwidth = 0;
-  const generatedMetadataStreams: TrajectoryStream[] = [];
-  
-  if (isMatch) {
-    if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
-      // Calculate Engine Load to determine multi-pass loopback
-      const getEngineLoad = (actionType: string) => {
-        if (actionType.includes('Decapsulation')) return 40;
-        if (actionType.includes('Slicing')) return 20;
-        if (actionType.includes('Masking')) return 30;
-        if (actionType.includes('Dedup')) return 50;
-        if (actionType.includes('NetFlow')) return 60;
-        if (actionType.includes('Metadata') || actionType.includes('AMI')) return 80;
-        return 30;
-      };
-      
-      const totalLoad = node.data.gigaSmartApps.reduce((acc: number, app: any) => acc + getEngineLoad(app.actionType as string), 0);
-      const isMultiPass = totalLoad > 100;
-      
-      // If multi-pass is required, we artificially double the rxMbps counted against this node's backplane
-      if (isMultiPass) {
-        nodeMetric.rxMbps += item.stream.bandwidth; // Add loopback penalty bandwidth
-      }
-
-      for (const app of node.data.gigaSmartApps) {
-        if (item.stream.bandwidth <= 0) break;
-        const actionType = (app.actionType as string) || 'Deduplication';
-        if (actionType === 'Deduplication' || actionType === 'Dedup') {
-          const dropFraction = (app.dedupRate || 20) / 100;
-          const drop = item.stream.bandwidth * dropFraction;
-          nodeMetric.droppedPackets += drop * 250;
-          nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + drop;
-          item.stream.bandwidth -= drop;
-        } else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
-          const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
-          const ratePercent = app.metadataRate !== undefined ? Number(app.metadataRate) : (defaultScale * 100);
-          const scale = ratePercent / 100;
-          const metadataBandwidth = item.stream.bandwidth * scale;
-          generatedMetadataStreams.push({
-            ...item.stream,
-            id: `${item.stream.id}-meta-${Math.random().toString(36).substring(7)}`,
-            bandwidth: metadataBandwidth,
-            trafficType: 'metadata',
-            metadataFormat: (app.metadataFormat as 'CEF' | 'JSON') || 'CEF'
-          });
-        } else if (actionType === 'Packet Slicing') {
-          const sliceSize = Number(app.sliceSize) || 128;
-          const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
-          const drop = item.stream.bandwidth * (1 - ratio);
-          nodeMetric.droppedPackets += drop * 250;
-          item.stream.bandwidth *= ratio;
-        } else if (actionType === 'Header Stripping') {
-          item.stream.bandwidth *= 0.95;
-        } else {
-          let scale = 1.0;
-          if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;
-          const outBandwidth = item.stream.bandwidth * scale;
-          if (scale < 1.0) {
-             nodeMetric.droppedPackets += item.stream.bandwidth * (1 - scale) * 250;
-          }
-          item.stream.bandwidth = outBandwidth;
-          if (actionType === 'SSL Decrypt') {
-            item.stream.isEncrypted = false;
-          }
-        }
-      }
-      forwardStream = { ...item.stream };
-    }
-
-    const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
-    if (!alreadyAddedAtTop) {
-      nodeMetric.txMbps += item.stream.bandwidth;
-      nodeMetric.txPackets += item.stream.bandwidth * 250;
-    }
-  } else {
-    dropBandwidth = item.stream.bandwidth;
-    nodeMetric.droppedPackets += dropBandwidth * 250;
-    nodeMetric.filterDroppedMbps = (nodeMetric.filterDroppedMbps || 0) + dropBandwidth;
-    forwardStream = null;
-  }
-
-  return { forwardStream, dropBandwidth, generatedMetadataStreams };
-};
-
-const processDefaultNode = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics
-): NodeProcessingResult => {
+const processDefaultNode: NodeProcessor = (node, item, nodeMetric) => {
   const alreadyAddedAtTop = node.id === item.stream.sourceNodeId && item.edgePath.length === 0;
   if (!alreadyAddedAtTop) {
     nodeMetric.txMbps += item.stream.bandwidth;
@@ -585,49 +30,14 @@ const processDefaultNode = (
   return { forwardStream: item.stream };
 };
 
-type NodeProcessor = (
-  node: CustomNode,
-  item: QueueItem,
-  nodeMetric: NodeMetrics,
-  toolReceivedStreams: Record<string, TrajectoryStream[]>,
-  deliveredStreamIds: Set<string>,
-  outboundEdges: Edge[],
-  activeEdgeSet: Set<string>,
-  edgeTraffic: Record<string, number>,
-  queue: QueueItem[]
-) => NodeProcessingResult;
-
 const PROCESSORS: Record<string, NodeProcessor> = {
-  toolNode: (node, item, nodeMetric, toolReceivedStreams, deliveredStreamIds) => 
-    processToolNode(node, item, nodeMetric, toolReceivedStreams, deliveredStreamIds),
-    
-  filterNode: (node, item, nodeMetric) => 
-    processFilterNode(node, item, nodeMetric),
-    
-  mapNode: (node, item, nodeMetric) => 
-    processMapNode(node, item, nodeMetric),
-    
-  gigaSmartNode: (node, item, nodeMetric, _, __, outboundEdges, activeEdgeSet, edgeTraffic, queue) => 
-    processGigaSmartNode(node, item, nodeMetric, outboundEdges, activeEdgeSet, edgeTraffic, queue),
-    
-  gigaStreamNode: (node, item, nodeMetric, _, __, outboundEdges, activeEdgeSet, edgeTraffic, queue) => 
-    processGigaStreamNode(node, item, nodeMetric, outboundEdges, activeEdgeSet, edgeTraffic, queue),
-    
-  hardwareNode: (node, item, nodeMetric) => 
-    processHardwareNode(node, item, nodeMetric),
+  toolNode: processToolNode,
+  filterNode: processFilterNode,
+  mapNode: processMapNode,
+  gigaSmartNode: processGigaSmartNode,
+  gigaStreamNode: processGigaStreamNode,
+  hardwareNode: processHardwareNode,
 };
-
-export interface SimulationStepResult {
-  metrics: Record<string, NodeMetrics>;
-  edgeMetrics: Record<string, number>;
-  activeEdges: string[];
-  blockedEdges: string[];
-  encryptedEdges: string[];
-  decryptedEdges: string[];
-  deliveredStreamIds: string[];
-  nodeDataPatches: Record<string, Record<string, unknown>>;
-  uniqueEgressMbps: number;
-}
 
 export const calculateSimulationStep = (
   nodes: CustomNode[],
@@ -636,22 +46,14 @@ export const calculateSimulationStep = (
 ): SimulationStepResult => {
   const nodeDataPatches: Record<string, Record<string, unknown>> = {};
 
-  // Ensure that any TAP Device node that has a VLAN 999 stream is set to 40 Gbps (40000 Mbps)
   nodes.forEach((node) => {
     if (node.type === 'inputNode' && String(node.data?.configType || '').startsWith('TAP')) {
       const hasVlan999 = trafficStreams.some(
         (stream) => stream.active && stream.sourceNodeId === node.id && stream.vlan === '999'
       );
       if (hasVlan999 && node.data?.linkSpeed !== 40000) {
-        nodeDataPatches[node.id] = {
-          ...nodeDataPatches[node.id],
-          linkSpeed: 40000
-        };
-        // Update the local node object linkSpeed so the rest of the calculation uses the new speed immediately
-        node.data = {
-          ...node.data,
-          linkSpeed: 40000
-        };
+        nodeDataPatches[node.id] = { ...nodeDataPatches[node.id], linkSpeed: 40000 };
+        node.data = { ...node.data, linkSpeed: 40000 };
       }
     }
 
@@ -665,16 +67,11 @@ export const calculateSimulationStep = (
           statusMessage: `Port mismatch: expected ${linkCount}, connected ${actualLinks}`
         };
       } else {
-        nodeDataPatches[node.id] = {
-          ...nodeDataPatches[node.id],
-          status: 'ok',
-          statusMessage: ''
-        };
+        nodeDataPatches[node.id] = { ...nodeDataPatches[node.id], status: 'ok', statusMessage: '' };
       }
     }
   });
 
-  // 1. Initialize metrics for all nodes
   const metrics: Record<string, NodeMetrics> = {};
   nodes.forEach((node) => {
     metrics[node.id] = { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedMbps: 0, filterDroppedMbps: 0 };
@@ -690,45 +87,30 @@ export const calculateSimulationStep = (
   const toolReceivedStreams: Record<string, TrajectoryStream[]> = {};
   const deliveredStreamIds = new Set<string>();
 
-  // Group by source node first to enforce physical link speeds (if configured).
   const streamsBySource: Record<string, TrajectoryStream[]> = {};
-
   trafficStreams.forEach((stream) => {
     if (!stream.active) return;
-    
     const sourceNode = nodes.find((n) => n.id === stream.sourceNodeId);
     if (!sourceNode) return;
-
     if (!streamsBySource[sourceNode.id]) streamsBySource[sourceNode.id] = [];
-    streamsBySource[sourceNode.id].push({ 
-      ...stream, 
-      trafficType: 'packet' 
-    });
+    streamsBySource[sourceNode.id].push({ ...stream, trafficType: 'packet' });
   });
 
   Object.entries(streamsBySource).forEach(([nodeId, nodeStreams]) => {
     const sourceNode = nodes.find(n => n.id === nodeId);
     const linkSpeed = (sourceNode?.data?.linkSpeed as number) || Infinity;
-    
     const totalRequested = nodeStreams.reduce((sum, s) => sum + s.bandwidth, 0);
     
     let streamsToProcess: TrajectoryStream[] = [];
-
     if (totalRequested > linkSpeed) {
-      // Traffic exceeds physical port capacity. Cap it and record ingress drops.
       const droppedBps = totalRequested - linkSpeed;
-      if (metrics[nodeId]) {
-        metrics[nodeId].droppedPackets += droppedBps * 250; // Approximated packet rate
-      }
-
-      // Scale down each stream proportionally so the sum equals linkSpeed
+      if (metrics[nodeId]) metrics[nodeId].droppedPackets += droppedBps * 250;
       nodeStreams.forEach(stream => {
         const scale = linkSpeed / totalRequested;
         stream.bandwidth *= scale;
         streamsToProcess.push(stream);
       });
     } else {
-      // Link capacity is sufficient
       streamsToProcess = nodeStreams;
     }
 
@@ -739,34 +121,19 @@ export const calculateSimulationStep = (
         : (stream.isEncrypted ? 1 : 0);
 
       if (encryptionRatio > 0) {
-        // Create encrypted part of the stream
         if (encryptionRatio < 1) {
           queue.push({ 
             nodeId, 
-            stream: { 
-              ...stream, 
-              id: `${stream.id}-clear`,
-              bandwidth: stream.bandwidth * (1 - encryptionRatio),
-              isEncrypted: false,
-            }, 
+            stream: { ...stream, id: `${stream.id}-clear`, bandwidth: stream.bandwidth * (1 - encryptionRatio), isEncrypted: false }, 
             edgePath: [] 
           });
         }
-        
-        // Create cleartext part of the stream
         queue.push({ 
           nodeId, 
-          stream: { 
-            ...stream,
-            id: `${stream.id}-enc`,
-            bandwidth: stream.bandwidth * encryptionRatio,
-            isEncrypted: true,
-          }, 
+          stream: { ...stream, id: `${stream.id}-enc`, bandwidth: stream.bandwidth * encryptionRatio, isEncrypted: true }, 
           edgePath: [] 
         });
-
       } else {
-        // The whole stream is cleartext
         queue.push({ nodeId, stream, edgePath: [] });
       }
     });
@@ -780,44 +147,34 @@ export const calculateSimulationStep = (
     const item = queue.shift()!;
     const node = nodes.find((n) => n.id === item.nodeId);
     if (!node) continue;
-
     const nodeMetric = metrics[node.id];
     if (!nodeMetric) continue;
 
-    const packetsPerSecond = item.stream.bandwidth * 250;
-
     if (node.id === item.stream.sourceNodeId && item.edgePath.length === 0) {
       nodeMetric.txMbps += item.stream.bandwidth;
-      nodeMetric.txPackets += packetsPerSecond;
+      nodeMetric.txPackets += item.stream.bandwidth * 250;
     } else {
       let allowedBandwidth = item.stream.bandwidth;
       if (node.type === 'hardwareNode') {
         const capacity = getHardwareOpticCapacity(node);
         if (nodeMetric.rxMbps + allowedBandwidth > capacity) {
           const excess = (nodeMetric.rxMbps + allowedBandwidth) - capacity;
-          // Trim the bandwidth, but leave at least 5% of original stream bandwidth or 1 Mbps
           const minPreserved = Math.max(1, item.stream.bandwidth * 0.05);
           const maxDrop = Math.max(0, allowedBandwidth - minPreserved);
           const drop = Math.min(excess, maxDrop);
-          
           nodeMetric.droppedPackets += drop * 250;
           allowedBandwidth -= drop;
         }
       }
-
       nodeMetric.rxMbps += allowedBandwidth;
       nodeMetric.rxPackets += allowedBandwidth * 250;
       item.stream.bandwidth = allowedBandwidth;
-
-      if (allowedBandwidth <= 0) {
-        continue;
-      }
+      if (allowedBandwidth <= 0) continue;
     }
 
     let outboundEdges = edges.filter((e) => e.source === node.id);
     if (node.parentId) {
-      const parentEdges = edges.filter((e) => e.source === node.parentId);
-      outboundEdges = [...outboundEdges, ...parentEdges];
+      outboundEdges = [...outboundEdges, ...edges.filter((e) => e.source === node.parentId)];
     }
     const seenTargets = new Set<string>();
     outboundEdges = outboundEdges.filter((edge) => {
@@ -827,31 +184,14 @@ export const calculateSimulationStep = (
       return true;
     });
 
-    let forwardStream: TrajectoryStream | null = item.stream;
-    let dropBandwidth = 0;
-    let generatedMetadataStreams: TrajectoryStream[] = [];
-
     const processor = (node.type && PROCESSORS[node.type]) || processDefaultNode;
-    const result = processor(
-      node,
-      item,
-      nodeMetric,
-      toolReceivedStreams,
-      deliveredStreamIds,
-      outboundEdges,
-      activeEdgeSet,
-      edgeTraffic,
-      queue
-    );
+    const result = processor(node, item, nodeMetric, toolReceivedStreams, deliveredStreamIds, outboundEdges, activeEdgeSet, edgeTraffic, queue, nodes);
 
-    if (result.handledQueueExternally) {
-      continue;
-    }
+    if (result.handledQueueExternally) continue;
 
-    forwardStream = result.forwardStream;
-    dropBandwidth = result.dropBandwidth || 0;
-    generatedMetadataStreams = result.generatedMetadataStreams || [];
-
+    const forwardStream = result.forwardStream;
+    const dropBandwidth = result.dropBandwidth || 0;
+    const generatedMetadataStreams = result.generatedMetadataStreams || [];
     const hasForwardStream = forwardStream && forwardStream.bandwidth > 0;
     const hasMetadataStreams = generatedMetadataStreams.length > 0;
 
@@ -861,25 +201,16 @@ export const calculateSimulationStep = (
         activeEdgeSet.add(edge.id);
         
         if (!targetNode || targetNode.type !== 'toolNode') {
-          // If the target is not a tool node, always forward both streams
           if (hasForwardStream) {
             if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
             else decryptedEdgeSet.add(edge.id);
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-            queue.push({
-              nodeId: edge.target,
-              stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id },
-              edgePath: [...item.edgePath, edge.id],
-            });
+            queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
           }
           if (hasMetadataStreams) {
             generatedMetadataStreams.forEach((ms) => {
               edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
-              queue.push({
-                nodeId: edge.target,
-                stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id },
-                edgePath: [...item.edgePath, edge.id],
-              });
+              queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
             });
           }
           return;
@@ -889,145 +220,83 @@ export const calculateSimulationStep = (
         const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
         const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
 
-        // Forward the main stream if target tool supports its traffic type
         if (hasForwardStream) {
           const isMetadata = forwardStream!.trafficType === 'metadata';
           let canAccept = isMetadata ? supportsMetadata : supportsPackets;
-          
-          // If this is a storage tool and we are generating metadata (like AMI), 
-          // do not send the raw packet stream over to the storage tool.
-          if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) {
-            canAccept = false;
-          }
+          if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
 
           if (canAccept) {
             if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
             else decryptedEdgeSet.add(edge.id);
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-            queue.push({
-              nodeId: edge.target,
-              stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id },
-              edgePath: [...item.edgePath, edge.id],
-            });
+            queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
           }
         }
         
-        // Forward any generated metadata streams if the target supports metadata
         if (hasMetadataStreams && supportsMetadata) {
           generatedMetadataStreams.forEach((ms) => {
             edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
-            queue.push({
-              nodeId: edge.target,
-              stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id },
-              edgePath: [...item.edgePath, edge.id],
-            });
+            queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
           });
         }
       });
       
-      // Accumulate transmission stats for the metadata streams
       generatedMetadataStreams.forEach((ms) => {
         nodeMetric.txMbps += ms.bandwidth;
         nodeMetric.txPackets += ms.bandwidth * 250;
       });
     } else if (dropBandwidth > 0 && outboundEdges.length > 0) {
-      outboundEdges.forEach((edge) => {
-        blockedEdgeSet.add(edge.id);
-      });
+      outboundEdges.forEach((edge) => blockedEdgeSet.add(edge.id));
     }
   }
 
-  // Post-traversal: Mark edges active based on connected RX/TX
   edges.forEach((edge) => {
     const sourceMetric = metrics[edge.source];
     if (sourceMetric && sourceMetric.txMbps > 0 && !activeEdgeSet.has(edge.id)) {
       const targetMetric = metrics[edge.target];
-      if (targetMetric && targetMetric.rxMbps > 0) {
-        activeEdgeSet.add(edge.id);
-      }
+      if (targetMetric && targetMetric.rxMbps > 0) activeEdgeSet.add(edge.id);
     }
   });
 
-  // Tool status calculation
   nodes.forEach((node) => {
     if (node.type === 'toolNode') {
-      const data = node.data as ToolNodeData;
+      const data = node.data;
       const configType = data.configType || '';
       const expectedFormat = data.expectedFormat || 'CEF';
-      
       const isPacketTool = isPacketToolConfig(configType) || data.expectedType === 'packet';
       const isMetadataTool = isMetadataToolConfig(configType) || data.expectedType === 'metadata';
-      
       const received = toolReceivedStreams[node.id] || [];
       
       let nextStatus: 'warning' | 'optimal' | undefined = undefined;
-      let nextStatusMessage = '';
+      let nextStatusMessage = 'No active traffic streams';
       let receivedFormat = '';
 
       if (received.length > 0) {
-        let hasValid = false;
-        let hasMismatch = false;
-        let mismatchMsg = '';
-
+        let hasValid = false, hasMismatch = false, mismatchMsg = '';
         for (const rStream of received) {
           const rType = rStream.trafficType || 'packet';
           const rFormat = rStream.metadataFormat;
-
           if (isPacketTool) {
             if (rType === 'packet') {
-              if (rStream.isEncrypted) {
-                hasMismatch = true;
-                if (!mismatchMsg) mismatchMsg = '⚠️ Blind Spot: Encrypted Traffic Detected';
-              } else {
-                hasValid = true;
-              }
-            } else {
-              hasMismatch = true;
-              if (!mismatchMsg) mismatchMsg = 'Expected packets, got metadata';
-            }
+              if (rStream.isEncrypted) { hasMismatch = true; if (!mismatchMsg) mismatchMsg = '⚠️ Blind Spot: Encrypted Traffic Detected'; }
+              else hasValid = true;
+            } else { hasMismatch = true; if (!mismatchMsg) mismatchMsg = 'Expected packets, got metadata'; }
           } else if (isMetadataTool) {
             if (rType === 'metadata') {
-              if (expectedFormat !== 'Any' && rFormat !== expectedFormat) {
-                hasMismatch = true;
-                if (!mismatchMsg) mismatchMsg = `Format mismatch: got ${rFormat}, expected ${expectedFormat}`;
-              } else {
-                hasValid = true;
-                receivedFormat = rFormat || 'Metadata';
-              }
-            } else {
-              hasMismatch = true;
-              if (!mismatchMsg) mismatchMsg = 'Expected metadata, got packets';
-            }
+              if (expectedFormat !== 'Any' && rFormat !== expectedFormat) { hasMismatch = true; if (!mismatchMsg) mismatchMsg = `Format mismatch: got ${rFormat}, expected ${expectedFormat}`; }
+              else { hasValid = true; receivedFormat = rFormat || 'Metadata'; }
+            } else { hasMismatch = true; if (!mismatchMsg) mismatchMsg = 'Expected metadata, got packets'; }
           }
         }
-
-        if (hasMismatch) {
-          nextStatus = 'warning';
-          nextStatusMessage = mismatchMsg;
-        } else if (hasValid) {
-          nextStatus = 'optimal';
-          nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`;
-        }
-      } else {
-        nextStatus = undefined;
-        nextStatusMessage = 'No active traffic streams';
+        if (hasMismatch) { nextStatus = 'warning'; nextStatusMessage = mismatchMsg; }
+        else if (hasValid) { nextStatus = 'optimal'; nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`; }
       }
-      if (
-        data.status !== nextStatus || 
-        data.statusMessage !== nextStatusMessage ||
-        data.receivedFormat !== receivedFormat
-      ) {
-        nodeDataPatches[node.id] = {
-          ...nodeDataPatches[node.id],
-          status: nextStatus, 
-          statusMessage: nextStatusMessage,
-          receivedFormat: receivedFormat 
-        };
+      if (data.status !== nextStatus || data.statusMessage !== nextStatusMessage || data.receivedFormat !== receivedFormat) {
+        nodeDataPatches[node.id] = { ...nodeDataPatches[node.id], status: nextStatus, statusMessage: nextStatusMessage, receivedFormat: receivedFormat };
       }
     }
   });
 
-  // Calculate unique egress metrics across duplicate paths
   const maxStreamBandwidth: Record<string, number> = {};
   Object.values(toolReceivedStreams).forEach((received) => {
     received.forEach((s) => {
@@ -1037,15 +306,5 @@ export const calculateSimulationStep = (
   });
   const uniqueEgressMbps = Object.values(maxStreamBandwidth).reduce((sum, bw) => sum + bw, 0);
 
-  return {
-    metrics,
-    edgeMetrics: edgeTraffic,
-    activeEdges: Array.from(activeEdgeSet),
-    blockedEdges: Array.from(blockedEdgeSet),
-    encryptedEdges: Array.from(encryptedEdgeSet),
-    decryptedEdges: Array.from(decryptedEdgeSet),
-    deliveredStreamIds: Array.from(deliveredStreamIds),
-    nodeDataPatches,
-    uniqueEgressMbps
-  };
+  return { metrics, edgeMetrics: edgeTraffic, activeEdges: Array.from(activeEdgeSet), blockedEdges: Array.from(blockedEdgeSet), encryptedEdges: Array.from(encryptedEdgeSet), decryptedEdges: Array.from(decryptedEdgeSet), deliveredStreamIds: Array.from(deliveredStreamIds), nodeDataPatches, uniqueEgressMbps };
 };

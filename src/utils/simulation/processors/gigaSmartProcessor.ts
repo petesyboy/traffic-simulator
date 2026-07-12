@@ -1,0 +1,131 @@
+import { type NodeProcessor, type TrajectoryStream } from '../types';
+import { type GigaSmartNodeData } from '../../../store/types';
+
+export const processGigaSmartNode: NodeProcessor = (
+  node,
+  item,
+  nodeMetric,
+  _,
+  __,
+  outboundEdges,
+  activeEdgeSet,
+  edgeTraffic,
+  queue
+) => {
+  const data = node.data as GigaSmartNodeData;
+  const actionType = data.actionType || 'Deduplication';
+  
+  if (actionType === 'SSL Decrypt' && item.stream.isEncrypted) {
+    const decryptionRate = (data.decryptionRate ?? 60) / 100;
+    const originalBandwidth = item.stream.bandwidth;
+    const decryptedBandwidth = originalBandwidth * decryptionRate;
+    const encryptedBandwidth = originalBandwidth * (1 - decryptionRate);
+
+    nodeMetric.txMbps += originalBandwidth;
+    nodeMetric.txPackets += originalBandwidth * 250;
+
+    outboundEdges.forEach((edge) => {
+      activeEdgeSet.add(edge.id);
+      
+      if (decryptedBandwidth > 0) {
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + decryptedBandwidth;
+        queue.push({
+          nodeId: edge.target,
+          stream: { 
+            ...item.stream, 
+            id: `${item.stream.id}-dec`,
+            bandwidth: decryptedBandwidth, 
+            isEncrypted: false,
+            firstEdgeId: item.stream.firstEdgeId || edge.id 
+          },
+          edgePath: [...item.edgePath, edge.id],
+        });
+      }
+
+      if (encryptedBandwidth > 0) {
+        edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + encryptedBandwidth;
+        queue.push({
+          nodeId: edge.target,
+          stream: { 
+            ...item.stream, 
+            id: `${item.stream.id}-enc-passthrough`,
+            bandwidth: encryptedBandwidth, 
+            isEncrypted: true,
+            firstEdgeId: item.stream.firstEdgeId || edge.id 
+          },
+          edgePath: [...item.edgePath, edge.id],
+        });
+      }
+    });
+
+    return { forwardStream: null, handledQueueExternally: true };
+  }
+
+  let forwardStream: TrajectoryStream | null = item.stream;
+  let dropBandwidth = 0;
+  
+  if (actionType === 'Deduplication' || actionType === 'Dedup') {
+    const dedupRate = data.dedupRate || 20;
+    const dropFraction = dedupRate / 100;
+
+    dropBandwidth = item.stream.bandwidth * dropFraction;
+    const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
+
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.txMbps += validBandwidth;
+    nodeMetric.txPackets += validBandwidth * 250;
+    forwardStream = { ...item.stream, bandwidth: validBandwidth };
+  } 
+  else if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
+    const format = data.metadataFormat || 'CEF';
+    const defaultScale = (actionType === 'AMX' || actionType === 'AMI') ? 0.015 : 0.03;
+    const ratePercent = data.metadataRate !== undefined ? Number(data.metadataRate) : (defaultScale * 100);
+    const scale = ratePercent / 100;
+    const metadataBandwidth = item.stream.bandwidth * scale;
+
+    dropBandwidth = item.stream.bandwidth * (1 - scale);
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.txMbps += metadataBandwidth;
+    nodeMetric.txPackets += metadataBandwidth * 250;
+    forwardStream = { 
+      ...item.stream, 
+      bandwidth: metadataBandwidth, 
+      trafficType: 'metadata', 
+      metadataFormat: format as 'CEF' | 'JSON'
+    };
+  }
+  else if (actionType === 'Packet Slicing') {
+    const sliceSize = Number(data.sliceSize) || 128;
+    const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
+    const slicedBandwidth = item.stream.bandwidth * ratio;
+    dropBandwidth = item.stream.bandwidth * (1 - ratio);
+    
+    nodeMetric.txMbps += slicedBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250;
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    
+    forwardStream = { ...item.stream, bandwidth: slicedBandwidth };
+  } 
+  else if (actionType === 'Header Stripping') {
+    const strippedBandwidth = item.stream.bandwidth * 0.95;
+    nodeMetric.txMbps += strippedBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250;
+    forwardStream = { ...item.stream, bandwidth: strippedBandwidth };
+  }
+  else {
+    let scale = 1.0;
+    if (actionType === 'Masking') scale = 0.95;
+    const outputBandwidth = item.stream.bandwidth * scale;
+    if (scale < 1.0) {
+      dropBandwidth = item.stream.bandwidth * (1 - scale);
+      nodeMetric.droppedPackets += dropBandwidth * 250;
+    }
+    nodeMetric.txMbps += outputBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250;
+    forwardStream = { ...item.stream, bandwidth: outputBandwidth };
+  }
+  if (dropBandwidth > 0) {
+    nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
+  }
+  return { forwardStream, dropBandwidth };
+};

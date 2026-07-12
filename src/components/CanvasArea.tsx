@@ -1,8 +1,7 @@
-import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import {
   ReactFlow,
   useReactFlow,
-  useViewport,
   Background,
   Controls,
   BackgroundVariant,
@@ -14,19 +13,12 @@ import { useStore, type CustomNode } from '../store/store';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './CustomNodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
-import dashboardImg from '../assets/dashboard-mock.webp';
+import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
+import { FederatedEnclosures } from './canvas/FederatedEnclosures';
+import { FederatedDashboard } from './canvas/FederatedDashboard';
+import { GroupingBanner } from './canvas/GroupingBanner';
+import { EdgeBanner } from './canvas/EdgeBanner';
 
-/**
- * nodeTypes MUST be defined outside the component.
- *
- * If it were defined inside CanvasArea, a new object would be created on every
- * render, causing ReactFlow to treat it as a brand-new type map each time and
- * re-mount every node.  By placing it at module scope the reference is stable
- * for the entire lifetime of the application.
- *
- * The keys here must match the `type` field used when adding nodes to the store.
- * We use the NODE_TYPES constants to keep them in sync.
- */
 const nodeTypes = {
   [NODE_TYPES.INPUT]:      InputNode,
   [NODE_TYPES.FILTER]:     FilterNode,
@@ -40,177 +32,27 @@ const nodeTypes = {
 
 const edgeTypes = {};
 
-// ─── Federated Search Enclosure ───────────────────────────────────────────────
-/**
- * Detects edges between Splunk and S3/Object Storage tool nodes and renders
- * a visual enclosure around each pair to indicate they form a logical
- * "Federated Search" entity.
- *
- * Positioned in flow-space coordinates and scaled/panned via the viewport
- * transform so the enclosures move with the canvas.
- */
-import type { Edge } from '@xyflow/react';
-
-interface FederatedEnclosuresProps {
-  nodes: CustomNode[];
-  edges: Edge[];
-  onShowDashboard: () => void;
-}
-
-const NODE_EST_WIDTH = 180;
-const NODE_EST_HEIGHT = 90;
-const ENCLOSURE_PAD = 28;
-
-const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges, onShowDashboard }) => {
-  const { x: vpX, y: vpY, zoom } = useViewport();
-
-  /** Group all S3 nodes connected to the same Splunk node. */
-  const groups = useMemo(() => {
-    // Map of Splunk node ID to the group of nodes (Splunk + all its S3s)
-    const splunkGroups = new Map<string, CustomNode[]>();
-
-    for (const edge of edges) {
-      const sourceNode = nodes.find((n) => n.id === edge.source);
-      const targetNode = nodes.find((n) => n.id === edge.target);
-      if (!sourceNode || !targetNode) continue;
-
-      const srcTool = (sourceNode.data?.toolName as string) || '';
-      const tgtTool = (targetNode.data?.toolName as string) || '';
-      const srcConfig = (sourceNode.data?.configType as string) || '';
-      const tgtConfig = (targetNode.data?.configType as string) || '';
-
-      let splunkNode: CustomNode | null = null;
-      let s3Node: CustomNode | null = null;
-
-      if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
-        splunkNode = sourceNode;
-        s3Node = targetNode;
-      } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
-        splunkNode = targetNode;
-        s3Node = sourceNode;
-      }
-
-      if (splunkNode && s3Node) {
-        if (!splunkGroups.has(splunkNode.id)) {
-          splunkGroups.set(splunkNode.id, [splunkNode]);
-        }
-        const groupNodes = splunkGroups.get(splunkNode.id)!;
-        if (!groupNodes.some(n => n.id === s3Node!.id)) {
-          groupNodes.push(s3Node);
-        }
-      }
-    }
-    return Array.from(splunkGroups.values());
-  }, [nodes, edges]);
-
-  if (groups.length === 0) return null;
-
-  return (
-    <>
-      {groups.map((groupNodes) => {
-        // Compute bounding box around all nodes in this group.
-        // nodeOrigin is [0.5, 0.5] so position is the CENTER of each node.
-        const halfW = NODE_EST_WIDTH / 2;
-        const halfH = NODE_EST_HEIGHT / 2;
-
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const n of groupNodes) {
-          minX = Math.min(minX, n.position.x - halfW);
-          minY = Math.min(minY, n.position.y - halfH);
-          maxX = Math.max(maxX, n.position.x + halfW);
-          maxY = Math.max(maxY, n.position.y + halfH);
-        }
-
-        // Add padding around the enclosure
-        const left   = (minX - ENCLOSURE_PAD) * zoom + vpX;
-        const top    = (minY - ENCLOSURE_PAD) * zoom + vpY;
-        const width  = (maxX - minX + ENCLOSURE_PAD * 2) * zoom;
-        const height = (maxY - minY + ENCLOSURE_PAD * 2) * zoom;
-
-        // Use a key that changes when the group composition changes
-        // This ensures React completely remounts the enclosure and cleans up any visual artifacts
-        const groupKey = groupNodes.map(n => n.id).sort().join('-');
-
-        return (
-          <div
-            key={`federated-${groupKey}`}
-            className="federated-enclosure pulse"
-            style={{ left, top, width, height }}
-          >
-            <div className="federated-enclosure-label">
-              🔍 Federated Search
-            </div>
-            <button 
-              onClick={onShowDashboard}
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '10px',
-                background: 'rgba(22, 22, 22, 0.95)',
-                border: '1px solid rgba(0, 229, 255, 0.4)',
-                borderRadius: '8px',
-                padding: '4px 8px',
-                fontSize: '10px',
-                color: '#00e5ff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                pointerEvents: 'auto',
-                boxShadow: '0 0 10px rgba(0, 229, 255, 0.2)'
-              }}
-            >
-              📊 Insights
-            </button>
-          </div>
-        );
-      })}
-    </>
-  );
-};
-
 const CanvasArea: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
-  const draggedNodeType = useStore((state) => state.draggedNodeType);
-  const nodes = useStore((state) => state.nodes);
-  const edges = useStore((state) => state.edges);
-  const activeEdges = useStore((state) => state.activeEdges);
-  const blockedEdges = useStore((state) => state.blockedEdges);
-  const encryptedEdges = useStore((state) => state.encryptedEdges);
-  const decryptedEdges = useStore((state) => state.decryptedEdges);
-  const edgeMetrics = useStore((state) => state.edgeMetrics || {});
-  const isRunning = useStore((state) => state.isRunning);
-  const showGrid = useStore((state) => state.showGrid);
-  const snapToGrid = useStore((state) => state.snapToGrid);
-  const snapAllNodesToGrid = useStore((state) => state.snapAllNodesToGrid);
-  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
-  const setExportDiagramMode = useStore((state) => state.setExportDiagramMode);
   
-  const onNodesChange = useStore((state) => state.onNodesChange);
-  const onEdgesChange = useStore((state) => state.onEdgesChange);
-  const onConnect = useStore((state) => state.onConnect);
-  const addNode = useStore((state) => state.addNode);
-  const addTrafficStream = useStore((state) => state.addTrafficStream);
-  const setSelectedNodeId = useStore((state) => state.setSelectedNodeId);
-  const fitViewTrigger = useStore((state) => state.fitViewTrigger);
-  const advancedMode = useStore((state) => state.advancedMode);
-  const updateNodeData = useStore((state) => state.updateNodeData);
-  const setEdges = useStore((state) => state.setEdges);
+  const {
+    draggedNodeType, nodes, edges, activeEdges, blockedEdges, 
+    encryptedEdges, decryptedEdges, edgeMetrics, isRunning,
+    showGrid, snapToGrid, snapAllNodesToGrid, exportDiagramMode,
+    setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
+    addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger,
+    advancedMode, updateNodeData, setEdges
+  } = useStore();
+  
   const { screenToFlowPosition, fitView } = useReactFlow();
 
   useEffect(() => {
-    // Wait for nodes to render and layout boundaries to compute
-    const timer = setTimeout(() => {
-      fitView({ padding: 0.1 });
-    }, 100);
+    const timer = setTimeout(() => fitView({ padding: 0.1 }), 100);
     return () => clearTimeout(timer);
   }, [fitViewTrigger, fitView]);
 
-  // Dynamically apply classes and animation flags to connections
   const styledEdges = edges.map((edge) => {
     const isActive = activeEdges.includes(edge.id);
     const isBlocked = blockedEdges.includes(edge.id);
@@ -220,79 +62,14 @@ const CanvasArea: React.FC = () => {
     const srcNode = nodes.find((n) => n.id === edge.source);
     const targetNode = nodes.find((n) => n.id === edge.target);
 
-    // Determine if it's a metadata edge
-    const isMetadata = (() => {
-      if (!srcNode) return false;
-      if (srcNode.type === 'gigaSmartNode') {
-        const actionType = srcNode.data?.actionType;
-        if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
-          return true;
-        }
-      }
-      if (srcNode.type === 'hardwareNode') {
-        const apps = (srcNode.data?.gigaSmartApps as any[]) || [];
-        const hasMetadataApp = apps.some(app => 
-          app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI'
-        );
-        if (hasMetadataApp && targetNode?.type === 'toolNode' && 
-            (targetNode.data?.configType === 'Metadata Tool' || targetNode.data?.configType === 'Objects' || targetNode.data?.configType === 'Storage Tool')) {
-          return true;
-        }
-      }
-      
-      // General traceback
-      const visited = new Set<string>();
-      const queue: string[] = [edge.source];
-      visited.add(edge.source);
-      let hasMetadataOrigin = false;
-      let hasPacketOrigin = false;
-
-      while (queue.length > 0) {
-        const currId = queue.shift()!;
-        const currNode = nodes.find(n => n.id === currId);
-        if (!currNode) continue;
-
-        if (currNode.type === 'inputNode') {
-          hasPacketOrigin = true;
-        } else if (currNode.type === 'gigaSmartNode') {
-          const actionType = currNode.data?.actionType;
-          if (actionType === 'Application Metadata' || actionType === 'AMX' || actionType === 'AMI') {
-            hasMetadataOrigin = true;
-          } else {
-            hasPacketOrigin = true;
-          }
-        } else if (currNode.type === 'hardwareNode') {
-          const apps = (currNode.data?.gigaSmartApps as any[]) || [];
-          if (apps.some(app => app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI')) {
-            hasMetadataOrigin = true;
-          }
-          const incoming = edges.filter(e => e.target === currId);
-          if (incoming.length === 0) {
-            hasPacketOrigin = true;
-          }
-        }
-
-        const incomingEdges = edges.filter(e => e.target === currId);
-        incomingEdges.forEach(e => {
-          if (!visited.has(e.source)) {
-            visited.add(e.source);
-            queue.push(e.source);
-          }
-        });
-      }
-      return (hasMetadataOrigin && !hasPacketOrigin) || 
-             (targetNode?.type === 'toolNode' && 
-              (targetNode.data?.configType === 'Metadata Tool' || 
-               ((targetNode.data?.configType === 'Objects' || targetNode.data?.configType === 'Storage Tool') && hasMetadataOrigin)));
-    })();
+    const isMetadata = isMetadataEdge(edge, nodes, edges);
 
     let className = '';
     let animated = false;
     
     if (isRunning) {
-      if (isBlocked) {
-        className = 'blocked-flow';
-      } else if (isActive) {
+      if (isBlocked) className = 'blocked-flow';
+      else if (isActive) {
         if (isEncrypted) className = 'active-flow encrypted-flow';
         else if (isDecrypted) className = 'active-flow decrypted-flow';
         else className = isMetadata ? 'metadata-flow' : 'active-flow';
@@ -300,847 +77,196 @@ const CanvasArea: React.FC = () => {
       }
     }
 
-    // Dynamic Edge Labeling for GigaSMART Application Metadata
     let label = edge.label;
-    
     if (srcNode?.type === 'gigaSmartNode' && 
-        (srcNode.data?.actionType === 'Application Metadata' || 
-         srcNode.data?.actionType === 'AMX' || 
-         srcNode.data?.actionType === 'AMI')) {
-      const format = (srcNode.data?.metadataFormat as string) || 'CEF';
-      label = `${format} Metadata`;
+        (srcNode.data?.actionType === 'Application Metadata' || srcNode.data?.actionType === 'AMX' || srcNode.data?.actionType === 'AMI')) {
+      label = `${srcNode.data?.metadataFormat || 'CEF'} Metadata`;
     }
 
-    // Always animate Federated Search (Splunk <-> S3) links to show "pull" capability
     const srcTool = (srcNode?.data?.toolName as string) || '';
-    const tgtTool = (targetNode?.data?.toolName as string) || '';
-    const srcConfig = (srcNode?.data?.configType as string) || '';
     const tgtConfig = (targetNode?.data?.configType as string) || '';
+    const srcConfig = (srcNode?.data?.configType as string) || '';
+    const tgtTool = (targetNode?.data?.toolName as string) || '';
 
     if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
-      // Flow from target (S3) back to source (Splunk)
       className = isMetadata ? 'reverse-metadata-flow' : 'reverse-flow';
       animated = true;
     } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
-      // Flow from source (S3) to target (Splunk)
       className = isMetadata ? 'metadata-flow' : 'active-flow';
       animated = true;
     }
     
-    const bps = edgeMetrics[edge.id];
-
-    // Append throughput if available
+    const bps = (edgeMetrics || {})[edge.id];
     if (isRunning && bps !== undefined && bps > 0) {
       const throughputLabel = bps >= 1000 ? `${(bps / 1000).toFixed(1)} Gbps` : `${bps.toFixed(0)} Mbps`;
       label = label ? `${label} | ${throughputLabel}` : throughputLabel;
     }
     
-    // Add padlock indicators
     if (isRunning && isActive) {
       if (isEncrypted) label = `🔒 ${label}`;
       else if (isDecrypted) label = `🔓 ${label}`;
     }
 
-    let stroke = '#007cff'; // default blue
+    let stroke = '#007cff';
     if (isRunning) {
       if (isActive) {
-        if (isEncrypted) stroke = '#ff1744'; // Crimson Red
-        else if (isDecrypted) stroke = '#00e676'; // Neon Green
+        if (isEncrypted) stroke = '#ff1744';
+        else if (isDecrypted) stroke = '#00e676';
         else stroke = isMetadata ? '#ff9800' : '#00e5ff';
-      } else if (isBlocked) {
-        stroke = '#ef5350';
-      }
+      } else if (isBlocked) stroke = '#ef5350';
     }
-    // Reverse flows
-    if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
-      stroke = isMetadata ? '#ff9800' : '#00e5ff';
-    } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
-      stroke = isMetadata ? '#ff9800' : '#00e5ff';
-    }
+    if ((srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) || ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk')) stroke = isMetadata ? '#ff9800' : '#00e5ff';
 
-    let style: React.CSSProperties = {
-      stroke,
-      strokeWidth: hoveredEdgeId === edge.id ? '4px' : '1.5px',
-      strokeDasharray: '4, 3',
-    };
-
-    if (isRunning && bps !== undefined && bps > 0) {
-      // Map absolute bandwidth logarithmically to animation speed so that the same volume
-      // always animates at the exact same speed, regardless of physical link capacity.
-      // 10 Mbps -> ~2.0s duration, 100 Gbps (100,000 Mbps) -> 0.2s duration.
-      const minLog = Math.log10(10);
-      const maxLog = Math.log10(100000);
-      const currentLog = Math.log10(Math.max(10, bps));
-      const normalized = Math.min(1.0, Math.max(0, (currentLog - minLog) / (maxLog - minLog)));
-      const duration = 2.0 - 1.8 * normalized;
-      
-      style = {
-        ...style,
-        animationDuration: `${duration.toFixed(2)}s`
-      };
-    }
+    let style: React.CSSProperties = { stroke, strokeWidth: hoveredEdgeId === edge.id ? '4px' : '1.5px', strokeDasharray: '4, 3' };
+    if (isRunning && bps !== undefined && bps > 0) style.animationDuration = calculateAnimationDuration(bps);
 
     if (hoveredEdgeId === edge.id) {
       const isInsertHover = draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL;
-      style = {
-        ...style,
-        stroke: isInsertHover ? '#ff9800' : '#00e5ff',
-        strokeWidth: isInsertHover ? '5px' : '4px',
-        filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)',
-      };
+      style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
-    return {
-      ...edge,
-      className,
-      type: edge.type || 'default',
-      animated: hoveredEdgeId === edge.id ? true : animated,
-      label,
-      style,
-      labelStyle: {
-        fill: isEncrypted ? '#ff1744' : (isDecrypted ? '#00e676' : (isMetadata ? '#ff9800' : '#00e5ff')),
-        fontSize: '9px',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontWeight: 'bold',
-      },
-      labelBgStyle: {
-        fill: '#121212',
-        fillOpacity: 0.95,
-        stroke: '#2a2a2a',
-        strokeWidth: 1,
-      },
-    };
+    return { ...edge, className, type: edge.type || 'default', animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: isEncrypted ? '#ff1744' : (isDecrypted ? '#00e676' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-
     if (draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL) {
-      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!reactFlowBounds) return;
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       let foundEdgeId: string | null = null;
       for (const edge of edges) {
-        const srcNode = nodes.find((n) => n.id === edge.source);
-        const targetNode = nodes.find((n) => n.id === edge.target);
-        if (!srcNode || !targetNode) continue;
-        
-        // Prevent interposing logical nodes onto physical hardware-to-hardware links
-        if (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE) {
-          continue;
-        }
-
-        const srcW = srcNode.measured?.width || srcNode.width || 170;
-        const srcH = srcNode.measured?.height || srcNode.height || 75;
-        const ax = srcNode.position.x + srcW;
-        const ay = srcNode.position.y + srcH / 2;
-
-        const targetH = targetNode.measured?.height || targetNode.height || 75;
-        const bx = targetNode.position.x;
-        const by = targetNode.position.y + targetH / 2;
-
-        const px = position.x;
-        const py = position.y;
-
-        const dx = bx - ax;
-        const dy = by - ay;
-        const lenSq = dx * dx + dy * dy;
-
-        let t = 0;
-        if (lenSq > 0) {
-          t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
-          t = Math.max(0, Math.min(1, t));
-        }
-
-        const cx = ax + t * dx;
-        const cy = ay + t * dy;
-
-        const distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
-        if (Math.sqrt(distSq) < 80) { // increased to 80 flow units
-          foundEdgeId = edge.id;
-          break;
-        }
+        const srcNode = nodes.find(n => n.id === edge.source), targetNode = nodes.find(n => n.id === edge.target);
+        if (!srcNode || !targetNode || (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE)) continue;
+        const srcW = srcNode.measured?.width || srcNode.width || 170, srcH = srcNode.measured?.height || srcNode.height || 75;
+        const ax = srcNode.position.x + srcW, ay = srcNode.position.y + srcH / 2;
+        const targetH = targetNode.measured?.height || targetNode.height || 75, bx = targetNode.position.x, by = targetNode.position.y + targetH / 2;
+        const px = position.x, py = position.y, dx = bx - ax, dy = by - ay, lenSq = dx * dx + dy * dy;
+        let t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
+        const cx = ax + t * dx, cy = ay + t * dy, distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+        if (Math.sqrt(distSq) < 80) { foundEdgeId = edge.id; break; }
       }
       setHoveredEdgeId(foundEdgeId);
     }
   }, [draggedNodeType, edges, nodes, screenToFlowPosition]);
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    const rawData = event.dataTransfer.getData('application/reactflow');
+    if (!rawData) return;
+    const { type, label, initialData } = JSON.parse(rawData);
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
 
-      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      const rawData = event.dataTransfer.getData('application/reactflow');
-
-      if (!rawData || !reactFlowBounds) {
-        return;
-      }
-
-      const { type, label, initialData } = JSON.parse(rawData);
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+    if (advancedMode && type === NODE_TYPES.GIGASMART) {
+      const targetNode = nodes.find(n => {
+        if (n.type !== 'hardwareNode') return false;
+        const w = n.measured?.width || n.width || 400, h = n.measured?.height || n.height || 200;
+        return (position.x >= n.position.x - w / 2 && position.x <= n.position.x + w / 2 && position.y >= n.position.y - h / 2 && position.y <= n.position.y + h / 2) ||
+               (position.x >= n.position.x && position.x <= n.position.x + w && position.y >= n.position.y && position.y <= n.position.y + h);
       });
-
-      if (advancedMode && type === NODE_TYPES.GIGASMART) {
-        const hasHc = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC'));
-        const hasTa = nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('TA'));
-        
-        if (!hasHc) {
-          if (hasTa) {
-            alert("GigaSMART is not supported on GigaVUE-TA series nodes. You must add a GigaVUE-HC series node to the canvas first.");
-          } else {
-            alert("GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first.");
-          }
-          return;
-        }
-
-        // Find the closest HC hardware node that the mouse was dropped on.
-        // hw nodes are usually quite large, so we check a wide bounding box.
-        const targetNode = nodes.find(n => {
-          if (n.type !== 'hardwareNode') return false;
-          
-          const w = n.measured?.width || n.width || 400;
-          const h = n.measured?.height || n.height || 200;
-          
-          // Check 1: Center-origin ([0.5, 0.5])
-          const cLeft = n.position.x - w / 2;
-          const cRight = n.position.x + w / 2;
-          const cTop = n.position.y - h / 2;
-          const cBottom = n.position.y + h / 2;
-          const insideCenter = position.x >= cLeft && position.x <= cRight &&
-                               position.y >= cTop && position.y <= cBottom;
-                               
-          // Check 2: Top-left-origin ([0, 0])
-          const tlLeft = n.position.x;
-          const tlRight = n.position.x + w;
-          const tlTop = n.position.y;
-          const tlBottom = n.position.y + h;
-          const insideTopLeft = position.x >= tlLeft && position.x <= tlRight &&
-                                position.y >= tlTop && position.y <= tlBottom;
-                                
-          return insideCenter || insideTopLeft;
-        });
-
-        if (targetNode) {
-          if (!String(targetNode.data?.model || '').includes('HC')) {
-            alert("GigaSMART applications can only be dropped onto GigaVUE-HC series appliances in Advanced Mode.");
-            return;
-          }
-          
-          const actionType = initialData?.actionType || 'Deduplication';
-          const chassisModel = String(targetNode.data?.model || '');
-          const installedModules = (targetNode.data?.installedModules as { sku: string }[])?.map(m => m.sku) || [];
-          
-          if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) {
-            alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`);
-            return;
-          }
-          
-          const apps = targetNode.data.gigaSmartApps || [];
-
-          // Check for combination compatibility
-          const incompatibleApp = apps.find((existingApp: any) => {
-            const comp = areActionsCompatible(actionType, existingApp.actionType);
-            return !comp.compatible;
-          });
-
-          if (incompatibleApp) {
-            const comp = areActionsCompatible(actionType, incompatibleApp.actionType);
-            alert(`🚫 COMBINATION REFUSED: ${comp.reason || 'Incompatible GigaSMART operations.'}`);
-            return;
-          }
-          
-          const newApp = {
-             id: `gs-${Date.now()}`,
-             label,
-             actionType,
-             dedupRate: 20,
-             metadataFormat: 'CEF'
-          };
-          updateNodeData(targetNode.id, { gigaSmartApps: [...apps, newApp] });
-          
-          return;
-        } else {
-          alert("In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
-          return;
-        }
-      }
-
-      const mergedData = { ...initialData };
-      let labelToUse = label;
-
-      if (type === NODE_TYPES.INPUT) {
-        // Auto-number new input ports by finding the highest existing index.
-        let maxIndex = 0;
-        nodes.forEach((node) => {
-          if (node.type === NODE_TYPES.INPUT) {
-            const labelStr = String(node.data?.label || '');
-            const match = labelStr.match(/(?:TAP\s+|Port\s+|Tunnel\s+|Traffic\s+|Estate\s+)(\d+)/i);
-            if (match) {
-              const idx = parseInt(match[1], 10);
-              if (idx > maxIndex) maxIndex = idx;
-            }
-          }
-        });
-        const nextIdx = maxIndex + 1;
-
-        if (initialData?.configType === 'Network Tap' || initialData?.configType === 'Virtual TAP' || initialData?.configType === CONFIG_TYPES.TAP) {
-          labelToUse = `Network TAP ${nextIdx}`;
-        } else if (initialData?.configType === 'SPAN Port' || initialData?.configType === CONFIG_TYPES.SPAN) {
-          labelToUse = `SPAN Port ${nextIdx}`;
-        } else if (initialData?.configType === CONFIG_TYPES.ERSPAN) {
-          labelToUse = `ERSPAN Tunnel ${nextIdx}`;
-        } else if (initialData?.configType === CONFIG_TYPES.EAST_WEST) {
-          labelToUse = `East/West Traffic ${nextIdx}`;
-        } else if (initialData?.configType === CONFIG_TYPES.VMWARE || initialData?.configType === 'GigaVUE-VM') {
-          labelToUse = `VMWare Estate ${nextIdx}`;
-        }
-      } else if (type === NODE_TYPES.HARDWARE) {
-        let maxIndex = 0;
-        const baseModel = String(initialData?.model || initialData?.label || 'Node');
-        nodes.forEach((node) => {
-          if (node.type === NODE_TYPES.HARDWARE) {
-            const nodeBaseModel = String(node.data?.model || node.data?.label || 'Node');
-            if (nodeBaseModel === baseModel) {
-              const labelStr = String(node.data?.label || '');
-              // Match "BaseModel #2" or "BaseModel 2"
-              const escapedModel = baseModel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const match = labelStr.match(new RegExp(`^${escapedModel}\\s+#?(\\d+)$`, 'i'));
-              if (match) {
-                const idx = parseInt(match[1], 10);
-                if (idx > maxIndex) maxIndex = idx;
-              } else if (labelStr === baseModel) {
-                if (1 > maxIndex) maxIndex = 1;
-              }
-            }
-          }
-        });
-        
-        if (maxIndex > 0) {
-           labelToUse = `${baseModel} #${maxIndex + 1}`;
-        }
-      }
-
-      if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) {
-        mergedData.dedupRate = Math.floor(Math.random() * 41) + 10; // random 10% to 50%
-        mergedData.lastDedupUpdate = Date.now();
-      }
-
-      if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) {
-        mergedData.ingestOptic = 'Customer Supplied Optic';
-        mergedData.ingestOpticQty = '1';
-      }
-
-      let edgeToInterpose: Edge | null = null;
-      if (type === NODE_TYPES.MAP || type === NODE_TYPES.FILTER || type === NODE_TYPES.TOOL) {
-        for (const edge of edges) {
-          const srcNode = nodes.find((n) => n.id === edge.source);
-          const targetNode = nodes.find((n) => n.id === edge.target);
-          if (!srcNode || !targetNode) continue;
-          
-          if (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE) {
-            continue;
-          }
-
-          const srcW = srcNode.measured?.width || srcNode.width || 170;
-          const srcH = srcNode.measured?.height || srcNode.height || 75;
-          const ax = srcNode.position.x + srcW;
-          const ay = srcNode.position.y + srcH / 2;
-
-          const targetH = targetNode.measured?.height || targetNode.height || 75;
-          const bx = targetNode.position.x;
-          const by = targetNode.position.y + targetH / 2;
-
-          const px = position.x;
-          const py = position.y;
-
-          const dx = bx - ax;
-          const dy = by - ay;
-          const lenSq = dx * dx + dy * dy;
-
-          let t = 0;
-          if (lenSq > 0) {
-            t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
-            t = Math.max(0, Math.min(1, t));
-          }
-
-          const cx = ax + t * dx;
-          const cy = ay + t * dy;
-
-          const distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
-          if (Math.sqrt(distSq) < 80) { // increased to 80 flow units
-            edgeToInterpose = edge;
-            break;
-          }
-        }
-      }
-
-      const newNode: CustomNode = {
-        id: uuidv4(),
-        type,
-        position,
-        data: { label: labelToUse, configType: mergedData.configType || labelToUse, ...mergedData },
-      };
-
-      addNode(newNode);
-
-      if (edgeToInterpose) {
-        const leftEdge: Edge = {
-          id: `e-${uuidv4()}`,
-          source: edgeToInterpose.source,
-          sourceHandle: edgeToInterpose.sourceHandle,
-          target: newNode.id,
-          targetHandle: 'in',
-        };
-        const rightEdge: Edge = {
-          id: `e-${uuidv4()}`,
-          source: newNode.id,
-          sourceHandle: 'out',
-          target: edgeToInterpose.target,
-          targetHandle: edgeToInterpose.targetHandle,
-        };
-        const updatedEdges = edges.filter(e => e.id !== edgeToInterpose!.id).concat(leftEdge, rightEdge);
-        setEdges(updatedEdges);
-      }
-
-      setHoveredEdgeId(null);
-
-      // Automatically generate a traffic stream whenever an input port or a G-TAP hardware node is dropped.
-      const isInput = type === NODE_TYPES.INPUT;
-      const isTapHardware = type === NODE_TYPES.HARDWARE && String(newNode.data?.model || '').includes('TAP');
-
-      if (isInput || isTapHardware) {
-        // Determine physical limit per link in Mbps
-        let speedLimitMbps = 10000; // default 10G
-        if (isInput) {
-          const portSpeedStr = String(newNode.data?.portSpeed || '');
-          const speedMatch = portSpeedStr.match(/(\d+)G/i);
-          if (speedMatch) {
-            speedLimitMbps = parseInt(speedMatch[1], 10) * 1000;
-          } else if (newNode.data?.linkSpeed) {
-            speedLimitMbps = Number(newNode.data.linkSpeed);
-          }
-        } else if (isTapHardware) {
-          const modelStr = String(newNode.data?.model || '');
-          if (modelStr.includes('25')) {
-            speedLimitMbps = 25000; // 25G
-          } else if (modelStr.includes('40')) {
-            speedLimitMbps = 40000; // 40G
-          } else if (modelStr.includes('100')) {
-            speedLimitMbps = 100000; // 100G
-          } else if (modelStr.includes('400')) {
-            speedLimitMbps = 400000; // 400G
-          } else {
-            speedLimitMbps = 10000; // default 10G
-          }
-        }
-
-        const tappedLinksCount = isTapHardware ? ((newNode.data?.tappedLinksCount as number) ?? 1) : 1;
-        const numStreamsToCreate = Math.min(tappedLinksCount, 4);
-
-        const profiles = [
-          { name: 'Web Traffic', port: '443', proto: 'tcp' },
-          { name: 'DB Sync Flow', port: '5432', proto: 'tcp' },
-          { name: 'App Services API', port: '8080', proto: 'tcp' },
-          { name: 'DNS Queries Query', port: '53', proto: 'udp' },
-          { name: 'Video Streaming Media', port: '5004', proto: 'udp' },
-          { name: 'VoIP Signaling', port: '5060', proto: 'udp' },
-          { name: 'Encrypted VPN Tunnel', port: '500', proto: 'udp' },
-          { name: 'ICMP Diagnostics', port: '0', proto: 'icmp' },
-        ];
-
-        for (let i = 0; i < numStreamsToCreate; i++) {
-          const profile = profiles[(Math.floor(Math.random() * profiles.length) + i) % profiles.length];
-          const profileTypes = ['low', 'medium', 'high'];
-          const chosenProfileType = profileTypes[Math.floor(Math.random() * profileTypes.length)];
-
-          let bandwidthMbps = 1000;
-          if (chosenProfileType === 'low') {
-            const lowSpeeds = [10, 50, 100, 250, 500];
-            bandwidthMbps = lowSpeeds[Math.floor(Math.random() * lowSpeeds.length)];
-          } else if (chosenProfileType === 'medium') {
-            const medSpeeds = [1000, 2000, 5000];
-            bandwidthMbps = medSpeeds[Math.floor(Math.random() * medSpeeds.length)];
-          } else {
-            const utilization = 0.3 + Math.random() * 0.45;
-            bandwidthMbps = Math.floor(speedLimitMbps * utilization);
-          }
-
-          // Enforce physical limits
-          if (bandwidthMbps > speedLimitMbps) {
-            bandwidthMbps = Math.floor(speedLimitMbps * 0.75);
-          }
-
-          const randomSubnet = Math.floor(Math.random() * 254) + 1;
-          const randomVlan = String(Math.floor(Math.random() * 900) + 100);
-          const streamGbps = bandwidthMbps >= 1000
-            ? `${(bandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
-            : `${bandwidthMbps} Mbps`;
-
-          const streamName = numStreamsToCreate > 1
-            ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${streamGbps})`
-            : `${labelToUse} - ${profile.name} (${streamGbps})`;
-
-          addTrafficStream({
-            id: `t-${uuidv4()}`,
-            name: streamName,
-            sourceNodeId: newNode.id,
-            vlan: randomVlan,
-            ipSrc: `192.168.${randomSubnet}.25`,
-            ipDst: `10.10.${randomSubnet}.5`,
-            portSrc: String(Math.floor(Math.random() * 50000) + 1024),
-            portDst: profile.port,
-            protocol: profile.proto as 'tcp' | 'udp' | 'icmp',
-            bandwidth: bandwidthMbps,
-            active: true,
-            drift: 1,
-            lastDriftUpdate: 0
-          });
-        }
-      }
-    },
-    [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData]
-  );
-
-  const onSelectionChange = useCallback(({ nodes }: { nodes: CustomNode[] }) => {
-    if (nodes.length === 1) {
-      setSelectedNodeId(nodes[0].id);
-    } else {
-      setSelectedNodeId(null);
+      if (targetNode && String(targetNode.data?.model || '').includes('HC')) {
+        const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || ''), installedModules = (targetNode.data?.installedModules as any[])?.map(m => m.sku) || [];
+        if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) { alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`); return; }
+        const apps = targetNode.data.gigaSmartApps || [], incompatibleApp = apps.find((a: any) => !areActionsCompatible(actionType, a.actionType).compatible);
+        if (incompatibleApp) { alert(`🚫 COMBINATION REFUSED: ${areActionsCompatible(actionType, incompatibleApp.actionType).reason}`); return; }
+        updateNodeData(targetNode.id, { gigaSmartApps: [...apps, { id: `gs-${Date.now()}`, label, actionType, dedupRate: 20, metadataFormat: 'CEF' }] });
+      } else alert(advancedMode && !nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC')) ? "GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first." : "In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
+      return;
     }
-  }, [setSelectedNodeId]);
 
-  const selectedInputNodes = nodes.filter(
-    (n) => n.selected && n.type === 'inputNode'
-  );
+    const mergedData = { ...initialData };
+    let labelToUse = label;
+    if (type === NODE_TYPES.INPUT) {
+      let maxIndex = 0;
+      nodes.forEach(n => { if (n.type === NODE_TYPES.INPUT) { const m = String(n.data?.label || '').match(/(?:TAP\s+|Port\s+|Tunnel\s+|Traffic\s+|Estate\s+)(\d+)/i); if (m) maxIndex = Math.max(maxIndex, parseInt(m[1], 10)); } });
+      const nIdx = maxIndex + 1;
+      if (initialData?.configType === 'Network Tap' || initialData?.configType === 'Virtual TAP' || initialData?.configType === CONFIG_TYPES.TAP) labelToUse = `Network TAP ${nIdx}`;
+      else if (initialData?.configType === 'SPAN Port' || initialData?.configType === CONFIG_TYPES.SPAN) labelToUse = `SPAN Port ${nIdx}`;
+      else if (initialData?.configType === CONFIG_TYPES.ERSPAN) labelToUse = `ERSPAN Tunnel ${nIdx}`;
+      else if (initialData?.configType === CONFIG_TYPES.EAST_WEST) labelToUse = `East/West Traffic ${nIdx}`;
+      else if (initialData?.configType === CONFIG_TYPES.VMWARE || initialData?.configType === 'GigaVUE-VM') labelToUse = `VMWare Estate ${nIdx}`;
+    } else if (type === NODE_TYPES.HARDWARE) {
+      let maxIndex = 0;
+      const baseModel = String(initialData?.model || initialData?.label || 'Node');
+      nodes.forEach(n => { if (n.type === NODE_TYPES.HARDWARE) { const nodeBaseModel = String(n.data?.model || n.data?.label || 'Node'); if (nodeBaseModel === baseModel) { const m = String(n.data?.label || '').match(new RegExp(`^${baseModel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+#?(\\d+)$`, 'i')); if (m) maxIndex = Math.max(maxIndex, parseInt(m[1], 10)); else if (String(n.data?.label) === baseModel) maxIndex = Math.max(maxIndex, 1); } } });
+      if (maxIndex > 0) labelToUse = `${baseModel} #${maxIndex + 1}`;
+    }
 
-  const selectedGroupNodes = nodes.filter(
-    (n) => n.selected && n.type === 'groupNode'
-  );
+    if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) { mergedData.dedupRate = Math.floor(Math.random() * 41) + 10; mergedData.lastDedupUpdate = Date.now(); }
+    if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
 
-  const selectedEdges = edges.filter((e) => e.selected);
-  const showGroupingBanner = selectedInputNodes.length >= 2 || selectedGroupNodes.length >= 1;
-  const showEdgeBanner = selectedEdges.length > 0;
+    let edgeToInterpose: any = null;
+    if (type === NODE_TYPES.MAP || type === NODE_TYPES.FILTER || type === NODE_TYPES.TOOL) {
+      for (const edge of edges) {
+        const srcNode = nodes.find(n => n.id === edge.source), targetNode = nodes.find(n => n.id === edge.target);
+        if (!srcNode || !targetNode || (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE)) continue;
+        const srcW = srcNode.measured?.width || srcNode.width || 170, srcH = srcNode.measured?.height || srcNode.height || 75;
+        const ax = srcNode.position.x + srcW, ay = srcNode.position.y + srcH / 2;
+        const targetH = targetNode.measured?.height || targetNode.height || 75, bx = targetNode.position.x, by = targetNode.position.y + targetH / 2;
+        const px = position.x, py = position.y, dx = bx - ax, dy = by - ay, lenSq = dx * dx + dy * dy;
+        let t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
+        const cx = ax + t * dx, cy = ay + t * dy, distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+        if (Math.sqrt(distSq) < 80) { edgeToInterpose = edge; break; }
+      }
+    }
 
-  const handleDeleteSelectedEdges = () => {
-    onEdgesChange(selectedEdges.map((e) => ({ id: e.id, type: 'remove' })));
-  };
+    const newNode: CustomNode = { id: uuidv4(), type, position, data: { label: labelToUse, configType: mergedData.configType || labelToUse, ...mergedData } };
+    addNode(newNode);
 
-  const handleCreateGroup = () => {
-    useStore.getState().groupSelectedNodes();
-  };
+    if (edgeToInterpose) {
+      const leftEdge = { id: `e-${uuidv4()}`, source: edgeToInterpose.source, sourceHandle: edgeToInterpose.sourceHandle, target: newNode.id, targetHandle: 'in' };
+      const rightEdge = { id: `e-${uuidv4()}`, source: newNode.id, sourceHandle: 'out', target: edgeToInterpose.target, targetHandle: edgeToInterpose.targetHandle };
+      setEdges(edges.filter(e => e.id !== edgeToInterpose.id).concat(leftEdge, rightEdge));
+    }
+    setHoveredEdgeId(null);
 
-  const handleUngroup = () => {
-    selectedGroupNodes.forEach((groupNode) => {
-      useStore.getState().ungroupGroup(groupNode.id);
-    });
-  };
+    if (type === NODE_TYPES.INPUT || (type === NODE_TYPES.HARDWARE && String(newNode.data?.model || '').includes('TAP'))) {
+      let speedLimitMbps = 10000;
+      if (type === NODE_TYPES.INPUT) { const m = String(newNode.data?.portSpeed || '').match(/(\d+)G/i); speedLimitMbps = m ? parseInt(m[1], 10) * 1000 : Number(newNode.data.linkSpeed || 10000); }
+      else { const m = String(newNode.data?.model || ''); speedLimitMbps = m.includes('25') ? 25000 : (m.includes('40') ? 40000 : (m.includes('100') ? 100000 : (m.includes('400') ? 400000 : 10000))); }
+      const tappedLinksCount = type === NODE_TYPES.HARDWARE ? ((newNode.data?.tappedLinksCount as number) ?? 1) : 1;
+      const numStreamsToCreate = Math.min(tappedLinksCount, 4), profiles = [{ name: 'Web Traffic', port: '443', proto: 'tcp' }, { name: 'DB Sync Flow', port: '5432', proto: 'tcp' }, { name: 'App Services API', port: '8080', proto: 'tcp' }, { name: 'DNS Queries Query', port: '53', proto: 'udp' }, { name: 'Video Streaming Media', port: '5004', proto: 'udp' }, { name: 'VoIP Signaling', port: '5060', proto: 'udp' }, { name: 'Encrypted VPN Tunnel', port: '500', proto: 'udp' }, { name: 'ICMP Diagnostics', port: '0', proto: 'icmp' }];
+      for (let i = 0; i < numStreamsToCreate; i++) {
+        const profile = profiles[(Math.floor(Math.random() * profiles.length) + i) % profiles.length], pt = ['low', 'medium', 'high'][Math.floor(Math.random() * 3)];
+        let bw = pt === 'low' ? [10, 50, 100, 250, 500][Math.floor(Math.random() * 5)] : (pt === 'medium' ? [1000, 2000, 5000][Math.floor(Math.random() * 3)] : Math.floor(speedLimitMbps * (0.3 + Math.random() * 0.45)));
+        if (bw > speedLimitMbps) bw = Math.floor(speedLimitMbps * 0.75);
+        const sub = Math.floor(Math.random() * 254) + 1, vlan = String(Math.floor(Math.random() * 900) + 100);
+        const gLabel = bw >= 1000 ? `${(bw / 1000).toFixed(1).replace('.0', '')} Gbps` : `${bw} Mbps`;
+        addTrafficStream({ id: `t-${uuidv4()}`, name: numStreamsToCreate > 1 ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${gLabel})` : `${labelToUse} - ${profile.name} (${gLabel})`, sourceNodeId: newNode.id, vlan, ipSrc: `192.168.${sub}.25`, ipDst: `10.10.${sub}.5`, portSrc: String(Math.floor(Math.random() * 50000) + 1024), portDst: profile.port, protocol: profile.proto as any, bandwidth: bw, active: true, drift: 1, lastDriftUpdate: 0 });
+      }
+    }
+  }, [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData, edges, setEdges]);
+
+  const onSelectionChange = useCallback(({ nodes }: any) => setSelectedNodeId(nodes.length === 1 ? nodes[0].id : null), [setSelectedNodeId]);
+  
+  const selectedInputCount = nodes.filter(n => n.selected && n.type === 'inputNode').length;
+  const selectedGroupCount = nodes.filter(n => n.selected && n.type === 'groupNode').length;
+  const selectedEdges = edges.filter(e => e.selected);
 
   return (
     <div className="canvas-wrapper" ref={reactFlowWrapper}>
       <ReactFlow
-        nodes={nodes}
-        edges={styledEdges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragLeave={() => setHoveredEdgeId(null)}
+        nodes={nodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
+        onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
         onSelectionChange={onSelectionChange}
-        onNodeDoubleClick={(_, node) => {
-          const state = useStore.getState();
-          if (state.glowingNodeId === node.id) {
-            state.setGlowingNodeId(null);
-          } else {
-            state.setGlowingNodeId(node.id);
-          }
-        }}
-        onPaneClick={() => {
-          useStore.getState().setGlowingNodeId(null);
-        }}
-        deleteKeyCode={['Backspace', 'Delete']}
-        nodeOrigin={[0.5, 0.5]}
-        snapToGrid={snapToGrid}
-        snapGrid={[15, 15]}
+        onNodeDoubleClick={(_, node) => { const s = useStore.getState(); s.setGlowingNodeId(s.glowingNodeId === node.id ? null : node.id); }}
+        onPaneClick={() => useStore.getState().setGlowingNodeId(null)}
+        deleteKeyCode={['Backspace', 'Delete']} nodeOrigin={[0.5, 0.5]} snapToGrid={snapToGrid} snapGrid={[15, 15]}
       >
         {showGrid && <Background variant={BackgroundVariant.Lines} color="rgba(255,255,255,0.06)" gap={15} size={1} />}
         <Controls />
         <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            onClick={snapAllNodesToGrid}
-            title="Align all nodes to the nearest grid points"
-            style={{
-              padding: '6px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              background: '#1e1e1e',
-              border: '1px solid #333',
-              borderRadius: '4px',
-              color: '#00e5ff',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#252525';
-              e.currentTarget.style.borderColor = '#00e5ff';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = '#1e1e1e';
-              e.currentTarget.style.borderColor = '#333';
-            }}
-          >
-            <span>🧲</span> Snap All to Grid
-          </button>
-
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#1e1e1e',
-            border: '1px solid #333',
-            borderRadius: '4px',
-            padding: '6px 12px',
-            fontSize: '11px',
-            fontWeight: 600,
-            color: exportDiagramMode ? '#00e5ff' : '#ccc',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            userSelect: 'none',
-            transition: 'all 0.2s ease',
-          }}>
-            <input
-              type="checkbox"
-              checked={exportDiagramMode}
-              onChange={(e) => setExportDiagramMode(e.target.checked)}
-              style={{ cursor: 'pointer', accentColor: '#00e5ff' }}
-            />
-            Export Diagram Ready Mode
+          <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', fontSize: '11px', fontWeight: 600, color: exportDiagramMode ? '#00e5ff' : '#ccc', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', userSelect: 'none', transition: 'all 0.2s ease' }}>
+            <input type="checkbox" checked={exportDiagramMode} onChange={(e) => setExportDiagramMode(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#00e5ff' }} /> Export Diagram Ready Mode
           </label>
         </Panel>
       </ReactFlow>
 
-      {/* ── Federated Search Enclosures ── */}
-      {/* When a Splunk tool is linked to an S3 / Object Storage tool, draw
-          a dashed enclosure around both nodes to show they form a logical
-          "Federated Search" entity across traditional ingest and object storage. */}
       <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
-
-      {showGroupingBanner && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 100,
-          background: 'rgba(22, 22, 22, 0.95)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '20px',
-          padding: '8px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-        }}>
-          {selectedInputNodes.length >= 2 && (
-            <>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#ffffff' }}>
-                {selectedInputNodes.length} Traffic Nodes Selected
-              </span>
-              <button 
-                onClick={handleCreateGroup}
-                style={{
-                  background: 'linear-gradient(135deg, #00b0ff 0%, #00e5ff 100%)',
-                  color: '#121212',
-                  border: 'none',
-                  padding: '6px 12px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 8px rgba(0, 229, 255, 0.4)',
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                📦 Group Ports Together
-              </button>
-            </>
-          )}
-          {selectedInputNodes.length >= 2 && selectedGroupNodes.length >= 1 && (
-            <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }} />
-          )}
-          {selectedGroupNodes.length >= 1 && (
-            <>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#ffffff' }}>
-                {selectedGroupNodes.length} Port Group{selectedGroupNodes.length > 1 ? 's' : ''} Selected
-              </span>
-              <button 
-                onClick={handleUngroup}
-                style={{
-                  background: 'linear-gradient(135deg, #ff1744 0%, #ff5252 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '6px 12px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 8px rgba(255, 23, 68, 0.4)',
-                }}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                🔓 Ungroup Ports
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {showEdgeBanner && (
-        <div style={{
-          position: 'absolute',
-          top: showGroupingBanner ? '72px' : '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 100,
-          background: 'rgba(22, 22, 22, 0.95)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '20px',
-          padding: '8px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          transition: 'top 0.2s ease-in-out',
-        }}>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '12px' }}>🔗</span>
-            {selectedEdges.length === 1 ? (
-              <>
-                Selected Link:{' '}
-                <span style={{ color: 'var(--color-orange)' }}>
-                  {(() => {
-                    const e = selectedEdges[0];
-                    const sourceNode = nodes.find((n) => n.id === e.source);
-                    const targetNode = nodes.find((n) => n.id === e.target);
-                    const srcLabel = sourceNode?.data?.label || 'Source';
-                    const dstLabel = targetNode?.data?.label || 'Target';
-                    return `${srcLabel} ➔ ${dstLabel}`;
-                  })()}
-                </span>
-              </>
-            ) : (
-              `${selectedEdges.length} Links Selected`
-            )}
-          </span>
-          <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }} />
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            Press <kbd style={{ background: '#2a2a2a', border: '1px solid #444', padding: '2px 5px', borderRadius: '4px', color: '#fff', fontSize: '10px', fontFamily: 'monospace' }}>Delete</kbd> or <kbd style={{ background: '#2a2a2a', border: '1px solid #444', padding: '2px 5px', borderRadius: '4px', color: '#fff', fontSize: '10px', fontFamily: 'monospace' }}>Backspace</kbd> to delete
-          </span>
-          <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }} />
-          <button 
-            onClick={handleDeleteSelectedEdges}
-            style={{
-              background: 'linear-gradient(135deg, #ff1744 0%, #ff5252 100%)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '6px 12px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              boxShadow: '0 0 8px rgba(255, 23, 68, 0.4)',
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            🗑️ Remove Link{selectedEdges.length > 1 ? 's' : ''}
-          </button>
-        </div>
-      )}
-
-      {/* ── Dashboard Modal ── */}
-      {showDashboard && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 10000,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{
-            background: '#121212',
-            border: '1px solid #333',
-            borderRadius: '16px',
-            width: '90%',
-            height: '90%',
-            maxWidth: '1200px',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            boxShadow: '0 0 40px rgba(0,0,0,0.8)'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '16px 24px',
-              borderBottom: '1px solid #333',
-              background: 'rgba(255,255,255,0.03)'
-            }}>
-              <h2 style={{ margin: 0, fontSize: '16px', color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📊 Federated Network Insights
-              </h2>
-              <button 
-                onClick={() => setShowDashboard(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#aaa',
-                  cursor: 'pointer',
-                  fontSize: '24px',
-                  lineHeight: '1',
-                  padding: '4px'
-                }}
-              >
-                &times;
-              </button>
-            </div>
-            <div style={{ flex: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0a0a0a' }}>
-              <img 
-                src={dashboardImg}
-                alt="Network Insights Dashboard" 
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '100%', 
-                  objectFit: 'contain',
-                  borderRadius: '8px',
-                  border: '1px solid #222',
-                  boxShadow: '0 4px 20px rgba(0, 229, 255, 0.1)'
-                }} 
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {(selectedInputCount >= 2 || selectedGroupCount >= 1) && <GroupingBanner selectedInputCount={selectedInputCount} selectedGroupCount={selectedGroupCount} />}
+      {selectedEdges.length > 0 && <EdgeBanner selectedEdges={selectedEdges} onDelete={() => onEdgesChange(selectedEdges.map(e => ({ id: e.id, type: 'remove' })))} topOffset={selectedInputCount >= 2 || selectedGroupCount >= 1} />}
+      {showDashboard && <FederatedDashboard onClose={() => setShowDashboard(false)} />}
     </div>
   );
 };
