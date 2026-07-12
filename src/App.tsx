@@ -224,7 +224,7 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
                 borderRadius: '4px 4px 0 0'
               }}
             >
-              📂 Saved Slots &amp; Files
+              📂 Saved Layouts &amp; Files
             </button>
             <button
               onClick={() => setActiveTab('presets')}
@@ -249,13 +249,13 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
         {/* --- SAVE MODE PANEL --- */}
         {mode === 'save' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Local Save Slot Slot Row */}
+            {/* Local Save Layout Row */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#888', marginBottom: '6px' }}>Save to Browser Slot (Local Storage)</label>
+              <label style={{ display: 'block', fontSize: '11px', color: '#888', marginBottom: '6px' }}>Save to Browser Storage (This PC)</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
-                  placeholder="Slot name (e.g. my-topology)"
+                  placeholder="Layout name (e.g. my-topology)"
                   value={slotName}
                   onChange={(e) => setSlotName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -270,11 +270,11 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
               </div>
             </div>
 
-            {/* List of existing slots for quick overwrite */}
+            {/* List of existing layouts for quick overwrite */}
             <div style={{ marginTop: '4px' }}>
-              <span style={{ fontSize: '11px', color: '#888' }}>Existing Save Slots:</span>
+              <span style={{ fontSize: '11px', color: '#888' }}>Existing Saved Layouts:</span>
               {slots.length === 0 ? (
-                <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>No slots saved yet.</p>
+                <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>No layouts saved yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto', paddingRight: '4px', marginTop: '6px' }}>
                   {slots.map((name) => (
@@ -333,12 +333,12 @@ const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, o
               </label>
             </div>
 
-            <div style={{ height: '1px', background: '#2d2d2d', margin: '4px 0' }} />
+             <div style={{ height: '1px', background: '#2d2d2d', margin: '4px 0' }} />
 
-            {/* List of browser Slots */}
-            <span style={{ fontSize: '11px', color: '#888' }}>Browser Save Slots:</span>
+            {/* List of browser saved layouts */}
+            <span style={{ fontSize: '11px', color: '#888' }}>Saved Layouts on this PC:</span>
             {slots.length === 0 ? (
-              <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>No local browser slots saved yet.</p>
+              <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>No layouts saved on this PC yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
                 {slots.map((name) => (

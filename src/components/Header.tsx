@@ -1199,8 +1199,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               </label>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '6px' }}>
-                <button className="header-btn" onClick={onSaveClick} style={{ padding: '5px 8px' }} title="Save to local browser slots">Slots Save</button>
-                <button className="header-btn" onClick={onLoadClick} style={{ padding: '5px 8px' }} title="Load from local browser slots">Slots Load</button>
+                <button className="header-btn" onClick={onSaveClick} style={{ padding: '5px 8px' }} title="Save to browser local storage">Browser Save</button>
+                <button className="header-btn" onClick={onLoadClick} style={{ padding: '5px 8px' }} title="Load from browser local storage">Browser Load</button>
               </div>
             </div>
 
