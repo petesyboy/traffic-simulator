@@ -38,6 +38,7 @@ import SimulationEngine from './components/SimulationEngine';
 import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { TradeShowDemo } from './components/TradeShowDemo';
 import './App.css';
 import pkg from '../package.json';
 
@@ -569,6 +570,8 @@ function App() {
         onSaveFileClick={handleExportStateToFile}
         onLoadFileChange={handleImportStateFromFile}
       />
+
+      <TradeShowDemo />
 
       <div className="main-content">
         <ReactFlowProvider>

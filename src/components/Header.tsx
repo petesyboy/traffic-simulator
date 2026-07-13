@@ -48,6 +48,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const currentScenarioName = useStore((state) => state.currentScenarioName);
   const projectRegion = useStore((state) => state.projectRegion);
   const duplicateSolution = useStore((state) => state.duplicateSolution);
+  const isTradeShowDemoActive = useStore((state) => state.isTradeShowDemoActive);
+  const setTradeShowDemoActive = useStore((state) => state.setTradeShowDemoActive);
 
   // Local UI state for modals
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -243,6 +245,21 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   {activeView === 'rack' ? '🎯 Canvas View' : '🗄️ Rack View'}
                 </button>
               )}
+
+              <button
+                className="header-btn"
+                onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
+                title="Toggle Automated Trade Show Demonstration Mode"
+                style={{
+                  background: isTradeShowDemoActive ? '#ef5350' : 'rgba(34, 197, 94, 0.12)',
+                  color: isTradeShowDemoActive ? '#fff' : '#22c55e',
+                  borderColor: isTradeShowDemoActive ? '#ef5350' : 'rgba(34, 197, 94, 0.35)',
+                  fontWeight: 'bold',
+                  boxShadow: isTradeShowDemoActive ? '0 0 8px rgba(239, 83, 80, 0.4)' : 'none',
+                }}
+              >
+                {isTradeShowDemoActive ? '⏹ Stop Demo' : '📺 Auto Demo'}
+              </button>
 
               <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
                 📸 Screenshot

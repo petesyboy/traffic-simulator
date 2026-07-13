@@ -217,11 +217,17 @@ export interface RFState {
   activeView: 'canvas' | 'rack';
   sidebarMessage: string | null;
   currentScenarioName: string | null;
+  isTradeShowDemoActive: boolean;
+  tradeShowDemoStep: number;
+  tradeShowDemoStatus: string;
 
   // Actions
   setActiveView: (view: 'canvas' | 'rack') => void;
   setSidebarMessage: (msg: string | null) => void;
   setCurrentScenarioName: (name: string | null) => void;
+  setTradeShowDemoActive: (active: boolean) => void;
+  setTradeShowDemoStep: (step: number) => void;
+  setTradeShowDemoStatus: (status: string) => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
