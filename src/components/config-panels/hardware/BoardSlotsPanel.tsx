@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { CustomNode } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards } from '../../../utils/opticValidation';
@@ -18,16 +18,23 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
   const installedOptics: InstalledOptic[] = hwData.optics || [];
 
   // Find catalogue details to get module_slots count
-  let details: Record<string, any> | null = null;
-  if (model?.includes('TA')) details = (hardwareCatalogue as any).ta_series?.find((t: { sku: string }) => t.sku === sku) || null;
-  else if (model?.includes('HC')) details = (hardwareCatalogue as any).hc_series?.find((t: { sku: string }) => t.sku === sku) || null;
+  const details = useMemo(() => {
+    if (model?.includes('TA')) return (hardwareCatalogue as any).ta_series?.find((t: { sku: string }) => t.sku === sku) || null;
+    if (model?.includes('HC')) return (hardwareCatalogue as any).hc_series?.find((t: { sku: string }) => t.sku === sku) || null;
+    return null;
+  }, [model, sku]);
 
   if (!details?.module_slots) return null;
 
-  const supportedBoards = getSupportedBoards(model || '', hwData.portCapacity as string, installedOptics);
-  const installableBoards = supportedBoards.filter(b => !b.board.toLowerCase().includes('main') && !b.board.toLowerCase().includes('base'));
+  const supportedBoards = useMemo(() => {
+    return getSupportedBoards(model || '', hwData.portCapacity as string, installedOptics);
+  }, [model, hwData.portCapacity, installedOptics]);
 
-  const handleBoardSelect = (slotIndex: number, boardName: string) => {
+  const installableBoards = useMemo(() => {
+    return supportedBoards.filter(b => !b.board.toLowerCase().includes('main') && !b.board.toLowerCase().includes('base'));
+  }, [supportedBoards]);
+
+  const handleBoardSelect = useCallback((slotIndex: number, boardName: string) => {
     const newBoards = { ...installedBoards };
     if (boardName) {
       newBoards[slotIndex] = boardName;
@@ -42,7 +49,7 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
       installedBoards: newBoards,
       optics: nextOptics
     });
-  };
+  }, [installedBoards, installedOptics, selectedNode.id, updateNodeData]);
 
   const slots = [];
   for (let i = 1; i <= details.module_slots; i++) {

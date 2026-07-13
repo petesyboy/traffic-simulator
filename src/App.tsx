@@ -37,6 +37,7 @@ import RackElevationView from './components/RackElevationView';
 import SimulationEngine from './components/SimulationEngine';
 import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 import pkg from '../package.json';
 
@@ -576,11 +577,15 @@ function App() {
             {activeView === 'rack' ? (
               <RackElevationView />
             ) : (
-              <CanvasArea />
+              <ErrorBoundary name="Canvas Area">
+                <CanvasArea />
+              </ErrorBoundary>
             )}
             <TrafficGenerator />
           </div>
-          <ConfigPanel />
+          <ErrorBoundary name="Configuration Panel">
+            <ConfigPanel />
+          </ErrorBoundary>
           <SimulationEngine />
         </ReactFlowProvider>
       </div>
