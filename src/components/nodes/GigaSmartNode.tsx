@@ -21,6 +21,11 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
   const edges = useStore((state) => state.edges);
   const advancedMode = useStore((state) => state.advancedMode);
 
+  const isLoadBalancing = actionType === 'Load Balancing (Stateless)' || actionType === 'Load Balancing (Stateful)';
+  const linkCount = (data.linkCount as number) || 2;
+  const actualLinks = edges.filter((e) => e.source === id).length;
+  const isMismatch = isLoadBalancing && actualLinks !== linkCount;
+
   // Trace upstream from this GigaSMART node to find a GigaVUE-HC chassis
   let hasConnectedHc = false;
   const visited = new Set<string>();
@@ -96,6 +101,31 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
               Slice: {(data.sliceSize as number) || 128} Bytes
             </div>
             <span style={{ fontSize: '8.5px', color: '#666' }}>Truncate Payload</span>
+          </div>
+        )}
+
+        {advancedMode && isLoadBalancing && (
+          <div style={{ marginTop: '6px', fontSize: '9px' }}>
+            <div style={{ opacity: 0.8 }}>Method: {String(data.algorithm || 'Round Robin')}</div>
+            <div style={{ color: '#00e5ff', fontWeight: 'bold', marginTop: '2px' }}>
+              Configured Links: {linkCount} (Connected: {actualLinks})
+            </div>
+          </div>
+        )}
+
+        {isMismatch && (
+          <div className="node-warning-badge" style={{
+            marginTop: '6px',
+            padding: '4px 6px',
+            fontSize: '9.5px',
+            color: '#ffd54f',
+            background: 'rgba(255, 213, 79, 0.12)',
+            border: '1px solid rgba(255, 213, 79, 0.35)',
+            borderRadius: '3px',
+            lineHeight: '1.2',
+            fontWeight: 'bold'
+          }}>
+            ⚠️ Port mismatch: expected {linkCount}, connected {actualLinks}
           </div>
         )}
 
