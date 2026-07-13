@@ -22,6 +22,8 @@ import {
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import skusData from '../constants/skus.json';
+import CatalogueSection from './sidebar/CatalogueSection';
+import type { HardwareCatalogueItem } from './sidebar/CatalogueSection';
 
 const skus: Record<string, string> = skusData as Record<string, string>;
 
@@ -467,58 +469,46 @@ const Sidebar: React.FC = () => {
             {openSections.advanced && (
               <div className="tree-content" style={{ maxHeight: '550px', overflowY: 'auto' }}>
                 {/* TAPS Sub-accordion */}
-                <div 
-                  className="demo-group-label" 
-                  onClick={() => toggleSection('hwTaps')}
-                  style={{ padding: '8px 12px 6px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                >
-                  <span className={`chevron ${openSections.hwTaps ? 'open' : ''}`} style={{ marginRight: '6px' }}>▶</span>
-                  TAPs
-                </div>
-                {openSections.hwTaps && hardwareCatalogue.taps
-                  .filter(item => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku) && item.model.toLowerCase().includes(searchQuery))
-                  .map((item) => (
-                  <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku, image: (item as any).image, tappedLinksCount: 0, tappedLinkAllocations: [] })} title={skus[item.sku] || ''}>
-                    <TapIcon size={18} />
-                    <span>{item.model} {item.ru ? `(${item.ru < 1 ? '1/2' : item.ru} RU)` : ''}</span>
-                  </div>
-                ))}
-                
+                <CatalogueSection
+                  title="TAPs"
+                  items={hardwareCatalogue.taps as HardwareCatalogueItem[]}
+                  isOpen={openSections.hwTaps}
+                  onToggle={() => toggleSection('hwTaps')}
+                  searchQuery={searchQuery}
+                  filterFn={(item) => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku)}
+                  onDragStart={onDragStart}
+                  nodeType={NODE_TYPES.HARDWARE}
+                  fallbackIcon={TapIcon}
+                  skus={skus}
+                  renderLabel={(item) => <>{item.model} {item.ru ? `(${item.ru < 1 ? '1/2' : item.ru} RU)` : ''}</>}
+                  buildInitialData={(item) => ({ configType: 'Hardware', model: item.model, sku: item.sku, image: item.image, tappedLinksCount: 0, tappedLinkAllocations: [] })}
+                />
+
                 {/* TA Series Sub-accordion */}
-                <div 
-                  className="demo-group-label" 
-                  onClick={() => toggleSection('hwTa')}
-                  style={{ padding: '8px 12px 6px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                >
-                  <span className={`chevron ${openSections.hwTa ? 'open' : ''}`} style={{ marginRight: '6px' }}>▶</span>
-                  TA Series
-                </div>
-                {openSections.hwTa && hardwareCatalogue.ta_series
-                  .filter(item => item.model.toLowerCase().includes(searchQuery))
-                  .map((item) => (
-                  <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku, image: (item as any).image })} title={skus[item.sku] || ''}>
-                    {(item as any).image ? <img src={(item as any).image} style={{height:'16px', objectFit:'contain'}} alt={item.model} /> : <GreenCircleIcon size={18} />}
-                    <span>{item.model}</span>
-                  </div>
-                ))}
-                
+                <CatalogueSection
+                  title="TA Series"
+                  items={hardwareCatalogue.ta_series as HardwareCatalogueItem[]}
+                  isOpen={openSections.hwTa}
+                  onToggle={() => toggleSection('hwTa')}
+                  searchQuery={searchQuery}
+                  onDragStart={onDragStart}
+                  nodeType={NODE_TYPES.HARDWARE}
+                  fallbackIcon={GreenCircleIcon}
+                  skus={skus}
+                />
+
                 {/* HC Series Sub-accordion */}
-                <div 
-                  className="demo-group-label" 
-                  onClick={() => toggleSection('hwHc')}
-                  style={{ padding: '8px 12px 6px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                >
-                  <span className={`chevron ${openSections.hwHc ? 'open' : ''}`} style={{ marginRight: '6px' }}>▶</span>
-                  HC Series
-                </div>
-                {openSections.hwHc && hardwareCatalogue.hc_series
-                  .filter(item => item.model.toLowerCase().includes(searchQuery))
-                  .map((item) => (
-                  <div key={item.sku} className="tree-draggable" draggable onDragStart={(e) => onDragStart(e, NODE_TYPES.HARDWARE, item.model, { configType: 'Hardware', model: item.model, sku: item.sku, image: (item as any).image })} title={skus[item.sku] || ''}>
-                    {(item as any).image ? <img src={(item as any).image} style={{height:'16px', objectFit:'contain'}} alt={item.model} /> : <MapIcon size={18} />}
-                    <span>{item.model}</span>
-                  </div>
-                ))}
+                <CatalogueSection
+                  title="HC Series"
+                  items={hardwareCatalogue.hc_series as HardwareCatalogueItem[]}
+                  isOpen={openSections.hwHc}
+                  onToggle={() => toggleSection('hwHc')}
+                  searchQuery={searchQuery}
+                  onDragStart={onDragStart}
+                  nodeType={NODE_TYPES.HARDWARE}
+                  fallbackIcon={MapIcon}
+                  skus={skus}
+                />
               </div>
             )}
           </div>

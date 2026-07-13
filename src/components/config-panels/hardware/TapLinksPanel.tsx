@@ -3,6 +3,7 @@ import type { CustomNode } from '../../../store/store';
 import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
+import { getOpticSpeed } from '../../../utils/hardwareUtils';
 
 interface TapLinksPanelProps {
   selectedNode: CustomNode;
@@ -62,22 +63,9 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532');
 
-  const getOpticSpeed = (opticVal: string): string => {
-    const m = opticVal.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
-    if (m) return m[1].toUpperCase();
-
-    const upper = opticVal.toUpperCase();
-    if (upper.startsWith('QDD-')) return '400G';
-    if (upper.startsWith('Q28-') || upper.startsWith('QSB-51') || upper.startsWith('QSB-52') || upper.startsWith('QSB-53')) return '100G';
-    if (upper.startsWith('QSF-') || upper.startsWith('QSB-50')) return '40G';
-    if (upper.startsWith('SFP-55')) return '25G';
-    if (upper.startsWith('SFP-53')) return '10G';
-    if (upper.startsWith('SFP-50')) return '1G';
-    return '';
-  };
-
   const networkSpeed = getOpticSpeed(activeAddOptic);
-  const speedFilteredToolOptics = (networkSpeed && !isPassiveOpticalTap)
+  const hasKnownSpeed = networkSpeed !== 'Unknown';
+  const speedFilteredToolOptics = (hasKnownSpeed && !isPassiveOpticalTap)
     ? availableOptics.filter(o => getOpticSpeed(o.value) === networkSpeed)
     : availableOptics.filter(o => o.isSM === isSMTap && !o.isCopper);
 

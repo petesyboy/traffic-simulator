@@ -4,6 +4,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus } from '../skuResolver';
+import { getBoardPortCapacity } from '../hardwareUtils';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
@@ -60,61 +61,6 @@ function checkSkuStatus(
       message: msg
     });
   }
-}
-
-// Helper to get physical cage capacities for HC nodes and modules
-function getBoardCages(boardName: string, isPlus: boolean, model: string): { sfp: number; qsfp: number } {
-  const name = boardName.toLowerCase();
-  const modelLower = model.toLowerCase();
-  
-  if (modelLower.includes('ta25')) {
-    return { sfp: 48, qsfp: 8 };
-  }
-  if (modelLower.includes('ta200')) {
-    return { sfp: 0, qsfp: 64 };
-  }
-  if (modelLower.includes('ta400')) {
-    return { sfp: 0, qsfp: 32 };
-  }
-  
-  if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
-    if (isPlus) {
-      return { sfp: 8, qsfp: 4 };
-    } else if (modelLower.includes('hct')) {
-      return { sfp: 4, qsfp: 2 };
-    } else { // HC1
-      return { sfp: 12, qsfp: 0 };
-    }
-  }
-  
-  if (name.includes('q04x08')) {
-    return { sfp: 8, qsfp: 4 };
-  }
-  if (name.includes('d25a24') || name.includes('bps-hc1-d25a24')) {
-    return { sfp: 24, qsfp: 0 };
-  }
-  if (name.includes('x12') || name.includes('g12')) {
-    return { sfp: 12, qsfp: 0 };
-  }
-  if (name.includes('x24')) {
-    return { sfp: 24, qsfp: 0 };
-  }
-  if (name.includes('c08q08')) {
-    return { sfp: 0, qsfp: 16 };
-  }
-  if (name.includes('c16')) {
-    return { sfp: 0, qsfp: 16 };
-  }
-  if (name.includes('c08')) {
-    return { sfp: 0, qsfp: 8 };
-  }
-  if (name.includes('c05')) {
-    return { sfp: 0, qsfp: 5 };
-  }
-  if (name.includes('bps-hc3')) {
-    return { sfp: 16, qsfp: 4 };
-  }
-  return { sfp: 0, qsfp: 0 };
 }
 
 export function validateConfiguration(
@@ -217,13 +163,13 @@ export function validateConfiguration(
     else if (model.includes('HC1') && isPlus) baseBoardName = 'HC1P-BASE (Main Board)';
     else if (model.includes('HCT')) baseBoardName = 'HCT-C02 (Main Board)';
     
-    const baseCages = getBoardCages(baseBoardName, isPlus, model);
+    const baseCages = getBoardPortCapacity(baseBoardName, model, isPlus);
     totalSfpCages += baseCages.sfp;
     totalQsfpCages += baseCages.qsfp;
 
     Object.values(installedBoards).forEach((boardSku) => {
       if (!boardSku) return;
-      const cages = getBoardCages(boardSku, isPlus, model);
+      const cages = getBoardPortCapacity(boardSku, model, isPlus);
       totalSfpCages += cages.sfp;
       totalQsfpCages += cages.qsfp;
     });

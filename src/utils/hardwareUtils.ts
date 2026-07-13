@@ -18,6 +18,22 @@ export const getOpticSpeed = (opticName: string): '1G' | '10G' | '25G' | '40G' |
 };
 
 /**
+ * Returns the speed of an optic in Mbps as a number.
+ */
+export const getOpticSpeedMbps = (opticName: string): number => {
+  const speedMap: Record<string, number> = {
+    '1G': 1000,
+    '10G': 10000,
+    '25G': 25000,
+    '40G': 40000,
+    '100G': 100000,
+    '400G': 400000,
+    'Unknown': 0,
+  };
+  return speedMap[getOpticSpeed(opticName)] ?? 0;
+};
+
+/**
  * Returns the SFP and QSFP cage count for a given board/module name.
  */
 export const getBoardPortCapacity = (

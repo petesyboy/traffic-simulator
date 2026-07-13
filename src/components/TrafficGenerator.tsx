@@ -16,6 +16,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore, type TrafficStream } from '../store/store';
+import { getOpticSpeedMbps } from '../utils/hardwareUtils';
 
 const TrafficGenerator: React.FC = () => {
   const trafficStreams    = useStore((state) => state.trafficStreams);
@@ -92,31 +93,15 @@ const TrafficGenerator: React.FC = () => {
       const allocations = sourceNode.data.tappedLinkAllocations as any[];
       let totalLinkBandwidth = 0;
 
-      const getOpticSpeedMbps = (opticName: string): number => {
-        const m = opticName.match(/(100M|1G|10G|25G|40G|100G|400G)/i);
-        if (m) {
-          const speedStr = m[1].toUpperCase();
-          return speedStr === '100M' ? 100 : parseInt(speedStr) * 1000;
-        }
-        const upper = opticName.toUpperCase();
-        if (upper.startsWith('QDD-')) return 400000;
-        if (upper.startsWith('Q28-') || upper.startsWith('QSB-51') || upper.startsWith('QSB-52') || upper.startsWith('QSB-53')) return 100000;
-        if (upper.startsWith('QSF-') || upper.startsWith('QSB-50')) return 40000;
-        if (upper.startsWith('SFP-55')) return 25000;
-        if (upper.startsWith('SFP-53')) return 10000;
-        if (upper.startsWith('SFP-50')) return 1000;
-        return 1000; // default 1G
-      };
-
       if (allocations && allocations.length > 0) {
         allocations.forEach(a => {
           const opticName = a.toolOptic || a.optic || '';
-          const speedMbps = getOpticSpeedMbps(opticName);
+          const speedMbps = getOpticSpeedMbps(opticName) || 1000;
           totalLinkBandwidth += speedMbps * (a.qty || 1);
         });
       } else if (sourceNode.data.tappedLinkOptic) {
         const opticName = sourceNode.data.tappedLinkOptic as string;
-        const speedMbps = getOpticSpeedMbps(opticName);
+        const speedMbps = getOpticSpeedMbps(opticName) || 1000;
         const numLinks = (sourceNode.data.tappedLinksCount as number) ?? 1;
         totalLinkBandwidth = numLinks * speedMbps;
       }

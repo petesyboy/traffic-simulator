@@ -1,7 +1,7 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.327",
+    "version": "1.0.329",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -9,7 +9,9 @@
         "lint": "eslint .",
         "test": "vitest",
         "preview": "vite preview",
-        "update-skus": "python scripts/parse_skus.py"
+        "update-skus": "python scripts/parse_skus.py",
+        "format": "prettier --write src/",
+        "format:check": "prettier --check src/"
     },
     "dependencies": {
         "@xyflow/react": "^12.11.0",
@@ -35,6 +37,7 @@
         "typescript-eslint": "^8.59.2",
         "vite": "^8.0.12",
         "vite-plugin-singlefile": "^2.3.3",
+        "prettier": "^3.5.3",
         "vitest": "^4.1.9"
     }
 }

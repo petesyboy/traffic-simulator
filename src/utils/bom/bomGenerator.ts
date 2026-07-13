@@ -185,51 +185,10 @@ export function generateBom(
     });
 
     if (model.includes('HC')) {
-      const gsActions = new Set<string>();
-      if (Array.isArray(node.data?.gigaSmartApps)) node.data.gigaSmartApps.forEach((app: any) => app.actionType && gsActions.add(app.actionType));
-      const visited = new Set<string>([node.id]), queue = [node.id];
-      while (queue.length > 0) {
-        const currentId = queue.shift()!;
-        edges.filter(e => e.source === currentId).forEach(e => {
-          if (!visited.has(e.target)) {
-            visited.add(e.target);
-            const targetNode = nodes.find(n => n.id === e.target);
-            if (targetNode) {
-              if (targetNode.type === 'gigaSmartNode' && targetNode.data?.actionType) gsActions.add(targetNode.data.actionType);
-              if (targetNode.type !== 'hardwareNode') queue.push(e.target);
-            }
-          }
-        });
-      }
+      const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as any[], edges, syncedNodes);
       gsActions.forEach(action => {
-        let gsSku = '';
-        const isHtl = licenseMode === 'HTL';
-        if (action === 'Deduplication') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-DD1-SW-TM' : 'SMT-HC1-DD1';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = isHtl ? 'SMT-HC1P-GEN3-DD1-SW-TM' : 'SMT-HC1P-GEN3-DD1-PL';
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-DD1-SW-TM' : 'SMT-HC3-GEN3-DD1';
-        } else if (action === 'SSL Decrypt') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-INSSL-SW-TM' : 'SMT-HC1-INSSL';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = isHtl ? 'SMT-HC1P-GEN3-INSSL-SW-TM' : 'SMT-HC1P-GEN3-INSSL-PL';
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-INSSL-SW-TM' : 'SMT-HC3-GEN3-INSSL-PL';
-        } else if (action === 'Masking') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = ''; // Masking is included in the HC1 Plus base license
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-APF-SW-TM' : 'SMT-HC3-GEN3-APF';
-        } else if (action === 'Packet Slicing') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = ''; // Packet Slicing is included in the HC1 Plus base license
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-AFS-SW-TM' : 'SMT-HC3-GEN3-AFS-PL';
-        } else if (action === 'Header Stripping') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-HS1-SW-TM' : 'SMT-HC1-HS1';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = isHtl ? 'SMT-HC1P-GEN3-HS1-SW-TM' : 'SMT-HC1P-GEN3-HS1-PL';
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-HS1-SW-TM' : 'SMT-HC3-GEN3-HS1-PL';
-        } else if (action === 'Application Metadata' || action === 'AMX' || action === 'AMI') {
-          if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-AMI-SW-TM' : 'SMT-HC1-AMI';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = isHtl ? 'SMT-HC1P-GEN3-AMI-SW-TM' : 'SMT-HC1P-GEN3-AMI-PL';
-          else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-AMI-SW-TM' : 'SMT-HC3-GEN3-AMI';
-        }
-        if (gsSku) addRow(node.id, gsSku, 1, 'License', isHtl ? termOverride : undefined);
+        const gsSku = resolveGigaSmartSku(action, model, licenseMode);
+        if (gsSku) addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
       });
     }
   });
@@ -286,6 +245,85 @@ export function generateBom(
   }
 
   return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
+}
+
+// ─── Shared GigaSMART helpers ─────────────────────────────────────────────────
+
+/** Resolve the GigaSMART licence SKU for a given action + chassis model + licence mode */
+function resolveGigaSmartSku(
+  action: string,
+  model: string,
+  licenseMode: 'HTL' | 'Perpetual',
+): string {
+  const isHtl = licenseMode === 'HTL';
+  const isHc1Plain = model.includes('HC1') && !model.includes('HC1-Plus') && !model.includes('HC1P');
+  const isHc1Plus = model.includes('HC1-Plus') || model.includes('HC1P');
+  const isHc3 = model.includes('HC3');
+
+  switch (action) {
+    case 'Deduplication':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-DD1-SW-TM' : 'SMT-HC1-DD1';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-DD1-SW-TM' : 'SMT-HC1P-GEN3-DD1-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-DD1-SW-TM' : 'SMT-HC3-GEN3-DD1';
+      return '';
+    case 'SSL Decrypt':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-INSSL-SW-TM' : 'SMT-HC1-INSSL';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-INSSL-SW-TM' : 'SMT-HC1P-GEN3-INSSL-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-INSSL-SW-TM' : 'SMT-HC3-GEN3-INSSL-PL';
+      return '';
+    case 'Masking':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
+      if (isHc1Plus) return ''; // Masking is included in the HC1 Plus base license
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-APF-SW-TM' : 'SMT-HC3-GEN3-APF';
+      return '';
+    case 'Packet Slicing':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
+      if (isHc1Plus) return ''; // Packet Slicing is included in the HC1 Plus base license
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-AFS-SW-TM' : 'SMT-HC3-GEN3-AFS-PL';
+      return '';
+    case 'Header Stripping':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-HS1-SW-TM' : 'SMT-HC1-HS1';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-HS1-SW-TM' : 'SMT-HC1P-GEN3-HS1-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-HS1-SW-TM' : 'SMT-HC3-GEN3-HS1-PL';
+      return '';
+    case 'Application Metadata':
+    case 'AMX':
+    case 'AMI':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-AMI-SW-TM' : 'SMT-HC1-AMI';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-AMI-SW-TM' : 'SMT-HC1P-GEN3-AMI-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-AMI-SW-TM' : 'SMT-HC3-GEN3-AMI';
+      return '';
+    default:
+      return '';
+  }
+}
+
+/** Walk the graph from a given HC node and collect all GigaSMART actions */
+function resolveGsActionsFromGraph(
+  nodeId: string,
+  localApps: any[] | undefined,
+  edges: Edge[],
+  nodes: CustomNode[],
+): Set<string> {
+  const gsActions = new Set<string>();
+  if (Array.isArray(localApps)) localApps.forEach((app: any) => app.actionType && gsActions.add(app.actionType));
+
+  const visited = new Set<string>([nodeId]);
+  const queue = [nodeId];
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    edges.filter(e => e.source === currentId).forEach(e => {
+      if (!visited.has(e.target)) {
+        visited.add(e.target);
+        const targetNode = nodes.find(n => n.id === e.target);
+        if (targetNode) {
+          if (targetNode.type === 'gigaSmartNode' && targetNode.data?.actionType) gsActions.add(targetNode.data.actionType);
+          if (targetNode.type !== 'hardwareNode') queue.push(e.target);
+        }
+      }
+    });
+  }
+  return gsActions;
 }
 
 export function generateSingleNodeBom(
@@ -367,24 +405,12 @@ export function generateSingleNodeBom(
     if (numM200T > 0) addRow('TAP-M200T', numM200T, 'Dependency');
   }
   if (model.includes('HC')) {
-    const gsActions = new Set<string>();
-    if (Array.isArray(node.data?.gigaSmartApps)) node.data.gigaSmartApps.forEach((app: any) => app.actionType && gsActions.add(app.actionType));
-    const visited = new Set<string>([node.id]), queue = [node.id];
-    while (queue.length > 0) {
-      const currentId = queue.shift()!;
-      edges.filter(e => e.source === currentId).forEach(e => {
-        if (!visited.has(e.target)) {
-          visited.add(e.target);
-          const targetNode = nodes.find(n => n.id === e.target);
-          if (targetNode) { if (targetNode.type === 'gigaSmartNode' && targetNode.data?.actionType) gsActions.add(targetNode.data.actionType); else if (targetNode.type === 'filterNode' || targetNode.type === 'mapNode') queue.push(targetNode.id); }
-        }
-      });
-    }
+    const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as any[], edges, nodes);
     gsActions.forEach(action => {
-      let appSku = '';
-      if (action === 'dedup') appSku = 'CLS-HC1-DEDUP'; else if (action === 'slicing') appSku = 'CLS-HC1-SLICE'; else if (action === 'masking') appSku = 'CLS-HC1-MASK'; else if (action === 'header_stripping') appSku = 'CLS-HC1-STRIP';
-      if (appSku) { if (model.includes('HC3')) appSku = appSku.replace('HC1', 'HC3'); if (licenseMode === 'HTL') appSku += '-SW-TM'; addRow(appSku, 1, 'License', termOverride); }
+      const gsSku = resolveGigaSmartSku(action, model, licenseMode);
+      if (gsSku) addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
     });
   }
   return Object.values(rowMap);
 }
+
