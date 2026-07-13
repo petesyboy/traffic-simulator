@@ -82,14 +82,10 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             Site: {data.site as string}
           </div>
         )}
-        <Handle type="target" position={Position.Left} id="in" style={{ top: '11%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '22%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '33%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '44%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-5" style={{ top: '55%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-6" style={{ top: '66%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-7" style={{ top: '77%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-8" style={{ top: '88%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={Position.Left} id="in" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}

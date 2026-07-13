@@ -68,14 +68,10 @@ const GigaStreamNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =>
             <span>Tx: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
-        <Handle type="source" position={Position.Right} id="out" style={{ top: '11%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-2" style={{ top: '22%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-3" style={{ top: '33%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-4" style={{ top: '44%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-5" style={{ top: '55%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-6" style={{ top: '66%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-7" style={{ top: '77%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-8" style={{ top: '88%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={Position.Right} id="out" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={Position.Right} id="out-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={Position.Right} id="out-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={Position.Right} id="out-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
       </div>
     </>
   );
