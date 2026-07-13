@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/store';
+import { useReactFlow } from '@xyflow/react';
 
 export const TradeShowDemo: React.FC = () => {
   const isDemoActive = useStore((s) => s.isTradeShowDemoActive);
@@ -14,6 +15,8 @@ export const TradeShowDemo: React.FC = () => {
   const addTrafficStream = useStore((s) => s.addTrafficStream);
   const toggleSimulation = useStore((s) => s.toggleSimulation);
   const setAdvancedMode = useStore((s) => s.setAdvancedMode);
+
+  const { fitView } = useReactFlow();
 
   const timerRef = useRef<any>(null);
   const [countdown, setCountdown] = useState<number>(0);
@@ -60,13 +63,13 @@ export const TradeShowDemo: React.FC = () => {
           addNode({
             id: 'demo-tap-1',
             type: 'inputNode',
-            position: { x: 80, y: 120 },
+            position: { x: 80, y: 100 },
             data: { label: 'Network TAP 1', configType: 'Network Tap', portSpeed: '10G' }
           });
           addNode({
             id: 'demo-tap-2',
             type: 'inputNode',
-            position: { x: 80, y: 320 },
+            position: { x: 80, y: 340 },
             data: { label: 'Network TAP 2', configType: 'Network Tap', portSpeed: '10G' }
           });
 
@@ -106,16 +109,16 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 2:
-          setDemoStatus('Step 2: Placing a GigaVUE-TA200 Aggregation Node...');
+          setDemoStatus('Step 2: Placing a GigaVUE-TA25 Aggregation Node...');
           addNode({
             id: 'demo-ta',
             type: 'hardwareNode',
-            position: { x: 340, y: 220 },
+            position: { x: 440, y: 220 },
             data: { 
-              label: 'GigaVUE-TA200', 
-              model: 'TA200',
+              label: 'GigaVUE-TA25', 
+              model: 'TA25',
               configType: 'Chassis',
-              installedBoards: { 'Slot 1': 'TA200 Base' },
+              installedBoards: { 'Slot 1': 'TA25 Base' },
               optics: [{ board: 'Base', optic: 'SFP-532', qty: 4 }]
             }
           });
@@ -123,10 +126,10 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 3:
-          setDemoStatus('Step 3: Connecting Network TAPs to GigaVUE-TA200 Aggregation ports...');
+          setDemoStatus('Step 3: Connecting BOTH Network TAPs to GigaVUE-TA25 ports...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
-            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in-2' }
+            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' }
           ]);
           timerRef.current = setTimeout(() => runStep(4), 3000);
           break;
@@ -136,7 +139,7 @@ export const TradeShowDemo: React.FC = () => {
           addNode({
             id: 'demo-hc',
             type: 'hardwareNode',
-            position: { x: 600, y: 220 },
+            position: { x: 800, y: 220 },
             data: { 
               label: 'GigaVUE-HC1-Plus', 
               model: 'HC1-Plus',
@@ -149,10 +152,10 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 5:
-          setDemoStatus('Step 5: Routing aggregated streams from TA200 into the HC1-Plus chassis...');
+          setDemoStatus('Step 5: Routing aggregated streams from TA25 into the HC1-Plus chassis...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
-            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in-2' },
+            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
             { id: 'demo-e3', source: 'demo-ta', sourceHandle: 'out', target: 'demo-hc', targetHandle: 'in' }
           ]);
           timerRef.current = setTimeout(() => runStep(6), 3000);
@@ -163,14 +166,14 @@ export const TradeShowDemo: React.FC = () => {
           addNode({
             id: 'demo-gs-dedup',
             type: 'gigaSmartNode',
-            position: { x: 860, y: 120 },
+            position: { x: 1160, y: 100 },
             data: { label: 'Packet Deduplication', configType: 'GigaSMART', actionType: 'Deduplication', dedupRate: 35 }
           });
           addNode({
             id: 'demo-gs-ami',
             type: 'gigaSmartNode',
-            position: { x: 860, y: 320 },
-            data: { label: 'App Metadata (AMI)', configType: 'GigaSMART', actionType: 'Application Metadata', metadataFormat: 'JSON', metadataRate: 2.0 }
+            position: { x: 1160, y: 340 },
+            data: { label: 'App Metadata (AMI)', configType: 'GigaSMART', actionType: 'Application Metadata', metadataFormat: 'CEF', metadataRate: 2.0 }
           });
           timerRef.current = setTimeout(() => runStep(7), 4000);
           break;
@@ -179,7 +182,7 @@ export const TradeShowDemo: React.FC = () => {
           setDemoStatus('Step 7: Routing the streams into GigaSMART engines for processing...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
-            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in-2' },
+            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
             { id: 'demo-e3', source: 'demo-ta', sourceHandle: 'out', target: 'demo-hc', targetHandle: 'in' },
             { id: 'demo-e4', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-dedup', targetHandle: 'in' },
             { id: 'demo-e5', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-ami', targetHandle: 'in' }
@@ -192,14 +195,14 @@ export const TradeShowDemo: React.FC = () => {
           addNode({
             id: 'demo-tool-extrahop',
             type: 'toolNode',
-            position: { x: 1120, y: 120 },
+            position: { x: 1520, y: 100 },
             data: { label: 'ExtraHop Tool', toolName: 'ExtraHop', configType: 'Packet Tool' }
           });
           addNode({
             id: 'demo-tool-splunk',
             type: 'toolNode',
-            position: { x: 1120, y: 320 },
-            data: { label: 'Splunk Tool', toolName: 'Splunk', configType: 'Metadata Tool' }
+            position: { x: 1520, y: 340 },
+            data: { label: 'Splunk Tool', toolName: 'Splunk', configType: 'Metadata Tool', expectedFormat: 'CEF' }
           });
           timerRef.current = setTimeout(() => runStep(9), 3500);
           break;
@@ -208,7 +211,7 @@ export const TradeShowDemo: React.FC = () => {
           setDemoStatus('Step 9: Delivering optimized packet streams and metadata to tools...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
-            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in-2' },
+            { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
             { id: 'demo-e3', source: 'demo-ta', sourceHandle: 'out', target: 'demo-hc', targetHandle: 'in' },
             { id: 'demo-e4', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-dedup', targetHandle: 'in' },
             { id: 'demo-e5', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-ami', targetHandle: 'in' },
@@ -237,6 +240,15 @@ export const TradeShowDemo: React.FC = () => {
         default:
           runStep(0);
       }
+
+      // Smoothly pan & zoom to center the currently placed nodes
+      setTimeout(() => {
+        try {
+          fitView({ duration: 800, padding: 0.15 });
+        } catch (e) {
+          console.warn('fitView failed', e);
+        }
+      }, 80);
     };
 
     runStep(0);

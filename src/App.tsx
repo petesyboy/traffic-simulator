@@ -571,10 +571,9 @@ function App() {
         onLoadFileChange={handleImportStateFromFile}
       />
 
-      <TradeShowDemo />
-
       <div className="main-content">
         <ReactFlowProvider>
+          <TradeShowDemo />
           <Sidebar />
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             {activeView === 'rack' ? (
