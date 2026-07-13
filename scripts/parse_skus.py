@@ -40,7 +40,14 @@ def main():
 
     # Read CSV
     with open(csv_path, 'r', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f)
+        # Check if the first line is the title/metadata header row
+        first_line = f.readline()
+        if "picture" in first_line.lower() or "effective date" in first_line.lower():
+            print("Skipping metadata header row (line 1)...")
+            reader = csv.DictReader(f)
+        else:
+            f.seek(0)
+            reader = csv.DictReader(f)
         
         # Determine columns
         headers = reader.fieldnames
