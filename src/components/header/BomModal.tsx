@@ -9,6 +9,60 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, validateConfiguration } from '../../utils/bomEngine';
 import type { HardwareNodeData } from '../../store/types';
+import pricesData from '../../constants/prices.json';
+
+const prices = pricesData as Record<string, { listPrice: number; monthlyPrice: number }>;
+
+export const formatCurrency = (num: number) => {
+  if (!num || num === 0) return '-';
+  return '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+export const parseAndConvertDimensions = (dimStr: string) => {
+  const regex = /([\d.]+)\s*in\s*x\s*([\d.]+)\s*in\s*x\s*([\d.]+)\s*in/i;
+  const match = dimStr.match(regex);
+  if (match) {
+    const h = parseFloat(match[1]);
+    const w = parseFloat(match[2]);
+    const d = parseFloat(match[3]);
+    const hCm = (h * 2.54).toFixed(2);
+    const wCm = (w * 2.54).toFixed(2);
+    const dCm = (d * 2.54).toFixed(2);
+    return {
+      inches: dimStr,
+      cm: `${hCm} cm x ${wCm} cm x ${dCm} cm`
+    };
+  }
+  return {
+    inches: dimStr,
+    cm: dimStr
+  };
+};
+
+export const getItemPriceInfo = (sku: string, description: string, termStr?: string, qty: number = 1, discountPercent: number = 0) => {
+  const priceInfo = prices[sku] || { listPrice: 0, monthlyPrice: 0 };
+  
+  const isMonthly = sku.includes('-SW-TM') || 
+                    description.toLowerCase().includes('term license') || 
+                    description.toLowerCase().includes('gigavue-os term license for') || 
+                    priceInfo.monthlyPrice > 0;
+                    
+  const termMonths = termStr ? parseInt(termStr, 10) : 36;
+  const effectiveMonths = isNaN(termMonths) || termMonths <= 0 ? 36 : termMonths;
+  
+  const unitPrice = isMonthly ? (priceInfo.monthlyPrice || (priceInfo.listPrice / 36)) : priceInfo.listPrice;
+  let totalPrice = isMonthly ? unitPrice * effectiveMonths * qty : unitPrice * qty;
+  
+  if (discountPercent > 0) {
+    totalPrice = totalPrice * (1 - Math.min(100, Math.max(0, discountPercent)) / 100);
+  }
+  
+  return {
+    isMonthly,
+    unitPrice,
+    totalPrice
+  };
+};
 
 export interface BomModalProps {
   onClose: () => void;
@@ -210,6 +264,11 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
+  const [clickCount, setClickCount] = useState(0);
+  const showPricing = clickCount >= 5;
+
+  const [discounts, setDiscounts] = useState<Record<string, string>>({});
+  const [blanketDiscount, setBlanketDiscount] = useState<string>('0');
 
   const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true);
   const validationErrors = validateConfiguration(nodes, edges);
@@ -239,11 +298,22 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
 
   // ── Export handlers ──
   const handleExportBomCsv = () => {
-    const csv = ['Site,Type,SKU,Description,Term(Months),Qty']
+    const headers = showPricing ? 'Site,Type,SKU,Description,Term(Months),Qty,Unit Price,Discount %,Total Price' : 'Site,Type,SKU,Description,Term(Months),Qty';
+    const csv = [headers]
       .concat(
         items.map(
-          (i) =>
-            `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`,
+          (i) => {
+            const rowContent = `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`;
+            if (showPricing) {
+              const isSw = i.sku.endsWith('-SW-TM');
+              const discountStr = discounts[i.sku] !== undefined ? discounts[i.sku] : (isSw ? blanketDiscount : '0');
+              const parsed = parseFloat(discountStr);
+              const activeDiscount = isNaN(parsed) ? 0 : parsed;
+              const priceInfo = getItemPriceInfo(i.sku, i.description, i.term, i.qty, activeDiscount);
+              return `${rowContent},${priceInfo.unitPrice},${activeDiscount}%,${priceInfo.totalPrice}`;
+            }
+            return rowContent;
+          }
         ),
       )
       .join('\n');
@@ -284,6 +354,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     <div className="modal-overlay" style={{ background: 'rgba(0,0,0,0.8)' }}>
       <div
         className="modal-card"
+        onClick={() => setClickCount((prev) => prev + 1)}
         style={{
           width: '920px',
           maxHeight: '85vh',
@@ -305,7 +376,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         >
           <div style={{ display: 'flex', gap: '16px' }}>
             <button
-              onClick={() => setActiveTab('bom')}
+              onClick={(e) => { e.stopPropagation(); setActiveTab('bom'); }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -320,7 +391,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
               📋 Bill of Materials
             </button>
             <button
-              onClick={() => setActiveTab('physical')}
+              onClick={(e) => { e.stopPropagation(); setActiveTab('physical'); }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -391,7 +462,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
             {/* View mode toggle */}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button
-                onClick={() => setBomViewMode('site')}
+                onClick={(e) => { e.stopPropagation(); setBomViewMode('site'); }}
                 style={{
                   background: bomViewMode === 'site' ? '#ff9800' : '#333',
                   color: bomViewMode === 'site' ? '#fff' : '#aaa',
@@ -405,7 +476,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
                 By Site Breakdown
               </button>
               <button
-                onClick={() => setBomViewMode('master')}
+                onClick={(e) => { e.stopPropagation(); setBomViewMode('master'); }}
                 style={{
                   background: bomViewMode === 'master' ? '#ff9800' : '#333',
                   color: bomViewMode === 'master' ? '#fff' : '#aaa',
@@ -421,7 +492,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
             </div>
 
             {activeTab === 'bom'
-              ? renderBomTab(items, nodes, bomViewMode)
+              ? renderBomTab(items, nodes, bomViewMode, showPricing, discounts, setDiscounts, blanketDiscount, setBlanketDiscount)
               : renderPhysicalTab(physicalItems, physicalSiteGroups, bomViewMode, totalRU, totalWeight, totalPower, totalHeat)}
           </div>
         </div>
@@ -451,6 +522,11 @@ function renderBomTab(
   items: ReturnType<typeof generateBom>,
   nodes: ReturnType<typeof useStore.getState>['nodes'],
   bomViewMode: 'site' | 'master',
+  showPricing: boolean,
+  discounts: Record<string, string>,
+  setDiscounts: React.Dispatch<React.SetStateAction<Record<string, string>>>,
+  blanketDiscount: string,
+  setBlanketDiscount: (val: string) => void,
 ) {
   if (items.length === 0) {
     return (
@@ -481,12 +557,40 @@ function renderBomTab(
     siteGroups[siteKey][nodeKey].push(item);
   });
 
+  // Calculate master total price
+  let masterTotalPrice = 0;
+  masterBomItems.forEach(item => {
+    const isSw = item.sku.endsWith('-SW-TM');
+    const rowDiscountStr = discounts[item.sku] !== undefined ? discounts[item.sku] : (isSw ? blanketDiscount : '0');
+    const parsed = parseFloat(rowDiscountStr);
+    const activeDiscount = isNaN(parsed) ? 0 : parsed;
+    const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
+    masterTotalPrice += priceInfo.totalPrice;
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {showPricing && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#222', padding: '10px 16px', borderRadius: '6px', border: '1px solid #333' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>Blanket Software License Discount (ends with -SW-TM):</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={blanketDiscount}
+            onChange={(e) => setBlanketDiscount(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '60px', background: '#111', border: '1px solid #444', color: '#81c784', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold' }}
+          />
+          <span style={{ fontSize: '12px', color: '#888' }}>%</span>
+        </div>
+      )}
+
       {bomViewMode === 'master' ? (
         <div style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
-            Master BOM (All Sites)
+          <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Master BOM (All Sites)</span>
+            {showPricing && <span style={{ color: '#81c784' }}>Est. Total: {formatCurrency(masterTotalPrice)}</span>}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
             <thead>
@@ -496,69 +600,166 @@ function renderBomTab(
                 <th style={{ padding: '8px', color: '#888' }}>Description</th>
                 <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
                 <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
+                {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'center', width: '120px' }}>Discount %</th>}
+                {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Total Price</th>}
               </tr>
             </thead>
             <tbody>
-              {masterBomItems.map((item, i) => (
-                <tr key={i} style={{ borderBottom: i === masterBomItems.length - 1 ? 'none' : '1px solid #333' }}>
-                  <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
-                  <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                  <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
-                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
+              {masterBomItems.map((item, i) => {
+                const isSw = item.sku.endsWith('-SW-TM');
+                const rowDiscountStr = discounts[item.sku] !== undefined ? discounts[item.sku] : (isSw ? blanketDiscount : '0');
+                const parsed = parseFloat(rowDiscountStr);
+                const activeDiscount = isNaN(parsed) ? 0 : parsed;
+                const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
+
+                return (
+                  <tr key={i} style={{ borderBottom: i === masterBomItems.length - 1 ? 'none' : '1px solid #333' }}>
+                    <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                    <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                    <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
+                    <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                    <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
+                    {showPricing && (
+                      <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                        {(priceInfo.isMonthly || isSw) ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={rowDiscountStr}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setDiscounts(prev => ({ ...prev, [item.sku]: val }));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ width: '50px', background: '#111', border: '1px solid #444', color: '#fff', borderRadius: '4px', padding: '2px 4px', fontSize: '11px', textAlign: 'right' }}
+                            />
+                            <span style={{ color: '#888' }}>%</span>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#555' }}>-</span>
+                        )}
+                      </td>
+                    )}
+                    {showPricing && <td style={{ padding: '8px', color: '#81c784', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(priceInfo.totalPrice)}</td>}
+                  </tr>
+                );
+              })}
+              {showPricing && (
+                <tr style={{ background: '#111', borderTop: '2px solid #555' }}>
+                  <td colSpan={6} style={{ padding: '10px 8px', color: '#fff', fontWeight: 'bold', textAlign: 'right' }}>Total Estimated List Price:</td>
+                  <td style={{ padding: '10px 8px', color: '#81c784', fontWeight: 'bold', textAlign: 'right', fontSize: '12px' }}>{formatCurrency(masterTotalPrice)}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       ) : (
-        Object.entries(siteGroups).map(([siteKey, nodeGroups]) => (
-          <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
-            <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
-              Site: {siteKey}
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
-                  <th style={{ padding: '8px', color: '#888' }}>Type</th>
-                  <th style={{ padding: '8px', color: '#888' }}>SKU</th>
-                  <th style={{ padding: '8px', color: '#888' }}>Description</th>
-                  <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
-                  <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(nodeGroups).map(([nodeId, groupItems]) => {
-                  const nodeInfo = nodes.find((n) => n.id === nodeId);
-                  const nodeLabel = nodeInfo
-                    ? `${nodeInfo.data?.label || ''} (${(nodeInfo.data as HardwareNodeData)?.model || ''})`
-                    : nodeId === 'global'
-                      ? 'Global Accessories & Dependencies'
-                      : 'System Components';
+        Object.entries(siteGroups).map(([siteKey, nodeGroups]) => {
+          let siteTotalPrice = 0;
+          Object.entries(nodeGroups).forEach(([nodeId, groupItems]) => {
+            groupItems.forEach(item => {
+              const isSw = item.sku.endsWith('-SW-TM');
+              const rowKey = `${nodeId}-${item.sku}`;
+              const rowDiscountStr = discounts[rowKey] !== undefined ? discounts[rowKey] : (isSw ? blanketDiscount : '0');
+              const parsed = parseFloat(rowDiscountStr);
+              const activeDiscount = isNaN(parsed) ? 0 : parsed;
+              const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
+              siteTotalPrice += priceInfo.totalPrice;
+            });
+          });
 
-                  return (
-                    <React.Fragment key={nodeId}>
-                      <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
-                        <td colSpan={5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
-                          {nodeLabel}
-                        </td>
-                      </tr>
-                      {groupItems.map((item, i) => (
-                        <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
-                          <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
-                          <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                          <td style={{ padding: '8px', color: '#aaa', maxWidth: '350px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
-                          <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                          <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+          return (
+            <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Site: {siteKey}</span>
+                {showPricing && <span style={{ color: '#81c784' }}>Site Est. Total: {formatCurrency(siteTotalPrice)}</span>}
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
+                    <th style={{ padding: '8px', color: '#888' }}>Type</th>
+                    <th style={{ padding: '8px', color: '#888' }}>SKU</th>
+                    <th style={{ padding: '8px', color: '#888' }}>Description</th>
+                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
+                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
+                    {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'center', width: '120px' }}>Discount %</th>}
+                    {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Total Price</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(nodeGroups).map(([nodeId, groupItems]) => {
+                    const nodeInfo = nodes.find((n) => n.id === nodeId);
+                    const nodeLabel = nodeInfo
+                      ? `${nodeInfo.data?.label || ''} (${(nodeInfo.data as HardwareNodeData)?.model || ''})`
+                      : nodeId === 'global'
+                        ? 'Global Accessories & Dependencies'
+                        : 'System Components';
+
+                    return (
+                      <React.Fragment key={nodeId}>
+                        <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
+                          <td colSpan={showPricing ? 7 : 5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
+                            {nodeLabel}
+                          </td>
                         </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ))
+                        {groupItems.map((item, i) => {
+                          const isSw = item.sku.endsWith('-SW-TM');
+                          const rowKey = `${nodeId}-${item.sku}`;
+                          const rowDiscountStr = discounts[rowKey] !== undefined ? discounts[rowKey] : (isSw ? blanketDiscount : '0');
+                          const parsed = parseFloat(rowDiscountStr);
+                          const activeDiscount = isNaN(parsed) ? 0 : parsed;
+                          const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
+
+                          return (
+                            <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
+                              <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                              <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                              <td style={{ padding: '8px', color: '#aaa', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
+                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+                              {showPricing && (
+                                <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                                  {(priceInfo.isMonthly || isSw) ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={rowDiscountStr}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setDiscounts(prev => ({ ...prev, [rowKey]: val }));
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{ width: '50px', background: '#111', border: '1px solid #444', color: '#fff', borderRadius: '4px', padding: '2px 4px', fontSize: '11px', textAlign: 'right' }}
+                                      />
+                                      <span style={{ color: '#888' }}>%</span>
+                                    </div>
+                                  ) : (
+                                    <span style={{ color: '#555' }}>-</span>
+                                  )}
+                                </td>
+                              )}
+                              {showPricing && <td style={{ padding: '8px', color: '#81c784', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(priceInfo.totalPrice)}</td>}
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                  {showPricing && (
+                    <tr style={{ background: '#111', borderTop: '2px solid #555' }}>
+                      <td colSpan={6} style={{ padding: '10px 8px', color: '#fff', fontWeight: 'bold', textAlign: 'right' }}>Site Estimated Total:</td>
+                      <td style={{ padding: '10px 8px', color: '#81c784', fontWeight: 'bold', textAlign: 'right', fontSize: '11px' }}>{formatCurrency(siteTotalPrice)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -595,18 +796,30 @@ function renderPhysicalTab(
     </tr>
   );
 
-  const renderRow = (item: PhysicalItem, i: number) => (
-    <tr key={i} style={{ borderBottom: '1px solid #333' }}>
-      <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
-      <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
-      <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
-      <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>{item.dimensions}</td>
-      <td style={{ padding: '8px', color: '#aaa' }}>{item.weight}</td>
-      <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
-      <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
-      <td style={{ padding: '8px', color: '#ccc', textAlign: 'center' }}>{item.airflow}</td>
-    </tr>
-  );
+  const renderRow = (item: PhysicalItem, i: number) => {
+    const { inches, cm } = parseAndConvertDimensions(item.dimensions);
+    const lbs = `${item.weightNum.toFixed(1)} lbs`;
+    const kg = `${(item.weightNum * 0.45359237).toFixed(2)} kg`;
+
+    return (
+      <tr key={i} style={{ borderBottom: '1px solid #333' }}>
+        <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
+        <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
+        <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
+        <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>
+          <div>{inches}</div>
+          <div style={{ color: '#888', marginTop: '2px' }}>{cm}</div>
+        </td>
+        <td style={{ padding: '8px', color: '#aaa' }}>
+          <div>{lbs}</div>
+          <div style={{ color: '#888', marginTop: '2px' }}>{kg}</div>
+        </td>
+        <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
+        <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
+        <td style={{ padding: '8px', color: '#ccc', textAlign: 'center' }}>{item.airflow}</td>
+      </tr>
+    );
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -642,8 +855,10 @@ function renderPhysicalTab(
         </div>
         <div style={{ background: '#222', border: '1px solid #333', borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
           <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>Total Est. Weight</div>
-          <div style={{ fontSize: '20px', color: '#a855f7', fontWeight: 'bold' }}>{totalWeight.toFixed(1)} lbs</div>
-          <div style={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>{(totalWeight * 0.453592).toFixed(1)} kg</div>
+          <div style={{ fontSize: '16px', color: '#a855f7', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span>{totalWeight.toFixed(1)} lbs</span>
+            <span>{(totalWeight * 0.45359237).toFixed(1)} kg</span>
+          </div>
         </div>
         <div style={{ background: '#222', border: '1px solid #333', borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
           <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>Total Max Power</div>
