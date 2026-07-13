@@ -115,7 +115,16 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
             <span>⚠️ Requires HC Chassis</span>
           </div>
         )}
-        <Handle type="source" position={Position.Right} id="out" />
+        { (actionType === 'Load Balancing (Stateless)' || actionType === 'Load Balancing (Stateful)') ? (
+          <>
+            <Handle type="source" position={Position.Right} id="out" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
+            <Handle type="source" position={Position.Right} id="out-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
+            <Handle type="source" position={Position.Right} id="out-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
+            <Handle type="source" position={Position.Right} id="out-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
+          </>
+        ) : (
+          <Handle type="source" position={Position.Right} id="out" />
+        )}
       </div>
     </>
   );

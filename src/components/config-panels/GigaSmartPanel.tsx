@@ -58,6 +58,8 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           <option value={ACTION_TYPES.DEDUPLICATION}>Packet Deduplication</option>
           <option value={ACTION_TYPES.GVHTTP2}>GVHTTP2</option>
           <option value={ACTION_TYPES.HEADER_STRIP}>Header Stripping (VXLAN/MPLS)</option>
+          <option value="Load Balancing (Stateless)">Load Balancing (Stateless)</option>
+          <option value="Load Balancing (Stateful)">Load Balancing (Stateful)</option>
           <option value={ACTION_TYPES.MASKING}>Masking</option>
           <option value={ACTION_TYPES.AMX}>AMX</option>
           <option value={ACTION_TYPES.AMI}>AMI</option>
@@ -68,6 +70,18 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           <option value={ACTION_TYPES.SSL_DECRYPT}>SSL Decrypt</option>
         </select>
       </FormGroup>
+
+      {(actionType === 'Load Balancing (Stateless)' || actionType === 'Load Balancing (Stateful)') && (
+        <FormGroup label="Load Balancing Method">
+          <select
+            value={(node.data?.algorithm as string) || 'Round Robin'}
+            onChange={(e) => onGenericChange('algorithm', e.target.value)}
+          >
+            <option value="Round Robin">Round Robin (Split Traffic)</option>
+            <option value="L4 Hash">L4 Hash (IP/Port Flow Preserve)</option>
+          </select>
+        </FormGroup>
+      )}
 
       {isMetadataAction(actionType) && (
         <>
