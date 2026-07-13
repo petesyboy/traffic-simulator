@@ -6,6 +6,7 @@ import sys
 # Define paths
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKU_JSON_PATH = os.path.join(ROOT_DIR, 'src', 'constants', 'skus.json')
+METADATA_JSON_PATH = os.path.join(ROOT_DIR, 'src', 'constants', 'skus_metadata.json')
 
 def main():
     if len(sys.argv) < 2:
@@ -18,13 +19,18 @@ def main():
         print(f"Error: CSV file not found at {csv_path}")
         sys.exit(1)
 
-    # Load existing SKUs
+    # Load existing SKUs and metadata
     try:
         with open(SKU_JSON_PATH, 'r', encoding='utf-8') as f:
             skus = json.load(f)
-    except Exception as e:
-        print(f"Error loading {SKU_JSON_PATH}: {e}")
+    except Exception:
         skus = {}
+
+    try:
+        with open(METADATA_JSON_PATH, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+    except Exception:
+        metadata = {}
 
     print(f"Loaded {len(skus)} existing SKUs.")
 
@@ -33,9 +39,6 @@ def main():
     no_change = 0
 
     # Read CSV
-    # Supported header names:
-    # SKU / Part Number / PartNumber
-    # Description / Desc / Name
     with open(csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         
@@ -43,43 +46,61 @@ def main():
         headers = reader.fieldnames
         sku_col = None
         desc_col = None
+        eos_col = None
+        eol_col = None
+        repl_col = None
         
         for h in headers:
             h_lower = h.lower().strip()
-            if 'sku' in h_lower or 'part number' in h_lower or 'partnumber' in h_lower:
+            if h_lower == 'sku':
                 sku_col = h
-            elif 'description' in h_lower or 'desc' in h_lower or 'name' in h_lower:
+            elif h_lower == 'sku for' and not sku_col:
+                sku_col = h
+            elif 'sku' in h_lower and not sku_col:
+                sku_col = h
+                
+            if h_lower == 'detailed description':
                 desc_col = h
+            elif h_lower == 'description' and not desc_col:
+                desc_col = h
+            elif 'desc' in h_lower and not desc_col:
+                desc_col = h
+                
+            if 'end of sale' in h_lower or 'eos' in h_lower:
+                if 'replacement' in h_lower:
+                    repl_col = h
+                else:
+                    eos_col = h
+            elif 'end of life' in h_lower or 'eol' in h_lower:
+                eol_col = h
+            elif 'replacement' in h_lower and not repl_col:
+                repl_col = h
                 
         if not sku_col or not desc_col:
             print("Error: Could not identify SKU or Description columns in CSV.")
             print(f"CSV Headers found: {headers}")
-            print("Please ensure your CSV has header columns containing 'SKU' and 'Description'.")
             sys.exit(1)
             
-        print(f"Parsing CSV using columns: SKU='{sku_col}', Description='{desc_col}'...")
+        print(f"Parsing CSV: SKU='{sku_col}', Description='{desc_col}'")
+        if eos_col: print(f"  Found End of Sale column: '{eos_col}'")
+        if eol_col: print(f"  Found End of Life column: '{eol_col}'")
+        if repl_col: print(f"  Found Replacement SKU column: '{repl_col}'")
 
         for row in reader:
-            sku = row[sku_col].strip()
+            sku = row[sku_col].strip().upper()
             desc = row[desc_col].strip()
             if not sku:
                 continue
                 
-            # Clean SKU (uppercase, trim)
-            sku = sku.upper()
+            eos_val = row.get(eos_col, '').strip() if eos_col else ''
+            eol_val = row.get(eol_col, '').strip() if eol_col else ''
+            repl_val = row.get(repl_col, '').strip().upper() if repl_col else ''
             
-            # Check for EOS flags or dates in other columns
-            eos_info = ""
-            for k, v in row.items():
-                if k != sku_col and k != desc_col and v:
-                    k_lower = k.lower()
-                    if 'eos' in k_lower or 'end of sale' in k_lower:
-                        eos_info = f" (EOS {v.strip()})"
+            # Auto-suffix EOS date to description if present
+            if eos_val and eos_val.lower() not in desc.lower():
+                desc += f" (EOS {eos_val})"
             
-            # If EOS is mentioned in the description, ensure it is highlighted
-            if eos_info and eos_info.lower() not in desc.lower():
-                desc += eos_info
-
+            # Save SKU description
             if sku in skus:
                 if skus[sku] != desc:
                     skus[sku] = desc
@@ -89,19 +110,31 @@ def main():
             else:
                 skus[sku] = desc
                 added += 1
+                
+            # Save SKU metadata if any metadata exists
+            if eos_val or eol_val or repl_val:
+                metadata[sku] = {
+                    "eos": eos_val,
+                    "eol": eol_val,
+                    "replacement": repl_val
+                }
 
-    # Save back to json
+    # Save files
     try:
         with open(SKU_JSON_PATH, 'w', encoding='utf-8') as f:
             json.dump(skus, f, indent=2, ensure_ascii=False)
+        with open(METADATA_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2, ensure_ascii=False)
+            
         print("\n--- Update Summary ---")
         print(f"New SKUs Added:      {added}")
         print(f"SKUs Updated:        {updated}")
         print(f"SKUs Unchanged:      {no_change}")
-        print(f"Total SKUs in List:  {len(skus)}")
-        print(f"Successfully saved to: {SKU_JSON_PATH}")
+        print(f"Total SKUs:          {len(skus)}")
+        print(f"Metadata entries:    {len(metadata)}")
+        print(f"Saved to: {SKU_JSON_PATH} and {METADATA_JSON_PATH}")
     except Exception as e:
-        print(f"Error saving updated SKUs: {e}")
+        print(f"Error saving files: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':

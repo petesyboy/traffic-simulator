@@ -2,12 +2,64 @@ import { type Edge } from '@xyflow/react';
 import { type CustomNode } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
+import { resolveOpticSku } from './skuUtils';
+import { resolveNodeSkus } from '../skuResolver';
+import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
+}
+
+interface SkuMetadata {
+  eos?: string;
+  eol?: string;
+  replacement?: string;
+}
+
+let activeMetadata: Record<string, SkuMetadata> = skusMetadata as Record<string, SkuMetadata>;
+
+export function setMockSkusMetadata(mockData: Record<string, SkuMetadata> | null) {
+  if (mockData === null) {
+    activeMetadata = skusMetadata as Record<string, SkuMetadata>;
+  } else {
+    activeMetadata = mockData;
+  }
+}
+
+function checkSkuStatus(
+  sku: string,
+  typeName: string,
+  chassisLabel: string,
+  nodeId: string,
+  errors: ConfigurationValidationError[]
+) {
+  if (!sku) return;
+  const entry = activeMetadata[sku];
+  if (!entry) return;
+
+  const hasEos = Boolean(entry.eos);
+  const hasEol = Boolean(entry.eol);
+  
+  if (hasEos || hasEol) {
+    const statusStr = hasEol ? 'End of Life' : 'End of Sale';
+    const dateStr = hasEol ? entry.eol : entry.eos;
+    let msg = `${typeName} SKU "${sku}" on chassis "${chassisLabel}" is ${statusStr} (effective ${dateStr}).`;
+    if (entry.replacement) {
+      msg += ` It is not available. Please use replacement SKU "${entry.replacement}" instead.`;
+    } else {
+      msg += ` It is no longer supported.`;
+    }
+    
+    errors.push({
+      type: 'eos_eol_sku_used',
+      nodeId,
+      nodeLabel: chassisLabel,
+      message: msg
+    });
+  }
 }
 
 // Helper to get physical cage capacities for HC nodes and modules
@@ -70,6 +122,33 @@ export function validateConfiguration(
   edges: Edge[]
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
+
+  // ─── SKU Status Validation (EOS/EOL) ──────────────────────────────────────
+  nodes.filter((n) => n.type === NODE_TYPES.HARDWARE).forEach((hwNode) => {
+    const model = (hwNode.data?.model as string) || '';
+    const label = (hwNode.data?.label as string) || model;
+    
+    // 1. Check Chassis/TAP SKU
+    const resolved = resolveNodeSkus(hwNode.data || {}, 'Perpetual');
+    if (resolved && resolved.hwSku) {
+      checkSkuStatus(resolved.hwSku, 'Chassis/TAP', label, hwNode.id, errors);
+    }
+
+    // 2. Check Installed Slot Boards
+    const installedBoards = (hwNode.data?.installedBoards as Record<string, string>) || {};
+    Object.values(installedBoards).forEach((boardSku) => {
+      if (boardSku) {
+        checkSkuStatus(boardSku, 'Module', label, hwNode.id, errors);
+      }
+    });
+
+    // 3. Check Installed Optics
+    const installedOptics = (hwNode.data?.optics as { optic: string }[]) || [];
+    installedOptics.forEach((opt) => {
+      const opticSku = resolveOpticSku(opt.optic, model);
+      checkSkuStatus(opticSku, 'Optic', label, hwNode.id, errors);
+    });
+  });
 
   const gigasmartNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASMART);
   const hcNodes = nodes.filter(

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { syncOpticsOnTapConnection, validateConfiguration } from './bomEngine';
+import { syncOpticsOnTapConnection, validateConfiguration, setMockSkusMetadata } from './bomEngine';
 import { type CustomNode } from '../store/types';
 
 describe('BOM Engine', () => {
@@ -59,6 +59,31 @@ describe('BOM Engine', () => {
       ];
       const errors = validateConfiguration(nodes, []);
       expect(errors.some(e => e.type === 'port_capacity_exceeded')).toBe(true);
+    });
+
+    it('should flag an error if an optic SKU is marked as End of Sale in skus_metadata', () => {
+      setMockSkusMetadata({
+        'SFP-532T': { eos: '2025-07-07', replacement: 'SFP-532T-Replacement' }
+      });
+      
+      const nodes: CustomNode[] = [
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'HC1',
+            configType: 'HC',
+            model: 'GigaVUE-HC1',
+            optics: [{ board: 'Base Ports', optic: 'SFP-532', qty: 2 }]
+          }
+        }
+      ];
+      const errors = validateConfiguration(nodes, []);
+      expect(errors.some(e => e.type === 'eos_eol_sku_used' && e.message.includes('End of Sale') && e.message.includes('SFP-532T-Replacement'))).toBe(true);
+      
+      // Clean up mock
+      setMockSkusMetadata(null);
     });
   });
 });
