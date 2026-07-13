@@ -153,6 +153,15 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       if (msg) set({ sidebarMessage: msg });
     }
 
+    const isDuplicate = get().edges.some(
+      (e) =>
+        e.source === connection.source &&
+        e.target === connection.target &&
+        e.sourceHandle === connection.sourceHandle &&
+        e.targetHandle === connection.targetHandle
+    );
+    if (isDuplicate) return;
+
     const nextEdges = addEdge({ ...connection, id: `e-${uuidv4()}` }, get().edges);
     set({ edges: nextEdges, nodes: syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, nextEdges), nextEdges) });
   },

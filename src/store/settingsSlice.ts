@@ -54,12 +54,23 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   setPanelTextScale: (scale) => set({ panelTextScale: scale }),
 
   restoreState: (nodes, edges, trafficStreams, settings) => {
-    let syncedNodes = syncSplunkLabels(nodes, edges);
-    syncedNodes = syncOpticsOnTapConnection(syncedNodes, edges);
+    // Filter out duplicate edges that connect the exact same source/target handles
+    const uniqueEdges: any[] = [];
+    const seen = new Set<string>();
+    edges.forEach((edge) => {
+      const key = `${edge.source}_${edge.sourceHandle || ''}_${edge.target}_${edge.targetHandle || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueEdges.push(edge);
+      }
+    });
+
+    let syncedNodes = syncSplunkLabels(nodes, uniqueEdges);
+    syncedNodes = syncOpticsOnTapConnection(syncedNodes, uniqueEdges);
     
     const updateObj: any = {
       nodes: syncedNodes,
-      edges,
+      edges: uniqueEdges,
       trafficStreams: trafficStreams || get().trafficStreams,
       fitViewTrigger: get().fitViewTrigger + 1
     };
