@@ -47,6 +47,45 @@ export interface CustomTool {
   description?: string;
 }
 
+export interface GigaSmartApp {
+  name: string;
+  gsop?: string;
+  enabled?: boolean;
+}
+
+export interface InstalledOptic {
+  board: string;
+  optic: string;
+  qty: number;
+  isAutoAdded?: boolean;
+}
+
+export interface TappedLinkAllocation {
+  qty: number;
+  optic: string;
+  toolOptic?: string;
+  linkIndex?: number;
+  speed?: string;
+  fiberType?: string;
+  northOptic?: string;
+  southOptic?: string;
+}
+
+export interface BreakoutPanel {
+  type: string;
+  tray: string;
+  slot?: number;
+}
+
+export interface HardwareCatalogueItem {
+  sku: string;
+  model: string;
+  image?: string;
+  isCustom?: boolean;
+  tappedLinksCount?: number;
+  tappedLinkAllocations?: TappedLinkAllocation[];
+}
+
 export type NodeType = 
   | 'inputNode' 
   | 'mapNode' 
@@ -65,7 +104,7 @@ export interface BaseNodeData {
   receivedFormat?: string;
   totalIngestedBytes?: number;
   site?: string;
-  [key: string]: any; // Keep index signature for compatibility
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any -- index signature for generic data access; use typed interfaces for safety
 }
 
 export interface InputNodeData extends BaseNodeData {
@@ -106,16 +145,19 @@ export interface GigaStreamNodeData extends BaseNodeData {
 export interface HardwareNodeData extends BaseNodeData {
   model: string;
   sku?: string;
-  optics?: Array<{ board: string; optic: string; qty: number; isAutoAdded?: boolean }>;
+  image?: string;
+  optics?: InstalledOptic[];
   gigaSmartApps?: GigaSmartNodeData[];
   installedBoards?: Record<string, string>;
   powerSupply?: 'AC' | 'DC';
-  portCapacity?: 'Full' | 'Quarter' | 'Half' | 'Upgrade';
+  portCapacity?: 'Full' | 'Quarter' | 'Half' | 'Upgrade' | '100G';
   tapMode?: 'Passive' | 'Active';
   tapFiberMode?: 'Singlemode' | 'Multimode';
   tappedLinksCount?: number;
   tappedLinkOptic?: string;
-  tappedLinkAllocations?: Array<{ qty: number, optic: string, toolOptic?: string }>;
+  tappedLinkAllocations?: TappedLinkAllocation[];
+  breakoutPanels?: BreakoutPanel[];
+  psType?: string;
 }
 
 export interface ToolNodeData extends BaseNodeData {

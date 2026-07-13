@@ -19,6 +19,68 @@
   --color-filter: #0091ea;
   --color-tool: #25b34b;
   --color-gigasmart: #0091ea;
+
+  /* Panel & card surfaces */
+  --bg-panel: #1a1a2e;
+  --bg-card: #0d0d1a;
+  --bg-input: #121218;
+  --bg-surface: #222;
+  --bg-hover: #2a2a3e;
+
+  /* Borders */
+  --border-subtle: #333;
+  --border-default: #2a2a3e;
+  --border-strong: #444;
+
+  /* Accent colours */
+  --accent-cyan: #00e5ff;
+  --accent-cyan-bg: rgba(0, 229, 255, 0.08);
+  --accent-cyan-hover: rgba(0, 229, 255, 0.15);
+  --accent-cyan-border: rgba(0, 229, 255, 0.3);
+  --accent-orange: #ff9800;
+  --accent-orange-bg: rgba(255, 152, 0, 0.1);
+  --accent-red: #ef5350;
+  --accent-red-bg: rgba(239, 83, 80, 0.1);
+  --accent-green: #4caf50;
+  --accent-green-bg: rgba(76, 175, 80, 0.1);
+  --accent-purple: #7c4dff;
+
+  /* Typography */
+  --font-xs: 9px;
+  --font-sm: 10px;
+  --font-md: 11px;
+  --font-base: 12px;
+  --font-lg: 13px;
+  --font-xl: 14px;
+  --font-2xl: 16px;
+  --font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  /* Spacing scale */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+
+  /* Border radii */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.5);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
 }
 
 body {

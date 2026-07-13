@@ -1,0 +1,167 @@
+/**
+ * Hardware utility functions extracted from HardwareNodePanel.
+ * Provides optic speed detection, board port capacity, and chassis base port capacity.
+ */
+
+/**
+ * Determines the speed tier of an optic based on its SKU/name.
+ */
+export const getOpticSpeed = (opticName: string): '1G' | '10G' | '25G' | '40G' | '100G' | '400G' | 'Unknown' => {
+  const name = opticName.toUpperCase();
+  if (name.includes('400G') || name.startsWith('QDD-')) return '400G';
+  if (name.includes('100G') || name.startsWith('Q28-')) return '100G';
+  if (name.includes('40G') || name.startsWith('QSF-')) return '40G';
+  if (name.includes('25G') || name.startsWith('SFP-55')) return '25G';
+  if (name.includes('10G') || name.startsWith('SFP-53')) return '10G';
+  if (name.includes('1G') || name.startsWith('SFP-50')) return '1G';
+  return 'Unknown';
+};
+
+/**
+ * Returns the SFP and QSFP cage count for a given board/module name.
+ */
+export const getBoardPortCapacity = (
+  boardSku: string,
+  model: string,
+  isPlus: boolean
+): { sfp: number; qsfp: number } => {
+  const name = boardSku.toLowerCase();
+  const modelLower = model.toLowerCase();
+
+  if (modelLower.includes('ta25')) {
+    return { sfp: 48, qsfp: 8 };
+  }
+  if (modelLower.includes('ta200')) {
+    return { sfp: 0, qsfp: 64 };
+  }
+  if (modelLower.includes('ta400e')) {
+    return { sfp: 2, qsfp: 32 };
+  }
+  if (modelLower.includes('ta400')) {
+    return { sfp: 0, qsfp: 32 };
+  }
+
+  if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
+    if (isPlus) {
+      return { sfp: 8, qsfp: 4 };
+    } else if (modelLower.includes('hct')) {
+      return { sfp: 4, qsfp: 2 };
+    } else { // HC1
+      return { sfp: 12, qsfp: 0 };
+    }
+  }
+
+  if (name.includes('q04x08')) {
+    return { sfp: 8, qsfp: 4 };
+  }
+  if (name.includes('d25a24') || name.includes('bps-hc1-d25a24')) {
+    return { sfp: 24, qsfp: 0 };
+  }
+  if (name.includes('x12') || name.includes('g12')) {
+    return { sfp: 12, qsfp: 0 };
+  }
+  if (name.includes('x24')) {
+    return { sfp: 24, qsfp: 0 };
+  }
+  if (name.includes('c08q08')) {
+    return { sfp: 0, qsfp: 16 };
+  }
+  if (name.includes('c16')) {
+    return { sfp: 0, qsfp: 16 };
+  }
+  if (name.includes('c08')) {
+    return { sfp: 0, qsfp: 8 };
+  }
+  if (name.includes('c05')) {
+    return { sfp: 0, qsfp: 5 };
+  }
+  if (name.includes('bps-hc3')) {
+    return { sfp: 16, qsfp: 4 };
+  }
+  return { sfp: 0, qsfp: 0 };
+};
+
+/**
+ * Returns base port capacity for a given chassis model (no boards installed).
+ */
+export const getChassisBasePortCapacity = (model: string): { sfp: number; qsfp: number } => {
+  const modelLower = model.toLowerCase();
+  if (modelLower.includes('ta25')) return { sfp: 48, qsfp: 8 };
+  if (modelLower.includes('ta200')) return { sfp: 0, qsfp: 64 };
+  if (modelLower.includes('ta400e')) return { sfp: 2, qsfp: 32 };
+  if (modelLower.includes('ta400')) return { sfp: 0, qsfp: 32 };
+  if (modelLower.includes('hct')) return { sfp: 4, qsfp: 2 };
+  if (modelLower.includes('hc1-plus') || modelLower.includes('hc1 plus')) return { sfp: 8, qsfp: 4 };
+  if (modelLower.includes('hc1')) return { sfp: 12, qsfp: 0 };
+  if (modelLower.includes('hc3')) return { sfp: 0, qsfp: 0 };
+  return { sfp: 0, qsfp: 0 };
+};
+
+/**
+ * Determines the fiber type of an optic: 'Copper', 'MM', 'SM', or ''.
+ */
+export const getOpticFiberType = (opticName: string): string => {
+  const upper = opticName.toUpperCase();
+  if (upper.includes('COPPER') || upper.includes('BASE-T') || upper.includes('BASET') || upper.includes('ACTIVE CABLE') || upper.includes('DIRECT ATTACH') || upper.includes('DAC')) {
+    return 'Copper';
+  }
+  if (/\b(SX|SR\d*|LRM|SWDM\d*|BIDI)\b/i.test(upper) || upper.includes(' SX') || upper.includes(' SR') || upper.includes(' LRM') || upper.includes(' SWDM') || upper.includes('BIDI')) {
+    return 'MM';
+  }
+  if (/\b(LX|LR\d*|ER\d*|ZR\d*|LH|DR\d*|FR\d*|CWDM\d*|PLR\d*|PSM\d*)\b/i.test(upper) || upper.includes(' LX') || upper.includes(' LR') || upper.includes(' ER') || upper.includes(' ZR') || upper.includes(' LH') || upper.includes(' DR') || upper.includes(' FR') || upper.includes(' CWDM') || upper.includes(' PLR') || upper.includes(' PSM')) {
+    return 'SM';
+  }
+  return '';
+};
+
+/**
+ * Formats an optic label with fiber type badge and TAA indicator.
+ */
+export const formatOpticLabel = (opticName: string): string => {
+  const type = getOpticFiberType(opticName);
+  const skuMatch = opticName.match(/^([A-Z0-9]+-[A-Z0-9]+)/i);
+  const isTAA = skuMatch ? /T$/i.test(skuMatch[1]) : false;
+  let label = type ? `${opticName} [${type}]` : opticName;
+  if (isTAA) label += ' (TAA)';
+  return label;
+};
+
+/**
+ * Returns a human-readable description for a board/module name.
+ */
+export const getBoardDescription = (boardName: string, model: string): string => {
+  const name = boardName.toUpperCase();
+  const isPlus = model.includes('Plus');
+
+  let desc = '';
+  if (name.includes('Q04X08')) {
+    desc = isPlus ? '4x 100G QSFP28 & 8x 25G SFP28' : '4x 40G QSFP+ & 8x 10G SFP+';
+  } else if (name.includes('D25A24')) {
+    desc = 'Bypass: 2x 10G SR Pairs & 20x 10G SFP+';
+  } else if (name.includes('X12') || name.includes('G12')) {
+    desc = '12x 10G/1G SFP+';
+  } else if (name.includes('X24')) {
+    desc = '24x 25G/10G SFP28/SFP+';
+  } else if (name.includes('C08Q08')) {
+    desc = '8x 100G QSFP28 & 8x 40G QSFP+';
+  } else if (name.includes('C16')) {
+    desc = '16x 100G QSFP28';
+  } else if (name.includes('C08')) {
+    desc = '8x 100G QSFP28';
+  } else if (name.includes('C05')) {
+    desc = '5x 100G/40G QSFP28';
+  } else if (name.includes('C25F2G')) {
+    desc = 'Bypass: 2x 100G SR4 Pairs & 16x 10G SFP+';
+  } else if (name.includes('C35C2G')) {
+    desc = 'Bypass: 2x 100G LR Pairs & 16x 10G SFP+';
+  } else if (name.includes('Q35C2G')) {
+    desc = 'Bypass: 2x 40G LR Pairs & 16x 10G SFP+';
+  }
+
+  const hasGigaSmart = name.startsWith('SMT-');
+
+  if (desc) {
+    return `${boardName} (${hasGigaSmart ? 'GigaSMART Engine + ' : ''}${desc})`;
+  }
+  return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
+};
