@@ -327,15 +327,19 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   };
 
   const handleExportPhysicalCsv = () => {
-    const csv = ['Node/Chassis,Qty,Rack Space,Dimensions,Weight,Power,Heat,Airflow']
+    const csv = ['Node/Chassis,Qty,Rack Space,Dimensions (Imperial),Dimensions (Metric),Weight (Imperial),Weight (Metric),Power,Heat,Airflow']
       .concat(
         physicalItems.map(
-          (p) =>
-            `${escapeCsv(p.name)},${p.qty},${escapeCsv(p.ru)},${escapeCsv(p.dimensions)},${escapeCsv(p.weight)},${escapeCsv(p.power)},${escapeCsv(p.heat)},${escapeCsv(p.airflow)}`,
+          (p) => {
+            const { inches, cm } = parseAndConvertDimensions(p.dimensions);
+            const lbs = `${p.weightNum.toFixed(1)} lbs`;
+            const kg = `${(p.weightNum * 0.45359237).toFixed(2)} kg`;
+            return `${escapeCsv(p.name)},${p.qty},${escapeCsv(p.ru)},${escapeCsv(inches)},${escapeCsv(cm)},${escapeCsv(lbs)},${escapeCsv(kg)},${escapeCsv(p.power)},${escapeCsv(p.heat)},${escapeCsv(p.airflow)}`;
+          }
         ),
       )
       .concat([
-        `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,${totalWeight} lbs,${totalPower} W,${totalHeat} BTU/hr,-`,
+        `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,-,${totalWeight.toFixed(1)} lbs,${(totalWeight * 0.45359237).toFixed(1)} kg,${totalPower} W,${totalHeat} BTU/hr,-`,
       ])
       .join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
