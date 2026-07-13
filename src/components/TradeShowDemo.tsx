@@ -27,7 +27,6 @@ export const TradeShowDemo: React.FC = () => {
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     const wasRunning = useStore.getState().isRunning;
     if (wasRunning) toggleSimulation();
-    clearCanvas();
     setDemoActive(false);
     setDemoStep(0);
     setDemoStatus('');
@@ -64,13 +63,27 @@ export const TradeShowDemo: React.FC = () => {
             id: 'demo-tap-1',
             type: 'inputNode',
             position: { x: 80, y: 100 },
-            data: { label: 'Network TAP 1', configType: 'Network Tap', portSpeed: '10G' }
+            data: { 
+              label: 'Network TAP 1 (SM - 6 Links)', 
+              configType: 'Network Tap', 
+              portSpeed: '10G',
+              tapFiberMode: 'Singlemode',
+              tappedLinksCount: 6,
+              tappedLinkOptic: '10G-SFP-LR'
+            }
           });
           addNode({
             id: 'demo-tap-2',
             type: 'inputNode',
             position: { x: 80, y: 340 },
-            data: { label: 'Network TAP 2', configType: 'Network Tap', portSpeed: '10G' }
+            data: { 
+              label: 'Network TAP 2 (MM - 6 Links)', 
+              configType: 'Network Tap', 
+              portSpeed: '10G',
+              tapFiberMode: 'Multimode',
+              tappedLinksCount: 6,
+              tappedLinkOptic: '10G-SFP-SR'
+            }
           });
 
           // Add traffic streams
