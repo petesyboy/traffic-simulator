@@ -214,7 +214,7 @@ export function generateBom(
           else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-INSSL-SW-TM' : 'SMT-HC3-GEN3-INSSL-PL';
         } else if (action === 'Masking') {
           if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
-          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = isHtl ? 'SMT-HC1P-GEN3-APF-SW-TM' : 'SMT-HC1P-GEN3-APF-PL';
+          else if (model.includes('HC1-Plus') || model.includes('HC1P')) gsSku = ''; // Masking is included in the HC1 Plus base license
           else if (model.includes('HC3')) gsSku = isHtl ? 'SMT-HC3-GEN3-APF-SW-TM' : 'SMT-HC3-GEN3-APF';
         } else if (action === 'Packet Slicing') {
           if (model.includes('HC1') && !model.includes('HC1-Plus')) gsSku = isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
