@@ -86,10 +86,10 @@ export const TradeShowDemo: React.FC = () => {
             }
           });
 
-          // Add traffic streams
+          // Add traffic streams (summing to ~40 Gbps)
           addTrafficStream({
             id: 'demo-ts-1',
-            name: 'TAP 1 - Web SSL Traffic (6.0 Gbps)',
+            name: 'TAP 1 - Web SSL Traffic (24.0 Gbps)',
             sourceNodeId: 'demo-tap-1',
             vlan: '100',
             ipSrc: '192.168.1.50',
@@ -97,14 +97,14 @@ export const TradeShowDemo: React.FC = () => {
             portSrc: '49152',
             portDst: '443',
             protocol: 'tcp',
-            bandwidth: 6000,
+            bandwidth: 24000,
             active: true,
             drift: 1,
             lastDriftUpdate: 0
           });
           addTrafficStream({
             id: 'demo-ts-2',
-            name: 'TAP 2 - DNS Query Volume (1.5 Gbps)',
+            name: 'TAP 2 - DNS Query Volume (16.0 Gbps)',
             sourceNodeId: 'demo-tap-2',
             vlan: '200',
             ipSrc: '192.168.2.100',
@@ -112,7 +112,7 @@ export const TradeShowDemo: React.FC = () => {
             portSrc: '53000',
             portDst: '53',
             protocol: 'udp',
-            bandwidth: 1500,
+            bandwidth: 16000,
             active: true,
             drift: 1,
             lastDriftUpdate: 0
@@ -175,12 +175,12 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 6:
-          setDemoStatus('Step 6: Deploying GigaSMART Deduplication and Application Metadata (AMI) engines...');
+          setDemoStatus('Step 6: Deploying GigaSMART Deduplication (starting at 30%) and Application Metadata (AMI)...');
           addNode({
             id: 'demo-gs-dedup',
             type: 'gigaSmartNode',
             position: { x: 1160, y: 100 },
-            data: { label: 'Packet Deduplication', configType: 'GigaSMART', actionType: 'Deduplication', dedupRate: 35 }
+            data: { label: 'Packet Deduplication', configType: 'GigaSMART', actionType: 'Deduplication', dedupRate: 30 }
           });
           addNode({
             id: 'demo-gs-ami',
@@ -204,7 +204,7 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 8:
-          setDemoStatus('Step 8: Deploying packet-consuming analysis tools (ExtraHop & Splunk)...');
+          setDemoStatus('Step 8: Deploying packet and storage tools (ExtraHop, S3 Object Storage, & Splunk)...');
           addNode({
             id: 'demo-tool-extrahop',
             type: 'toolNode',
@@ -212,16 +212,22 @@ export const TradeShowDemo: React.FC = () => {
             data: { label: 'ExtraHop Tool', toolName: 'ExtraHop', configType: 'Packet Tool' }
           });
           addNode({
-            id: 'demo-tool-splunk',
+            id: 'demo-tool-s3',
             type: 'toolNode',
             position: { x: 1520, y: 340 },
+            data: { label: 'S3 Cold Storage', toolName: 'S3 / Object Storage', configType: 'Objects', expectedType: 'objects' }
+          });
+          addNode({
+            id: 'demo-tool-splunk',
+            type: 'toolNode',
+            position: { x: 1880, y: 340 },
             data: { label: 'Splunk Tool', toolName: 'Splunk', configType: 'Metadata Tool', expectedFormat: 'CEF' }
           });
           timerRef.current = setTimeout(() => runStep(9), 3500);
           break;
 
         case 9:
-          setDemoStatus('Step 9: Delivering optimized packet streams and metadata to tools...');
+          setDemoStatus('Step 9: Archiving AMI to S3 Storage and establishing Splunk Federated Search...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
             { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
@@ -229,7 +235,8 @@ export const TradeShowDemo: React.FC = () => {
             { id: 'demo-e4', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-dedup', targetHandle: 'in' },
             { id: 'demo-e5', source: 'demo-hc', sourceHandle: 'out', target: 'demo-gs-ami', targetHandle: 'in' },
             { id: 'demo-e6', source: 'demo-gs-dedup', sourceHandle: 'out', target: 'demo-tool-extrahop', targetHandle: 'in' },
-            { id: 'demo-e7', source: 'demo-gs-ami', sourceHandle: 'out', target: 'demo-tool-splunk', targetHandle: 'in' }
+            { id: 'demo-e7', source: 'demo-gs-ami', sourceHandle: 'out', target: 'demo-tool-s3', targetHandle: 'in' },
+            { id: 'demo-e8', source: 'demo-tool-s3', sourceHandle: 'out', target: 'demo-tool-splunk', targetHandle: 'in' }
           ]);
           timerRef.current = setTimeout(() => runStep(10), 3000);
           break;
