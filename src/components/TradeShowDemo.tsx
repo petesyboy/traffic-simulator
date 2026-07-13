@@ -132,16 +132,16 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 4:
-          setDemoStatus('Step 4: Placing a GigaVUE-HC1 chassis for GigaSMART traffic optimization...');
+          setDemoStatus('Step 4: Placing a GigaVUE-HC1-Plus chassis for GigaSMART traffic optimization...');
           addNode({
             id: 'demo-hc',
             type: 'hardwareNode',
             position: { x: 600, y: 220 },
             data: { 
-              label: 'GigaVUE-HC1', 
-              model: 'HC1',
+              label: 'GigaVUE-HC1-Plus', 
+              model: 'HC1-Plus',
               configType: 'Chassis',
-              installedBoards: { 'Slot 1': 'HC1 Base' },
+              installedBoards: { 'Slot 1': 'HC1-Plus Base' },
               optics: [{ board: 'Base', optic: 'SFP-532', qty: 4 }]
             }
           });
@@ -149,7 +149,7 @@ export const TradeShowDemo: React.FC = () => {
           break;
 
         case 5:
-          setDemoStatus('Step 5: Routing aggregated streams from TA200 into the HC1 chassis...');
+          setDemoStatus('Step 5: Routing aggregated streams from TA200 into the HC1-Plus chassis...');
           setEdges([
             { id: 'demo-e1', source: 'demo-tap-1', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in' },
             { id: 'demo-e2', source: 'demo-tap-2', sourceHandle: 'out', target: 'demo-ta', targetHandle: 'in-2' },
