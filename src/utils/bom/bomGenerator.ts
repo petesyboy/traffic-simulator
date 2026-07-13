@@ -170,7 +170,7 @@ export function generateBom(
     }
     if (resolved.advSku) addRow(node.id, resolved.advSku, 1, 'License', termOverride);
     Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => {
-      if (!boardSku) return;
+      if (!boardSku || boardSku.toLowerCase().includes('base')) return;
       if (licenseMode === 'HTL') { addRow(node.id, boardSku + '-HW', 1, 'Module'); addRow(node.id, boardSku + '-SW-TM', 1, 'License', termOverride); }
       else addRow(node.id, boardSku, 1, 'Module');
     });
@@ -395,7 +395,7 @@ export function generateSingleNodeBom(
     else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), 2, 'Dependency');
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', termOverride);
-  Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
+  Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
   let totalTapModules = 0;
   ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; const opticSku = resolveOpticSku(opt.optic, model); addRow(opticSku, opt.qty, 'Optic'); if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) totalTapModules += opt.qty; });
   if (totalTapModules > 0) {
