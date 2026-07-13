@@ -82,10 +82,14 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             Site: {data.site as string}
           </div>
         )}
-        <Handle type="target" position={Position.Left} id="in" style={{ top: '20%' }} />
-        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '40%' }} />
-        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '60%' }} />
-        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '80%' }} />
+        <Handle type="target" position={Position.Left} id="in" style={{ top: '11%' }} />
+        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '22%' }} />
+        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '33%' }} />
+        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '44%' }} />
+        <Handle type="target" position={Position.Left} id="in-5" style={{ top: '55%' }} />
+        <Handle type="target" position={Position.Left} id="in-6" style={{ top: '66%' }} />
+        <Handle type="target" position={Position.Left} id="in-7" style={{ top: '77%' }} />
+        <Handle type="target" position={Position.Left} id="in-8" style={{ top: '88%' }} />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}
