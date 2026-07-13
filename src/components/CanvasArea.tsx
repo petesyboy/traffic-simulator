@@ -77,10 +77,19 @@ const CanvasArea: React.FC = () => {
       }
     }
 
+    const parallelEdges = edges.filter(e => e.source === edge.source && e.target === edge.target);
+    const totalParallel = parallelEdges.length;
+    const parallelIndex = parallelEdges.findIndex(e => e.id === edge.id);
+
     let label = edge.label;
     if (srcNode?.type === 'gigaSmartNode' && 
         (srcNode.data?.actionType === 'Application Metadata' || srcNode.data?.actionType === 'AMX' || srcNode.data?.actionType === 'AMI')) {
       label = `${srcNode.data?.metadataFormat || 'CEF'} Metadata`;
+    }
+
+    if (totalParallel > 1) {
+      const linkPrefix = `Link ${parallelIndex + 1}/${totalParallel}`;
+      label = label ? `${linkPrefix} | ${label}` : linkPrefix;
     }
 
     const srcTool = (srcNode?.data?.toolName as string) || '';
