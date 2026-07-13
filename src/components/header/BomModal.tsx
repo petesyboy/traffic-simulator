@@ -269,6 +269,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
 
   const [discounts, setDiscounts] = useState<Record<string, string>>({});
   const [blanketDiscount, setBlanketDiscount] = useState<string>('0');
+  const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
 
   const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true);
   const validationErrors = validateConfiguration(nodes, edges);
@@ -464,40 +465,79 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* View mode toggle */}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setBomViewMode('site'); }}
-                style={{
-                  background: bomViewMode === 'site' ? '#ff9800' : '#333',
-                  color: bomViewMode === 'site' ? '#fff' : '#aaa',
-                  border: 'none',
-                  padding: '6px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                By Site Breakdown
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setBomViewMode('master'); }}
-                style={{
-                  background: bomViewMode === 'master' ? '#ff9800' : '#333',
-                  color: bomViewMode === 'master' ? '#fff' : '#aaa',
-                  border: 'none',
-                  padding: '6px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                Master Report (Aggregated)
-              </button>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setBomViewMode('site'); }}
+                  style={{
+                    background: bomViewMode === 'site' ? '#ff9800' : '#333',
+                    color: bomViewMode === 'site' ? '#fff' : '#aaa',
+                    border: 'none',
+                    padding: '6px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  By Site Breakdown
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setBomViewMode('master'); }}
+                  style={{
+                    background: bomViewMode === 'master' ? '#ff9800' : '#333',
+                    color: bomViewMode === 'master' ? '#fff' : '#aaa',
+                    border: 'none',
+                    padding: '6px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Master Report (Aggregated)
+                </button>
+              </div>
+
+              {activeTab === 'physical' && (
+                <div style={{ display: 'flex', gap: '4px', background: '#222', padding: '2px', borderRadius: '6px', border: '1px solid #444', marginLeft: '10px' }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setUnitSystem('metric'); }}
+                    style={{
+                      background: unitSystem === 'metric' ? '#00e5ff' : 'transparent',
+                      color: unitSystem === 'metric' ? '#000' : '#aaa',
+                      border: 'none',
+                      padding: '4px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Metric
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setUnitSystem('imperial'); }}
+                    style={{
+                      background: unitSystem === 'imperial' ? '#00e5ff' : 'transparent',
+                      color: unitSystem === 'imperial' ? '#000' : '#aaa',
+                      border: 'none',
+                      padding: '4px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Imperial
+                  </button>
+                </div>
+              )}
             </div>
 
             {activeTab === 'bom'
               ? renderBomTab(items, nodes, bomViewMode, showPricing, discounts, setDiscounts, blanketDiscount, setBlanketDiscount)
-              : renderPhysicalTab(physicalItems, physicalSiteGroups, bomViewMode, totalRU, totalWeight, totalPower, totalHeat)}
+              : renderPhysicalTab(physicalItems, physicalSiteGroups, bomViewMode, totalRU, totalWeight, totalPower, totalHeat, unitSystem)}
           </div>
         </div>
 
@@ -769,7 +809,6 @@ function renderBomTab(
   );
 }
 
-// ─── Physical tab renderer ────────────────────────────────────────────────────
 function renderPhysicalTab(
   physicalItems: PhysicalItem[],
   physicalSiteGroups: Record<string, PhysicalItem[]>,
@@ -778,6 +817,7 @@ function renderPhysicalTab(
   totalWeight: number,
   totalPower: number,
   totalHeat: number,
+  unitSystem: 'metric' | 'imperial'
 ) {
   if (physicalItems.length === 0) {
     return (
@@ -805,18 +845,23 @@ function renderPhysicalTab(
     const lbs = `${item.weightNum.toFixed(1)} lbs`;
     const kg = `${(item.weightNum * 0.45359237).toFixed(2)} kg`;
 
+    const dimPrimary = unitSystem === 'metric' ? cm : inches;
+    const dimSecondary = unitSystem === 'metric' ? inches : cm;
+    const weightPrimary = unitSystem === 'metric' ? kg : lbs;
+    const weightSecondary = unitSystem === 'metric' ? lbs : kg;
+
     return (
       <tr key={i} style={{ borderBottom: '1px solid #333' }}>
         <td style={{ padding: '8px', color: '#ffb74d', fontWeight: 'bold' }}>{item.name}</td>
         <td style={{ padding: '8px', color: '#fff', textAlign: 'center' }}>{item.qty}</td>
         <td style={{ padding: '8px', color: '#00e5ff', textAlign: 'center', fontWeight: 'bold' }}>{item.ru}</td>
         <td style={{ padding: '8px', color: '#aaa', fontFamily: 'monospace' }}>
-          <div>{inches}</div>
-          <div style={{ color: '#888', marginTop: '2px' }}>{cm}</div>
+          <div>{dimPrimary}</div>
+          <div style={{ color: '#666', fontSize: '9.5px', marginTop: '2px' }}>({dimSecondary})</div>
         </td>
         <td style={{ padding: '8px', color: '#aaa' }}>
-          <div>{lbs}</div>
-          <div style={{ color: '#888', marginTop: '2px' }}>{kg}</div>
+          <div>{weightPrimary}</div>
+          <div style={{ color: '#666', fontSize: '9.5px', marginTop: '2px' }}>({weightSecondary})</div>
         </td>
         <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.power}</td>
         <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.heat}</td>
@@ -860,8 +905,17 @@ function renderPhysicalTab(
         <div style={{ background: '#222', border: '1px solid #333', borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
           <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>Total Est. Weight</div>
           <div style={{ fontSize: '16px', color: '#a855f7', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span>{totalWeight.toFixed(1)} lbs</span>
-            <span>{(totalWeight * 0.45359237).toFixed(1)} kg</span>
+            {unitSystem === 'metric' ? (
+              <>
+                <span>{(totalWeight * 0.45359237).toFixed(1)} kg</span>
+                <span style={{ fontSize: '11px', opacity: 0.6 }}>({totalWeight.toFixed(1)} lbs)</span>
+              </>
+            ) : (
+              <>
+                <span>{totalWeight.toFixed(1)} lbs</span>
+                <span style={{ fontSize: '11px', opacity: 0.6 }}>({(totalWeight * 0.45359237).toFixed(1)} kg)</span>
+              </>
+            )}
           </div>
         </div>
         <div style={{ background: '#222', border: '1px solid #333', borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
