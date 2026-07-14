@@ -9,9 +9,48 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, validateConfiguration } from '../../utils/bomEngine';
 import type { HardwareNodeData } from '../../store/types';
-import pricesData from '../../constants/prices.json';
+import encryptedPricesData from '../../constants/prices.encrypted.json';
 
-const prices = pricesData as Record<string, { listPrice: number; monthlyPrice: number }>;
+let decryptedPrices: Record<string, { listPrice: number; monthlyPrice: number }> = {};
+
+function rc4Decrypt(key: string, base64Str: string): string {
+  const binaryStr = atob(base64Str);
+  const s = new Array(256);
+  for (let i = 0; i < 256; i++) {
+    s[i] = i;
+  }
+  let j = 0;
+  for (let i = 0; i < 256; i++) {
+    j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
+    const temp = s[i];
+    s[i] = s[j];
+    s[j] = temp;
+  }
+  let i = 0;
+  j = 0;
+  let res = '';
+  for (let y = 0; y < binaryStr.length; y++) {
+    i = (i + 1) % 256;
+    j = (j + s[i]) % 256;
+    const temp = s[i];
+    s[i] = s[j];
+    s[j] = temp;
+    const k = s[(s[i] + s[j]) % 256];
+    res += String.fromCharCode(binaryStr.charCodeAt(y) ^ k);
+  }
+  return res;
+}
+
+// Auto-decrypt on session restore if session was already unlocked
+try {
+  const isAlreadyUnlocked = sessionStorage.getItem('bom-pricing-unlocked') === 'true';
+  if (isAlreadyUnlocked) {
+    const decrypted = rc4Decrypt('mrsbunfield', encryptedPricesData.data);
+    decryptedPrices = JSON.parse(decrypted);
+  }
+} catch (e) {
+  console.error('Auto-decrypt failed', e);
+}
 
 export const formatCurrency = (num: number) => {
   if (!num || num === 0) return '-';
@@ -40,7 +79,7 @@ export const parseAndConvertDimensions = (dimStr: string) => {
 };
 
 export const getItemPriceInfo = (sku: string, description: string, termStr?: string, qty: number = 1, discountPercent: number = 0) => {
-  const priceInfo = prices[sku] || { listPrice: 0, monthlyPrice: 0 };
+  const priceInfo = decryptedPrices[sku] || { listPrice: 0, monthlyPrice: 0 };
   
   const isMonthly = sku.includes('-SW-TM') || 
                     description.toLowerCase().includes('term license') || 
@@ -369,8 +408,14 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
           if (nextCount === 5) {
             const pw = window.prompt("Enter the password to unlock pricing data:");
             if (pw === 'mrsbunfield') {
-              setIsUnlocked(true);
-              sessionStorage.setItem('bom-pricing-unlocked', 'true');
+              try {
+                const decrypted = rc4Decrypt('mrsbunfield', encryptedPricesData.data);
+                decryptedPrices = JSON.parse(decrypted);
+                setIsUnlocked(true);
+                sessionStorage.setItem('bom-pricing-unlocked', 'true');
+              } catch (e) {
+                alert("Failed to decrypt pricing database.");
+              }
             } else {
               if (pw !== null) {
                 alert("Incorrect password.");
