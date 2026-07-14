@@ -3,7 +3,7 @@ import type { CustomNode } from '../../../store/store';
 import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
-import { getOpticSpeed } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, getTapLinkCapacity } from '../../../utils/hardwareUtils';
 
 interface TapLinksPanelProps {
   selectedNode: CustomNode;
@@ -18,6 +18,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   const tapModel = String(selectedNode.data?.model || '');
   const tapSku = String(selectedNode.data?.sku || '');
+  const tapDescription = String(selectedNode.data?.description || '');
   const hwData = selectedNode.data as HardwareNodeData;
 
   const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') ||
@@ -34,26 +35,12 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     ? `Passive Optical Splitter (${isSMTap ? 'Singlemode' : 'Multimode'})`
     : 'Built-in 1G Copper';
 
-  // Max links logic
-  let maxLinks = 1;
-  if (tapModel.includes('24-Link')) maxLinks = 24;
-  else if (tapModel.includes('16-Link')) maxLinks = 16;
-  else if (tapModel.includes('12-Link')) maxLinks = 12;
-  else if (tapModel.includes('8-Link')) maxLinks = 8;
-  else if (tapModel.includes('6-Link')) maxLinks = 6;
-  else if (tapModel.includes('4-Link')) maxLinks = 4;
-  else if (tapModel.includes('2-Link')) maxLinks = 2;
+  const maxLinks = getTapLinkCapacity(tapDescription);
 
   let availableOptics = SUPPORTED_TAP_OPTICS;
 
-  const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [
-    {
-      qty: hwData.tappedLinksCount ?? 1,
-      optic: isBuiltInOptics ? builtInOpticLabel : (hwData.tappedLinkOptic ? hwData.tappedLinkOptic.split(' ')[0] : (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532'))
-    }
-  ];
-
-  const currentAllocatedCount = allocations.reduce((sum, a) => sum + a.qty, 0);
+  const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [];
+  const currentAllocatedCount = hwData.tappedLinkAllocations ? hwData.tappedLinkAllocations.reduce((sum, a) => sum + a.qty, 0) : 0;
   const remainingLinks = maxLinks - currentAllocatedCount;
 
   // Local state

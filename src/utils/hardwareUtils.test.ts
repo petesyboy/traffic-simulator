@@ -7,6 +7,7 @@ import {
   getOpticFiberType,
   formatOpticLabel,
   getBoardDescription,
+  getTapLinkCapacity,
 } from './hardwareUtils';
 
 describe('hardwareUtils', () => {
@@ -74,6 +75,18 @@ describe('hardwareUtils', () => {
     it('should return correct board descriptions', () => {
       expect(getBoardDescription('q04x08', 'HC1')).toBe('q04x08 (4x 40G QSFP+ & 8x 10G SFP+)');
       expect(getBoardDescription('SMT-HC3-C08Q08', 'HC3')).toBe('SMT-HC3-C08Q08 (GigaSMART Engine + 8x 100G QSFP28 & 8x 40G QSFP+)');
+    });
+  });
+
+  describe('getTapLinkCapacity', () => {
+    it('should parse the correct number of links from a TAP SKU description', () => {
+      const desc1 = "G-TAP M Series 1/10/25/40/100Gb 50/50 tap module, 830-940nm MM 50/125µm OM5, taps 6 links, LC, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.";
+      const desc2 = "G-TAP M Series 1/10/25/40/100Gb 50/50 tap module, 830-940nm MM 50/125µm OM5, taps 2 links, LC, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.";
+      const desc3 = "G-TAP M Series 40/100/400Gb 50/50 unidirectional tap module, 830-870nm MM 50/125µm OM5, taps 1 link, MPO, requires TAP-M202ULT chassis. TAA Compliant.";
+      expect(getTapLinkCapacity(desc1)).toBe(6);
+      expect(getTapLinkCapacity(desc2)).toBe(2);
+      expect(getTapLinkCapacity(desc3)).toBe(1);
+      expect(getTapLinkCapacity("Some description without the phrase")).toBe(1);
     });
   });
 });

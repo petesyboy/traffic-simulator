@@ -181,3 +181,17 @@ export const getBoardDescription = (boardName: string, model: string): string =>
   }
   return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
 };
+
+/**
+ * Parses the maximum number of tapped links from a TAP module's description.
+ * Defaults to 1 if not found.
+ * @param description The full SKU description of the TAP module.
+ */
+export const getTapLinkCapacity = (description: string): number => {
+  if (!description) return 1;
+  const match = description.match(/taps (\d+) links?/i);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  return 1;
+};
