@@ -265,7 +265,10 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   const [clickCount, setClickCount] = useState(0);
-  const showPricing = clickCount >= 5;
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('bom-pricing-unlocked') === 'true';
+  });
+  const showPricing = isUnlocked;
 
   const [discounts, setDiscounts] = useState<Record<string, string>>({});
   const [blanketDiscount, setBlanketDiscount] = useState<string>('0');
@@ -359,7 +362,23 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     <div className="modal-overlay" style={{ background: 'rgba(0,0,0,0.8)' }}>
       <div
         className="modal-card"
-        onClick={() => setClickCount((prev) => prev + 1)}
+        onClick={() => {
+          if (isUnlocked) return;
+          const nextCount = clickCount + 1;
+          setClickCount(nextCount);
+          if (nextCount === 5) {
+            const pw = window.prompt("Enter the password to unlock pricing data:");
+            if (pw === 'mrsbunfield') {
+              setIsUnlocked(true);
+              sessionStorage.setItem('bom-pricing-unlocked', 'true');
+            } else {
+              if (pw !== null) {
+                alert("Incorrect password.");
+              }
+              setClickCount(0);
+            }
+          }
+        }}
         style={{
           width: '920px',
           maxHeight: '85vh',
