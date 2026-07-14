@@ -39,14 +39,8 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   let availableOptics = SUPPORTED_TAP_OPTICS;
 
-  const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [
-    {
-      qty: hwData.tappedLinksCount ?? 1,
-      optic: isBuiltInOptics ? builtInOpticLabel : (hwData.tappedLinkOptic ? hwData.tappedLinkOptic.split(' ')[0] : (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532'))
-    }
-  ];
-
-  const currentAllocatedCount = allocations.reduce((sum, a) => sum + a.qty, 0);
+  const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [];
+  const currentAllocatedCount = hwData.tappedLinkAllocations ? hwData.tappedLinkAllocations.reduce((sum, a) => sum + a.qty, 0) : 0;
   const remainingLinks = maxLinks - currentAllocatedCount;
 
   // Local state
