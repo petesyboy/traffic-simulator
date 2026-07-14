@@ -4,6 +4,8 @@ import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 import { getOpticSpeed, getTapLinkCapacity } from '../../../utils/hardwareUtils';
+import skusData from '../../../constants/skus.json';
+import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
 
 interface TapLinksPanelProps {
   selectedNode: CustomNode;
@@ -18,7 +20,11 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   const tapModel = String(selectedNode.data?.model || '');
   const tapSku = String(selectedNode.data?.sku || '');
-  const tapDescription = String(selectedNode.data?.description || '');
+  const tapDescription = String(
+    selectedNode.data?.description || 
+    (tapSku && (skusData as Record<string, string>)[tapSku]) || 
+    ''
+  );
   const hwData = selectedNode.data as HardwareNodeData;
 
   const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') ||
@@ -35,7 +41,8 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     ? `Passive Optical Splitter (${isSMTap ? 'Singlemode' : 'Multimode'})`
     : 'Built-in 1G Copper';
 
-  const maxLinks = getTapLinkCapacity(tapDescription);
+  const catalogueItem = hardwareCatalogue.taps.find(t => t.sku === tapSku || t.model === tapModel);
+  const maxLinks = catalogueItem?.max_links ?? getTapLinkCapacity(tapDescription);
 
   let availableOptics = SUPPORTED_TAP_OPTICS;
 
