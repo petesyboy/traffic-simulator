@@ -45,12 +45,12 @@ export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpe
 
   // TAPs do not have separate HW/SW SKUs, return early
   if (model.includes('TAP')) {
-    if (model.includes('A-TX') && !model.includes('TX2')) {
+    if (/G-TAP A-TX(?!2)/.test(model)) {
       const tapPower = nodeData.tapPower || 'Individual Power Brick';
       if (tapPower === 'Individual Power Brick') resolvedSku = 'GTP-ATX01-UN';
       else if (tapPower === 'PST-GTA02 (DC Power Tray)') resolvedSku = 'GTP-ATX02';
       else resolvedSku = 'GTP-ATX00';
-    } else if (model.includes('A-SF') && !model.includes('SF2')) {
+    } else if (/G-TAP A-SF(?!2)/.test(model)) {
       const tapPower = nodeData.tapPower || 'Individual Power Brick';
       if (tapPower === 'Individual Power Brick') resolvedSku = 'GTP-ASF01-UN';
       else if (tapPower === 'PST-GTA02 (DC Power Tray)') resolvedSku = 'GTP-ASF02';
