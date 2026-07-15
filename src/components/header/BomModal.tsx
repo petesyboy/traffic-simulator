@@ -402,7 +402,17 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
       <div
         className="modal-card"
         onClick={() => {
-          if (isUnlocked) return;
+          if (isUnlocked) {
+            const nextCount = clickCount + 1;
+            setClickCount(nextCount);
+            if (nextCount === 5) {
+              decryptedPrices = {};
+              setIsUnlocked(false);
+              sessionStorage.removeItem('bom-pricing-unlocked');
+              setClickCount(0);
+            }
+            return;
+          }
           const nextCount = clickCount + 1;
           setClickCount(nextCount);
           if (nextCount === 5) {
@@ -413,6 +423,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
                 decryptedPrices = JSON.parse(decrypted);
                 setIsUnlocked(true);
                 sessionStorage.setItem('bom-pricing-unlocked', 'true');
+                setClickCount(0);
               } catch (e) {
                 alert("Failed to decrypt pricing database.");
               }
