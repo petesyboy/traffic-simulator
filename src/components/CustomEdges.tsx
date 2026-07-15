@@ -79,3 +79,101 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
     </>
   );
 };
+
+export const ParallelEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  label,
+  labelStyle,
+  labelBgStyle,
+  markerEnd,
+  className,
+  data
+}: EdgeProps & { className?: string; data?: any }) => {
+  const parallelIndex = data?.parallelIndex ?? 0;
+  const totalParallel = data?.totalParallel ?? 1;
+
+  let edgePath = '';
+  let labelX = (sourceX + targetX) / 2;
+  let labelY = (sourceY + targetY) / 2;
+
+  if (totalParallel > 1) {
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    const k = parallelIndex - (totalParallel - 1) / 2;
+    // Increased curvature offset to 50px for wider separation
+    const offset = k * 50;
+
+    const midX = (sourceX + targetX) / 2;
+    const midY = (sourceY + targetY) / 2;
+
+    const controlX = midX + nx * offset;
+    const controlY = midY + ny * offset;
+
+    edgePath = `M ${sourceX},${sourceY} Q ${controlX},${controlY} ${targetX},${targetY}`;
+    
+    // Stagger labels horizontally along the curve: vary t between 0.35 and 0.65
+    const t = totalParallel > 1 ? (0.35 + (parallelIndex / (totalParallel - 1)) * 0.3) : 0.5;
+    const mt = 1 - t;
+    labelX = mt * mt * sourceX + 2 * mt * t * controlX + t * t * targetX;
+    labelY = mt * mt * sourceY + 2 * mt * t * controlY + t * t * targetY;
+  } else {
+    const [path, lx, ly] = getBezierPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+    });
+    edgePath = path;
+    labelX = lx;
+    labelY = ly;
+  }
+
+  return (
+    <>
+      <path
+        id={id}
+        className={`react-flow__edge-path ${className || ''}`}
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={style}
+        fill="none"
+      />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              background: (labelBgStyle as any)?.fill || '#121212',
+              border: `1px solid ${(labelBgStyle as any)?.stroke || '#2a2a2a'}`,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              color: (labelStyle as any)?.fill || '#fff',
+              fontSize: (labelStyle as any)?.fontSize || '9px',
+              fontWeight: (labelStyle as any)?.fontWeight || 'bold',
+              fontFamily: (labelStyle as any)?.fontFamily || 'system-ui, -apple-system, sans-serif',
+              pointerEvents: 'all',
+              zIndex: 1000,
+            }}
+            className="nodrag nopan"
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+};

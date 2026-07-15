@@ -1058,5 +1058,61 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
       expect(result.metrics['tool-vectra'].rxMbps).toBe(10000);
     });
+
+    it('should split traffic 4 ways across 4 parallel links from an HC chassis model to a tool node correctly', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'hc1-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'HC1', model: 'GigaVUE-HC1', sku: 'GV-HC1-HW', configType: 'HC' },
+        },
+        {
+          id: 'tool-vectra',
+          type: 'toolNode',
+          position: { x: 450, y: 0 },
+          data: { label: 'Vectra', configType: 'Packet Tool', toolName: 'Vectra' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc1-1' },
+        { id: 'e-hc-tool-1', source: 'hc1-1', sourceHandle: 'out', target: 'tool-vectra', targetHandle: 'in' },
+        { id: 'e-hc-tool-2', source: 'hc1-1', sourceHandle: 'out-2', target: 'tool-vectra', targetHandle: 'in-2' },
+        { id: 'e-hc-tool-3', source: 'hc1-1', sourceHandle: 'out-3', target: 'tool-vectra', targetHandle: 'in-3' },
+        { id: 'e-hc-tool-4', source: 'hc1-1', sourceHandle: 'out-4', target: 'tool-vectra', targetHandle: 'in-4' }
+      ];
+
+      const trafficStreams = [
+        {
+          id: 'stream-1',
+          name: 'SSL Traffic',
+          sourceNodeId: 'tap-1',
+          bandwidth: 10000,
+          active: true,
+          vlan: '100',
+          ipSrc: '192.168.1.1',
+          ipDst: '10.0.0.1',
+          portSrc: '1234',
+          portDst: '443',
+          protocol: 'tcp',
+          drift: 0,
+          lastDriftUpdate: 0
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, trafficStreams);
+      expect(result.edgeMetrics['e-hc-tool-1']).toBe(2500);
+      expect(result.edgeMetrics['e-hc-tool-2']).toBe(2500);
+      expect(result.edgeMetrics['e-hc-tool-3']).toBe(2500);
+      expect(result.edgeMetrics['e-hc-tool-4']).toBe(2500);
+      expect(result.metrics['tool-vectra'].rxMbps).toBe(10000);
+    });
   });
 });

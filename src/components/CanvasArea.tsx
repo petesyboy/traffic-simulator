@@ -19,6 +19,8 @@ import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { GroupingBanner } from './canvas/GroupingBanner';
 import { EdgeBanner } from './canvas/EdgeBanner';
 
+import { ParallelEdge } from './CustomEdges';
+
 const nodeTypes = {
   [NODE_TYPES.INPUT]:      InputNode,
   [NODE_TYPES.FILTER]:     FilterNode,
@@ -30,7 +32,9 @@ const nodeTypes = {
   [NODE_TYPES.HARDWARE]:   HardwareNode,
 };
 
-const edgeTypes = {};
+const edgeTypes = {
+  default: ParallelEdge,
+};
 
 const CanvasArea: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -134,7 +138,7 @@ const CanvasArea: React.FC = () => {
       style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
-    return { ...edge, className, type: edge.type || 'default', animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: isEncrypted ? '#ff1744' : (isDecrypted ? '#00e676' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
+    return { ...edge, className, type: 'default', data: { parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: isEncrypted ? '#ff1744' : (isDecrypted ? '#00e676' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {
