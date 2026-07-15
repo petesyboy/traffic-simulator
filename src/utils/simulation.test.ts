@@ -876,4 +876,135 @@ describe('Simulation Utils', () => {
       expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
     });
   });
+
+  describe('GigaStream Load Balancing parallel edges', () => {
+    it('should split traffic across multiple edges from GigaStream to the same destination tool node', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'ta25-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'TA25', model: 'GigaVUE-TA25', sku: 'GV-TA25-HW', configType: 'TA' },
+        },
+        {
+          id: 'gs-lb',
+          type: 'gigaStreamNode',
+          parentId: 'ta25-1',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Load Balancer',
+            configType: 'Load Balancing',
+            algorithm: 'Round Robin',
+            linkCount: 2
+          },
+        },
+        {
+          id: 'tool-extrahop',
+          type: 'toolNode',
+          position: { x: 450, y: 0 },
+          data: { label: 'ExtraHop', configType: 'Packet Tool', toolName: 'ExtraHop' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-ta', source: 'tap-1', target: 'ta25-1' },
+        { id: 'e-ta-gs', source: 'ta25-1', target: 'gs-lb' },
+        { id: 'e-gs-tool-1', source: 'gs-lb', sourceHandle: 'out', target: 'tool-extrahop', targetHandle: 'in' },
+        { id: 'e-gs-tool-2', source: 'gs-lb', sourceHandle: 'out-2', target: 'tool-extrahop', targetHandle: 'in-2' }
+      ];
+
+      const trafficStreams = [
+        {
+          id: 'stream-1',
+          name: 'SSL Traffic',
+          sourceNodeId: 'tap-1',
+          bandwidth: 10000,
+          active: true,
+          vlan: '100',
+          ipSrc: '192.168.1.1',
+          ipDst: '10.0.0.1',
+          portSrc: '1234',
+          portDst: '443',
+          protocol: 'tcp',
+          drift: 0,
+          lastDriftUpdate: 0
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, trafficStreams);
+      expect(result.edgeMetrics['e-gs-tool-1']).toBe(5000);
+      expect(result.edgeMetrics['e-gs-tool-2']).toBe(5000);
+      expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
+    });
+
+    it('should split traffic across multiple edges from the parent chassis node when a GigaStream node is nested inside it', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'ta25-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'TA25', model: 'GigaVUE-TA25', sku: 'GV-TA25-HW', configType: 'TA' },
+        },
+        {
+          id: 'gs-lb',
+          type: 'gigaStreamNode',
+          parentId: 'ta25-1',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Load Balancer',
+            configType: 'Load Balancing',
+            algorithm: 'Round Robin',
+            linkCount: 2
+          },
+        },
+        {
+          id: 'tool-extrahop',
+          type: 'toolNode',
+          position: { x: 450, y: 0 },
+          data: { label: 'ExtraHop', configType: 'Packet Tool', toolName: 'ExtraHop' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-ta', source: 'tap-1', target: 'ta25-1' },
+        { id: 'e-ta-tool-1', source: 'ta25-1', sourceHandle: 'out', target: 'tool-extrahop', targetHandle: 'in' },
+        { id: 'e-ta-tool-2', source: 'ta25-1', sourceHandle: 'out-2', target: 'tool-extrahop', targetHandle: 'in-2' }
+      ];
+
+      const trafficStreams = [
+        {
+          id: 'stream-1',
+          name: 'SSL Traffic',
+          sourceNodeId: 'tap-1',
+          bandwidth: 10000,
+          active: true,
+          vlan: '100',
+          ipSrc: '192.168.1.1',
+          ipDst: '10.0.0.1',
+          portSrc: '1234',
+          portDst: '443',
+          protocol: 'tcp',
+          drift: 0,
+          lastDriftUpdate: 0
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, trafficStreams);
+      expect(result.edgeMetrics['e-ta-tool-1']).toBe(5000);
+      expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
+      expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
+    });
+  });
 });

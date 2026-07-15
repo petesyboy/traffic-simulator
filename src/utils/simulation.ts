@@ -183,6 +183,10 @@ export const calculateSimulationStep = (
         const actionType = String(node.data?.actionType || '');
         if (actionType.startsWith('Load Balancing')) return true;
       }
+      if (node.type === 'hardwareNode') {
+        const hasGigaStreamChild = nodes.some(n => n.parentId === node.id && n.type === 'gigaStreamNode');
+        if (hasGigaStreamChild) return true;
+      }
       if (seenTargets.has(edge.target)) return false;
       seenTargets.add(edge.target);
       return true;
@@ -200,55 +204,106 @@ export const calculateSimulationStep = (
     const hasMetadataStreams = generatedMetadataStreams.length > 0;
 
     if ((hasForwardStream || hasMetadataStreams) && outboundEdges.length > 0) {
-      outboundEdges.forEach((edge) => {
-        const targetNode = nodes.find(n => n.id === edge.target);
-        activeEdgeSet.add(edge.id);
-        
-        if (!targetNode || targetNode.type !== 'toolNode') {
-          if (hasForwardStream) {
-            if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
-            else decryptedEdgeSet.add(edge.id);
-            edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-            queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+      const gigaStreamChild = nodes.find(n => n.parentId === node.id && n.type === 'gigaStreamNode');
+      const isChassisLoadBalancing = !!gigaStreamChild;
+
+      if (isChassisLoadBalancing && hasForwardStream) {
+        const splitBandwidth = forwardStream!.bandwidth / outboundEdges.length;
+
+        outboundEdges.forEach((edge) => {
+          const targetNode = nodes.find(n => n.id === edge.target);
+          activeEdgeSet.add(edge.id);
+          
+          if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+          else decryptedEdgeSet.add(edge.id);
+          
+          edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
+          
+          let canAccept = true;
+          if (targetNode && targetNode.type === 'toolNode') {
+            const toolConfig = targetNode.data?.configType || '';
+            const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
+            canAccept = supportsPackets;
           }
-          if (hasMetadataStreams) {
+          
+          if (canAccept) {
+            queue.push({
+              nodeId: edge.target,
+              stream: { ...forwardStream!, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
+              edgePath: [...item.edgePath, edge.id]
+            });
+          }
+        });
+
+        if (hasMetadataStreams) {
+          outboundEdges.forEach((edge) => {
+            const targetNode = nodes.find(n => n.id === edge.target);
+            const toolConfig = targetNode?.data?.configType || '';
+            const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
+            if (!targetNode || targetNode.type !== 'toolNode' || supportsMetadata) {
+              generatedMetadataStreams.forEach((ms) => {
+                edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
+                queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+              });
+            }
+          });
+        }
+
+        generatedMetadataStreams.forEach((ms) => {
+          nodeMetric.txMbps += ms.bandwidth;
+          nodeMetric.txPackets += ms.bandwidth * 250;
+        });
+      } else {
+        outboundEdges.forEach((edge) => {
+          const targetNode = nodes.find(n => n.id === edge.target);
+          activeEdgeSet.add(edge.id);
+          
+          if (!targetNode || targetNode.type !== 'toolNode') {
+            if (hasForwardStream) {
+              if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+              else decryptedEdgeSet.add(edge.id);
+              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
+              queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+            }
+            if (hasMetadataStreams) {
+              generatedMetadataStreams.forEach((ms) => {
+                edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
+                queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+              });
+            }
+            return;
+          }
+
+          const toolConfig = targetNode.data?.configType || '';
+          const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
+          const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
+
+          if (hasForwardStream) {
+            const isMetadata = forwardStream!.trafficType === 'metadata';
+            let canAccept = isMetadata ? supportsMetadata : supportsPackets;
+            if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
+
+            if (canAccept) {
+              if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+              else decryptedEdgeSet.add(edge.id);
+              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
+              queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+            }
+          }
+          
+          if (hasMetadataStreams && supportsMetadata) {
             generatedMetadataStreams.forEach((ms) => {
               edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
               queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
             });
           }
-          return;
-        }
-
-        const toolConfig = targetNode.data?.configType || '';
-        const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
-        const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
-
-        if (hasForwardStream) {
-          const isMetadata = forwardStream!.trafficType === 'metadata';
-          let canAccept = isMetadata ? supportsMetadata : supportsPackets;
-          if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
-
-          if (canAccept) {
-            if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
-            else decryptedEdgeSet.add(edge.id);
-            edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-            queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
-          }
-        }
+        });
         
-        if (hasMetadataStreams && supportsMetadata) {
-          generatedMetadataStreams.forEach((ms) => {
-            edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
-            queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
-          });
-        }
-      });
-      
-      generatedMetadataStreams.forEach((ms) => {
-        nodeMetric.txMbps += ms.bandwidth;
-        nodeMetric.txPackets += ms.bandwidth * 250;
-      });
+        generatedMetadataStreams.forEach((ms) => {
+          nodeMetric.txMbps += ms.bandwidth;
+          nodeMetric.txPackets += ms.bandwidth * 250;
+        });
+      }
     } else if (dropBandwidth > 0 && outboundEdges.length > 0) {
       outboundEdges.forEach((edge) => blockedEdgeSet.add(edge.id));
     }
