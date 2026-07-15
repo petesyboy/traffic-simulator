@@ -584,19 +584,19 @@
   animation: edge-flow-dash-reverse 1.2s linear infinite;
 }
 
-/* Active Encrypted Flow */
+/* Active Encrypted Flow — orange, not red, for colorblind accessibility */
 .react-flow__edge.encrypted-flow .react-flow__edge-path {
-  stroke: #ff1744;
+  stroke: #FF8C00;
   stroke-dasharray: 2 6 !important;
-  filter: drop-shadow(0 0 4px rgba(255, 23, 68, 0.7)) !important;
+  filter: drop-shadow(0 0 4px rgba(255, 140, 0, 0.7)) !important;
   animation: edge-flow-dash 1.8s linear infinite;
 }
 
-/* Active Decrypted Flow */
+/* Active Decrypted Flow — blue, not green, for colorblind accessibility */
 .react-flow__edge.decrypted-flow .react-flow__edge-path {
-  stroke: #00e676;
+  stroke: #448AFF;
   stroke-dasharray: 8 4 !important;
-  filter: drop-shadow(0 0 4px rgba(0, 230, 118, 0.7)) !important;
+  filter: drop-shadow(0 0 4px rgba(68, 138, 255, 0.7)) !important;
   animation: edge-flow-dash 1.0s linear infinite;
 }
 

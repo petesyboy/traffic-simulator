@@ -113,6 +113,7 @@ export const processGigaSmartNode: NodeProcessor = (
     const validBandwidth = item.stream.bandwidth * (1 - dropFraction);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
     nodeMetric.txMbps += validBandwidth;
     nodeMetric.txPackets += validBandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: validBandwidth };
@@ -164,9 +165,6 @@ export const processGigaSmartNode: NodeProcessor = (
     nodeMetric.txMbps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: outputBandwidth };
-  }
-  if (dropBandwidth > 0) {
-    nodeMetric.dedupDroppedMbps = (nodeMetric.dedupDroppedMbps || 0) + dropBandwidth;
   }
   return { forwardStream, dropBandwidth };
 };

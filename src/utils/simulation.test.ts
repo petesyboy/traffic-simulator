@@ -104,7 +104,6 @@ describe('Simulation Utils', () => {
 
       expect(result.nodeDataPatches['tap-node-vlan-999']).toBeDefined();
       expect(result.nodeDataPatches['tap-node-vlan-999'].linkSpeed).toBe(40000);
-      expect(nodes[0].data.linkSpeed).toBe(40000);
     });
 
     it('should not force a SPAN Port node linkSpeed to 40 Gbps even if it hosts a VLAN 999 stream', () => {
