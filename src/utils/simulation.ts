@@ -186,6 +186,8 @@ export const calculateSimulationStep = (
       if (node.type === 'hardwareNode') {
         const hasGigaStreamChild = nodes.some(n => n.parentId === node.id && n.type === 'gigaStreamNode');
         if (hasGigaStreamChild) return true;
+        const parallelEdges = outboundEdges.filter(e => e.target === edge.target);
+        if (parallelEdges.length > 1) return true;
       }
       if (seenTargets.has(edge.target)) return false;
       seenTargets.add(edge.target);
@@ -254,19 +256,28 @@ export const calculateSimulationStep = (
           nodeMetric.txPackets += ms.bandwidth * 250;
         });
       } else {
+        const edgesPerTarget: Record<string, number> = {};
+        outboundEdges.forEach(e => {
+          edgesPerTarget[e.target] = (edgesPerTarget[e.target] || 0) + 1;
+        });
+
         outboundEdges.forEach((edge) => {
           const targetNode = nodes.find(n => n.id === edge.target);
           activeEdgeSet.add(edge.id);
           
+          const numLinks = edgesPerTarget[edge.target] || 1;
+          const edgeForwardStream = hasForwardStream ? { ...forwardStream!, bandwidth: forwardStream!.bandwidth / numLinks } : null;
+          const edgeMetadataStreams = generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / numLinks }));
+
           if (!targetNode || targetNode.type !== 'toolNode') {
-            if (hasForwardStream) {
-              if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+            if (edgeForwardStream) {
+              if (edgeForwardStream.isEncrypted) encryptedEdgeSet.add(edge.id);
               else decryptedEdgeSet.add(edge.id);
-              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-              queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + edgeForwardStream.bandwidth;
+              queue.push({ nodeId: edge.target, stream: { ...edgeForwardStream, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
             }
             if (hasMetadataStreams) {
-              generatedMetadataStreams.forEach((ms) => {
+              edgeMetadataStreams.forEach((ms) => {
                 edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
                 queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
               });
@@ -278,21 +289,21 @@ export const calculateSimulationStep = (
           const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
           const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
 
-          if (hasForwardStream) {
-            const isMetadata = forwardStream!.trafficType === 'metadata';
+          if (edgeForwardStream) {
+            const isMetadata = edgeForwardStream.trafficType === 'metadata';
             let canAccept = isMetadata ? supportsMetadata : supportsPackets;
             if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
 
             if (canAccept) {
-              if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+              if (edgeForwardStream.isEncrypted) encryptedEdgeSet.add(edge.id);
               else decryptedEdgeSet.add(edge.id);
-              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + forwardStream!.bandwidth;
-              queue.push({ nodeId: edge.target, stream: { ...forwardStream!, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
+              edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + edgeForwardStream.bandwidth;
+              queue.push({ nodeId: edge.target, stream: { ...edgeForwardStream, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
             }
           }
           
           if (hasMetadataStreams && supportsMetadata) {
-            generatedMetadataStreams.forEach((ms) => {
+            edgeMetadataStreams.forEach((ms) => {
               edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + ms.bandwidth;
               queue.push({ nodeId: edge.target, stream: { ...ms, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
             });

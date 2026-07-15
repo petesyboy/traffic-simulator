@@ -1006,5 +1006,57 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
       expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
     });
+
+    it('should split traffic across multiple edges from the parent chassis node to the same tool node even without an explicit GigaStream node', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'ta25-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'TA25', model: 'GigaVUE-TA25', sku: 'GV-TA25-HW', configType: 'TA' },
+        },
+        {
+          id: 'tool-vectra',
+          type: 'toolNode',
+          position: { x: 450, y: 0 },
+          data: { label: 'Vectra', configType: 'Packet Tool', toolName: 'Vectra' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-ta', source: 'tap-1', target: 'ta25-1' },
+        { id: 'e-ta-tool-1', source: 'ta25-1', sourceHandle: 'out', target: 'tool-vectra', targetHandle: 'in' },
+        { id: 'e-ta-tool-2', source: 'ta25-1', sourceHandle: 'out-2', target: 'tool-vectra', targetHandle: 'in-2' }
+      ];
+
+      const trafficStreams = [
+        {
+          id: 'stream-1',
+          name: 'SSL Traffic',
+          sourceNodeId: 'tap-1',
+          bandwidth: 10000,
+          active: true,
+          vlan: '100',
+          ipSrc: '192.168.1.1',
+          ipDst: '10.0.0.1',
+          portSrc: '1234',
+          portDst: '443',
+          protocol: 'tcp',
+          drift: 0,
+          lastDriftUpdate: 0
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, trafficStreams);
+      expect(result.edgeMetrics['e-ta-tool-1']).toBe(5000);
+      expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
+      expect(result.metrics['tool-vectra'].rxMbps).toBe(10000);
+    });
   });
 });
