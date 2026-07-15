@@ -817,4 +817,63 @@ describe('Simulation Utils', () => {
       expect(upgradeRowHTL?.qty).toBe(1);
     });
   });
+
+  describe('GigaSMART Load Balancing parallel edges', () => {
+    it('should split traffic across multiple edges to the same destination tool node', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 10000 },
+        },
+        {
+          id: 'gs-lb',
+          type: 'gigaSmartNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'Load Balancer',
+            configType: 'GigaSMART',
+            actionType: 'Load Balancing (Stateless)',
+            algorithm: 'Round Robin'
+          },
+        },
+        {
+          id: 'tool-extrahop',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: { label: 'ExtraHop', configType: 'Packet Tool', toolName: 'ExtraHop' },
+        }
+      ];
+
+      const edges = [
+        { id: 'e-tap-gs', source: 'tap-1', target: 'gs-lb' },
+        { id: 'e-gs-tool-1', source: 'gs-lb', sourceHandle: 'out', target: 'tool-extrahop', targetHandle: 'in' },
+        { id: 'e-gs-tool-2', source: 'gs-lb', sourceHandle: 'out-2', target: 'tool-extrahop', targetHandle: 'in-2' }
+      ];
+
+      const trafficStreams = [
+        {
+          id: 'stream-1',
+          name: 'SSL Traffic',
+          sourceNodeId: 'tap-1',
+          bandwidth: 10000,
+          active: true,
+          vlan: '100',
+          ipSrc: '192.168.1.1',
+          ipDst: '10.0.0.1',
+          portSrc: '1234',
+          portDst: '443',
+          protocol: 'tcp',
+          drift: 0,
+          lastDriftUpdate: 0
+        }
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, trafficStreams);
+      expect(result.edgeMetrics['e-gs-tool-1']).toBe(5000);
+      expect(result.edgeMetrics['e-gs-tool-2']).toBe(5000);
+      expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
+    });
+  });
 });
