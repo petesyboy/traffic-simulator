@@ -53,7 +53,6 @@ export const calculateSimulationStep = (
       );
       if (hasVlan999 && node.data?.linkSpeed !== 40000) {
         nodeDataPatches[node.id] = { ...nodeDataPatches[node.id], linkSpeed: 40000 };
-        node.data = { ...node.data, linkSpeed: 40000 };
       }
     }
 

@@ -30,7 +30,8 @@ export const processHardwareNode: NodeProcessor = (
       const isMultiPass = totalLoad > 100;
       
       if (isMultiPass) {
-        nodeMetric.rxMbps += item.stream.bandwidth;
+        // rxMbps is already incremented in the simulation loop before the processor runs,
+        // so no additional increment is needed here.
       }
 
       for (const app of node.data.gigaSmartApps) {
