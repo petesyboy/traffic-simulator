@@ -173,8 +173,8 @@ export const calculateSimulationStep = (
     }
 
     let outboundEdges = edges.filter((e) => e.source === node.id);
-    if (node.parentId) {
-      outboundEdges = [...outboundEdges, ...edges.filter((e) => e.source === node.parentId)];
+    if (outboundEdges.length === 0 && node.parentId) {
+      outboundEdges = edges.filter((e) => e.source === node.parentId);
     }
     const seenTargets = new Set<string>();
     outboundEdges = outboundEdges.filter((edge) => {
