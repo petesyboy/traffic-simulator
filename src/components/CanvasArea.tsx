@@ -43,7 +43,7 @@ const CanvasArea: React.FC = () => {
   
   const {
     draggedNodeType, nodes, edges, activeEdges, blockedEdges, 
-    encryptedEdges, decryptedEdges, edgeMetrics, isRunning,
+    encryptedEdges, decryptedEdges, edgeMetrics, edgeEncryptedMbps, isRunning,
     showGrid, snapToGrid, snapAllNodesToGrid, exportDiagramMode,
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
     addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger,
@@ -71,10 +71,15 @@ const CanvasArea: React.FC = () => {
     let className = '';
     let animated = false;
     
+    const encryptedMbps = (edgeEncryptedMbps || {})[edge.id] || 0;
+    const totalMbps = (edgeMetrics || {})[edge.id] || 0;
+    const isMixed = isEncrypted && isDecrypted && encryptedMbps > 0 && (totalMbps - encryptedMbps) > 0.5;
+
     if (isRunning) {
       if (isBlocked) className = 'blocked-flow';
       else if (isActive) {
-        if (isEncrypted) className = 'active-flow encrypted-flow';
+        if (isMixed) className = 'active-flow mixed-flow';
+        else if (isEncrypted) className = 'active-flow encrypted-flow';
         else if (isDecrypted) className = 'active-flow decrypted-flow';
         else className = isMetadata ? 'metadata-flow' : 'active-flow';
         animated = true;
@@ -116,14 +121,21 @@ const CanvasArea: React.FC = () => {
     }
     
     if (isRunning && isActive) {
-      if (isEncrypted) label = `🔒 ${label}`;
-      else if (isDecrypted) label = `🔓 ${label}`;
+      if (isMixed && totalMbps > 0) {
+        const encPct = Math.round((encryptedMbps / totalMbps) * 100);
+        label = `🔒 ${encPct}% blind spot | 🔓 ${100 - encPct}% visible`;
+      } else if (isEncrypted) {
+        label = `🔒 ${label}`;
+      } else if (isDecrypted) {
+        label = `🔓 ${label}`;
+      }
     }
 
     let stroke = '#007cff';
     if (isRunning) {
       if (isActive) {
-        if (isEncrypted) stroke = '#FF8C00';
+        if (isMixed) stroke = '#FF8C00';
+        else if (isEncrypted) stroke = '#FF8C00';
         else if (isDecrypted) stroke = '#448AFF';
         else stroke = isMetadata ? '#ff9800' : '#00e5ff';
       } else if (isBlocked) stroke = '#ef5350';
@@ -138,7 +150,7 @@ const CanvasArea: React.FC = () => {
       style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
-    return { ...edge, className, type: 'default', data: { parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: isEncrypted ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
+    return { ...edge, className, type: 'default', data: { parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {

@@ -81,6 +81,7 @@ export const calculateSimulationStep = (
   const encryptedEdgeSet = new Set<string>();
   const decryptedEdgeSet = new Set<string>();
   const edgeTraffic: Record<string, number> = {};
+  const edgeEncryptedTraffic: Record<string, number> = {};
 
   const queue: QueueItem[] = [];
   const toolReceivedStreams: Record<string, TrajectoryStream[]> = {};
@@ -194,7 +195,7 @@ export const calculateSimulationStep = (
     });
 
     const processor = (node.type && PROCESSORS[node.type]) || processDefaultNode;
-    const result = processor(node, item, nodeMetric, toolReceivedStreams, deliveredStreamIds, outboundEdges, activeEdgeSet, edgeTraffic, queue, nodes);
+    const result = processor(node, item, nodeMetric, toolReceivedStreams, deliveredStreamIds, outboundEdges, activeEdgeSet, edgeTraffic, queue, nodes, edgeEncryptedTraffic);
 
     if (result.handledQueueExternally) continue;
 
@@ -215,9 +216,9 @@ export const calculateSimulationStep = (
           const targetNode = nodes.find(n => n.id === edge.target);
           activeEdgeSet.add(edge.id);
           
-          if (forwardStream!.isEncrypted) encryptedEdgeSet.add(edge.id);
+          if (forwardStream!.isEncrypted) { encryptedEdgeSet.add(edge.id); edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + splitBandwidth; }
           else decryptedEdgeSet.add(edge.id);
-          
+
           edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
           
           let canAccept = true;
@@ -270,7 +271,7 @@ export const calculateSimulationStep = (
 
           if (!targetNode || targetNode.type !== 'toolNode') {
             if (edgeForwardStream) {
-              if (edgeForwardStream.isEncrypted) encryptedEdgeSet.add(edge.id);
+              if (edgeForwardStream.isEncrypted) { encryptedEdgeSet.add(edge.id); edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + edgeForwardStream.bandwidth; }
               else decryptedEdgeSet.add(edge.id);
               edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + edgeForwardStream.bandwidth;
               queue.push({ nodeId: edge.target, stream: { ...edgeForwardStream, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
@@ -294,7 +295,7 @@ export const calculateSimulationStep = (
             if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
 
             if (canAccept) {
-              if (edgeForwardStream.isEncrypted) encryptedEdgeSet.add(edge.id);
+              if (edgeForwardStream.isEncrypted) { encryptedEdgeSet.add(edge.id); edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + edgeForwardStream.bandwidth; }
               else decryptedEdgeSet.add(edge.id);
               edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + edgeForwardStream.bandwidth;
               queue.push({ nodeId: edge.target, stream: { ...edgeForwardStream, firstEdgeId: item.stream.firstEdgeId || edge.id }, edgePath: [...item.edgePath, edge.id] });
@@ -375,5 +376,5 @@ export const calculateSimulationStep = (
   });
   const uniqueEgressMbps = Object.values(maxStreamBandwidth).reduce((sum, bw) => sum + bw, 0);
 
-  return { metrics, edgeMetrics: edgeTraffic, activeEdges: Array.from(activeEdgeSet), blockedEdges: Array.from(blockedEdgeSet), encryptedEdges: Array.from(encryptedEdgeSet), decryptedEdges: Array.from(decryptedEdgeSet), deliveredStreamIds: Array.from(deliveredStreamIds), nodeDataPatches, uniqueEgressMbps };
+  return { metrics, edgeMetrics: edgeTraffic, edgeEncryptedMbps: edgeEncryptedTraffic, activeEdges: Array.from(activeEdgeSet), blockedEdges: Array.from(blockedEdgeSet), encryptedEdges: Array.from(encryptedEdgeSet), decryptedEdges: Array.from(decryptedEdgeSet), deliveredStreamIds: Array.from(deliveredStreamIds), nodeDataPatches, uniqueEgressMbps };
 };

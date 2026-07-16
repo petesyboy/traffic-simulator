@@ -2,6 +2,8 @@
  * Hardware utility functions extracted from HardwareNodePanel.
  * Provides optic speed detection, board port capacity, and chassis base port capacity.
  */
+import { getSupportedBoards } from './opticValidation';
+import type { HardwareNodeData, InstalledOptic } from '../store/types';
 
 /**
  * Determines the speed tier of an optic based on its SKU/name.
@@ -180,6 +182,121 @@ export const getBoardDescription = (boardName: string, model: string): string =>
     return `${boardName} (${hasGigaSmart ? 'GigaSMART Engine + ' : ''}${desc})`;
   }
   return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
+};
+
+export interface CageCapacityBreakdown {
+  totalSfpCages: number;
+  totalQsfpCages: number;
+  usedSfpOptics: number;
+  usedQsfpOptics: number;
+  usedBreakouts: number;
+  hasBuiltInCopper: boolean;
+  usedBuiltInCopper: number;
+  totalExpandedSfpPorts: number;
+  breakoutSfpExpansion: number;
+  remainingSfpCages: number;
+  remainingQsfpCages: number;
+}
+
+/**
+ * Computes the physical SFP/QSFP cage usage and remaining capacity for a chassis,
+ * accounting for installed boards, breakout panel expansion, and built-in copper ports.
+ */
+export const getCageCapacityBreakdown = (
+  model: string,
+  hwData: HardwareNodeData
+): CageCapacityBreakdown => {
+  const installedOptics: InstalledOptic[] = hwData.optics || [];
+  const installedBoards = hwData.installedBoards || {};
+  const isPlus = model.includes('Plus');
+
+  const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string, installedOptics);
+  const availableOpticBoards: { board: string }[] = [];
+
+  const mainBoardObj = supportedBoards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
+  if (mainBoardObj) {
+    availableOpticBoards.push({ board: mainBoardObj.board });
+  }
+  Object.entries(installedBoards).forEach(([slotIdx, boardName]) => {
+    if (!boardName) return;
+    const boardTemplate = supportedBoards.find(b => b.board === boardName);
+    if (boardTemplate) {
+      availableOpticBoards.push({ board: `${boardName} (Slot ${slotIdx})` });
+    }
+  });
+
+  let totalSfpCages = 0;
+  let totalQsfpCages = 0;
+  let hasBuiltInCopper = false;
+
+  availableOpticBoards.forEach(b => {
+    const cages = getBoardPortCapacity(b.board, model, isPlus);
+    totalSfpCages += cages.sfp;
+    totalQsfpCages += cages.qsfp;
+
+    const name = b.board.toLowerCase();
+    const modelLower = model.toLowerCase();
+    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct') && !modelLower.includes('tap')) {
+      hasBuiltInCopper = true;
+    }
+  });
+
+  let usedSfpOptics = 0;
+  let usedQsfpOptics = 0;
+  let usedBreakouts = 0;
+  let usedBuiltInCopper = 0;
+
+  installedOptics.forEach(opt => {
+    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
+      usedBreakouts += opt.qty;
+    } else {
+      const speed = getOpticSpeed(opt.optic);
+      const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
+      const isCopper = getOpticFiberType(opt.optic) === 'Copper';
+
+      if (isQsfp) {
+        usedQsfpOptics += opt.qty;
+      } else {
+        if (hasBuiltInCopper && isCopper && opt.optic.includes('SFP-501')) {
+          const countForBuiltIn = Math.min(opt.qty, 4 - usedBuiltInCopper);
+          usedBuiltInCopper += countForBuiltIn;
+          usedSfpOptics += (opt.qty - countForBuiltIn);
+        } else {
+          usedSfpOptics += opt.qty;
+        }
+      }
+    }
+  });
+
+  const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
+  const remainingQsfpCages = Math.max(0, totalQsfpCages - totalUsedQsfpCages);
+  const breakoutSfpExpansion = usedBreakouts * 4;
+  const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
+  const remainingSfpCages = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
+
+  return {
+    totalSfpCages,
+    totalQsfpCages,
+    usedSfpOptics,
+    usedQsfpOptics,
+    usedBreakouts,
+    hasBuiltInCopper,
+    usedBuiltInCopper,
+    totalExpandedSfpPorts,
+    breakoutSfpExpansion,
+    remainingSfpCages,
+    remainingQsfpCages,
+  };
+};
+
+/**
+ * Returns just the remaining free SFP/QSFP cage counts for a chassis. Returns
+ * zero capacity for TAP modules, which have no installable optic cages.
+ */
+export const getRemainingCageCapacity = (model: string, hwData: HardwareNodeData): { sfp: number; qsfp: number } => {
+  if (model.includes('TAP')) return { sfp: 0, qsfp: 0 };
+  const breakdown = getCageCapacityBreakdown(model, hwData);
+  return { sfp: breakdown.remainingSfpCages, qsfp: breakdown.remainingQsfpCages };
 };
 
 /**

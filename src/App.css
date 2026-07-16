@@ -592,6 +592,14 @@
   animation: edge-flow-dash 1.8s linear infinite;
 }
 
+/* Mixed Flow — orange with a looser dash to signal "partially blind" */
+.react-flow__edge.mixed-flow .react-flow__edge-path {
+  stroke: #FF8C00;
+  stroke-dasharray: 6 3 2 3 !important;
+  filter: drop-shadow(0 0 4px rgba(255, 140, 0, 0.5)) !important;
+  animation: edge-flow-dash 1.4s linear infinite;
+}
+
 /* Active Decrypted Flow — blue, not green, for colorblind accessibility */
 .react-flow__edge.decrypted-flow .react-flow__edge-path {
   stroke: #448AFF;

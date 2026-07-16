@@ -203,7 +203,8 @@ const SimulationEngine: React.FC = () => {
         streamPatches,
         result.uniqueEgressMbps,
         result.encryptedEdges,
-        result.decryptedEdges
+        result.decryptedEdges,
+        result.edgeEncryptedMbps
       );
     };
 

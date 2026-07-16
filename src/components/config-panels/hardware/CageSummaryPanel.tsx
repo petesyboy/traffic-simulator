@@ -1,8 +1,7 @@
 import React from 'react';
 import type { CustomNode } from '../../../store/store';
-import type { HardwareNodeData, InstalledOptic } from '../../../store/types';
-import { getOpticSpeed, getBoardPortCapacity, getOpticFiberType } from '../../../utils/hardwareUtils';
-import { getSupportedBoards } from '../../../utils/opticValidation';
+import type { HardwareNodeData } from '../../../store/types';
+import { getCageCapacityBreakdown } from '../../../utils/hardwareUtils';
 
 interface CageSummaryPanelProps {
   selectedNode: CustomNode;
@@ -11,77 +10,23 @@ interface CageSummaryPanelProps {
 export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode }) => {
   const model = String(selectedNode.data?.model || '');
   const hwData = selectedNode.data as HardwareNodeData;
-  const installedOptics: InstalledOptic[] = hwData.optics || [];
-  const installedBoards = hwData.installedBoards || {};
-  const isPlus = model.includes('Plus');
 
   if (model.includes('TAP')) return null;
 
-  // Build available optic boards list
-  const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string, installedOptics);
-  const availableOpticBoards: { board: string; supportedOptics: string[] }[] = [];
-
-  const mainBoardObj = supportedBoards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
-  if (mainBoardObj) {
-    availableOpticBoards.push({ board: mainBoardObj.board, supportedOptics: mainBoardObj.supportedOptics });
-  }
-  Object.entries(installedBoards).forEach(([slotIdx, boardName]) => {
-    if (!boardName) return;
-    const boardTemplate = supportedBoards.find(b => b.board === boardName);
-    if (boardTemplate) {
-      availableOpticBoards.push({ board: `${boardName} (Slot ${slotIdx})`, supportedOptics: boardTemplate.supportedOptics });
-    }
-  });
-
-  // Calculate physical cages
-  let totalSfpCages = 0;
-  let totalQsfpCages = 0;
-  let hasBuiltInCopper = false;
-  let usedBuiltInCopper = 0;
-
-  availableOpticBoards.forEach(b => {
-    const cages = getBoardPortCapacity(b.board, model, isPlus);
-    totalSfpCages += cages.sfp;
-    totalQsfpCages += cages.qsfp;
-
-    const name = b.board.toLowerCase();
-    const modelLower = model.toLowerCase();
-    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct') && !modelLower.includes('tap')) {
-      hasBuiltInCopper = true;
-    }
-  });
-
-  let usedSfpOptics = 0;
-  let usedQsfpOptics = 0;
-  let usedBreakouts = 0;
-
-  installedOptics.forEach(opt => {
-    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
-      usedBreakouts += opt.qty;
-    } else {
-      const speed = getOpticSpeed(opt.optic);
-      const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
-      const isCopper = getOpticFiberType(opt.optic) === 'Copper';
-
-      if (isQsfp) {
-        usedQsfpOptics += opt.qty;
-      } else {
-        if (hasBuiltInCopper && isCopper && opt.optic.includes('SFP-501')) {
-          const countForBuiltIn = Math.min(opt.qty, 4 - usedBuiltInCopper);
-          usedBuiltInCopper += countForBuiltIn;
-          usedSfpOptics += (opt.qty - countForBuiltIn);
-        } else {
-          usedSfpOptics += opt.qty;
-        }
-      }
-    }
-  });
+  const {
+    totalQsfpCages,
+    usedQsfpOptics,
+    usedBreakouts,
+    hasBuiltInCopper,
+    usedBuiltInCopper,
+    totalExpandedSfpPorts,
+    usedSfpOptics,
+    breakoutSfpExpansion,
+    remainingSfpCages: remainingSfpPorts,
+    remainingQsfpCages,
+  } = getCageCapacityBreakdown(model, hwData);
 
   const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
-  const remainingQsfpCages = Math.max(0, totalQsfpCages - totalUsedQsfpCages);
-  const breakoutSfpExpansion = usedBreakouts * 4;
-  const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
-  const remainingSfpPorts = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
 
   return (
     <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>

@@ -140,7 +140,7 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
             </span>
           </div>
         )}
-        {advancedMode && !hasConnectedHc && (
+        {!hasConnectedHc && nodes.some(n => n.type === 'hardwareNode') && (
           <div style={{ color: '#ef5350', fontSize: '9px', fontWeight: 'bold', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span>⚠️ Requires HC Chassis</span>
           </div>
