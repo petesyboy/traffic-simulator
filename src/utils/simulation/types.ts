@@ -34,12 +34,14 @@ export type NodeProcessor = (
   activeEdgeSet: Set<string>,
   edgeTraffic: Record<string, number>,
   queue: QueueItem[],
-  nodes: CustomNode[]
+  nodes: CustomNode[],
+  edgeEncryptedTraffic: Record<string, number>
 ) => NodeProcessingResult;
 
 export interface SimulationStepResult {
   metrics: Record<string, NodeMetrics>;
   edgeMetrics: Record<string, number>;
+  edgeEncryptedMbps: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
   encryptedEdges: string[];

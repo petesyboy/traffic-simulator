@@ -9,12 +9,14 @@ export const processGigaStreamNode: NodeProcessor = (
   outboundEdges,
   activeEdgeSet,
   edgeTraffic,
-  queue
+  queue,
+  _nodes,
+  edgeEncryptedTraffic
 ) => {
   if (outboundEdges.length > 0) {
     nodeMetric.txMbps += item.stream.bandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
-    
+
     const algorithm = (node.data?.algorithm as string) || 'Round Robin';
 
     if (algorithm.toLowerCase().includes('hash')) {
@@ -29,6 +31,7 @@ export const processGigaStreamNode: NodeProcessor = (
 
       activeEdgeSet.add(selectedEdge.id);
       edgeTraffic[selectedEdge.id] = (edgeTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
+      if (item.stream.isEncrypted) edgeEncryptedTraffic[selectedEdge.id] = (edgeEncryptedTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
       queue.push({
         nodeId: selectedEdge.target,
         stream: { ...item.stream, firstEdgeId: item.stream.firstEdgeId || selectedEdge.id },
@@ -39,6 +42,7 @@ export const processGigaStreamNode: NodeProcessor = (
       outboundEdges.forEach((edge) => {
         activeEdgeSet.add(edge.id);
         edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
+        if (item.stream.isEncrypted) edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + splitBandwidth;
         queue.push({
           nodeId: edge.target,
           stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },

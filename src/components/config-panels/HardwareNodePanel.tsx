@@ -339,7 +339,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         )}
 
         {model?.includes('TAP') && (
-          <TapLinksPanel selectedNode={node} updateNodeData={updateNodeData} />
+          <TapLinksPanel selectedNode={node} updateNodeData={updateNodeData} nodes={nodes} edges={edges} />
         )}
       </div>
 

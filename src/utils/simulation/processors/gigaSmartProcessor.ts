@@ -10,7 +10,9 @@ export const processGigaSmartNode: NodeProcessor = (
   outboundEdges,
   activeEdgeSet,
   edgeTraffic,
-  queue
+  queue,
+  _nodes,
+  edgeEncryptedTraffic
 ) => {
   const data = node.data as GigaSmartNodeData;
   const actionType = data.actionType || 'Deduplication';
@@ -34,6 +36,7 @@ export const processGigaSmartNode: NodeProcessor = (
 
         activeEdgeSet.add(selectedEdge.id);
         edgeTraffic[selectedEdge.id] = (edgeTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
+        if (item.stream.isEncrypted) edgeEncryptedTraffic[selectedEdge.id] = (edgeEncryptedTraffic[selectedEdge.id] || 0) + item.stream.bandwidth;
         queue.push({
           nodeId: selectedEdge.target,
           stream: { ...item.stream, firstEdgeId: item.stream.firstEdgeId || selectedEdge.id },
@@ -44,6 +47,7 @@ export const processGigaSmartNode: NodeProcessor = (
         outboundEdges.forEach((edge) => {
           activeEdgeSet.add(edge.id);
           edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
+          if (item.stream.isEncrypted) edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + splitBandwidth;
           queue.push({
             nodeId: edge.target,
             stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
@@ -85,14 +89,15 @@ export const processGigaSmartNode: NodeProcessor = (
 
       if (encryptedBandwidth > 0) {
         edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + encryptedBandwidth;
+        edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + encryptedBandwidth;
         queue.push({
           nodeId: edge.target,
-          stream: { 
-            ...item.stream, 
+          stream: {
+            ...item.stream,
             id: `${item.stream.id}-enc-passthrough`,
-            bandwidth: encryptedBandwidth, 
+            bandwidth: encryptedBandwidth,
             isEncrypted: true,
-            firstEdgeId: item.stream.firstEdgeId || edge.id 
+            firstEdgeId: item.stream.firstEdgeId || edge.id
           },
           edgePath: [...item.edgePath, edge.id],
         });

@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
+import type { Edge } from '@xyflow/react';
 import type { CustomNode } from '../../../store/store';
 import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
-import { getOpticSpeed, getTapLinkCapacity } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../../../utils/hardwareUtils';
 import skusData from '../../../constants/skus.json';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
 
 interface TapLinksPanelProps {
   selectedNode: CustomNode;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
+  nodes: CustomNode[];
+  edges: Edge[];
 }
+
+const isQsfpSpeed = (speed: string) => speed === '40G' || speed === '100G' || speed === '400G';
 
 export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   selectedNode,
-  updateNodeData
+  updateNodeData,
+  nodes,
+  edges
 }) => {
   const addTrafficStream = useStore(state => state.addTrafficStream);
 
@@ -48,7 +55,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [];
   const currentAllocatedCount = hwData.tappedLinkAllocations ? hwData.tappedLinkAllocations.reduce((sum, a) => sum + a.qty, 0) : 0;
-  const remainingLinks = maxLinks - currentAllocatedCount;
+  const remainingLinksByTapCapacity = maxLinks - currentAllocatedCount;
 
   // Local state
   const [addQty, setAddQty] = useState(1);
@@ -66,6 +73,36 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   const activeAddToolOptic = (addToolOptic && (isPassiveOpticalTap || getOpticSpeed(addToolOptic) === networkSpeed))
     ? addToolOptic
     : speedFilteredToolOptics[0]?.value || activeAddOptic;
+
+  // Find the chassis (HC/TA) this TAP is physically connected to, so we can cap the
+  // link selector by however many free SFP/QSFP cages it actually has left.
+  const connectedChassis = edges
+    .filter(e => e.source === selectedNode.id || e.target === selectedNode.id)
+    .map(e => nodes.find(n => n.id === (e.source === selectedNode.id ? e.target : e.source)))
+    .find(n => n?.type === 'hardwareNode' && (String(n.data?.model || '').includes('HC') || String(n.data?.model || '').includes('TA')));
+
+  let remainingLinksByCageCapacity = Infinity;
+  let cageLimitReason = '';
+  if (connectedChassis && !isBuiltInOptics) {
+    const chassisModel = String(connectedChassis.data?.model || '');
+    const freeCages = getRemainingCageCapacity(chassisModel, connectedChassis.data as HardwareNodeData);
+
+    const networkIsQsfp = isQsfpSpeed(networkSpeed);
+    const toolIsQsfp = isQsfpSpeed(getOpticSpeed(activeAddToolOptic));
+    const qsfpPerLink = (networkIsQsfp ? 1 : 0) + (toolIsQsfp ? 1 : 0);
+    const sfpPerLink = 2 - qsfpPerLink;
+
+    const maxByQsfp = qsfpPerLink > 0 ? Math.floor(freeCages.qsfp / qsfpPerLink) : Infinity;
+    const maxBySfp = sfpPerLink > 0 ? Math.floor(freeCages.sfp / sfpPerLink) : Infinity;
+    remainingLinksByCageCapacity = Math.max(0, Math.min(maxByQsfp, maxBySfp));
+
+    if (remainingLinksByCageCapacity < remainingLinksByTapCapacity) {
+      const limitingCageType = maxByQsfp <= maxBySfp ? 'QSFP' : 'SFP';
+      cageLimitReason = `Limited by ${limitingCageType} cages free on ${connectedChassis.data?.label || chassisModel}.`;
+    }
+  }
+
+  const remainingLinks = Math.max(0, Math.min(remainingLinksByTapCapacity, remainingLinksByCageCapacity));
 
   const mismatchedAllocations = allocations.filter(a => {
     if (isM506T) return false;
@@ -221,15 +258,18 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
             <div className="flex-row gap-2">
               <div className="flex-col gap-1" style={{ width: isBuiltInOptics ? '100%' : '70px' }}>
                 <label className="text-xs text-muted">Links</label>
-                <select 
-                  value={addQty} 
-                  onChange={e => setAddQty(parseInt(e.target.value))} 
+                <select
+                  value={Math.min(addQty, remainingLinks)}
+                  onChange={e => setAddQty(parseInt(e.target.value))}
                   className="form-select text-md p-1 bg-[#222]"
                 >
                   {Array.from({ length: remainingLinks }, (_, i) => i + 1).map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
+                {cageLimitReason && (
+                  <span className="text-xs text-orange mt-1">{cageLimitReason}</span>
+                )}
               </div>
 
               {!isBuiltInOptics && (
@@ -277,6 +317,10 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
           >
             + Add Links
           </button>
+        </div>
+      ) : remainingLinksByCageCapacity <= 0 && remainingLinksByTapCapacity > 0 ? (
+        <div className="badge badge-orange p-2 rounded-md mb-3 flex-center text-md">
+          ⚠️ No free SFP/QSFP cages remain on {connectedChassis?.data?.label || String(connectedChassis?.data?.model || 'the connected chassis')} to allocate more links.
         </div>
       ) : (
         <div className="badge badge-green p-2 rounded-md mb-3 flex-center text-md">

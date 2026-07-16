@@ -8,7 +8,9 @@ import {
   formatOpticLabel,
   getBoardDescription,
   getTapLinkCapacity,
+  getRemainingCageCapacity,
 } from './hardwareUtils';
+import type { HardwareNodeData } from '../store/types';
 
 describe('hardwareUtils', () => {
   describe('getOpticSpeed and getOpticSpeedMbps', () => {
@@ -75,6 +77,38 @@ describe('hardwareUtils', () => {
     it('should return correct board descriptions', () => {
       expect(getBoardDescription('q04x08', 'HC1')).toBe('q04x08 (4x 40G QSFP+ & 8x 10G SFP+)');
       expect(getBoardDescription('SMT-HC3-C08Q08', 'HC3')).toBe('SMT-HC3-C08Q08 (GigaSMART Engine + 8x 100G QSFP28 & 8x 40G QSFP+)');
+    });
+  });
+
+  describe('getRemainingCageCapacity', () => {
+    it('returns full board capacity when no optics are installed', () => {
+      const hwData = { optics: [], installedBoards: {} } as unknown as HardwareNodeData;
+      expect(getRemainingCageCapacity('GigaVUE-HC1', hwData)).toEqual({ sfp: 12, qsfp: 0 });
+    });
+
+    it('subtracts installed optics from remaining SFP/QSFP capacity', () => {
+      const hwData = {
+        optics: [
+          { board: 'main', optic: 'SFP-532 (10G SFP+ SR)', qty: 10 },
+        ],
+        installedBoards: {},
+      } as unknown as HardwareNodeData;
+      expect(getRemainingCageCapacity('GigaVUE-HC1', hwData)).toEqual({ sfp: 2, qsfp: 0 });
+    });
+
+    it('clamps at zero when optics exceed physical capacity', () => {
+      const hwData = {
+        optics: [
+          { board: 'main', optic: 'SFP-532 (10G SFP+ SR)', qty: 20 },
+        ],
+        installedBoards: {},
+      } as unknown as HardwareNodeData;
+      expect(getRemainingCageCapacity('GigaVUE-HC1', hwData)).toEqual({ sfp: 0, qsfp: 0 });
+    });
+
+    it('returns zero capacity for TAP modules', () => {
+      const hwData = { optics: [], installedBoards: {} } as unknown as HardwareNodeData;
+      expect(getRemainingCageCapacity('TAP-A-TX2', hwData)).toEqual({ sfp: 0, qsfp: 0 });
     });
   });
 

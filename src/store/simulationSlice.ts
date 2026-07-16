@@ -9,6 +9,7 @@ export interface SimulationSlice {
   simulationSpeed: number;
   nodeMetrics: Record<string, NodeMetrics>;
   edgeMetrics: Record<string, number>;
+  edgeEncryptedMbps: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
   encryptedEdges: string[];
@@ -29,7 +30,8 @@ export interface SimulationSlice {
     streamPatches?: Record<string, Partial<any>>,
     uniqueEgressMbps?: number,
     encryptedEdges?: string[],
-    decryptedEdges?: string[]
+    decryptedEdges?: string[],
+    edgeEncryptedMbps?: Record<string, number>
   ) => void;
   loadDemo: () => void;
 }
@@ -39,6 +41,7 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
   simulationSpeed: 1,
   nodeMetrics: {},
   edgeMetrics: {},
+  edgeEncryptedMbps: {},
   activeEdges: [],
   blockedEdges: [],
   encryptedEdges: [],
@@ -54,13 +57,14 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
         drift: 1.0,
         lastDriftUpdate: 0,
       }));
-      set({ 
-        isRunning: false, 
-        activeEdges: [], 
-        blockedEdges: [], 
+      set({
+        isRunning: false,
+        activeEdges: [],
+        blockedEdges: [],
         encryptedEdges: [],
         decryptedEdges: [],
-        trafficStreams: resetTraffic 
+        edgeEncryptedMbps: {},
+        trafficStreams: resetTraffic
       });
     } else {
       set({ isRunning: true });
@@ -71,12 +75,13 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
 
   resetMetrics: () => {
     const resetNodes = get().nodes.map(n => ({ ...n, data: { ...n.data, totalIngestedBytes: 0 } }));
-    set({ 
-      nodeMetrics: {}, 
-      activeEdges: [], 
+    set({
+      nodeMetrics: {},
+      activeEdges: [],
       blockedEdges: [],
       encryptedEdges: [],
       decryptedEdges: [],
+      edgeEncryptedMbps: {},
       deliveredStreams: [],
       uniqueEgressMbps: 0,
       nodes: syncSplunkLabels(resetNodes, get().edges)
@@ -93,7 +98,8 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
     streamPatches,
     uniqueEgressMbps,
     encryptedEdges,
-    decryptedEdges
+    decryptedEdges,
+    edgeEncryptedMbps
   ) => {
     let nextNodes = get().nodes;
     
@@ -132,6 +138,7 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
     set({
       nodeMetrics: metrics,
       edgeMetrics,
+      edgeEncryptedMbps: edgeEncryptedMbps || {},
       activeEdges,
       blockedEdges,
       encryptedEdges: encryptedEdges || [],

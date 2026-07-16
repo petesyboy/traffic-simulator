@@ -197,6 +197,7 @@ export interface RFState {
   simulationSpeed: number;
   nodeMetrics: Record<string, NodeMetrics>;
   edgeMetrics: Record<string, number>;
+  edgeEncryptedMbps: Record<string, number>;
   activeEdges: string[];
   blockedEdges: string[];
   encryptedEdges: string[];
@@ -281,7 +282,8 @@ export interface RFState {
     streamPatches?: Record<string, Partial<TrafficStream>>,
     uniqueEgressMbps?: number,
     encryptedEdges?: string[],
-    decryptedEdges?: string[]
+    decryptedEdges?: string[],
+    edgeEncryptedMbps?: Record<string, number>
   ) => void;
   clearCanvas: () => void;
   loadDemo: () => void;

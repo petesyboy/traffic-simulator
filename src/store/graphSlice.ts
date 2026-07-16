@@ -106,6 +106,17 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const nodeB = get().nodes.find(n => n.id === connection.target);
     if (!nodeA || !nodeB) return;
 
+    // Block TA appliances from connecting directly to a GigaSMART node — TAs have no GigaSMART engine.
+    if (nodeB.type === NODE_TYPES.GIGASMART && nodeA.type === 'hardwareNode') {
+      const model = String((nodeA.data as HardwareNodeData)?.model || '');
+      const modelLower = model.toLowerCase();
+      const hasGigaSmartEngine = modelLower.includes('hc1') || modelLower.includes('hc3') || modelLower.includes('hct');
+      if (!hasGigaSmartEngine) {
+        window.alert(`🚫 CONNECTION REFUSED: ${model || 'This appliance'} is a Traffic Aggregator and does not have a GigaSMART engine. GigaSMART functions (dedup, slicing, SSL decrypt, etc.) require a GigaVUE-HC series chassis.`);
+        return;
+      }
+    }
+
     if (nodeA.data?.site && nodeB.data?.site && nodeA.data.site !== nodeB.data.site) {
       window.alert(`⚠️ WARNING: You are connecting a node in Site "${nodeA.data.site}" to a node in Site "${nodeB.data.site}". Cross-site links require long-haul optical connections (e.g. dark fiber). Ensure this is intentional.`);
     }
