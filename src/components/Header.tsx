@@ -12,6 +12,7 @@ import { useStore } from '../store/store';
 import pkg from '../../package.json';
 import { toPng } from 'html-to-image';
 import { validateConfiguration } from '../utils/bomEngine';
+import gigamonLogo from '../assets/gigamon-logo.png';
 
 import { ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal } from './header/index';
 
@@ -136,8 +137,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
         <header className="header-brand">
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img 
-                src="./gigamon-logo.png" 
+              <img
+                src={gigamonLogo}
                 alt="Gigamon" 
                 style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
                 onClick={handleLogoClick}

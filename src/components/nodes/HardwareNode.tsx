@@ -18,6 +18,7 @@ import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles';
+import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -38,8 +39,8 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   if (resolved.advSku) displaySku += ` + ${resolved.advSku}`;
 
   const hwData = data as HardwareNodeData;
-  const image = hwData.image || '';
-  
+  const image = resolveHardwareIcon(hwData.image);
+
   let rawIcon = image ? (
     <img src={image} alt={model} style={{ height: '32px', display: 'block', objectFit: 'contain' }} />
   ) : <GreenCircleIcon size={20} />;
