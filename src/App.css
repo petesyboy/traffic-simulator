@@ -32,13 +32,14 @@
 
 /* Brand Bar (Topmost) */
 .header-brand {
-  height: 40px;
+  height: 48px;
   background-color: var(--bg-header);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 18px;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .brand-logo {
@@ -47,6 +48,58 @@
   color: #00e5ff;
   letter-spacing: -0.01em;
   text-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+.brand-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-project-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand-region-flag {
+  height: 11px;
+  width: auto;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.brand-region-flag:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.brand-subtitle {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.brand-build-link {
+  margin-left: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.brand-build-link:hover {
+  color: var(--text-secondary);
 }
 
 .build-number {
@@ -70,38 +123,43 @@
 }
 
 .tab.monitoring-session {
-  padding: 10px 16px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
   border-right: 1px solid var(--border-color);
   border-left: 1px solid var(--border-color);
   background-color: #121212;
-  cursor: pointer;
+  cursor: default;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .tab.monitoring-session.active {
   background-color: #1a1a1a;
   color: #ffffff;
-  border-bottom: 2px stroke var(--color-blue);
+  border-bottom: 2px solid var(--color-blue);
 }
 
 /* Header Controls & Custom Buttons */
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .control-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background-color: rgba(255, 255, 255, 0.03);
-  padding: 3px 6px;
-  border-radius: 6px;
+  padding: 4px 7px;
+  border-radius: 7px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-normal);
 }
 
 .control-group:hover {
@@ -118,19 +176,30 @@
   letter-spacing: 0.05em;
 }
 
+.control-divider {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 7px;
+}
+
 .header-btn {
-  padding: 5px 10px;
+  height: 26px;
+  padding: 0 10px;
   font-size: 11px;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 5px;
   background-color: #222222;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  cursor: pointer;
 }
 
 .header-btn:hover {
@@ -139,22 +208,27 @@
 }
 
 .header-btn.icon-only {
-  padding: 5px;
-  min-width: 28px;
+  padding: 0;
+  width: 26px;
   justify-content: center;
 }
 
 .sim-btn {
+  height: 26px;
   background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
   color: white;
   border: 1px solid #388e3c;
-  padding: 5px 12px;
+  padding: 0 12px;
   font-size: 11px;
   font-weight: bold;
   box-shadow: 0 0 6px rgba(76, 175, 80, 0.2);
-  border-radius: 4px;
+  border-radius: 5px;
   white-space: nowrap;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .sim-btn.running {
@@ -180,10 +254,6 @@
   color: #fff;
 }
 
-.header-btn:hover {
-  background-color: #333333;
-}
-
 .header-btn.primary {
   background-color: var(--color-blue);
   border-color: #0069d9;
@@ -201,6 +271,65 @@
 
 .header-btn.danger:hover {
   background-color: rgba(239, 83, 80, 0.18);
+}
+
+/* Accent variants — token-driven, replace one-off inline colors */
+.header-btn--cyan {
+  color: var(--accent-cyan);
+  background-color: var(--accent-cyan-bg);
+  border-color: var(--accent-cyan-border);
+}
+
+.header-btn--cyan:hover {
+  background-color: var(--accent-cyan-hover);
+}
+
+.header-btn--orange {
+  color: var(--accent-orange);
+  background-color: var(--accent-orange-bg);
+  border-color: rgba(255, 152, 0, 0.3);
+}
+
+.header-btn--orange:hover {
+  background-color: rgba(255, 152, 0, 0.18);
+}
+
+.header-btn--red {
+  color: var(--accent-red);
+  background-color: var(--accent-red-bg);
+  border-color: rgba(239, 83, 80, 0.3);
+}
+
+.header-btn--red:hover {
+  background-color: rgba(239, 83, 80, 0.18);
+}
+
+.header-btn--green {
+  color: var(--accent-green);
+  background-color: var(--accent-green-bg);
+  border-color: rgba(76, 175, 80, 0.35);
+}
+
+.header-btn--green:hover {
+  background-color: rgba(76, 175, 80, 0.18);
+}
+
+.header-btn--solid-red {
+  color: #fff;
+  background-color: var(--accent-red);
+  border-color: var(--accent-red);
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(239, 83, 80, 0.4);
+}
+
+.header-btn--solid-red:hover {
+  background-color: #e04641;
+}
+
+.header-btn--active-view {
+  background-color: var(--color-blue);
+  color: #fff;
+  border-color: #0069d9;
 }
 
 /* Sub-Header Row */

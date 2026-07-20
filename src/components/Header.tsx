@@ -14,7 +14,12 @@ import { toPng } from 'html-to-image';
 import { validateConfiguration } from '../utils/bomEngine';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
-import { ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal } from './header/index';
+import {
+  ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal,
+  PlayIcon, PauseIcon, CopyIcon, ClipboardIcon, GridIcon, ServerRackIcon,
+  PresentationIcon, StopIcon, CameraIcon, SaveIcon, FolderOpenIcon,
+  GearIcon, RefreshIcon, TrashIcon,
+} from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
 
@@ -135,42 +140,41 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       <div className="header-wrapper">
         {/* ── Top Brand Bar ── */}
         <header className="header-brand">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img
-                src={gigamonLogo}
-                alt="Gigamon" 
-                style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }} 
-                onClick={handleLogoClick}
-                title="Gigamon Traffic Simulator"
-              />
-              
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                <span className="brand-logo" style={{ color: '#fff', textShadow: 'none', fontWeight: 600, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>{currentScenarioName || 'Untitled Project'}</span>
-                  <img 
-                    src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'} 
-                    alt={projectRegion}
-                    title={`Deployment Region: ${projectRegion}`}
-                    onClick={() => setShowSettings(true)}
-                    style={{ height: '10px', width: 'auto', borderRadius: '1px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                  />
-                </span>
-                <span style={{ fontSize: '9px', color: '#666', fontWeight: 500, letterSpacing: '0.02em' }}>
-                  FLOW MAPPING DESIGNER
-                  <a 
-                    href={`https://github.com/petesyboy/traffic-simulator/releases/tag/v${pkg.version}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`Build ${pkg.version}`}
-                    style={{ marginLeft: '8px', color: '#444', textDecoration: 'none', cursor: 'pointer' }}
-                  >
-                    v{pkg.version}
-                  </a>
-                </span>
-              </div>
+          <div className="brand-identity">
+            <img
+              src={gigamonLogo}
+              alt="Gigamon"
+              style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }}
+              onClick={handleLogoClick}
+              title="Gigamon Traffic Simulator"
+            />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span className="brand-project-name">
+                <span>{currentScenarioName || 'Untitled Project'}</span>
+                <img
+                  className="brand-region-flag"
+                  src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'}
+                  alt={projectRegion}
+                  title={`Deployment Region: ${projectRegion}`}
+                  onClick={() => setShowSettings(true)}
+                />
+              </span>
+              <span className="brand-subtitle">
+                FLOW MAPPING DESIGNER
+                <a
+                  className="brand-build-link"
+                  href={`https://github.com/petesyboy/traffic-simulator/releases/tag/v${pkg.version}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`Build ${pkg.version}`}
+                >
+                  v{pkg.version}
+                </a>
+              </span>
             </div>
-            <div className="tab monitoring-session active" style={{ height: '40px', display: 'flex', alignItems: 'center', borderBottom: '2px solid #007cff', color: advancedMode ? '#ff9800' : '#fff' }}>
+
+            <div className="tab monitoring-session active" style={{ color: advancedMode ? '#ff9800' : '#fff' }}>
               {advancedMode ? 'Expert Designer' : 'Standard View'}
             </div>
           </div>
@@ -183,7 +187,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 className={`sim-btn ${isRunning ? 'running' : ''}`}
                 style={{ minWidth: isRunning ? '80px' : '130px' }}
               >
-                {isRunning ? '⏸ Pause' : '▶ Run Simulation'}
+                {isRunning ? <PauseIcon /> : <PlayIcon />}
+                {isRunning ? 'Pause' : 'Run Simulation'}
               </button>
 
               {isRunning && (
@@ -203,17 +208,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
             {/* ── Group 2: Project / View ── */}
             <div className="control-group">
               {nodes.length > 0 && (
-                <button 
-                  className="header-btn" 
+                <button
+                  className="header-btn header-btn--cyan"
                   onClick={() => setShowDuplicatePrompt(true)}
                   title="Duplicate the entire topology to a new site"
-                  style={{
-                    background: 'rgba(0, 124, 255, 0.1)',
-                    color: '#00e5ff',
-                    borderColor: 'rgba(0, 124, 255, 0.3)'
-                  }}
                 >
-                  👥 Duplicate
+                  <CopyIcon /> Duplicate
                 </button>
               )}
 
@@ -221,52 +221,39 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 const validationErrors = validateConfiguration(nodes, edges);
                 const hasErrors = validationErrors.length > 0;
                 return (
-                  <button 
-                    className="header-btn" 
-                    style={{ 
-                      background: hasErrors ? 'rgba(239, 83, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)', 
-                      color: hasErrors ? '#ef5350' : '#ffb74d', 
-                      borderColor: hasErrors ? 'rgba(239, 83, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)' 
-                    }} 
+                  <button
+                    className={`header-btn ${hasErrors ? 'header-btn--red' : 'header-btn--orange'}`}
                     onClick={() => setShowBom(true)}
                     title={hasErrors ? 'Configuration errors detected' : 'View Bill of Materials'}
                   >
-                    📋 BOM{hasErrors ? ' (⚠️)' : ''}
+                    <ClipboardIcon /> BOM{hasErrors ? ' (!)' : ''}
                   </button>
                 );
               })()}
 
               {advancedMode && (
-                <button 
-                  className="header-btn" 
-                  onClick={() => setActiveView(activeView === 'canvas' ? 'rack' : 'canvas')} 
+                <button
+                  className={`header-btn ${activeView === 'rack' ? 'header-btn--active-view' : ''}`}
+                  onClick={() => setActiveView(activeView === 'canvas' ? 'rack' : 'canvas')}
                   title="Toggle Rack Elevation View"
-                  style={{ background: activeView === 'rack' ? '#007cff' : 'transparent', color: activeView === 'rack' ? '#fff' : '#ccc' }}
                 >
-                  {activeView === 'rack' ? '🎯 Canvas View' : '🗄️ Rack View'}
+                  {activeView === 'rack' ? <><GridIcon /> Canvas View</> : <><ServerRackIcon /> Rack View</>}
                 </button>
               )}
 
               <button
-                className="header-btn"
+                className={`header-btn ${isTradeShowDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
                 onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
                 title="Toggle Automated Trade Show Demonstration Mode"
-                style={{
-                  background: isTradeShowDemoActive ? '#ef5350' : 'rgba(34, 197, 94, 0.12)',
-                  color: isTradeShowDemoActive ? '#fff' : '#22c55e',
-                  borderColor: isTradeShowDemoActive ? '#ef5350' : 'rgba(34, 197, 94, 0.35)',
-                  fontWeight: 'bold',
-                  boxShadow: isTradeShowDemoActive ? '0 0 8px rgba(239, 83, 80, 0.4)' : 'none',
-                }}
               >
-                {isTradeShowDemoActive ? '⏹ Stop Demo' : '📺 Auto Demo'}
+                {isTradeShowDemoActive ? <><StopIcon /> Stop Demo</> : <><PresentationIcon /> Auto Demo</>}
               </button>
 
               <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
-                📸 Screenshot
+                <CameraIcon /> Screenshot
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '8px' }}>
+              <div className="control-divider">
                 <span style={{ fontSize: '9px', color: '#666', fontWeight: 700 }}>SIZE</span>
                 <select
                   value={panelTextScale}
@@ -287,29 +274,29 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
             {/* ── Group 3: File Operations ── */}
             <div className="control-group">
               <button className="header-btn" onClick={onSaveFileClick} title="Save project to a .json file">
-                💾 Save
+                <SaveIcon /> Save
               </button>
               <label className="header-btn" style={{ cursor: 'pointer', margin: 0 }} title="Load project from a .json file">
-                📂 Load
+                <FolderOpenIcon /> Load
                 <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
               </label>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '6px' }}>
-                <button className="header-btn" onClick={onSaveClick} style={{ padding: '5px 8px' }} title="Save to browser local storage">Browser Save</button>
-                <button className="header-btn" onClick={onLoadClick} style={{ padding: '5px 8px' }} title="Load from browser local storage">Browser Load</button>
+
+              <div className="control-divider">
+                <button className="header-btn" onClick={onSaveClick} title="Save to browser local storage"><SaveIcon /> Browser Save</button>
+                <button className="header-btn" onClick={onLoadClick} title="Load from browser local storage"><FolderOpenIcon /> Browser Load</button>
               </div>
             </div>
 
             {/* ── Group 4: System / Danger ── */}
             <div className="control-group">
               <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
-                ⚙️
+                <GearIcon />
               </button>
               <button className="header-btn icon-only" onClick={loadDemo} title="Reset to default demo layout">
-                🔄
+                <RefreshIcon />
               </button>
               <button onClick={handleClearRequest} className="header-btn danger icon-only" title="Clear canvas">
-                🗑️
+                <TrashIcon />
               </button>
             </div>
           </div>
