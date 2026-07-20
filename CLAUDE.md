@@ -12,7 +12,7 @@ Interactive visual orchestration tool for demonstrating Gigamon network visibili
 npm run dev          # Start Vite dev server
 npm run build        # tsc + Vite bundle → single HTML in /dist
 npm run lint         # ESLint on TS/TSX
-npm run test         # Vitest test suite (173 test files)
+npm run test         # Vitest test suite
 npm run format       # Prettier on src/
 npm run format:check # Check Prettier compliance
 npm run preview      # Preview production build
