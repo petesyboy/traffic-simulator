@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -128,9 +129,9 @@ const CatalogueSection: React.FC<CatalogueSectionProps> = ({
             }
             title={skus[item.sku] || ''}
           >
-            {item.image ? (
+            {resolveHardwareIcon(item.image) ? (
               <img
-                src={item.image}
+                src={resolveHardwareIcon(item.image)}
                 style={{ height: '16px', objectFit: 'contain' }}
                 alt={item.model}
               />
