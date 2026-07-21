@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
-import { getOpticSpeed } from '../../utils/hardwareUtils';
+import { getOpticSpeed, getTaLicenseLimits } from '../../utils/hardwareUtils';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
 import {
@@ -106,26 +106,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const isOpticsInvalid = (totalOptics < totalOpticsNeeded) || (missingMM > 0) || (missingSM > 0) || (missingCopper > 0);
 
   // License Exceeded Validation
-  const getTaLicenseLimits = (modelName: string, capacity: string): { sfp: number, qsfp: number } => {
-    const isTA25 = modelName.includes('TA25');
-    const isTA200 = modelName.includes('TA200');
-    const isTA400 = modelName.includes('TA400');
-    const cap = capacity || 'Full';
-    if (isTA25) {
-      if (cap === 'Quarter') return { sfp: 12, qsfp: 2 };
-      if (cap === 'Half') return { sfp: 24, qsfp: 4 };
-      return { sfp: 48, qsfp: 8 };
-    } else if (isTA200) {
-      if (cap === 'Half') return { sfp: 0, qsfp: 32 };
-      return { sfp: 0, qsfp: 64 };
-    } else if (isTA400) {
-      return { sfp: 2, qsfp: 32 };
-    } else {
-      if (cap === 'Quarter' || cap === '100G') return { sfp: 2, qsfp: 32 };
-      if (cap === 'Half') return { sfp: 0, qsfp: 16 };
-      return { sfp: 2, qsfp: 32 };
-    }
-  };
 
   const capVal = hwData.portCapacity || 'Full';
   const limits = getTaLicenseLimits(model || '', capVal);

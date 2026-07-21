@@ -77,6 +77,45 @@ export interface BreakoutPanel {
   slot?: number;
 }
 
+export interface PortInfo {
+  type: string;
+  count: number;
+  speeds: string[];
+}
+
+export interface LicensingInfo {
+  ports: PortInfo[];
+}
+
+export interface HardwareModel {
+  model: string;
+  sku: string;
+  power?: string;
+  fans?: number;
+  airflow?: string;
+  ports?: (PortInfo | number)[];
+  base_ports?: (PortInfo | number)[];
+  licensing?: LicensingInfo;
+  module_slots?: number;
+  image?: string;
+  isCustom?: boolean;
+  tappedLinksCount?: number;
+  tappedLinkAllocations?: TappedLinkAllocation[];
+}
+
+export interface Module {
+  model: string;
+  sku: string;
+  ports: PortInfo[];
+}
+
+export interface HardwareCatalogue {
+  taps: HardwareModel[];
+  ta_series: HardwareModel[];
+  hc_series: HardwareModel[];
+  modules: Module[];
+}
+
 export interface HardwareCatalogueItem {
   sku: string;
   model: string;

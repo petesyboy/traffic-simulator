@@ -4,7 +4,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus } from '../skuResolver';
-import { getBoardPortCapacity } from '../hardwareUtils';
+import { getBoardPortCapacity, getChassisBasePortCapacity } from '../hardwareUtils';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
@@ -152,26 +152,30 @@ export function validateConfiguration(
     const totalInstalledOptics = installedOptics.reduce((sum, opt) => sum + opt.qty, 0);
 
     const model = (chassis.data?.model as string) || '';
-    const isPlus = model.includes('Plus');
 
     const installedBoards = (chassis.data?.installedBoards as Record<string, string>) || {};
     let totalSfpCages = 0;
     let totalQsfpCages = 0;
 
-    let baseBoardName = 'Main Board';
-    if (model.includes('HC1') && !isPlus) baseBoardName = 'HC1-X12G4 (Main board)';
-    else if (model.includes('HC1') && isPlus) baseBoardName = 'HC1P-BASE (Main Board)';
-    else if (model.includes('HCT')) baseBoardName = 'HCT-C02 (Main Board)';
-    
-    const baseCages = getBoardPortCapacity(baseBoardName, model, isPlus);
-    totalSfpCages += baseCages.sfp;
-    totalQsfpCages += baseCages.qsfp;
+    const baseCages = getChassisBasePortCapacity(model);
+    for (const portType in baseCages) {
+      if (portType.toUpperCase().includes('SFP')) {
+        totalSfpCages += baseCages[portType];
+      } else if (portType.toUpperCase().includes('QSFP')) {
+        totalQsfpCages += baseCages[portType];
+      }
+    }
 
     Object.values(installedBoards).forEach((boardSku) => {
       if (!boardSku) return;
-      const cages = getBoardPortCapacity(boardSku, model, isPlus);
-      totalSfpCages += cages.sfp;
-      totalQsfpCages += cages.qsfp;
+      const cages = getBoardPortCapacity(boardSku);
+      for (const portType in cages) {
+        if (portType.toUpperCase().includes('SFP')) {
+          totalSfpCages += cages[portType];
+        } else if (portType.toUpperCase().includes('QSFP')) {
+          totalQsfpCages += cages[portType];
+        }
+      }
     });
 
     let installedSfp = 0;

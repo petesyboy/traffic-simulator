@@ -22,8 +22,16 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
     totalExpandedSfpPorts,
     usedSfpOptics,
     breakoutSfpExpansion,
-    remainingSfpCages: remainingSfpPorts,
+    remainingSfpCages,
     remainingQsfpCages,
+    licensedSfpCages,
+    licensedQsfpCages,
+    remainingLicensedSfpCages,
+    remainingLicensedQsfpCages,
+    licensedQsfp400gCages,
+    remainingLicensedQsfp400gCages,
+    isLicensed,
+    used400G,
   } = getCageCapacityBreakdown(model, hwData);
 
   const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
@@ -35,13 +43,21 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#aaa' }}>QSFP Cages (40G/100G/400G):</span>
           <strong style={{ color: remainingQsfpCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
-            {totalUsedQsfpCages} / {totalQsfpCages} Used ({remainingQsfpCages} Free)
+            {totalUsedQsfpCages} / {isLicensed ? `${licensedQsfpCages} (${totalQsfpCages} phys)` : totalQsfpCages} Used ({isLicensed ? `${remainingLicensedQsfpCages} lic, ` : ''}{remainingQsfpCages} Free)
           </strong>
         </div>
+        {isLicensed && model.includes('TA400E') && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: '#aaa' }}>400G Licensed Ports:</span>
+            <strong style={{ color: remainingLicensedQsfp400gCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
+              {used400G} / {licensedQsfp400gCages} Used ({remainingLicensedQsfp400gCages} Free)
+            </strong>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#aaa' }}>SFP Cages (1G/10G/25G):</span>
-          <strong style={{ color: remainingSfpPorts === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
-            {usedSfpOptics} / {totalExpandedSfpPorts} Used ({remainingSfpPorts} Free)
+          <strong style={{ color: remainingSfpCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
+            {usedSfpOptics} / {isLicensed ? `${licensedSfpCages} (${totalExpandedSfpPorts} phys)` : totalExpandedSfpPorts} Used ({isLicensed ? `${remainingLicensedSfpCages} lic, ` : ''}{remainingSfpCages} Free)
           </strong>
         </div>
         {usedBreakouts > 0 && (

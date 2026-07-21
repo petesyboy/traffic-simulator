@@ -279,7 +279,7 @@
     "SMT-HC1-S": [],
     "TAP-HC1-G10040": []
   },
-  "GigaVUE-HC2 CCv1                                                 Final GVOS Version : 6.5.00": {
+  "GigaVUE-HC2 CCv1": {
     "PRT-HC0-X24": [
       "SFP-501 (1G SFP Copper)",
       "SFP-501T (1G SFP Copper)",
@@ -419,7 +419,7 @@
       "SFP-535 (10G SFP+ LRM)"
     ]
   },
-  "GigaVUE-HC2 CCv2                                                  Final GVOS Version : 6.5.00": {
+  "GigaVUE-HC2 CCv2": {
     "PRT-HC0-X24": [
       "SFP-501 (1G SFP Copper)",
       "SFP-501T (1G SFP Copper)",
@@ -579,7 +579,7 @@
       "Q28-514 (100G QSFP28 FR1)"
     ]
   },
-  "GigaVUE-HC3 CCv1 \nFinal GVOS Version : 5.16.00": {
+  "GigaVUE-HC3 CCv1": {
     "PRT-HC3-X24": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
