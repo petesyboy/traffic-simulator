@@ -25,7 +25,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -70,7 +69,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -79,7 +77,8 @@
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
       "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
+      "SFP-535 (10G SFP+ LRM)",
+      "Q28-504T (100G QSFP28 ER4-lite)"
     ],
     "BPS-HC1-D25A60": [],
     "BPS-HC1-D35C60": [],
@@ -131,7 +130,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -153,7 +151,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -162,7 +159,6 @@
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
       "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)",
       "SFP-552 (25G SFP28 SR)",
       "SFP-552T (25G SFP28 SR)",
       "SFP-553T (25G SFP28 LR)"
@@ -174,7 +170,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -182,8 +177,7 @@
       "SFP-533 (10G SFP+ LR)",
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
+      "SFP-534T (10G SFP+ ER)"
     ],
     "PRT-HC1-X12": [
       "SFP-501 (1G SFP Copper)",
@@ -192,7 +186,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -200,8 +193,7 @@
       "SFP-533 (10G SFP+ LR)",
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
+      "SFP-534T (10G SFP+ ER)"
     ],
     "BPS-HC1-D25A60": [],
     "BPS-HC1-D35C60": [],
@@ -213,30 +205,31 @@
       "QSF-502 (40G QSFP+ SR4)",
       "QSF-502T (40G QSFP+ SR4)",
       "QSF-503T (40G QSFP+ LR4)",
-      "QSF-504 (40G QSFP+ ER4)",
-      "QSF-506 (40G QSFP+ PSM4)",
       "QSF-506T (40G QSFP+ PSM4)",
-      "QSF-507 (40G QSFP+ SR4-ER)",
       "QSF-507T (40G QSFP+ SR4-ER)",
-      "QSF-508 (40G QSFP+ SWDM4)"
+      "QSF-508 (40G QSFP+ SWDM4)",
+      "Q28-502T (100G QSFP28 SR4)",
+      "Q28-503T (100G QSFP28 LR4)",
+      "Q28-506 (100G QSFP28 PLR4)",
+      "Q28-508 (100G QSFP28 SWDM4)",
+      "Q28-513 (100G QSFP28 CWDM4)"
     ],
     "PRT-HC1-Q04X08": [
       "QSF-502 (40G QSFP+ SR4)",
       "QSF-502T (40G QSFP+ SR4)",
       "QSF-503T (40G QSFP+ LR4)",
-      "QSF-504 (40G QSFP+ ER4)",
-      "QSF-506 (40G QSFP+ PSM4)",
       "QSF-506T (40G QSFP+ PSM4)",
-      "QSF-507 (40G QSFP+ SR4-ER)",
       "QSF-507T (40G QSFP+ SR4-ER)",
       "QSF-508 (40G QSFP+ SWDM4)",
-      "SFP-501 (1G SFP Copper)",
       "SFP-501T (1G SFP Copper)",
-      "SFP-502 (1G SFP SX)",
       "SFP-502T (1G SFP SX)",
-      "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)"
+      "SFP-531T (10G SFP+ Copper)",
+      "SFP-532T (10G SFP+ SR)",
+      "SFP-533T (10G SFP+ LR)",
+      "SFP-534T (10G SFP+ ER)",
+      "SFP-552T (25G SFP28 SR)",
+      "SFP-553T (25G SFP28 LR)"
     ],
     "PRT-HC1-X12": [
       "SFP-501 (1G SFP Copper)",
@@ -245,7 +238,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -253,17 +245,16 @@
       "SFP-533 (10G SFP+ LR)",
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
+      "SFP-534T (10G SFP+ ER)"
     ],
     "BPS-HC1-D25A24": [
-      "SFP-501 (1G SFP Copper)",
       "SFP-501T (1G SFP Copper)",
-      "SFP-502 (1G SFP SX)",
       "SFP-502T (1G SFP SX)",
-      "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)"
+      "SFP-531T (10G SFP+ Copper)",
+      "SFP-532T (10G SFP+ SR)",
+      "SFP-533T (10G SFP+ LR)",
+      "SFP-534T (10G SFP+ ER)"
     ],
     "PRT-HC1-G12": [
       "SFP-501 (1G SFP Copper)",
@@ -595,7 +586,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -609,14 +599,12 @@
       "QSF-506 (40G QSFP+ PSM4)",
       "QSF-506T (40G QSFP+ PSM4)",
       "QSF-507 (40G QSFP+ SR4-ER)",
-      "QSF-507T (40G QSFP+ SR4-ER)",
-      "QSF-508 (40G QSFP+ SWDM4)"
+      "QSF-507T (40G QSFP+ SR4-ER)"
     ],
     "SMT-HC3-C05": [
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -630,8 +618,7 @@
       "QSF-506 (40G QSFP+ PSM4)",
       "QSF-506T (40G QSFP+ PSM4)",
       "QSF-507 (40G QSFP+ SR4-ER)",
-      "QSF-507T (40G QSFP+ SR4-ER)",
-      "QSF-508 (40G QSFP+ SWDM4)"
+      "QSF-507T (40G QSFP+ SR4-ER)"
     ],
     "BPS-HC3-C25F2G": [
       "SFP-531 (10G SFP+ Copper)",
@@ -644,7 +631,7 @@
       "SFP-534T (10G SFP+ ER)",
       "SFP-535 (10G SFP+ LRM)"
     ],
-    "BPS-HC3-C35F2G": [
+    "BPS-HC3-C35C2G": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -655,7 +642,7 @@
       "SFP-534T (10G SFP+ ER)",
       "SFP-535 (10G SFP+ LRM)"
     ],
-    "BPS-HC3-Q35F2G": [
+    "BPS-HC3-Q35C2G": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -686,7 +673,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -707,7 +693,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -728,7 +713,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -759,7 +743,7 @@
       "SFP-552T (25G SFP28 SR)",
       "SFP-553T (25G SFP28 LR)"
     ],
-    "BPS-HC3-C35F2G": [
+    "BPS-HC3-C35C2G": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -773,7 +757,7 @@
       "SFP-552T (25G SFP28 SR)",
       "SFP-553T (25G SFP28 LR)"
     ],
-    "BPS-HC3-Q35F2G": [
+    "BPS-HC3-Q35C2G": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -791,7 +775,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -817,7 +800,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -833,7 +815,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -859,7 +840,6 @@
       "SFP-502T (1G SFP SX)",
       "SFP-503 (1G SFP LX)",
       "SFP-503T (1G SFP LX)",
-      "SFP-505T (1G SFP FX)",
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
       "SFP-532 (10G SFP+ SR)",
@@ -868,14 +848,12 @@
       "SFP-533T (10G SFP+ LR)",
       "SFP-534 (10G SFP+ ER)",
       "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)",
       "SFP-552 (25G SFP28 SR)",
       "SFP-552T (25G SFP28 SR)",
       "SFP-553T (25G SFP28 LR)",
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -921,7 +899,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -944,7 +921,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -967,7 +943,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -994,7 +969,6 @@
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504 (100G QSFP28 ER4-lite)",
       "Q28-504T (100G QSFP28 ER4-lite)",
       "Q28-506 (100G QSFP28 PLR4)",
       "Q28-508 (100G QSFP28 SWDM4)",
@@ -1013,7 +987,15 @@
       "QSF-506T (40G QSFP+ PSM4)",
       "QSF-507 (40G QSFP+ SR4-ER)",
       "QSF-507T (40G QSFP+ SR4-ER)",
-      "QSF-508 (40G QSFP+ SWDM4)"
+      "QSF-508 (40G QSFP+ SWDM4)",
+      "SFP-531 (10G SFP+ Copper)",
+      "SFP-531T (10G SFP+ Copper)",
+      "SFP-532 (10G SFP+ SR)",
+      "SFP-532T (10G SFP+ SR)",
+      "SFP-533 (10G SFP+ LR)",
+      "SFP-533T (10G SFP+ LR)",
+      "SFP-534 (10G SFP+ ER)",
+      "SFP-534T (10G SFP+ ER)"
     ]
   }
 }
