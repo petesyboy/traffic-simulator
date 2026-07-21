@@ -17,7 +17,7 @@
 - **CRITICAL RULE**: For all tooltips on the nodes and anywhere else in this project, use British English spelling conventions (e.g., "analyse" instead of "analyze", "optimise" instead of "optimize", "colour" instead of "color", etc.).
 
 ## Breakout Panels
-- **CRITICAL RULE**: A panel, either a single mode or multi mode breakout panel (e.g. PNL-M341, PNL-M343), sits in either an M100T or an M200T tray along with optical TAPs. It consumes one of the slots (3 in M100T, 6 in M200T) within that tray.
+- **CRITICAL RULE**: A panel, either a single mode or multi mode breakout panel (e.g. PNL-M341, PNL-M343), sits in either an M100T or an M200T tray along with optical TAPs. It consumes one of the slots (there are 3 slots in an M100T, and 6 in an M200T) within that tray.
 
 ## Communication Style
 - **CRITICAL RULE**: When responding to the user, DO NOT output details of the internal tools used to search for text or read files (like `grep`, `cat`, or codebase searching). Focus the response strictly on the logic applied, the actual software changes made, and what the final outcome is.
