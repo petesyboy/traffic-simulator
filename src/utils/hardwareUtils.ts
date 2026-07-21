@@ -80,7 +80,9 @@ export const getChassisBasePortCapacity = (model: string): { [portType: string]:
   const chassis = allSeries.find(c => c.model === model);
 
   if (chassis) {
-    const ports = chassis.ports || (chassis as any).base_ports;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- catalogue entries mix `ports` (new schema) and `base_ports` (legacy)
+    const chassisAny = chassis as any;
+    const ports = chassisAny.ports || chassisAny.base_ports;
     if (ports) {
       return sumPortCounts(ports);
     }
@@ -196,6 +198,7 @@ export interface CageCapacityBreakdown {
   licensedSfpCages: number;
   licensedQsfpCages: number;
   remainingLicensedSfpCages: number;
+  remainingLicensedQsfpCages: number;
   licensedQsfp400gCages: number;
   remainingLicensedQsfp400gCages: number;
   isLicensed: boolean;
@@ -236,10 +239,10 @@ export const getCageCapacityBreakdown = (
 
   const chassisCapacity = getChassisBasePortCapacity(model);
   for (const portType in chassisCapacity) {
-    if (portType.toUpperCase().includes('SFP')) {
-      totalSfpCages += chassisCapacity[portType];
-    } else if (portType.toUpperCase().includes('QSFP')) {
+    if (portType.toUpperCase().includes('QSFP')) {
       totalQsfpCages += chassisCapacity[portType];
+    } else if (portType.toUpperCase().includes('SFP')) {
+      totalSfpCages += chassisCapacity[portType];
     }
   }
 
@@ -248,10 +251,10 @@ export const getCageCapacityBreakdown = (
     if (!boardName) return;
     const cages = getBoardPortCapacity(boardName);
     for (const portType in cages) {
-      if (portType.toUpperCase().includes('SFP')) {
-        totalSfpCages += cages[portType];
-      } else if (portType.toUpperCase().includes('QSFP')) {
+      if (portType.toUpperCase().includes('QSFP')) {
         totalQsfpCages += cages[portType];
+      } else if (portType.toUpperCase().includes('SFP')) {
+        totalSfpCages += cages[portType];
       }
     }
   });
@@ -309,10 +312,11 @@ export const getCageCapacityBreakdown = (
   let licensedQsfpCages = 0;
 
   for (const portType in licenseLimits) {
-    if (portType.toUpperCase().includes('SFP')) {
-      licensedSfpCages += licenseLimits[portType as keyof typeof licenseLimits] as number;
-    } else if (portType.toUpperCase().includes('QSFP')) {
+    if (portType === 'qsfp_400g') continue; // tracked separately as licensedQsfp400gCages below
+    if (portType.toUpperCase().includes('QSFP')) {
       licensedQsfpCages += licenseLimits[portType as keyof typeof licenseLimits] as number;
+    } else if (portType.toUpperCase().includes('SFP')) {
+      licensedSfpCages += licenseLimits[portType as keyof typeof licenseLimits] as number;
     }
   }
   

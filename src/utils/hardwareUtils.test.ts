@@ -18,6 +18,9 @@ describe('hardwareUtils', () => {
   describe('getCageCapacityBreakdown', () => {
     it('should calculate correct base capacity for an empty HC1', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
+        label: 'Test HC1',
+        configType: 'Hardware',
+        model: 'GigaVUE-HC1',
         optics: [],
         installedBoards: {},
       } as HardwareNodeData);
@@ -31,6 +34,9 @@ describe('hardwareUtils', () => {
 
     it('should calculate used capacity for an HC1 with optics', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
+        label: 'Test HC1',
+        configType: 'Hardware',
+        model: 'GigaVUE-HC1',
         optics: [{ optic: 'SFP-532', qty: 5, board: 'Base Ports' }],
         installedBoards: {},
       } as HardwareNodeData);
@@ -43,6 +49,9 @@ describe('hardwareUtils', () => {
 
     it('should account for installed boards on an HC3', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
+        label: 'Test HC3',
+        configType: 'Hardware',
+        model: 'GigaVUE-HC3',
         optics: [],
         installedBoards: { '1': 'PRT-HC3-C16' },
       } as HardwareNodeData);
@@ -55,6 +64,9 @@ describe('hardwareUtils', () => {
 
     it('should respect license limits on a TA25E with Quarter capacity', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-TA25E', {
+        label: 'Test TA25E',
+        configType: 'Hardware',
+        model: 'GigaVUE-TA25E',
         portCapacity: 'Quarter',
         optics: [
           { optic: 'SFP-552', qty: 10, board: 'Base Ports' },
@@ -80,6 +92,9 @@ describe('hardwareUtils', () => {
 
     it('should correctly calculate 400G usage on a TA400E with an Upgrade license', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-TA400E', {
+        label: 'Test TA400E',
+        configType: 'Hardware',
+        model: 'GigaVUE-TA400E',
         portCapacity: 'Upgrade',
         optics: [
           { optic: 'QDD-503', qty: 10, board: 'Base Ports' }, // 400G
@@ -142,8 +157,34 @@ describe('hardwareUtils', () => {
     it('should return correct port capacity for boards', () => {
       // Test a module from the catalogue
       expect(getBoardPortCapacity('SMT-HC3-C05')).toEqual({ 'QSFP28': 5 });
-      
-      expect(getBoardPortCapacity('SMT-HC1-q04x08')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
+
+      expect(getBoardPortCapacity('PRT-HC1-Q04X08')).toEqual({ 'SFP28': 8, 'QSFP28': 4 });
+    });
+
+    // Every module in hardwareCatalogue.json's `modules` array, cross-checked against
+    // the official GigaVUE HC Series datasheet (references/ds-gigavue-hc-series.pdf)
+    // and the real SKU descriptions in src/constants/skus.json.
+    it.each([
+      ['SMT-HC3-C05', { 'QSFP28': 5 }],
+      ['PRT-HC1-Q04X08', { 'SFP28': 8, 'QSFP28': 4 }],
+      ['BPS-HC1-D25A24', { 'SFP+': 8 }],
+      ['BPS-HC1-D25A60', { 'SFP+': 12 }],
+      ['BPS-HC1-D35C60', { 'SFP+': 12 }],
+      ['PRT-HC1-x12', { 'SFP+': 12 }],
+      ['PRT-HC1-G12', { 'RJ45': 6, 'SFP': 6 }],
+      ['SMT-HC1-S', {}],
+      ['TAP-HC1-G10040', { 'RJ45': 8 }],
+      ['PRT-HC3-X24', { 'SFP+': 24 }],
+      ['SMT-HC3-c08q08', { 'QSFP28': 8, 'QSFP+': 8 }],
+      ['PRT-HC3-C08Q08', { 'QSFP28': 8, 'QSFP+': 8 }],
+      ['SMT-HC3-c16', { 'QSFP28': 16 }],
+      ['PRT-HC3-C16', { 'QSFP28': 16 }],
+      ['SMT-HC3-c08', { 'QSFP28': 8 }],
+      ['BPS-HC3-C25F2G', { 'QSFP28': 4, 'SFP+': 16 }],
+      ['BPS-HC3-Q35C2G', { 'QSFP+': 4, 'SFP+': 16 }],
+      ['BPS-HC3-C35C2G', { 'QSFP28': 4, 'SFP+': 16 }],
+    ])('%s returns %j', (boardSku, expected) => {
+      expect(getBoardPortCapacity(boardSku)).toEqual(expected);
     });
   });
 
@@ -153,6 +194,130 @@ describe('hardwareUtils', () => {
       expect(getChassisBasePortCapacity('GigaVUE-HC1')).toEqual({ 'RJ45': 4, 'SFP+': 12 });
       expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
       expect(getChassisBasePortCapacity('GigaVUE-HC3')).toEqual({});
+      expect(getChassisBasePortCapacity('GigaVUE-HCT')).toEqual({});
+    });
+  });
+
+  describe('getCageCapacityBreakdown — every HC module installed alone', () => {
+    // Base physical SFP/QSFP cage totals per chassis with zero boards installed,
+    // derived straight from getChassisBasePortCapacity (RJ45 built-in ports never
+    // count toward either cage bucket).
+    const baseCages: Record<string, { sfp: number; qsfp: number }> = {
+      'GigaVUE-HCT': { sfp: 0, qsfp: 0 },
+      'GigaVUE-HC1': { sfp: 12, qsfp: 0 },
+      'GigaVUE-HC1-Plus': { sfp: 8, qsfp: 4 },
+      'GigaVUE-HC3': { sfp: 0, qsfp: 0 },
+    };
+
+    const hwData = (model: string, boardSku: string) => ({
+      label: 'Test',
+      configType: 'Hardware',
+      model,
+      optics: [],
+      installedBoards: { '1': boardSku },
+    } as unknown as HardwareNodeData);
+
+    // [chassis, board, { sfp delta, qsfp delta }] — every board that chassis can
+    // actually accept per the datasheet, installed alone in slot 1.
+    it.each([
+      // GigaVUE-HCT (1 slot) — all HC1-family boards it supports, plus its own PRT-HC1-G12
+      ['GigaVUE-HCT', 'PRT-HC1-Q04X08', { sfp: 8, qsfp: 4 }],
+      ['GigaVUE-HCT', 'PRT-HC1-x12', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HCT', 'PRT-HC1-G12', { sfp: 6, qsfp: 0 }],
+      ['GigaVUE-HCT', 'BPS-HC1-D25A24', { sfp: 8, qsfp: 0 }],
+      ['GigaVUE-HCT', 'BPS-HC1-D25A60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HCT', 'BPS-HC1-D35C60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HCT', 'SMT-HC1-S', { sfp: 0, qsfp: 0 }],
+      ['GigaVUE-HCT', 'TAP-HC1-G10040', { sfp: 0, qsfp: 0 }],
+
+      // GigaVUE-HC1 (2 slots) — PRT-HC1-G12 is HCT-only, not valid here
+      ['GigaVUE-HC1', 'PRT-HC1-Q04X08', { sfp: 8, qsfp: 4 }],
+      ['GigaVUE-HC1', 'PRT-HC1-x12', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1', 'BPS-HC1-D25A24', { sfp: 8, qsfp: 0 }],
+      ['GigaVUE-HC1', 'BPS-HC1-D25A60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1', 'BPS-HC1-D35C60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1', 'SMT-HC1-S', { sfp: 0, qsfp: 0 }],
+      ['GigaVUE-HC1', 'TAP-HC1-G10040', { sfp: 0, qsfp: 0 }],
+
+      // GigaVUE-HC1-Plus (2 slots) — same module set as HC1
+      ['GigaVUE-HC1-Plus', 'PRT-HC1-Q04X08', { sfp: 8, qsfp: 4 }],
+      ['GigaVUE-HC1-Plus', 'PRT-HC1-x12', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1-Plus', 'BPS-HC1-D25A24', { sfp: 8, qsfp: 0 }],
+      ['GigaVUE-HC1-Plus', 'BPS-HC1-D25A60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1-Plus', 'BPS-HC1-D35C60', { sfp: 12, qsfp: 0 }],
+      ['GigaVUE-HC1-Plus', 'SMT-HC1-S', { sfp: 0, qsfp: 0 }],
+      ['GigaVUE-HC1-Plus', 'TAP-HC1-G10040', { sfp: 0, qsfp: 0 }],
+
+      // GigaVUE-HC3 (4 slots) — combining the CCv1 and CCv2 board sets
+      ['GigaVUE-HC3', 'SMT-HC3-C05', { sfp: 0, qsfp: 5 }],
+      ['GigaVUE-HC3', 'SMT-HC3-c08', { sfp: 0, qsfp: 8 }],
+      ['GigaVUE-HC3', 'SMT-HC3-c08q08', { sfp: 0, qsfp: 16 }],
+      ['GigaVUE-HC3', 'SMT-HC3-c16', { sfp: 0, qsfp: 16 }],
+      ['GigaVUE-HC3', 'PRT-HC3-X24', { sfp: 24, qsfp: 0 }],
+      ['GigaVUE-HC3', 'PRT-HC3-C08Q08', { sfp: 0, qsfp: 16 }],
+      ['GigaVUE-HC3', 'PRT-HC3-C16', { sfp: 0, qsfp: 16 }],
+      ['GigaVUE-HC3', 'BPS-HC3-C25F2G', { sfp: 16, qsfp: 4 }],
+      ['GigaVUE-HC3', 'BPS-HC3-Q35C2G', { sfp: 16, qsfp: 4 }],
+      ['GigaVUE-HC3', 'BPS-HC3-C35C2G', { sfp: 16, qsfp: 4 }],
+    ])('%s + %s -> base + module cages', (chassis, board, delta) => {
+      const breakdown = getCageCapacityBreakdown(chassis, hwData(chassis, board));
+      const base = baseCages[chassis];
+      expect(breakdown.totalSfpCages).toBe(base.sfp + delta.sfp);
+      expect(breakdown.totalQsfpCages).toBe(base.qsfp + delta.qsfp);
+    });
+  });
+
+  describe('getCageCapacityBreakdown — multiple boards installed simultaneously', () => {
+    it('sums cages across both slots on an HC1', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
+        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC1',
+        optics: [],
+        installedBoards: { '1': 'PRT-HC1-Q04X08', '2': 'BPS-HC1-D25A60' },
+      } as unknown as HardwareNodeData);
+      // base (SFP+:12) + PRT-HC1-Q04X08 (SFP28:8, QSFP28:4) + BPS-HC1-D25A60 (SFP+:12)
+      expect(breakdown.totalSfpCages).toBe(12 + 8 + 12);
+      expect(breakdown.totalQsfpCages).toBe(0 + 4 + 0);
+    });
+
+    it('sums cages across both slots on an HC1-Plus', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1-Plus', {
+        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC1-Plus',
+        optics: [],
+        installedBoards: { '1': 'PRT-HC1-x12', '2': 'BPS-HC1-D35C60' },
+      } as unknown as HardwareNodeData);
+      // base (SFP+:8, QSFP+:4) + PRT-HC1-x12 (SFP+:12) + BPS-HC1-D35C60 (SFP+:12)
+      expect(breakdown.totalSfpCages).toBe(8 + 12 + 12);
+      expect(breakdown.totalQsfpCages).toBe(4);
+    });
+
+    it('sums cages across all four slots on an HC3, mixing SFP-only, QSFP-only, and mixed boards', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
+        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC3',
+        optics: [],
+        installedBoards: {
+          '1': 'PRT-HC3-X24',      // SFP-only:  SFP+:24
+          '2': 'SMT-HC3-c16',      // QSFP-only: QSFP28:16
+          '3': 'BPS-HC3-C25F2G',   // mixed:     SFP+:16, QSFP28:4
+          '4': 'PRT-HC3-C08Q08',   // QSFP-only: QSFP28:8, QSFP+:8
+        },
+      } as unknown as HardwareNodeData);
+      // base HC3 is 0/0
+      expect(breakdown.totalSfpCages).toBe(24 + 0 + 16 + 0);
+      expect(breakdown.totalQsfpCages).toBe(0 + 16 + 4 + 16);
+    });
+
+    it('every board in the modules catalogue has a real entry (regression: no board silently returns {})', () => {
+      const catalogueSkus = [
+        'SMT-HC3-C05', 'PRT-HC1-Q04X08', 'BPS-HC1-D25A24', 'BPS-HC1-D25A60', 'BPS-HC1-D35C60',
+        'PRT-HC1-x12', 'PRT-HC1-G12', 'SMT-HC1-S', 'TAP-HC1-G10040', 'PRT-HC3-X24',
+        'SMT-HC3-c08q08', 'PRT-HC3-C08Q08', 'SMT-HC3-c16', 'PRT-HC3-C16', 'SMT-HC3-c08',
+        'BPS-HC3-C25F2G', 'BPS-HC3-Q35C2G', 'BPS-HC3-C35C2G',
+      ];
+      for (const sku of catalogueSkus) {
+        // SMT-HC1-S is a pure GigaSMART engine card with no physical cages — {} is correct for it.
+        if (sku === 'SMT-HC1-S') continue;
+        expect(getBoardPortCapacity(sku), `${sku} returned {} — missing from the catalogue`).not.toEqual({});
+      }
     });
   });
 
