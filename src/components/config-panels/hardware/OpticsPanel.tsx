@@ -108,78 +108,6 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const totalOpticsNeeded = (requiredMMOptics + requiredSMOptics + requiredCopperOptics) + outgoingToolLinks;
   const isOpticsInvalid = (totalOptics < totalOpticsNeeded) || (missingMM > 0) || (missingSM > 0) || (missingCopper > 0);
 
-  // ─── Speed capacity calculations ──────────────────────────────────
-  const getBoardCageCapacities = (boardName: string): {
-    ports1G: number; ports10G: number; ports25G: number; ports40G: number; ports100G: number;
-  } => {
-    const caps = { ports1G: 0, ports10G: 0, ports25G: 0, ports40G: 0, ports100G: 0 };
-    const name = boardName.toLowerCase();
-    const modelLower = model.toLowerCase();
-    const cages = getBoardPortCapacity(boardName, model, isPlus);
-
-    caps.ports100G = cages.qsfp;
-    caps.ports40G = cages.qsfp;
-    caps.ports25G = cages.sfp;
-    caps.ports10G = cages.sfp;
-    caps.ports1G = cages.sfp;
-
-    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct')) {
-      caps.ports1G = 12 + 4;
-    }
-
-    return caps;
-  };
-
-  let total100G = 0, total40G = 0, total25G = 0, total10G = 0, total1G = 0;
-  availableOpticBoards.forEach(b => {
-    const caps = getBoardCageCapacities(b.board);
-    total100G += caps.ports100G;
-    total40G += caps.ports40G;
-    total25G += caps.ports25G;
-    total10G += caps.ports10G;
-    total1G += caps.ports1G;
-  });
-
-  const numBreakouts = installedOptics.reduce((sum, opt) => {
-    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) return sum + opt.qty;
-    return sum;
-  }, 0);
-  total25G += numBreakouts * 4;
-  total10G += numBreakouts * 4;
-
-  const modelLowerStr = model.toLowerCase();
-  if (modelLowerStr.includes('ta25e')) {
-    total25G = Math.min(total25G, 80); total10G = Math.min(total10G, 80);
-  } else if (modelLowerStr.includes('ta25')) {
-    total25G = Math.min(total25G, 56); total10G = Math.min(total10G, 56);
-  } else if (modelLowerStr.includes('ta200e') || modelLowerStr.includes('ta200')) {
-    total25G = Math.min(total25G, 128); total10G = Math.min(total10G, 128); total1G = 0;
-  } else if (modelLowerStr.includes('ta400e')) {
-    total100G = Math.min(total100G, 128); total25G = Math.min(total25G, 130); total10G = Math.min(total10G, 130); total1G = 0;
-  } else if (modelLowerStr.includes('ta400')) {
-    total100G = Math.min(total100G, 128); total25G = Math.min(total25G, 128); total10G = Math.min(total10G, 128); total1G = 0;
-  } else if (modelLowerStr.includes('hct')) {
-    total100G = Math.min(total100G, 2); total40G = Math.min(total40G, 6); total25G = Math.min(total25G, 12); total10G = Math.min(total10G, 32); total1G = Math.min(total1G, 12);
-  } else if (modelLowerStr.includes('hc1-plus') || modelLowerStr.includes('hc1 plus')) {
-    total100G = Math.min(total100G, 12); total40G = Math.min(total40G, 12); total25G = Math.min(total25G, 72); total10G = Math.min(total10G, 72); total1G = Math.min(total1G, 32);
-  } else if (modelLowerStr.includes('hc1')) {
-    total40G = Math.min(total40G, 8); total25G = 0; total10G = Math.min(total10G, 60); total1G = Math.min(total1G, 40);
-  } else if (modelLowerStr.includes('hc3')) {
-    total100G = Math.min(total100G, 64); total40G = Math.min(total40G, 64); total25G = Math.min(total25G, 128); total10G = Math.min(total10G, 128);
-  }
-
-  let used100G = 0, used40G = 0, used25G = 0, used10G = 0, used1G = 0;
-  installedOptics.forEach(opt => {
-    if (opt.optic.includes('PNL-M34')) return;
-    const speed = getOpticSpeed(opt.optic);
-    if (speed === '100G') used100G += opt.qty;
-    else if (speed === '40G') used40G += opt.qty;
-    else if (speed === '25G') used25G += opt.qty;
-    else if (speed === '10G') used10G += opt.qty;
-    else if (speed === '1G') used1G += opt.qty;
-  });
-
-  // ─── Handlers ─────────────────────────────────────────────────────
   const handleAddOptic = () => {
     setErrorMsg('');
     const targetBoard = availableOpticBoards.length === 1 ? availableOpticBoards[0].board : selectedOpticBoard;
@@ -196,37 +124,18 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     let qty = parseInt(qtyStr);
     if (isNaN(qty) || qty < 1) qty = 1;
 
-    const cages = getBoardPortCapacity(targetBoard, model, isPlus);
-    let currentSfp = 0;
-    let currentQsfp = 0;
-    installedOptics.forEach(opt => {
-      if (opt.board === targetBoard) {
-        if (opt.optic.includes('PNL-M34')) return;
-        const speed = getOpticSpeed(opt.optic);
-        if (speed === '100G' || speed === '40G') {
-          currentQsfp += opt.qty;
-        } else {
-          currentSfp += opt.qty;
-        }
-      }
-    });
-
+    const capacity = getCageCapacityBreakdown(model, hwData);
     const newSpeed = getOpticSpeed(selectedOptic);
-    const isNewQsfp = newSpeed === '100G' || newSpeed === '40G';
+    const isNewQsfp = newSpeed === '100G' || newSpeed === '40G' || newSpeed === '400G';
 
     if (isNewQsfp) {
-      if (currentQsfp + qty > cages.qsfp) {
-        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${cages.qsfp} QSFP cage(s) (currently using ${currentQsfp}, attempting to add ${qty}).`);
+      if (qty > capacity.remainingQsfpCages) {
+        setErrorMsg(`Cannot add optic. Not enough free QSFP cages. Available: ${capacity.remainingQsfpCages}, trying to add: ${qty}.`);
         return;
       }
     } else {
-      const numBreakoutPanels = installedOptics.reduce((sum, opt) => {
-        if (opt.board === targetBoard && (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343'))) return sum + opt.qty;
-        return sum;
-      }, 0);
-      const allowedSfp = cages.sfp + numBreakoutPanels * 4;
-      if (currentSfp + qty > allowedSfp) {
-        setErrorMsg(`Cannot add optic. Board/Module "${targetBoard}" only has ${allowedSfp} SFP cage(s) (currently using ${currentSfp}, attempting to add ${qty}).`);
+      if (qty > capacity.remainingSfpCages) {
+        setErrorMsg(`Cannot add optic. Not enough free SFP cages. Available: ${capacity.remainingSfpCages}, trying to add: ${qty}.`);
         return;
       }
     }
@@ -242,14 +151,13 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     // Auto-add corresponding parent optic if a breakout panel is added
     if (selectedOptic.includes('PNL-M341') || selectedOptic.includes('PNL-M343')) {
       let parentOptic = '';
-      if (selectedOptic.includes('PNL-M341')) {
-        const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
-        const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-502T'));
-        parentOptic = supports100G ? 'Q28-502T (100G QSFP28 SR4)' : 'QSF-502T (40G QSFP+ SR4)';
-      } else {
-        const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
-        const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-506'));
-        parentOptic = supports100G ? 'Q28-506 (100G QSFP28 PLR4)' : 'QSF-506T (40G QSFP+ PSM4)';
+      const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
+      const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-'));
+      
+      if (selectedOptic.includes('PNL-M341')) { // Multimode breakout
+        parentOptic = supports100G ? 'Q28-502T (100G QSFP28 SR4)' : 'QSF-502 (40G QSFP+ SR4)';
+      } else { // Singlemode breakout
+        parentOptic = supports100G ? 'Q28-506 (100G QSFP28 PLR4)' : 'QSF-506 (40G QSFP+ PSM4)';
       }
 
       if (parentOptic) {
@@ -344,20 +252,6 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
           </strong>
         </div>
       </div>
-
-      {/* Chassis Cage Capacity */}
-      {(total100G > 0 || total40G > 0 || total25G > 0 || total10G > 0 || total1G > 0) && (
-        <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Chassis Cage Capacity</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', textAlign: 'center', background: '#111', padding: '8px', borderRadius: '4px', border: '1px solid #333' }}>
-            {total100G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>100G</div><div style={{ color: used100G > total100G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used100G}/{total100G}</div></div>}
-            {total40G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>40G</div><div style={{ color: used40G > total40G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used40G}/{total40G}</div></div>}
-            {total25G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>25G</div><div style={{ color: used25G > total25G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used25G}/{total25G}</div></div>}
-            {total10G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>10G</div><div style={{ color: used10G > total10G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used10G}/{total10G}</div></div>}
-            {total1G > 0 && <div><div style={{ color: '#888', fontWeight: 'bold', fontSize: '10px' }}>1G</div><div style={{ color: used1G > total1G ? '#ef5350' : '#fff', fontSize: '11px', marginTop: '2px', fontFamily: 'monospace' }}>{used1G}/{total1G}</div></div>}
-          </div>
-        </div>
-      )}
 
       {/* Optics Deployment Status */}
       <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
