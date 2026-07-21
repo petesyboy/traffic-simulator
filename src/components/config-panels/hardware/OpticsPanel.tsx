@@ -3,7 +3,7 @@ import type { CustomNode } from '../../../store/store';
 import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
-import { getOpticSpeed, formatOpticLabel, getBoardPortCapacity, getCageCapacityBreakdown } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown } from '../../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
 interface OpticsPanelProps {
@@ -18,7 +18,6 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const hwData = selectedNode.data as HardwareNodeData;
   const installedOptics: InstalledOptic[] = hwData.optics || [];
   const installedBoards = hwData.installedBoards || {};
-  const isPlus = model.includes('Plus');
 
   const [selectedOpticBoard, setSelectedOpticBoard] = useState('');
   const [selectedOptic, setSelectedOptic] = useState('');

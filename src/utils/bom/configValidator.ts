@@ -159,10 +159,10 @@ export function validateConfiguration(
 
     const baseCages = getChassisBasePortCapacity(model);
     for (const portType in baseCages) {
-      if (portType.toUpperCase().includes('SFP')) {
-        totalSfpCages += baseCages[portType];
-      } else if (portType.toUpperCase().includes('QSFP')) {
+      if (portType.toUpperCase().includes('QSFP')) {
         totalQsfpCages += baseCages[portType];
+      } else if (portType.toUpperCase().includes('SFP')) {
+        totalSfpCages += baseCages[portType];
       }
     }
 
@@ -170,10 +170,10 @@ export function validateConfiguration(
       if (!boardSku) return;
       const cages = getBoardPortCapacity(boardSku);
       for (const portType in cages) {
-        if (portType.toUpperCase().includes('SFP')) {
-          totalSfpCages += cages[portType];
-        } else if (portType.toUpperCase().includes('QSFP')) {
+        if (portType.toUpperCase().includes('QSFP')) {
           totalQsfpCages += cages[portType];
+        } else if (portType.toUpperCase().includes('SFP')) {
+          totalSfpCages += cages[portType];
         }
       }
     });

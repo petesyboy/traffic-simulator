@@ -255,6 +255,7 @@
       "fans": 6,
       "airflow": "Front-to-Rear",
       "ports": [
+        { "type": "SFP+", "count": 2, "speeds": ["1G", "10G"] },
         { "type": "QSFP-DD", "count": 32, "speeds": ["100G", "400G"] }
       ],
       "image": "./hardware-icons/GigaVUE-TA400.png"
@@ -317,18 +318,32 @@
         ]
     },
     {
-        "model": "SMT-HC1-q04x08",
-        "sku": "SMT-HC1-q04x08",
+        "model": "PRT-HC1-Q04X08",
+        "sku": "PRT-HC1-Q04X08",
         "ports": [
-            { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] },
-            { "type": "QSFP+", "count": 4, "speeds": ["40G"] }
+            { "type": "SFP28", "count": 8, "speeds": ["1G", "10G", "25G"] },
+            { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] }
         ]
     },
     {
-        "model": "BPS-HC1-d25a24",
-        "sku": "BPS-HC1-d25a24",
+        "model": "BPS-HC1-D25A24",
+        "sku": "BPS-HC1-D25A24",
         "ports": [
-            { "type": "SFP+", "count": 24, "speeds": ["1G", "10G"] }
+            { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC1-D25A60",
+        "sku": "BPS-HC1-D25A60",
+        "ports": [
+            { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC1-D35C60",
+        "sku": "BPS-HC1-D35C60",
+        "ports": [
+            { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
         ]
     },
     {
@@ -339,15 +354,43 @@
         ]
     },
     {
-        "model": "PRT-HC1-x24",
-        "sku": "PRT-HC1-x24",
+        "model": "PRT-HC1-G12",
+        "sku": "PRT-HC1-G12",
         "ports": [
-            { "type": "SFP28", "count": 24, "speeds": ["10G", "25G"] }
+            { "type": "RJ45", "count": 6, "speeds": ["10M", "100M", "1G"] },
+            { "type": "SFP", "count": 6, "speeds": ["100M", "1G"] }
+        ]
+    },
+    {
+        "model": "SMT-HC1-S",
+        "sku": "SMT-HC1-S",
+        "ports": []
+    },
+    {
+        "model": "TAP-HC1-G10040",
+        "sku": "TAP-HC1-G10040",
+        "ports": [
+            { "type": "RJ45", "count": 8, "speeds": ["10M", "100M", "1G"] }
+        ]
+    },
+    {
+        "model": "PRT-HC3-X24",
+        "sku": "PRT-HC3-X24",
+        "ports": [
+            { "type": "SFP+", "count": 24, "speeds": ["10G"] }
         ]
     },
     {
         "model": "SMT-HC3-c08q08",
         "sku": "SMT-HC3-c08q08",
+        "ports": [
+            { "type": "QSFP28", "count": 8, "speeds": ["100G"] },
+            { "type": "QSFP+", "count": 8, "speeds": ["40G"] }
+        ]
+    },
+    {
+        "model": "PRT-HC3-C08Q08",
+        "sku": "PRT-HC3-C08Q08",
         "ports": [
             { "type": "QSFP28", "count": 8, "speeds": ["100G"] },
             { "type": "QSFP+", "count": 8, "speeds": ["40G"] }
@@ -361,6 +404,13 @@
         ]
     },
     {
+        "model": "PRT-HC3-C16",
+        "sku": "PRT-HC3-C16",
+        "ports": [
+            { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
+        ]
+    },
+    {
         "model": "SMT-HC3-c08",
         "sku": "SMT-HC3-c08",
         "ports": [
@@ -368,11 +418,27 @@
         ]
     },
     {
-        "model": "BPS-HC3-100",
-        "sku": "BPS-HC3-100",
+        "model": "BPS-HC3-C25F2G",
+        "sku": "BPS-HC3-C25F2G",
         "ports": [
-            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] },
-            { "type": "QSFP28", "count": 4, "speeds": ["100G"] }
+            { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] },
+            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC3-Q35C2G",
+        "sku": "BPS-HC3-Q35C2G",
+        "ports": [
+            { "type": "QSFP+", "count": 4, "speeds": ["40G"] },
+            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC3-C35C2G",
+        "sku": "BPS-HC3-C35C2G",
+        "ports": [
+            { "type": "QSFP28", "count": 4, "speeds": ["100G"] },
+            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
         ]
     }
   ]
