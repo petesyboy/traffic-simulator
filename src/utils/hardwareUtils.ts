@@ -3,7 +3,28 @@
  * Provides optic speed detection, board port capacity, and chassis base port capacity.
  */
 import { getSupportedBoards } from './opticValidation';
-import type { HardwareNodeData, InstalledOptic } from '../store/types';
+import type { HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
+import hardwareCatalogue from '../constants/hardwareCatalogue.json';
+
+const sumPortCounts = (ports: (PortInfo | number)[]): { [portType: string]: number } => {
+  const counts: { [portType: string]: number } = {};
+
+  if (!ports) {
+    return counts;
+  }
+
+  for (const port of ports) {
+    if (typeof port === 'number') {
+      // Legacy format, assume SFP
+      counts['SFP'] = (counts['SFP'] || 0) + port;
+      continue;
+    }
+
+    counts[port.type] = (counts[port.type] || 0) + port.count;
+  }
+
+  return counts;
+};
 
 /**
  * Determines the speed tier of an optic based on its SKU/name.
@@ -40,79 +61,32 @@ export const getOpticSpeedMbps = (opticName: string): number => {
  */
 export const getBoardPortCapacity = (
   boardSku: string,
-  model: string,
-  isPlus: boolean
-): { sfp: number; qsfp: number } => {
+): { [portType: string]: number } => {
   const name = boardSku.toLowerCase();
-  const modelLower = model.toLowerCase();
 
-  if (modelLower.includes('ta25')) {
-    return { sfp: 48, qsfp: 8 };
-  }
-  if (modelLower.includes('ta200')) {
-    return { sfp: 0, qsfp: 64 };
-  }
-  if (modelLower.includes('ta400e')) {
-    return { sfp: 2, qsfp: 32 };
-  }
-  if (modelLower.includes('ta400')) {
-    return { sfp: 0, qsfp: 32 };
+  const module = hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
+  if (module) {
+    return sumPortCounts(module.ports);
   }
 
-  if (name.includes('main') || name.includes('base') || name.includes('hc1-x12g4') || name.includes('hc1p-c04x08') || name.includes('hc1p-base') || name.includes('hct-c02')) {
-    if (isPlus) {
-      return { sfp: 8, qsfp: 4 };
-    } else if (modelLower.includes('hct')) {
-      return { sfp: 4, qsfp: 2 };
-    } else { // HC1
-      return { sfp: 12, qsfp: 0 };
-    }
-  }
-
-  if (name.includes('q04x08')) {
-    return { sfp: 8, qsfp: 4 };
-  }
-  if (name.includes('d25a24') || name.includes('bps-hc1-d25a24')) {
-    return { sfp: 24, qsfp: 0 };
-  }
-  if (name.includes('x12') || name.includes('g12')) {
-    return { sfp: 12, qsfp: 0 };
-  }
-  if (name.includes('x24')) {
-    return { sfp: 24, qsfp: 0 };
-  }
-  if (name.includes('c08q08')) {
-    return { sfp: 0, qsfp: 16 };
-  }
-  if (name.includes('c16')) {
-    return { sfp: 0, qsfp: 16 };
-  }
-  if (name.includes('c08')) {
-    return { sfp: 0, qsfp: 8 };
-  }
-  if (name.includes('c05')) {
-    return { sfp: 0, qsfp: 5 };
-  }
-  if (name.includes('bps-hc3')) {
-    return { sfp: 16, qsfp: 4 };
-  }
-  return { sfp: 0, qsfp: 0 };
+  return {};
 };
 
 /**
  * Returns base port capacity for a given chassis model (no boards installed).
  */
-export const getChassisBasePortCapacity = (model: string): { sfp: number; qsfp: number } => {
-  const modelLower = model.toLowerCase();
-  if (modelLower.includes('ta25')) return { sfp: 48, qsfp: 8 };
-  if (modelLower.includes('ta200')) return { sfp: 0, qsfp: 64 };
-  if (modelLower.includes('ta400e')) return { sfp: 2, qsfp: 32 };
-  if (modelLower.includes('ta400')) return { sfp: 0, qsfp: 32 };
-  if (modelLower.includes('hct')) return { sfp: 4, qsfp: 2 };
-  if (modelLower.includes('hc1-plus') || modelLower.includes('hc1 plus')) return { sfp: 8, qsfp: 4 };
-  if (modelLower.includes('hc1')) return { sfp: 12, qsfp: 0 };
-  if (modelLower.includes('hc3')) return { sfp: 0, qsfp: 0 };
-  return { sfp: 0, qsfp: 0 };
+export const getChassisBasePortCapacity = (model: string): { [portType: string]: number } => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  const chassis = allSeries.find(c => c.model === model);
+
+  if (chassis) {
+    const ports = chassis.ports || chassis.base_ports;
+    if (ports) {
+      return sumPortCounts(ports);
+    }
+  }
+  
+  return {};
 };
 
 /**
@@ -184,6 +158,29 @@ export const getBoardDescription = (boardName: string, model: string): string =>
   return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
 };
 
+export const getTaLicenseLimits = (modelName: string, capacity: string): { [portType: string]: number; qsfp_400g: number } => {
+  const modelLower = modelName.toLowerCase();
+  const cap = capacity || 'Full';
+
+  const chassis = hardwareCatalogue.ta_series.find(c => c.model.toLowerCase() === modelLower);
+
+  if (chassis && chassis.licensing && chassis.licensing.tiers) {
+    const tier = chassis.licensing.tiers.find(t => t.name.toLowerCase() === cap.toLowerCase());
+    if (tier) {
+      const counts = sumPortCounts(tier.ports);
+      return { ...counts, qsfp_400g: 0 };
+    }
+  }
+  
+  // Fallback for models not yet in the catalogue with the new structure
+  if (modelLower.includes('ta400e')) {
+    if (cap === '100G') return { 'SFP+': 2, 'QSFP28': 32, qsfp_400g: 0 };
+    if (cap === 'Upgrade') return { 'SFP+': 2, 'QSFP28': 32, qsfp_400g: 16 };
+    return { 'SFP+': 2, 'QSFP28': 32, qsfp_400g: 32 }; // Full
+  }
+  return { qsfp_400g: 0 };
+};
+
 export interface CageCapacityBreakdown {
   totalSfpCages: number;
   totalQsfpCages: number;
@@ -196,6 +193,14 @@ export interface CageCapacityBreakdown {
   breakoutSfpExpansion: number;
   remainingSfpCages: number;
   remainingQsfpCages: number;
+  licensedSfpCages: number;
+  licensedQsfpCages: number;
+  remainingLicensedSfpCages: number;
+  remainingLicensedQsfpCages: number;
+  licensedQsfp400gCages: number;
+  remainingLicensedQsfp400gCages: number;
+  isLicensed: boolean;
+  used400G: number;
 }
 
 /**
@@ -209,6 +214,7 @@ export const getCageCapacityBreakdown = (
   const installedOptics: InstalledOptic[] = hwData.optics || [];
   const installedBoards = hwData.installedBoards || {};
   const isPlus = model.includes('Plus');
+  const portCapacity = hwData.portCapacity || 'Full';
 
   const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string, installedOptics);
   const availableOpticBoards: { board: string }[] = [];
@@ -229,11 +235,29 @@ export const getCageCapacityBreakdown = (
   let totalQsfpCages = 0;
   let hasBuiltInCopper = false;
 
-  availableOpticBoards.forEach(b => {
-    const cages = getBoardPortCapacity(b.board, model, isPlus);
-    totalSfpCages += cages.sfp;
-    totalQsfpCages += cages.qsfp;
+  const chassisCapacity = getChassisBasePortCapacity(model);
+  for (const portType in chassisCapacity) {
+    if (portType.toUpperCase().includes('SFP')) {
+      totalSfpCages += chassisCapacity[portType];
+    } else if (portType.toUpperCase().includes('QSFP')) {
+      totalQsfpCages += chassisCapacity[portType];
+    }
+  }
 
+
+  Object.values(installedBoards).forEach(boardName => {
+    if (!boardName) return;
+    const cages = getBoardPortCapacity(boardName);
+    for (const portType in cages) {
+      if (portType.toUpperCase().includes('SFP')) {
+        totalSfpCages += cages[portType];
+      } else if (portType.toUpperCase().includes('QSFP')) {
+        totalQsfpCages += cages[portType];
+      }
+    }
+  });
+
+  availableOpticBoards.forEach(b => {
     const name = b.board.toLowerCase();
     const modelLower = model.toLowerCase();
     if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct') && !modelLower.includes('tap')) {
@@ -245,12 +269,16 @@ export const getCageCapacityBreakdown = (
   let usedQsfpOptics = 0;
   let usedBreakouts = 0;
   let usedBuiltInCopper = 0;
+  let used400G = 0;
 
   installedOptics.forEach(opt => {
     if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
       usedBreakouts += opt.qty;
     } else {
       const speed = getOpticSpeed(opt.optic);
+      if (speed === '400G') {
+        used400G += opt.qty;
+      }
       const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
       const isCopper = getOpticFiberType(opt.optic) === 'Copper';
 
@@ -274,6 +302,32 @@ export const getCageCapacityBreakdown = (
   const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
   const remainingSfpCages = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
 
+  const isLicensed = model.includes('TA25') || model.includes('TA200') || model.includes('TA400E');
+  
+  const licenseLimits = getTaLicenseLimits(model, portCapacity);
+
+  let licensedSfpCages = 0;
+  let licensedQsfpCages = 0;
+
+  for (const portType in licenseLimits) {
+    if (portType.toUpperCase().includes('SFP')) {
+      licensedSfpCages += licenseLimits[portType as keyof typeof licenseLimits] as number;
+    } else if (portType.toUpperCase().includes('QSFP')) {
+      licensedQsfpCages += licenseLimits[portType as keyof typeof licenseLimits] as number;
+    }
+  }
+  
+  if (!isLicensed) {
+    licensedSfpCages = totalExpandedSfpPorts;
+    licensedQsfpCages = totalQsfpCages;
+  }
+  
+  const licensedQsfp400gCages = isLicensed ? licenseLimits.qsfp_400g : 0;
+
+  const remainingLicensedSfpCages = Math.max(0, licensedSfpCages - usedSfpOptics);
+  const remainingLicensedQsfpCages = Math.max(0, licensedQsfpCages - totalUsedQsfpCages);
+  const remainingLicensedQsfp400gCages = Math.max(0, licensedQsfp400gCages - used400G);
+
   return {
     totalSfpCages,
     totalQsfpCages,
@@ -286,8 +340,18 @@ export const getCageCapacityBreakdown = (
     breakoutSfpExpansion,
     remainingSfpCages,
     remainingQsfpCages,
+    licensedSfpCages,
+    licensedQsfpCages,
+    remainingLicensedSfpCages,
+  remainingLicensedQsfpCages,
+    licensedQsfp400gCages,
+    remainingLicensedQsfp400gCages,
+    isLicensed,
+    used400G,
   };
 };
+
+
 
 /**
  * Returns just the remaining free SFP/QSFP cage counts for a chassis. Returns

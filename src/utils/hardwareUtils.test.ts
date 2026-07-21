@@ -9,10 +9,24 @@ import {
   getBoardDescription,
   getTapLinkCapacity,
   getRemainingCageCapacity,
+  getTaLicenseLimits,
 } from './hardwareUtils';
 import type { HardwareNodeData } from '../store/types';
 
 describe('hardwareUtils', () => {
+  describe('getTaLicenseLimits', () => {
+    it('should return correct license limits for GigaVUE-TA25E', () => {
+      expect(getTaLicenseLimits('GigaVUE-TA25E', 'Quarter')).toEqual({ 'SFP28': 12, 'QSFP28': 2, qsfp_400g: 0 });
+      expect(getTaLicenseLimits('GigaVUE-TA25E', 'Half')).toEqual({ 'SFP28': 24, 'QSFP28': 4, qsfp_400g: 0 });
+      expect(getTaLicenseLimits('GigaVUE-TA25E', 'Full')).toEqual({ 'SFP28': 48, 'QSFP28': 8, qsfp_400g: 0 });
+    });
+
+    it('should return correct license limits for GigaVUE-TA200', () => {
+      expect(getTaLicenseLimits('GigaVUE-TA200', 'Half')).toEqual({ 'QSFP28': 32, qsfp_400g: 0 });
+      expect(getTaLicenseLimits('GigaVUE-TA200', 'Full')).toEqual({ 'QSFP28': 64, qsfp_400g: 0 });
+    });
+  });
+  
   describe('getOpticSpeed and getOpticSpeedMbps', () => {
     it('should determine correct optic speed tiers', () => {
       expect(getOpticSpeed('QDD-502 (400G)')).toBe('400G');
@@ -34,26 +48,20 @@ describe('hardwareUtils', () => {
   });
 
   describe('getBoardPortCapacity', () => {
-    it('should return correct port capacity for boards and chassis combinations', () => {
-      // TA25
-      expect(getBoardPortCapacity('', 'GigaVUE-TA25', false)).toEqual({ sfp: 48, qsfp: 8 });
-      // TA200
-      expect(getBoardPortCapacity('', 'GigaVUE-TA200', false)).toEqual({ sfp: 0, qsfp: 64 });
-      // HC1 Main board (not Plus)
-      expect(getBoardPortCapacity('main', 'GigaVUE-HC1', false)).toEqual({ sfp: 12, qsfp: 0 });
-      // HC1 Plus Main Board
-      expect(getBoardPortCapacity('main', 'GigaVUE-HC1-Plus', true)).toEqual({ sfp: 8, qsfp: 4 });
-      // HCT Board
-      expect(getBoardPortCapacity('hct-c02', 'GigaVUE-HCT', false)).toEqual({ sfp: 4, qsfp: 2 });
+    it('should return correct port capacity for boards', () => {
+      // Test a module from the catalogue
+      expect(getBoardPortCapacity('SMT-HC3-C05')).toEqual({ 'QSFP28': 5 });
+      
+      expect(getBoardPortCapacity('SMT-HC1-q04x08')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
     });
   });
 
   describe('getChassisBasePortCapacity', () => {
     it('should return correct base capacities for chassis models', () => {
-      expect(getChassisBasePortCapacity('GigaVUE-TA25')).toEqual({ sfp: 48, qsfp: 8 });
-      expect(getChassisBasePortCapacity('GigaVUE-HC1')).toEqual({ sfp: 12, qsfp: 0 });
-      expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ sfp: 8, qsfp: 4 });
-      expect(getChassisBasePortCapacity('GigaVUE-HC3')).toEqual({ sfp: 0, qsfp: 0 });
+      expect(getChassisBasePortCapacity('GigaVUE-TA25E')).toEqual({ 'SFP28': 48, 'QSFP28': 8 });
+      expect(getChassisBasePortCapacity('GigaVUE-HC1')).toEqual({ 'RJ45': 4, 'SFP+': 12 });
+      expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
+      expect(getChassisBasePortCapacity('GigaVUE-HC3')).toEqual({});
     });
   });
 

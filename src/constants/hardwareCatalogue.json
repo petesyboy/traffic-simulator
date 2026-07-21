@@ -152,7 +152,35 @@
       "power": "400W",
       "fans": 4,
       "airflow": "Front-to-Rear",
-      "ports": 48,
+      "ports": [
+        { "type": "SFP28", "count": 48, "speeds": ["1G", "10G", "25G"] },
+        { "type": "QSFP28", "count": 8, "speeds": ["40G", "100G"] }
+      ],
+      "licensing": {
+        "tiers": [
+          {
+            "name": "Quarter",
+            "ports": [
+              { "type": "SFP28", "count": 12, "speeds": ["1G", "10G", "25G"] },
+              { "type": "QSFP28", "count": 2, "speeds": ["40G", "100G"] }
+            ]
+          },
+          {
+            "name": "Half",
+            "ports": [
+              { "type": "SFP28", "count": 24, "speeds": ["1G", "10G", "25G"] },
+              { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] }
+            ]
+          },
+          {
+            "name": "Full",
+            "ports": [
+              { "type": "SFP28", "count": 48, "speeds": ["1G", "10G", "25G"] },
+              { "type": "QSFP28", "count": 8, "speeds": ["40G", "100G"] }
+            ]
+          }
+        ]
+      },
       "image": "./hardware-icons/GigaVUE-TA25E.png"
     },
     {
@@ -161,7 +189,25 @@
       "power": "1069W",
       "fans": 8,
       "airflow": "Front-to-Rear",
-      "ports": 64,
+      "ports": [
+        { "type": "QSFP28", "count": 64, "speeds": ["100G"] }
+      ],
+      "licensing": {
+        "tiers": [
+          {
+            "name": "Half",
+            "ports": [
+              { "type": "QSFP28", "count": 32, "speeds": ["100G"] }
+            ]
+          },
+          {
+            "name": "Full",
+            "ports": [
+              { "type": "QSFP28", "count": 64, "speeds": ["100G"] }
+            ]
+          }
+        ]
+      },
       "image": "./hardware-icons/GigaVUE-TA200.png"
     },
     {
@@ -170,7 +216,25 @@
       "power": "800W",
       "fans": 8,
       "airflow": "Front-to-Rear",
-      "ports": 64,
+      "ports": [
+        { "type": "QSFP28", "count": 64, "speeds": ["100G"] }
+      ],
+      "licensing": {
+        "tiers": [
+          {
+            "name": "Half",
+            "ports": [
+              { "type": "QSFP28", "count": 32, "speeds": ["100G"] }
+            ]
+          },
+          {
+            "name": "Full",
+            "ports": [
+              { "type": "QSFP28", "count": 64, "speeds": ["100G"] }
+            ]
+          }
+        ]
+      },
       "image": "./hardware-icons/GigaVUE-TA200E.png"
     },
     {
@@ -179,7 +243,9 @@
       "power": "1000W",
       "fans": 7,
       "airflow": "Front-to-Rear",
-      "ports": 32,
+      "ports": [
+        { "type": "QSFP28", "count": 32, "speeds": ["100G"] }
+      ],
       "image": "./hardware-icons/GigaVUE-TA400.png"
     },
     {
@@ -188,7 +254,9 @@
       "power": "1294W",
       "fans": 6,
       "airflow": "Front-to-Rear",
-      "ports": 32,
+      "ports": [
+        { "type": "QSFP-DD", "count": 32, "speeds": ["100G", "400G"] }
+      ],
       "image": "./hardware-icons/GigaVUE-TA400.png"
     }
   ],
@@ -199,7 +267,10 @@
       "power": "450W",
       "fans": 6,
       "airflow": "Front-to-Rear",
-      "base_ports": 12,
+      "base_ports": [
+        { "type": "RJ45", "count": 4, "speeds": ["10M", "100M", "1G"]},
+        { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
+      ],
       "module_slots": 2,
       "image": "./hardware-icons/GigaVUE-HC1.png"
     },
@@ -209,7 +280,10 @@
       "power": "850W",
       "fans": 12,
       "airflow": "Front-to-Rear",
-      "base_ports": 24,
+      "base_ports": [
+        { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] },
+        { "type": "QSFP+", "count": 4, "speeds": ["40G"] }
+      ],
       "module_slots": 2,
       "image": "./hardware-icons/GigaVUE-HC1-Plus.png"
     },
@@ -219,7 +293,7 @@
       "power": "2000W",
       "fans": 10,
       "airflow": "Front-to-Rear",
-      "base_ports": 0,
+      "base_ports": [],
       "module_slots": 4,
       "image": "./hardware-icons/GigaVUE-HC3.png"
     },
@@ -229,9 +303,77 @@
       "power": "150W",
       "fans": 4,
       "airflow": "Front-to-Rear",
-      "base_ports": 0,
+      "base_ports": [],
       "module_slots": 1,
       "image": "./hardware-icons/GigaVUE-HCT.png"
+    }
+  ],
+  "modules": [
+    {
+        "model": "SMT-HC3-C05",
+        "sku": "SMT-HC3-C05",
+        "ports": [
+            { "type": "QSFP28", "count": 5, "speeds": ["40G", "100G"] }
+        ]
+    },
+    {
+        "model": "SMT-HC1-q04x08",
+        "sku": "SMT-HC1-q04x08",
+        "ports": [
+            { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] },
+            { "type": "QSFP+", "count": 4, "speeds": ["40G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC1-d25a24",
+        "sku": "BPS-HC1-d25a24",
+        "ports": [
+            { "type": "SFP+", "count": 24, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "PRT-HC1-x12",
+        "sku": "PRT-HC1-x12",
+        "ports": [
+            { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
+        ]
+    },
+    {
+        "model": "PRT-HC1-x24",
+        "sku": "PRT-HC1-x24",
+        "ports": [
+            { "type": "SFP28", "count": 24, "speeds": ["10G", "25G"] }
+        ]
+    },
+    {
+        "model": "SMT-HC3-c08q08",
+        "sku": "SMT-HC3-c08q08",
+        "ports": [
+            { "type": "QSFP28", "count": 8, "speeds": ["100G"] },
+            { "type": "QSFP+", "count": 8, "speeds": ["40G"] }
+        ]
+    },
+    {
+        "model": "SMT-HC3-c16",
+        "sku": "SMT-HC3-c16",
+        "ports": [
+            { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
+        ]
+    },
+    {
+        "model": "SMT-HC3-c08",
+        "sku": "SMT-HC3-c08",
+        "ports": [
+            { "type": "QSFP28", "count": 8, "speeds": ["100G"] }
+        ]
+    },
+    {
+        "model": "BPS-HC3-100",
+        "sku": "BPS-HC3-100",
+        "ports": [
+            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] },
+            { "type": "QSFP28", "count": 4, "speeds": ["100G"] }
+        ]
     }
   ]
 }
