@@ -940,6 +940,7 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-gs-tool-1']).toBe(5000);
       expect(result.edgeMetrics['e-gs-tool-2']).toBe(5000);
       expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
+      expect(result.uniqueEgressMbps).toBe(10000);
     });
 
     it('should split traffic across multiple edges from the parent chassis node when a GigaStream node is nested inside it', () => {
@@ -1004,6 +1005,7 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-ta-tool-1']).toBe(5000);
       expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
       expect(result.metrics['tool-extrahop'].rxMbps).toBe(10000);
+      expect(result.uniqueEgressMbps).toBe(10000);
     });
 
     it('should split traffic across multiple edges from the parent chassis node to the same tool node even without an explicit GigaStream node', () => {
@@ -1056,6 +1058,7 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-ta-tool-1']).toBe(5000);
       expect(result.edgeMetrics['e-ta-tool-2']).toBe(5000);
       expect(result.metrics['tool-vectra'].rxMbps).toBe(10000);
+      expect(result.uniqueEgressMbps).toBe(10000);
     });
 
     it('should split traffic 4 ways across 4 parallel links from an HC chassis model to a tool node correctly', () => {
@@ -1112,6 +1115,7 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-hc-tool-3']).toBe(2500);
       expect(result.edgeMetrics['e-hc-tool-4']).toBe(2500);
       expect(result.metrics['tool-vectra'].rxMbps).toBe(10000);
+      expect(result.uniqueEgressMbps).toBe(10000);
     });
   });
 });

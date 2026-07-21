@@ -50,7 +50,7 @@ export const processGigaSmartNode: NodeProcessor = (
           if (item.stream.isEncrypted) edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + splitBandwidth;
           queue.push({
             nodeId: edge.target,
-            stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: item.stream.firstEdgeId || edge.id },
+            stream: { ...item.stream, bandwidth: splitBandwidth, firstEdgeId: edge.id },
             edgePath: [...item.edgePath, edge.id],
           });
         });
