@@ -80,7 +80,7 @@ export const getChassisBasePortCapacity = (model: string): { [portType: string]:
   const chassis = allSeries.find(c => c.model === model);
 
   if (chassis) {
-    const ports = chassis.ports || chassis.base_ports;
+    const ports = chassis.ports || (chassis as any).base_ports;
     if (ports) {
       return sumPortCounts(ports);
     }
@@ -296,7 +296,7 @@ export const getCageCapacityBreakdown = (
   });
 
   const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
-  const remainingQsfpCages = Math.max(0, totalQsfpCages - totalUsedQsfpCages);
+  const remainingQsfpCages = Math.max(0, totalQsfpCages - usedQsfpOptics - usedBreakouts);
   const breakoutSfpExpansion = usedBreakouts * 4;
   const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
   const remainingSfpCages = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
@@ -331,8 +331,8 @@ export const getCageCapacityBreakdown = (
     totalSfpCages,
     totalQsfpCages,
     usedSfpOptics,
-    usedQsfpOptics,
     usedBreakouts,
+    usedQsfpOptics,
     hasBuiltInCopper,
     usedBuiltInCopper,
     totalExpandedSfpPorts,

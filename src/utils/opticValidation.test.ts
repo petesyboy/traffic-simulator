@@ -14,14 +14,14 @@ describe('opticValidation', () => {
 
   it('should validate supported and unsupported optics', () => {
     // Valid optic on GigaVUE-TA25 Base Ports
-    const validResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'Q28-502T (100G QSFP28 SR4)');
+    const validResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'Q28-502T (100G QSFP28 SR4)', 'Full', []);
     expect(validResult.valid).toBe(true);
 
     // Invalid optic on GigaVUE-TA25 Base Ports
-    const invalidResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'SFP-501 (1G SFP Copper)');
-    expect(invalidResult.valid).toBe(true);
+    const supportedResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'SFP-501 (1G SFP Copper)', 'Full', []);
+    expect(supportedResult.valid).toBe(true);
     // SFP-501 is supported on TA25! Let's check a completely unsupported optic speed/type, e.g. QDD-503 (400G QSFP-DD LR4)
-    const completelyInvalidResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'QDD-503 (400G QSFP-DD LR4)');
+    const completelyInvalidResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'QDD-503 (400G QSFP-DD LR4)', 'Full', []);
     expect(completelyInvalidResult.valid).toBe(false);
     expect(completelyInvalidResult.message).toContain('is NOT supported on Base Ports');
   });

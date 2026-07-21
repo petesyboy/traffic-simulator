@@ -10,10 +10,101 @@ import {
   getTapLinkCapacity,
   getRemainingCageCapacity,
   getTaLicenseLimits,
+  getCageCapacityBreakdown,
 } from './hardwareUtils';
 import type { HardwareNodeData } from '../store/types';
 
 describe('hardwareUtils', () => {
+  describe('getCageCapacityBreakdown', () => {
+    it('should calculate correct base capacity for an empty HC1', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
+        optics: [],
+        installedBoards: {},
+      } as HardwareNodeData);
+
+      expect(breakdown.totalSfpCages).toBe(12);
+      expect(breakdown.totalQsfpCages).toBe(0);
+      expect(breakdown.usedSfpOptics).toBe(0);
+      expect(breakdown.remainingSfpCages).toBe(12);
+      expect(breakdown.isLicensed).toBe(false);
+    });
+
+    it('should calculate used capacity for an HC1 with optics', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
+        optics: [{ optic: 'SFP-532', qty: 5, board: 'Base Ports' }],
+        installedBoards: {},
+      } as HardwareNodeData);
+
+      expect(breakdown.totalSfpCages).toBe(12);
+      expect(breakdown.usedSfpOptics).toBe(5);
+      expect(breakdown.remainingSfpCages).toBe(7);
+      expect(breakdown.remainingLicensedSfpCages).toBe(7);
+    });
+
+    it('should account for installed boards on an HC3', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
+        optics: [],
+        installedBoards: { '1': 'PRT-HC3-C16' },
+      } as HardwareNodeData);
+
+      expect(breakdown.totalSfpCages).toBe(0);
+      expect(breakdown.totalQsfpCages).toBe(16);
+      expect(breakdown.usedQsfpOptics).toBe(0);
+      expect(breakdown.remainingQsfpCages).toBe(16);
+    });
+
+    it('should respect license limits on a TA25E with Quarter capacity', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-TA25E', {
+        portCapacity: 'Quarter',
+        optics: [
+          { optic: 'SFP-552', qty: 10, board: 'Base Ports' },
+          { optic: 'Q28-502T', qty: 1, board: 'Base Ports' },
+        ],
+        installedBoards: {},
+      } as HardwareNodeData);
+
+      expect(breakdown.isLicensed).toBe(true);
+      // Physical cages
+      expect(breakdown.totalSfpCages).toBe(48);
+      expect(breakdown.totalQsfpCages).toBe(8);
+      // Licensed cages
+      expect(breakdown.licensedSfpCages).toBe(12);
+      expect(breakdown.licensedQsfpCages).toBe(2);
+      // Used optics
+      expect(breakdown.usedSfpOptics).toBe(10);
+      expect(breakdown.usedQsfpOptics).toBe(1);
+      // Remaining licensed cages
+      expect(breakdown.remainingLicensedSfpCages).toBe(2); // 12 - 10
+      expect(breakdown.remainingLicensedQsfpCages).toBe(1); // 2 - 1
+    });
+
+    it('should correctly calculate 400G usage on a TA400E with an Upgrade license', () => {
+      const breakdown = getCageCapacityBreakdown('GigaVUE-TA400E', {
+        portCapacity: 'Upgrade',
+        optics: [
+          { optic: 'QDD-503', qty: 10, board: 'Base Ports' }, // 400G
+          { optic: 'Q28-502T', qty: 12, board: 'Base Ports' }, // 100G
+        ],
+        installedBoards: {},
+      } as HardwareNodeData);
+
+      expect(breakdown.isLicensed).toBe(true);
+      // Physical cages
+      expect(breakdown.totalSfpCages).toBe(2);
+      expect(breakdown.totalQsfpCages).toBe(32);
+      // Licensed cages
+      expect(breakdown.licensedSfpCages).toBe(2);
+      expect(breakdown.licensedQsfpCages).toBe(32);
+      expect(breakdown.licensedQsfp400gCages).toBe(16);
+      // Used optics
+      expect(breakdown.used400G).toBe(10);
+      expect(breakdown.usedQsfpOptics).toBe(22); // 10 (400G) + 12 (100G)
+      // Remaining licensed cages
+      expect(breakdown.remainingLicensedQsfpCages).toBe(10); // 32 - 22
+      expect(breakdown.remainingLicensedQsfp400gCages).toBe(6); // 16 - 10
+    });
+  });
+
   describe('getTaLicenseLimits', () => {
     it('should return correct license limits for GigaVUE-TA25E', () => {
       expect(getTaLicenseLimits('GigaVUE-TA25E', 'Quarter')).toEqual({ 'SFP28': 12, 'QSFP28': 2, qsfp_400g: 0 });
