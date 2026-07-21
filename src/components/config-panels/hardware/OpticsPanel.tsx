@@ -3,7 +3,7 @@ import type { CustomNode } from '../../../store/store';
 import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
-import { getOpticSpeed, formatOpticLabel, getBoardPortCapacity } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, formatOpticLabel, getBoardPortCapacity, getCageCapacityBreakdown } from '../../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
 interface OpticsPanelProps {

@@ -196,7 +196,6 @@ export interface CageCapacityBreakdown {
   licensedSfpCages: number;
   licensedQsfpCages: number;
   remainingLicensedSfpCages: number;
-  remainingLicensedQsfpCages: number;
   licensedQsfp400gCages: number;
   remainingLicensedQsfp400gCages: number;
   isLicensed: boolean;
@@ -343,7 +342,7 @@ export const getCageCapacityBreakdown = (
     licensedSfpCages,
     licensedQsfpCages,
     remainingLicensedSfpCages,
-  remainingLicensedQsfpCages,
+    remainingLicensedQsfpCages,
     licensedQsfp400gCages,
     remainingLicensedQsfp400gCages,
     isLicensed,
