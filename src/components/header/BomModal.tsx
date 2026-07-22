@@ -9,53 +9,6 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, validateConfiguration } from '../../utils/bomEngine';
 import type { HardwareNodeData } from '../../store/types';
-import encryptedPricesData from '../../constants/prices.encrypted.json';
-
-let decryptedPrices: Record<string, { listPrice: number; monthlyPrice: number }> = {};
-
-function rc4Decrypt(key: string, base64Str: string): string {
-  const binaryStr = atob(base64Str);
-  const s = new Array(256);
-  for (let i = 0; i < 256; i++) {
-    s[i] = i;
-  }
-  let j = 0;
-  for (let i = 0; i < 256; i++) {
-    j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
-    const temp = s[i];
-    s[i] = s[j];
-    s[j] = temp;
-  }
-  let i = 0;
-  j = 0;
-  let res = '';
-  for (let y = 0; y < binaryStr.length; y++) {
-    i = (i + 1) % 256;
-    j = (j + s[i]) % 256;
-    const temp = s[i];
-    s[i] = s[j];
-    s[j] = temp;
-    const k = s[(s[i] + s[j]) % 256];
-    res += String.fromCharCode(binaryStr.charCodeAt(y) ^ k);
-  }
-  return res;
-}
-
-// Auto-decrypt on session restore if session was already unlocked
-try {
-  const isAlreadyUnlocked = sessionStorage.getItem('bom-pricing-unlocked') === 'true';
-  if (isAlreadyUnlocked) {
-    const decrypted = rc4Decrypt('mrsbunfield', encryptedPricesData.data);
-    decryptedPrices = JSON.parse(decrypted);
-  }
-} catch (e) {
-  console.error('Auto-decrypt failed', e);
-}
-
-export const formatCurrency = (num: number) => {
-  if (!num || num === 0) return '-';
-  return '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
 
 export const parseAndConvertDimensions = (dimStr: string) => {
   const regex = /([\d.]+)\s*in\s*x\s*([\d.]+)\s*in\s*x\s*([\d.]+)\s*in/i;
@@ -75,31 +28,6 @@ export const parseAndConvertDimensions = (dimStr: string) => {
   return {
     inches: dimStr,
     cm: dimStr
-  };
-};
-
-export const getItemPriceInfo = (sku: string, description: string, termStr?: string, qty: number = 1, discountPercent: number = 0) => {
-  const priceInfo = decryptedPrices[sku] || { listPrice: 0, monthlyPrice: 0 };
-  
-  const isMonthly = sku.includes('-SW-TM') || 
-                    description.toLowerCase().includes('term license') || 
-                    description.toLowerCase().includes('gigavue-os term license for') || 
-                    priceInfo.monthlyPrice > 0;
-                    
-  const termMonths = termStr ? parseInt(termStr, 10) : 36;
-  const effectiveMonths = isNaN(termMonths) || termMonths <= 0 ? 36 : termMonths;
-  
-  const unitPrice = isMonthly ? (priceInfo.monthlyPrice || (priceInfo.listPrice / 36)) : priceInfo.listPrice;
-  let totalPrice = isMonthly ? unitPrice * effectiveMonths * qty : unitPrice * qty;
-  
-  if (discountPercent > 0) {
-    totalPrice = totalPrice * (1 - Math.min(100, Math.max(0, discountPercent)) / 100);
-  }
-  
-  return {
-    isMonthly,
-    unitPrice,
-    totalPrice
   };
 };
 
@@ -303,14 +231,6 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
-  const [clickCount, setClickCount] = useState(0);
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    return sessionStorage.getItem('bom-pricing-unlocked') === 'true';
-  });
-  const showPricing = isUnlocked;
-
-  const [discounts, setDiscounts] = useState<Record<string, string>>({});
-  const [blanketDiscount, setBlanketDiscount] = useState<string>('0');
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
 
   const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true);
@@ -341,22 +261,12 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
 
   // ── Export handlers ──
   const handleExportBomCsv = () => {
-    const headers = showPricing ? 'Site,Type,SKU,Description,Term(Months),Qty,Unit Price,Discount %,Total Price' : 'Site,Type,SKU,Description,Term(Months),Qty';
+    const headers = 'Site,Type,SKU,Description,Term(Months),Qty';
     const csv = [headers]
       .concat(
         items.map(
-          (i) => {
-            const rowContent = `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`;
-            if (showPricing) {
-              const isSw = i.sku.endsWith('-SW-TM');
-              const discountStr = discounts[i.sku] !== undefined ? discounts[i.sku] : (isSw ? blanketDiscount : '0');
-              const parsed = parseFloat(discountStr);
-              const activeDiscount = isNaN(parsed) ? 0 : parsed;
-              const priceInfo = getItemPriceInfo(i.sku, i.description, i.term, i.qty, activeDiscount);
-              return `${rowContent},${priceInfo.unitPrice},${activeDiscount}%,${priceInfo.totalPrice}`;
-            }
-            return rowContent;
-          }
+          (i) =>
+            `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`,
         ),
       )
       .join('\n');
@@ -401,40 +311,6 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     <div className="modal-overlay" style={{ background: 'rgba(0,0,0,0.8)' }}>
       <div
         className="modal-card"
-        onClick={() => {
-          if (isUnlocked) {
-            const nextCount = clickCount + 1;
-            setClickCount(nextCount);
-            if (nextCount === 5) {
-              decryptedPrices = {};
-              setIsUnlocked(false);
-              sessionStorage.removeItem('bom-pricing-unlocked');
-              setClickCount(0);
-            }
-            return;
-          }
-          const nextCount = clickCount + 1;
-          setClickCount(nextCount);
-          if (nextCount === 5) {
-            const pw = window.prompt("Enter the password to unlock pricing data:");
-            if (pw === 'mrsbunfield') {
-              try {
-                const decrypted = rc4Decrypt('mrsbunfield', encryptedPricesData.data);
-                decryptedPrices = JSON.parse(decrypted);
-                setIsUnlocked(true);
-                sessionStorage.setItem('bom-pricing-unlocked', 'true');
-                setClickCount(0);
-              } catch (e) {
-                alert("Failed to decrypt pricing database.");
-              }
-            } else {
-              if (pw !== null) {
-                alert("Incorrect password.");
-              }
-              setClickCount(0);
-            }
-          }
-        }}
         style={{
           width: '920px',
           maxHeight: '85vh',
@@ -611,7 +487,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
             </div>
 
             {activeTab === 'bom'
-              ? renderBomTab(items, nodes, bomViewMode, showPricing, discounts, setDiscounts, blanketDiscount, setBlanketDiscount)
+              ? renderBomTab(items, nodes, bomViewMode)
               : renderPhysicalTab(physicalItems, physicalSiteGroups, bomViewMode, totalRU, totalWeight, totalPower, totalHeat, unitSystem)}
           </div>
         </div>
@@ -641,11 +517,6 @@ function renderBomTab(
   items: ReturnType<typeof generateBom>,
   nodes: ReturnType<typeof useStore.getState>['nodes'],
   bomViewMode: 'site' | 'master',
-  showPricing: boolean,
-  discounts: Record<string, string>,
-  setDiscounts: React.Dispatch<React.SetStateAction<Record<string, string>>>,
-  blanketDiscount: string,
-  setBlanketDiscount: (val: string) => void,
 ) {
   if (items.length === 0) {
     return (
@@ -676,40 +547,12 @@ function renderBomTab(
     siteGroups[siteKey][nodeKey].push(item);
   });
 
-  // Calculate master total price
-  let masterTotalPrice = 0;
-  masterBomItems.forEach(item => {
-    const isSw = item.sku.endsWith('-SW-TM');
-    const rowDiscountStr = discounts[item.sku] !== undefined ? discounts[item.sku] : (isSw ? blanketDiscount : '0');
-    const parsed = parseFloat(rowDiscountStr);
-    const activeDiscount = isNaN(parsed) ? 0 : parsed;
-    const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
-    masterTotalPrice += priceInfo.totalPrice;
-  });
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {showPricing && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#222', padding: '10px 16px', borderRadius: '6px', border: '1px solid #333' }}>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>Blanket Software License Discount (ends with -SW-TM):</span>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={blanketDiscount}
-            onChange={(e) => setBlanketDiscount(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: '60px', background: '#111', border: '1px solid #444', color: '#81c784', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold' }}
-          />
-          <span style={{ fontSize: '12px', color: '#888' }}>%</span>
-        </div>
-      )}
-
       {bomViewMode === 'master' ? (
         <div style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Master BOM (All Sites)</span>
-            {showPricing && <span style={{ color: '#81c784' }}>Est. Total: {formatCurrency(masterTotalPrice)}</span>}
+          <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+            Master BOM (All Sites)
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
             <thead>
@@ -719,166 +562,69 @@ function renderBomTab(
                 <th style={{ padding: '8px', color: '#888' }}>Description</th>
                 <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
                 <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
-                {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'center', width: '120px' }}>Discount %</th>}
-                {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Total Price</th>}
               </tr>
             </thead>
             <tbody>
-              {masterBomItems.map((item, i) => {
-                const isSw = item.sku.endsWith('-SW-TM');
-                const rowDiscountStr = discounts[item.sku] !== undefined ? discounts[item.sku] : (isSw ? blanketDiscount : '0');
-                const parsed = parseFloat(rowDiscountStr);
-                const activeDiscount = isNaN(parsed) ? 0 : parsed;
-                const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
-
-                return (
-                  <tr key={i} style={{ borderBottom: i === masterBomItems.length - 1 ? 'none' : '1px solid #333' }}>
-                    <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
-                    <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                    <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
-                    <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                    <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
-                    {showPricing && (
-                      <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                        {(priceInfo.isMonthly || isSw) ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={rowDiscountStr}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDiscounts(prev => ({ ...prev, [item.sku]: val }));
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ width: '50px', background: '#111', border: '1px solid #444', color: '#fff', borderRadius: '4px', padding: '2px 4px', fontSize: '11px', textAlign: 'right' }}
-                            />
-                            <span style={{ color: '#888' }}>%</span>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#555' }}>-</span>
-                        )}
-                      </td>
-                    )}
-                    {showPricing && <td style={{ padding: '8px', color: '#81c784', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(priceInfo.totalPrice)}</td>}
-                  </tr>
-                );
-              })}
-              {showPricing && (
-                <tr style={{ background: '#111', borderTop: '2px solid #555' }}>
-                  <td colSpan={6} style={{ padding: '10px 8px', color: '#fff', fontWeight: 'bold', textAlign: 'right' }}>Total Estimated List Price:</td>
-                  <td style={{ padding: '10px 8px', color: '#81c784', fontWeight: 'bold', textAlign: 'right', fontSize: '12px' }}>{formatCurrency(masterTotalPrice)}</td>
+              {masterBomItems.map((item, i) => (
+                <tr key={i} style={{ borderBottom: i === masterBomItems.length - 1 ? 'none' : '1px solid #333' }}>
+                  <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                  <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                  <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
+                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                  <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       ) : (
-        Object.entries(siteGroups).map(([siteKey, nodeGroups]) => {
-          let siteTotalPrice = 0;
-          Object.entries(nodeGroups).forEach(([nodeId, groupItems]) => {
-            groupItems.forEach(item => {
-              const isSw = item.sku.endsWith('-SW-TM');
-              const rowKey = `${nodeId}-${item.sku}`;
-              const rowDiscountStr = discounts[rowKey] !== undefined ? discounts[rowKey] : (isSw ? blanketDiscount : '0');
-              const parsed = parseFloat(rowDiscountStr);
-              const activeDiscount = isNaN(parsed) ? 0 : parsed;
-              const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
-              siteTotalPrice += priceInfo.totalPrice;
-            });
-          });
-
-          return (
-            <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
-              <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Site: {siteKey}</span>
-                {showPricing && <span style={{ color: '#81c784' }}>Site Est. Total: {formatCurrency(siteTotalPrice)}</span>}
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
-                    <th style={{ padding: '8px', color: '#888' }}>Type</th>
-                    <th style={{ padding: '8px', color: '#888' }}>SKU</th>
-                    <th style={{ padding: '8px', color: '#888' }}>Description</th>
-                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
-                    <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
-                    {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'center', width: '120px' }}>Discount %</th>}
-                    {showPricing && <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Total Price</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(nodeGroups).map(([nodeId, groupItems]) => {
-                    const nodeInfo = nodes.find((n) => n.id === nodeId);
-                    const nodeLabel = nodeInfo
-                      ? `${nodeInfo.data?.label || ''} (${(nodeInfo.data as HardwareNodeData)?.model || ''})`
-                      : nodeId === 'global'
-                        ? 'Global Accessories & Dependencies'
-                        : 'System Components';
-
-                    return (
-                      <React.Fragment key={nodeId}>
-                        <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
-                          <td colSpan={showPricing ? 7 : 5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
-                            {nodeLabel}
-                          </td>
-                        </tr>
-                        {groupItems.map((item, i) => {
-                          const isSw = item.sku.endsWith('-SW-TM');
-                          const rowKey = `${nodeId}-${item.sku}`;
-                          const rowDiscountStr = discounts[rowKey] !== undefined ? discounts[rowKey] : (isSw ? blanketDiscount : '0');
-                          const parsed = parseFloat(rowDiscountStr);
-                          const activeDiscount = isNaN(parsed) ? 0 : parsed;
-                          const priceInfo = getItemPriceInfo(item.sku, item.description, item.term, item.qty, activeDiscount);
-
-                          return (
-                            <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
-                              <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
-                              <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
-                              <td style={{ padding: '8px', color: '#aaa', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
-                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
-                              <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
-                              {showPricing && (
-                                <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                  {(priceInfo.isMonthly || isSw) ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={rowDiscountStr}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          setDiscounts(prev => ({ ...prev, [rowKey]: val }));
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        style={{ width: '50px', background: '#111', border: '1px solid #444', color: '#fff', borderRadius: '4px', padding: '2px 4px', fontSize: '11px', textAlign: 'right' }}
-                                      />
-                                      <span style={{ color: '#888' }}>%</span>
-                                    </div>
-                                  ) : (
-                                    <span style={{ color: '#555' }}>-</span>
-                                  )}
-                                </td>
-                              )}
-                              {showPricing && <td style={{ padding: '8px', color: '#81c784', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(priceInfo.totalPrice)}</td>}
-                            </tr>
-                          );
-                        })}
-                      </React.Fragment>
-                    );
-                  })}
-                  {showPricing && (
-                    <tr style={{ background: '#111', borderTop: '2px solid #555' }}>
-                      <td colSpan={6} style={{ padding: '10px 8px', color: '#fff', fontWeight: 'bold', textAlign: 'right' }}>Site Estimated Total:</td>
-                      <td style={{ padding: '10px 8px', color: '#81c784', fontWeight: 'bold', textAlign: 'right', fontSize: '11px' }}>{formatCurrency(siteTotalPrice)}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+        Object.entries(siteGroups).map(([siteKey, nodeGroups]) => (
+          <div key={siteKey} style={{ border: '1px solid #444', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ background: '#333', padding: '10px 16px', borderBottom: '2px solid #555', fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>
+              Site: {siteKey}
             </div>
-          );
-        })
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #444', background: '#1a1a1a' }}>
+                  <th style={{ padding: '8px', color: '#888' }}>Type</th>
+                  <th style={{ padding: '8px', color: '#888' }}>SKU</th>
+                  <th style={{ padding: '8px', color: '#888' }}>Description</th>
+                  <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Term (Mo)</th>
+                  <th style={{ padding: '8px', color: '#888', textAlign: 'right' }}>Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(nodeGroups).map(([nodeId, groupItems]) => {
+                  const nodeInfo = nodes.find((n) => n.id === nodeId);
+                  const nodeLabel = nodeInfo
+                    ? `${nodeInfo.data?.label || ''} (${(nodeInfo.data as HardwareNodeData)?.model || ''})`
+                    : nodeId === 'global'
+                      ? 'Global Accessories & Dependencies'
+                      : 'System Components';
+
+                  return (
+                    <React.Fragment key={nodeId}>
+                      <tr style={{ borderBottom: '1px solid #333', background: '#222' }}>
+                        <td colSpan={5} style={{ padding: '6px 8px', color: '#ffb74d', fontWeight: 'bold', fontSize: '10px', textTransform: 'uppercase' }}>
+                          {nodeLabel}
+                        </td>
+                      </tr>
+                      {groupItems.map((item, i) => (
+                        <tr key={`${nodeId}-${i}`} style={{ borderBottom: i === groupItems.length - 1 ? '2px solid #444' : '1px solid #333' }}>
+                          <td style={{ padding: '8px', color: '#ccc' }}>{item.type}</td>
+                          <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.sku}</td>
+                          <td style={{ padding: '8px', color: '#aaa', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.description}>{item.description}</td>
+                          <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
+                          <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.qty}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))
       )}
     </div>
   );
