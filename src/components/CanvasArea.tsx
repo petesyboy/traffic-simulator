@@ -146,7 +146,7 @@ const CanvasArea: React.FC = () => {
     if (isRunning && bps !== undefined && bps > 0) style.animationDuration = calculateAnimationDuration(bps);
 
     if (hoveredEdgeId === edge.id) {
-      const isInsertHover = draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL;
+      const isInsertHover = draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM;
       style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
@@ -156,7 +156,7 @@ const CanvasArea: React.FC = () => {
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-    if (draggedNodeType === NODE_TYPES.MAP || draggedNodeType === NODE_TYPES.FILTER || draggedNodeType === NODE_TYPES.TOOL) {
+    if (draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM) {
       const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       let foundEdgeId: string | null = null;
       for (const edge of edges) {
@@ -221,7 +221,7 @@ const CanvasArea: React.FC = () => {
     if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
 
     let edgeToInterpose: any = null;
-    if (type === NODE_TYPES.MAP || type === NODE_TYPES.FILTER || type === NODE_TYPES.TOOL) {
+    if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
       for (const edge of edges) {
         const srcNode = nodes.find(n => n.id === edge.source), targetNode = nodes.find(n => n.id === edge.target);
         if (!srcNode || !targetNode || (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE)) continue;
