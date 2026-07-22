@@ -886,9 +886,10 @@
 .react-flow__handle {
   width: 10px !important;
   height: 10px !important;
-  background-color: #131313 !important;
-  border: 1px solid #3c3c3c !important;
+  background-color: var(--accent-cyan) !important;
+  border: 2px solid #121212 !important;
   border-radius: 50% !important;
+  box-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
   top: 50%;
 }
 
