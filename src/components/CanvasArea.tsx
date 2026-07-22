@@ -156,7 +156,8 @@ const CanvasArea: React.FC = () => {
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-    if (draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM) {
+    const canInterposeOnEdge = draggedNodeType === NODE_TYPES.GIGASTREAM || (draggedNodeType === NODE_TYPES.GIGASMART && !advancedMode);
+    if (canInterposeOnEdge) {
       const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       let foundEdgeId: string | null = null;
       for (const edge of edges) {
@@ -171,8 +172,10 @@ const CanvasArea: React.FC = () => {
         if (Math.sqrt(distSq) < 80) { foundEdgeId = edge.id; break; }
       }
       setHoveredEdgeId(foundEdgeId);
+    } else if (hoveredEdgeId !== null) {
+      setHoveredEdgeId(null);
     }
-  }, [draggedNodeType, edges, nodes, screenToFlowPosition]);
+  }, [draggedNodeType, edges, nodes, screenToFlowPosition, advancedMode, hoveredEdgeId]);
 
   const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
