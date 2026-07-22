@@ -74,7 +74,8 @@ interface SaveSlotModalProps {
  */
 const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, onLoaded }) => {
   const [activeTab, setActiveTab] = useState<'slots' | 'presets'>('slots');
-  const [slotName, setSlotName] = useState('');
+  const currentScenarioName = useStore((s) => s.currentScenarioName);
+  const [slotName, setSlotName] = useState(currentScenarioName || '');
   const [slots, setSlots] = useState<string[]>(getSavedSlots);
   const nodes         = useStore((s) => s.nodes);
   const edges         = useStore((s) => s.edges);

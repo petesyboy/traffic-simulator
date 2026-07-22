@@ -52,6 +52,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
   const currentScenarioName = useStore((state) => state.currentScenarioName);
+  const setCurrentScenarioName = useStore((state) => state.setCurrentScenarioName);
   const projectRegion = useStore((state) => state.projectRegion);
   const duplicateSolution = useStore((state) => state.duplicateSolution);
   const isTradeShowDemoActive = useStore((state) => state.isTradeShowDemoActive);
@@ -63,6 +64,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showSettings, setShowSettings] = useState(false);
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -79,6 +82,17 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const handleClearRequest = () => setShowClearConfirm(true);
   const handleClearConfirm  = () => { clearCanvas(); setShowClearConfirm(false); };
   const handleClearCancel   = () => setShowClearConfirm(false);
+
+  const handleNameDoubleClick = () => {
+    setNameDraft(currentScenarioName || '');
+    setIsEditingName(true);
+  };
+  const commitNameEdit = () => {
+    const trimmed = nameDraft.trim();
+    setCurrentScenarioName(trimmed || null);
+    setIsEditingName(false);
+  };
+  const cancelNameEdit = () => setIsEditingName(false);
 
   const handleExportScreenshot = () => {
     const element = document.querySelector('.react-flow') as HTMLElement;
@@ -151,7 +165,33 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <span className="brand-project-name">
-                <span>{currentScenarioName || 'Untitled Project'}</span>
+                {isEditingName ? (
+                  <input
+                    type="text"
+                    autoFocus
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    onBlur={commitNameEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitNameEdit();
+                      if (e.key === 'Escape') cancelNameEdit();
+                    }}
+                    placeholder="Untitled Project"
+                    style={{
+                      background: '#121212',
+                      border: '1px solid var(--color-blue)',
+                      borderRadius: '3px',
+                      color: '#fff',
+                      font: 'inherit',
+                      padding: '0 4px',
+                      width: '180px',
+                    }}
+                  />
+                ) : (
+                  <span onDoubleClick={handleNameDoubleClick} title="Double-click to rename project" style={{ cursor: 'text' }}>
+                    {currentScenarioName || 'Untitled Project'}
+                  </span>
+                )}
                 <img
                   className="brand-region-flag"
                   src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'}
