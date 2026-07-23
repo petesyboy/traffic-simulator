@@ -648,91 +648,7 @@
       "Q28-514 (100G QSFP28 FR1)"
     ]
   },
-  "GigaVUE-HC3 CCv1": {
-    "PRT-HC3-X24": [
-      "SFP-531 (10G SFP+ Copper)",
-      "SFP-531T (10G SFP+ Copper)",
-      "SFP-532 (10G SFP+ SR)",
-      "SFP-532T (10G SFP+ SR)",
-      "SFP-533 (10G SFP+ LR)",
-      "SFP-533T (10G SFP+ LR)",
-      "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
-    ],
-    "PRT-HC3-C08Q16": [
-      "Q28-502T (100G QSFP28 SR4)",
-      "Q28-503 (100G QSFP28 LR4)",
-      "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504T (100G QSFP28 ER4-lite)",
-      "Q28-506 (100G QSFP28 PLR4)",
-      "Q28-508 (100G QSFP28 SWDM4)",
-      "Q28-511T (100G QSFP28 DR1)",
-      "Q28-513 (100G QSFP28 CWDM4)",
-      "Q28-514 (100G QSFP28 FR1)",
-      "QSF-502 (40G QSFP+ SR4)",
-      "QSF-502T (40G QSFP+ SR4)",
-      "QSF-503T (40G QSFP+ LR4)",
-      "QSF-504 (40G QSFP+ ER4)",
-      "QSF-506 (40G QSFP+ PSM4)",
-      "QSF-506T (40G QSFP+ PSM4)",
-      "QSF-507 (40G QSFP+ SR4-ER)",
-      "QSF-507T (40G QSFP+ SR4-ER)"
-    ],
-    "SMT-HC3-C05": [
-      "Q28-502T (100G QSFP28 SR4)",
-      "Q28-503 (100G QSFP28 LR4)",
-      "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504T (100G QSFP28 ER4-lite)",
-      "Q28-506 (100G QSFP28 PLR4)",
-      "Q28-508 (100G QSFP28 SWDM4)",
-      "Q28-511T (100G QSFP28 DR1)",
-      "Q28-513 (100G QSFP28 CWDM4)",
-      "Q28-514 (100G QSFP28 FR1)",
-      "QSF-502 (40G QSFP+ SR4)",
-      "QSF-502T (40G QSFP+ SR4)",
-      "QSF-503T (40G QSFP+ LR4)",
-      "QSF-504 (40G QSFP+ ER4)",
-      "QSF-506 (40G QSFP+ PSM4)",
-      "QSF-506T (40G QSFP+ PSM4)",
-      "QSF-507 (40G QSFP+ SR4-ER)",
-      "QSF-507T (40G QSFP+ SR4-ER)"
-    ],
-    "BPS-HC3-C25F2G": [
-      "SFP-531 (10G SFP+ Copper)",
-      "SFP-531T (10G SFP+ Copper)",
-      "SFP-532 (10G SFP+ SR)",
-      "SFP-532T (10G SFP+ SR)",
-      "SFP-533 (10G SFP+ LR)",
-      "SFP-533T (10G SFP+ LR)",
-      "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
-    ],
-    "BPS-HC3-C35C2G": [
-      "SFP-531 (10G SFP+ Copper)",
-      "SFP-531T (10G SFP+ Copper)",
-      "SFP-532 (10G SFP+ SR)",
-      "SFP-532T (10G SFP+ SR)",
-      "SFP-533 (10G SFP+ LR)",
-      "SFP-533T (10G SFP+ LR)",
-      "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
-    ],
-    "BPS-HC3-Q35C2G": [
-      "SFP-531 (10G SFP+ Copper)",
-      "SFP-531T (10G SFP+ Copper)",
-      "SFP-532 (10G SFP+ SR)",
-      "SFP-532T (10G SFP+ SR)",
-      "SFP-533 (10G SFP+ LR)",
-      "SFP-533T (10G SFP+ LR)",
-      "SFP-534 (10G SFP+ ER)",
-      "SFP-534T (10G SFP+ ER)",
-      "SFP-535 (10G SFP+ LRM)"
-    ]
-  },
-  "GigaVUE-HC3 CCv2": {
+  "GigaVUE-HC3": {
     "PRT-HC3-X24": [
       "SFP-531 (10G SFP+ Copper)",
       "SFP-531T (10G SFP+ Copper)",
@@ -748,6 +664,26 @@
       "SFP-553T (25G SFP28 LR)"
     ],
     "PRT-HC3-C08Q08": [
+      "Q28-502T (100G QSFP28 SR4)",
+      "Q28-503 (100G QSFP28 LR4)",
+      "Q28-503T (100G QSFP28 LR4)",
+      "Q28-504T (100G QSFP28 ER4-lite)",
+      "Q28-506 (100G QSFP28 PLR4)",
+      "Q28-508 (100G QSFP28 SWDM4)",
+      "Q28-511T (100G QSFP28 DR1)",
+      "Q28-513 (100G QSFP28 CWDM4)",
+      "Q28-514 (100G QSFP28 FR1)",
+      "QSF-502 (40G QSFP+ SR4)",
+      "QSF-502T (40G QSFP+ SR4)",
+      "QSF-503T (40G QSFP+ LR4)",
+      "QSF-504 (40G QSFP+ ER4)",
+      "QSF-506 (40G QSFP+ PSM4)",
+      "QSF-506T (40G QSFP+ PSM4)",
+      "QSF-507 (40G QSFP+ SR4-ER)",
+      "QSF-507T (40G QSFP+ SR4-ER)",
+      "QSF-508 (40G QSFP+ SWDM4)"
+    ],
+    "PRT-HC3-C16": [
       "Q28-502T (100G QSFP28 SR4)",
       "Q28-503 (100G QSFP28 LR4)",
       "Q28-503T (100G QSFP28 LR4)",
@@ -848,26 +784,6 @@
       "SFP-552 (25G SFP28 SR)",
       "SFP-552T (25G SFP28 SR)",
       "SFP-553T (25G SFP28 LR)"
-    ],
-    "PRT-HC3-C16": [
-      "Q28-502T (100G QSFP28 SR4)",
-      "Q28-503 (100G QSFP28 LR4)",
-      "Q28-503T (100G QSFP28 LR4)",
-      "Q28-504T (100G QSFP28 ER4-lite)",
-      "Q28-506 (100G QSFP28 PLR4)",
-      "Q28-508 (100G QSFP28 SWDM4)",
-      "Q28-511T (100G QSFP28 DR1)",
-      "Q28-513 (100G QSFP28 CWDM4)",
-      "Q28-514 (100G QSFP28 FR1)",
-      "QSF-502 (40G QSFP+ SR4)",
-      "QSF-502T (40G QSFP+ SR4)",
-      "QSF-503T (40G QSFP+ LR4)",
-      "QSF-504 (40G QSFP+ ER4)",
-      "QSF-506 (40G QSFP+ PSM4)",
-      "QSF-506T (40G QSFP+ PSM4)",
-      "QSF-507 (40G QSFP+ SR4-ER)",
-      "QSF-507T (40G QSFP+ SR4-ER)",
-      "QSF-508 (40G QSFP+ SWDM4)"
     ]
   },
   "GigaVUE-TA25": {

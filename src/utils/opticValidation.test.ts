@@ -113,5 +113,29 @@ describe('opticValidation', () => {
         }
       }
     });
+
+    it('GigaVUE-HC3 CCv2-only boards (PRT-HC3-C16, SMT-HC3-C08) are now reachable - previously invisible entirely', () => {
+      // opticRules.json used to key HC3's boards under "GigaVUE-HC3 CCv1" and
+      // "GigaVUE-HC3 CCv2" separately, but hardwareCatalogue.json only has a single
+      // "GigaVUE-HC3" model (no way for the app to select which compute-card
+      // generation is deployed). getSupportedBoards's prefix match always resolved
+      // to "GigaVUE-HC3 CCv1" (first match, equal string length), so CCv2-exclusive
+      // boards never appeared in the Slot dropdown at all - installing them was
+      // impossible even though they're real, valid HC3 modules.
+      const boards = getSupportedBoards('GigaVUE-HC3', 'Full', []);
+      const names = boards.map(b => b.board);
+      for (const board of ['PRT-HC3-X24', 'PRT-HC3-C08Q08', 'PRT-HC3-C16', 'SMT-HC3-C05', 'SMT-HC3-C08', 'BPS-HC3-C25F2G', 'BPS-HC3-C35C2G', 'BPS-HC3-Q35C2G']) {
+        expect(names, `${board} unreachable on GigaVUE-HC3`).toContain(board);
+      }
+    });
+
+    it('PRT-HC3-C08Q16 (CCv1-only, no longer shipped) is not offered - its CCv2 replacement PRT-HC3-C08Q08 is', () => {
+      // CCv1 HC3 units are EOL - all new deployments are CCv2. PRT-HC3-C08Q16 also
+      // has no port-capacity entry in hardwareCatalogue.json's modules list, so it
+      // was never functional even when reachable (would show 0 cages installed).
+      const names = getSupportedBoards('GigaVUE-HC3', 'Full', []).map(b => b.board);
+      expect(names).not.toContain('PRT-HC3-C08Q16');
+      expect(names).toContain('PRT-HC3-C08Q08');
+    });
   });
 });
