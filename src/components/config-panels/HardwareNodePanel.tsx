@@ -311,7 +311,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           </div>
         </div>
 
-        {!model?.includes('TAP') && (
+        {(!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && (
           <PowerSupplyPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 

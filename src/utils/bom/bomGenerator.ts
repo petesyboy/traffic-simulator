@@ -176,7 +176,7 @@ export function generateBom(
         if (node.data.tapDualPower) addRow(node.id, 'PBK-GTA21', 1, 'Dependency');
         if (node.data.tapBattery) addRow(node.id, 'BAT-GTA20', 1, 'Dependency');
         let cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
-        let cordQty = globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0);
+        let cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
         if (cordQty > 0) addRow(node.id, cordSku, cordQty, 'Dependency');
       }
       if (hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku)?.type === 'module') tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + 1;
@@ -404,7 +404,9 @@ export function generateSingleNodeBom(
     } else if (isSeries2) {
       if (node.data.tapDualPower) addRow('PBK-GTA21', 1, 'Dependency');
       if (node.data.tapBattery) addRow('BAT-GTA20', 1, 'Dependency');
-      if (globalRegion !== 'US') addRow(globalRegion === 'EU' ? 'PCD-00A23' : 'PCD-00A25', 1, 'Dependency');
+      let cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
+      let cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
+      if (cordQty > 0) addRow(cordSku, cordQty, 'Dependency');
     }
     return Object.values(rowMap);
   }
