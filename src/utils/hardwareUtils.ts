@@ -135,14 +135,26 @@ export const formatOpticLabel = (opticName: string): string => {
 export const getBoardDescription = (boardName: string, model: string): string => {
   const name = boardName.toUpperCase();
   const isPlus = model.includes('Plus');
+  const isHct = model.includes('HCT');
 
   let desc = '';
   if (name.includes('Q04X08')) {
-    desc = isPlus ? '4x 100G QSFP28 & 8x 25G SFP28' : '4x 40G QSFP+ & 8x 10G SFP+';
+    // Same PRT-HC1-Q04X08 module runs different port speeds depending on which
+    // chassis it's installed in (per its SKU description) - same 4 QSFP + 8 SFP
+    // cage form factor throughout, but HCT splits the 8 SFP cages across two speeds.
+    if (isPlus) desc = '4x 100G QSFP28 & 8x 25G SFP28';
+    else if (isHct) desc = '4x 40G QSFP+ & 4x 25G SFP28 & 4x 10G SFP+';
+    else desc = '4x 40G QSFP+ & 8x 10G SFP+';
   } else if (name.includes('D25A24')) {
     desc = 'Bypass: 2x 10G SR Pairs & 20x 10G SFP+';
-  } else if (name.includes('X12') || name.includes('G12')) {
+  } else if (name.includes('G12')) {
+    // HCT-only module - distinct from PRT-HC1-X12 below despite the similar SKU name.
+    desc = '6x RJ45 (10/100/1000M) & 6x SFP (100M/1G)';
+  } else if (name.includes('X12')) {
     desc = '12x 10G/1G SFP+';
+  } else if (name.includes('G10040')) {
+    // Fixed port speed on HC1-Plus/HCT; HC1 auto-negotiates down to 10/100M too.
+    desc = (isPlus || isHct) ? '4x TAP/Bypass Pairs, 1000M Copper' : '4x TAP/Bypass Pairs, 10/100/1000M Copper';
   } else if (name.includes('X24')) {
     desc = '24x 25G/10G SFP28/SFP+';
   } else if (name.includes('C08Q08')) {

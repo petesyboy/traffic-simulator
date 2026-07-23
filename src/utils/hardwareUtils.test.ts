@@ -462,6 +462,23 @@ describe('hardwareUtils', () => {
       expect(getBoardDescription('q04x08', 'HC1')).toBe('q04x08 (4x 40G QSFP+ & 8x 10G SFP+)');
       expect(getBoardDescription('SMT-HC3-C08Q08', 'HC3')).toBe('SMT-HC3-C08Q08 (GigaSMART Engine + 8x 100G QSFP28 & 8x 40G QSFP+)');
     });
+
+    it('should vary PRT-HC1-Q04X08 port speeds by chassis - same 4 QSFP + 8 SFP cage count throughout', () => {
+      expect(getBoardDescription('PRT-HC1-Q04X08', 'GigaVUE-HC1')).toBe('PRT-HC1-Q04X08 (4x 40G QSFP+ & 8x 10G SFP+)');
+      expect(getBoardDescription('PRT-HC1-Q04X08', 'GigaVUE-HC1-Plus')).toBe('PRT-HC1-Q04X08 (4x 100G QSFP28 & 8x 25G SFP28)');
+      expect(getBoardDescription('PRT-HC1-Q04X08', 'GigaVUE-HCT')).toBe('PRT-HC1-Q04X08 (4x 40G QSFP+ & 4x 25G SFP28 & 4x 10G SFP+)');
+    });
+
+    it('should not confuse the HCT-only PRT-HC1-G12 (RJ45+SFP copper module) with PRT-HC1-X12 (pure SFP+ module)', () => {
+      expect(getBoardDescription('PRT-HC1-G12', 'GigaVUE-HCT')).toBe('PRT-HC1-G12 (6x RJ45 (10/100/1000M) & 6x SFP (100M/1G))');
+      expect(getBoardDescription('PRT-HC1-x12', 'GigaVUE-HC1')).toBe('PRT-HC1-x12 (12x 10G/1G SFP+)');
+    });
+
+    it('should fix TAP-HC1-G10040 speed to 1000M-only on HC1-Plus/HCT, variable on plain HC1', () => {
+      expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HC1')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 10/100/1000M Copper)');
+      expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HC1-Plus')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 1000M Copper)');
+      expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HCT')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 1000M Copper)');
+    });
   });
 
   describe('getRemainingCageCapacity', () => {
