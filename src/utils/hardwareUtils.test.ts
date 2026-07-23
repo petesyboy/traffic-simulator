@@ -48,6 +48,20 @@ describe('hardwareUtils', () => {
       expect(breakdown.remainingLicensedSfpCages).toBe(7);
     });
 
+    it('should report built-in copper RJ45 ports only for GigaVUE-HC1, not TA-series chassis', () => {
+      const hc1 = getCageCapacityBreakdown('GigaVUE-HC1', {
+        label: 'Test HC1', configType: 'Hardware', model: 'GigaVUE-HC1', optics: [], installedBoards: {},
+      } as HardwareNodeData);
+      expect(hc1.hasBuiltInCopper).toBe(true);
+
+      for (const model of ['GigaVUE-TA25E', 'GigaVUE-TA25', 'GigaVUE-TA100', 'GigaVUE-TA200', 'GigaVUE-TA400']) {
+        const breakdown = getCageCapacityBreakdown(model, {
+          label: `Test ${model}`, configType: 'Hardware', model, optics: [], installedBoards: {},
+        } as HardwareNodeData);
+        expect(breakdown.hasBuiltInCopper).toBe(false);
+      }
+    });
+
     it('should account for installed boards on an HC3', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
         label: 'Test HC3',

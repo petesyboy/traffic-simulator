@@ -2,7 +2,6 @@
  * Hardware utility functions extracted from HardwareNodePanel.
  * Provides optic speed detection, board port capacity, and chassis base port capacity.
  */
-import { getSupportedBoards } from './opticValidation';
 import type { HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 
@@ -237,29 +236,17 @@ export const getCageCapacityBreakdown = (
 ): CageCapacityBreakdown => {
   const installedOptics: InstalledOptic[] = hwData.optics || [];
   const installedBoards = hwData.installedBoards || {};
-  const isPlus = model.includes('Plus');
   const portCapacity = hwData.portCapacity || 'Full';
-
-  const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string, installedOptics);
-  const availableOpticBoards: { board: string }[] = [];
-
-  const mainBoardObj = supportedBoards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
-  if (mainBoardObj) {
-    availableOpticBoards.push({ board: mainBoardObj.board });
-  }
-  Object.entries(installedBoards).forEach(([slotIdx, boardName]) => {
-    if (!boardName) return;
-    const boardTemplate = supportedBoards.find(b => b.board === boardName);
-    if (boardTemplate) {
-      availableOpticBoards.push({ board: `${boardName} (Slot ${slotIdx})` });
-    }
-  });
 
   let totalSfpCages = 0;
   let totalQsfpCages = 0;
-  let hasBuiltInCopper = false;
 
   const chassisCapacity = getChassisBasePortCapacity(model);
+  // Only chassis whose catalogue entry lists physical RJ45 base ports (currently just
+  // GigaVUE-HC1) actually have built-in copper data ports. TA-series chassis (TA25E,
+  // TA100, TA200, TA400, etc.) also expose a "Base Ports" board in opticRules.json, but
+  // that board is entirely SFP/QSFP cages - every one of its data ports needs a transceiver.
+  const hasBuiltInCopper = 'RJ45' in chassisCapacity;
   for (const portType in chassisCapacity) {
     if (portType.toUpperCase().includes('QSFP')) {
       totalQsfpCages += chassisCapacity[portType];
@@ -278,14 +265,6 @@ export const getCageCapacityBreakdown = (
       } else if (portType.toUpperCase().includes('SFP')) {
         totalSfpCages += cages[portType];
       }
-    }
-  });
-
-  availableOpticBoards.forEach(b => {
-    const name = b.board.toLowerCase();
-    const modelLower = model.toLowerCase();
-    if ((name.includes('main') || name.includes('base') || name.includes('hc1-x12g4')) && !isPlus && !modelLower.includes('hct') && !modelLower.includes('tap')) {
-      hasBuiltInCopper = true;
     }
   });
 
