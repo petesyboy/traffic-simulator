@@ -12,7 +12,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import type { HardwareNodeData } from '../../store/types';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
-import { getCageCapacityBreakdown, getBoardDescription } from '../../utils/hardwareUtils';
+import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount } from '../../utils/hardwareUtils';
 
 interface PortSpec {
   type: string;
@@ -40,6 +40,8 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
   const capacity = getCageCapacityBreakdown(model, hwData);
   const installedBoards = hwData.installedBoards || {};
   const capVal = (hwData.portCapacity as string) || 'Full';
+  const maxCapacityBySpeed = isHc ? getMaxChassisCapacityBySpeed(model) : [];
+  const gigaSmartEngines = isHc ? getGigaSmartEngineCount(model, hwData) : 0;
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -76,9 +78,14 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
           <section>
             {isHc ? (
               <>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Add-in Boards ({slotCount} slot{slotCount !== 1 ? 's' : ''})
-                </h4>
+                <div className="flex-between" style={{ marginBottom: '8px' }}>
+                  <h4 style={{ margin: 0, fontSize: '11px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Add-in Boards ({slotCount} slot{slotCount !== 1 ? 's' : ''})
+                  </h4>
+                  <span style={{ fontSize: '11px', color: '#888' }}>
+                    GigaSMART Engines: <strong style={{ color: '#fff' }}>{gigaSmartEngines}</strong>
+                  </span>
+                </div>
                 {slotCount === 0 ? (
                   <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No module slots on this chassis.</div>
                 ) : (
@@ -145,6 +152,27 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
               )}
             </div>
           </section>
+
+          {maxCapacityBySpeed.length > 0 && (
+            <section>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Maximum Possible Capacity
+              </h4>
+              <div style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {maxCapacityBySpeed.map(({ speed, maxPorts, config }) => (
+                  <div key={speed} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ color: '#888' }}>{speed} ports:</span>
+                    <strong style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                      {maxPorts} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({config})</span>
+                    </strong>
+                  </div>
+                ))}
+              </div>
+              <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '6px', fontSize: '11px' }}>
+                Best-case if every slot were filled with the single densest module for that speed — not necessarily the current configuration above.
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>,

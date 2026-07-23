@@ -13,6 +13,8 @@ import {
   getCageCapacityBreakdown,
   getMaxFanoutSfpPorts,
   getBoardSpeedSubCap,
+  getMaxChassisCapacityBySpeed,
+  getGigaSmartEngineCount,
 } from './hardwareUtils';
 import type { HardwareNodeData } from '../store/types';
 
@@ -557,6 +559,59 @@ describe('hardwareUtils', () => {
       expect(getOpticFiberType('10G-SFP-SR')).toBe('MM');
       expect(getOpticFiberType('SFP-533 (10G SFP+ LR)')).toBe('SM');
       expect(getOpticFiberType('10G-SFP-LR')).toBe('SM');
+    });
+  });
+
+  describe('getMaxChassisCapacityBySpeed', () => {
+    it('returns [] for chassis with no module slots (TA-series)', () => {
+      expect(getMaxChassisCapacityBySpeed('GigaVUE-TA25')).toEqual([]);
+    });
+
+    it('GigaVUE-HC3 tops out at 64x 100G ports (4x PRT-HC3-C16), matching the datasheet max', () => {
+      const entry = getMaxChassisCapacityBySpeed('GigaVUE-HC3').find(e => e.speed === '100G');
+      expect(entry?.maxPorts).toBe(64);
+      expect(entry?.config).toBe('4x PRT-HC3-C16');
+    });
+
+    it("GigaVUE-HCT's PRT-HC1-Q04X08 only offers 40G optics per the matrix, so 100G max comes from the built-in cages only", () => {
+      // Contrast with HC1/HC1-Plus below, where the same board SKU does offer 100G.
+      const entry = getMaxChassisCapacityBySpeed('GigaVUE-HCT').find(e => e.speed === '100G');
+      expect(entry?.maxPorts).toBe(2);
+      expect(entry?.config).toBe('built-in ports');
+    });
+
+    it('GigaVUE-HC1 and GigaVUE-HC1-Plus both offer 100G on PRT-HC1-Q04X08 (2 slots x 4 cages = 8)', () => {
+      for (const model of ['GigaVUE-HC1', 'GigaVUE-HC1-Plus']) {
+        const entry = getMaxChassisCapacityBySpeed(model).find(e => e.speed === '100G');
+        expect(entry?.maxPorts).toBe(8);
+      }
+    });
+  });
+
+  describe('getGigaSmartEngineCount', () => {
+    const baseHwData = (installedBoards: Record<number, string>) =>
+      ({ label: '', configType: 'Hardware', model: '', optics: [], installedBoards } as unknown as HardwareNodeData);
+
+    it('HC1 and HC1-Plus have one onboard engine with no boards installed', () => {
+      expect(getGigaSmartEngineCount('GigaVUE-HC1', baseHwData({}))).toBe(1);
+      expect(getGigaSmartEngineCount('GigaVUE-HC1-Plus', baseHwData({}))).toBe(1);
+    });
+
+    it('HCT and HC3 have no onboard engine with no boards installed', () => {
+      expect(getGigaSmartEngineCount('GigaVUE-HCT', baseHwData({}))).toBe(0);
+      expect(getGigaSmartEngineCount('GigaVUE-HC3', baseHwData({}))).toBe(0);
+    });
+
+    it('counts installed SMT- boards on top of any onboard engine', () => {
+      expect(getGigaSmartEngineCount('GigaVUE-HC1', baseHwData({ 1: 'SMT-HC1-S' }))).toBe(2);
+      expect(getGigaSmartEngineCount('GigaVUE-HCT', baseHwData({ 1: 'SMT-HC1-S' }))).toBe(1);
+      expect(
+        getGigaSmartEngineCount('GigaVUE-HC3', baseHwData({ 1: 'SMT-HC3-C05', 2: 'SMT-HC3-C08', 3: 'PRT-HC3-C16', 4: '' }))
+      ).toBe(2);
+    });
+
+    it('ignores non-SMT boards', () => {
+      expect(getGigaSmartEngineCount('GigaVUE-HC3', baseHwData({ 1: 'PRT-HC3-C16', 2: 'PRT-HC3-X24' }))).toBe(0);
     });
   });
 });

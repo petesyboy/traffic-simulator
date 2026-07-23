@@ -4,6 +4,7 @@
  */
 import type { HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
+import { getSupportedBoards } from './opticValidation';
 
 const sumPortCounts = (ports: (PortInfo | number)[]): { [portType: string]: number } => {
   const counts: { [portType: string]: number } = {};
@@ -193,6 +194,123 @@ export const getBoardSpeedSubCap = (model: string, boardName: string, speed: str
   const name = boardName.toUpperCase();
   if (model.includes('HCT') && name.includes('Q04X08') && speed === '25G') return 4;
   return Infinity;
+};
+
+const getBoardPortSpecs = (boardSku: string): PortInfo[] => {
+  const name = boardSku.toLowerCase();
+  const module = hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
+  return (module?.ports as PortInfo[]) || [];
+};
+
+const getChassisBasePortSpecs = (model: string): PortInfo[] => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  const chassis = allSeries.find(c => c.model === model) as { ports?: PortInfo[]; base_ports?: PortInfo[] } | undefined;
+  return chassis?.ports || chassis?.base_ports || [];
+};
+
+export interface MaxSpeedCapacity {
+  speed: string;
+  maxPorts: number;
+  config: string;
+}
+
+const SPEED_DISPLAY_ORDER = ['400G', '100G', '40G', '25G', '10G', '1G'];
+
+/**
+ * The generic per-module `ports[].speeds` list in hardwareCatalogue.json isn't always
+ * chassis-accurate - e.g. PRT-HC1-Q04X08's QSFP28 cages are listed as ['40G','100G']
+ * everywhere, but the matrix-verified opticRules.json shows GigaVUE-HCT only actually
+ * offers 40G QSFP+ optics for that board (no Q28- 100G SKUs), while HC1/HC1-Plus offer
+ * both. Intersecting against the real optic list per chassis+board corrects for this.
+ */
+const getBoardSpeedsFromOptics = (model: string, board: string): Set<string> => {
+  const optics = getSupportedBoards(model).find(b => b.board === board)?.supportedOptics ?? [];
+  const speeds = new Set<string>();
+  optics.forEach(o => {
+    if (o.includes('PNL-')) return; // breakout panel, not a real cage speed
+    const speed = getOpticSpeed(o);
+    if (speed !== 'Unknown') speeds.add(speed);
+  });
+  return speeds;
+};
+
+/**
+ * For HC-series chassis (which have interchangeable module slots), works out the
+ * highest port count achievable at each optic speed if every slot were filled with
+ * whichever single installable module maximises that speed - e.g. "how many 100G
+ * ports can a GigaVUE-HC3 take?" (4x PRT-HC3-C16, 16 QSFP28 cages each = 64).
+ * Returns [] for chassis with no module slots (TA-series, fixed-configuration units).
+ */
+export const getMaxChassisCapacityBySpeed = (model: string): MaxSpeedCapacity[] => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  const chassis = allSeries.find(c => c.model === model) as { module_slots?: number } | undefined;
+  const slotCount = chassis?.module_slots || 0;
+  if (!slotCount) return [];
+
+  const allBoards = getSupportedBoards(model);
+  const installableBoards = allBoards.map(b => b.board).filter(b => !b.toLowerCase().includes('main') && !b.toLowerCase().includes('base'));
+  const mainBoard = allBoards.find(b => b.board.toLowerCase().includes('main'));
+  const baseSpeeds = mainBoard ? getBoardSpeedsFromOptics(model, mainBoard.board) : null;
+
+  const basePortSpecs = getChassisBasePortSpecs(model);
+
+  const speedsSeen = new Set<string>();
+  basePortSpecs.forEach(p => p.speeds.forEach(s => speedsSeen.add(s)));
+  installableBoards.forEach(b => getBoardPortSpecs(b).forEach(p => p.speeds.forEach(s => speedsSeen.add(s))));
+
+  const results: MaxSpeedCapacity[] = [];
+
+  for (const speed of SPEED_DISPLAY_ORDER) {
+    if (!speedsSeen.has(speed)) continue;
+
+    const baseCount =
+      !baseSpeeds || baseSpeeds.has(speed) ? basePortSpecs.filter(p => p.speeds.includes(speed)).reduce((sum, p) => sum + p.count, 0) : 0;
+
+    let bestBoard = '';
+    let bestPerSlot = 0;
+    for (const board of installableBoards) {
+      const boardSpeeds = getBoardSpeedsFromOptics(model, board);
+      if (!boardSpeeds.has(speed)) continue;
+      let count = getBoardPortSpecs(board)
+        .filter(p => p.speeds.includes(speed))
+        .reduce((sum, p) => sum + p.count, 0);
+      const subCap = getBoardSpeedSubCap(model, board, speed);
+      if (subCap !== Infinity) count = Math.min(count, subCap);
+      if (count > bestPerSlot) {
+        bestPerSlot = count;
+        bestBoard = board;
+      }
+    }
+
+    const maxPorts = baseCount + bestPerSlot * slotCount;
+    if (maxPorts === 0) continue;
+
+    const configParts: string[] = [];
+    if (bestPerSlot > 0) configParts.push(`${slotCount}x ${bestBoard}`);
+    if (baseCount > 0) configParts.push('built-in ports');
+    results.push({ speed, maxPorts, config: configParts.join(' + ') });
+  }
+
+  return results;
+};
+
+/**
+ * Counts the GigaSMART engines available on an HC-series chassis for its current
+ * board configuration. HC1 and HC1-Plus each have one onboard/built-in engine on
+ * the main board itself; HCT and HC3 have none built in. Every installed SMT-*
+ * add-in board (e.g. SMT-HC1-S, SMT-HC3-C05/C08) contributes one additional engine
+ * on any chassis that supports it. Returns 0 for TA-series (no GigaSMART support).
+ */
+export const getGigaSmartEngineCount = (model: string, hwData: HardwareNodeData): number => {
+  const hasOnboardEngine = model.includes('HC1'); // matches HC1 and HC1-Plus, not HCT or HC3
+  let count = hasOnboardEngine ? 1 : 0;
+
+  const installedBoards = hwData.installedBoards || {};
+  Object.values(installedBoards).forEach(boardName => {
+    if (boardName && boardName.toUpperCase().startsWith('SMT-')) count += 1;
+  });
+
+  return count;
 };
 
 export const getTaLicenseLimits = (modelName: string, capacity: string): { [portType: string]: number; qsfp_400g: number } => {
