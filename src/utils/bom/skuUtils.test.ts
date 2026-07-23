@@ -12,8 +12,8 @@ describe('resolveOpticSku', () => {
   });
 
   it('never returns the raw picker value verbatim (the reported bug)', () => {
-    expect(resolveOpticSku('10G-SFP-SR', '')).toBe('SFP-532');
-    expect(resolveOpticSku('10G-SFP-LR', '')).toBe('SFP-533');
+    expect(resolveOpticSku('10G-SFP-SR', '')).toBe('SFP-532T');
+    expect(resolveOpticSku('10G-SFP-LR', '')).toBe('SFP-533T');
   });
 
   it('resolves the legacy descriptive-phrase strings used by ToolNodePanel to real SKUs', () => {

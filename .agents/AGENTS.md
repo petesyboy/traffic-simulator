@@ -19,5 +19,8 @@
 ## Breakout Panels
 - **CRITICAL RULE**: A panel, either a single mode or multi mode breakout panel (e.g. PNL-M341, PNL-M343), sits in either an M100T or an M200T tray along with optical TAPs. It consumes one of the slots (there are 3 slots in an M100T, and 6 in an M200T) within that tray.
 
+## TAA Compliant Optics Preference
+- **CRITICAL RULE**: Whenever resolving or auto-assigning transceivers (e.g. SFP-501 vs SFP-501T, SFP-532 vs SFP-532T), always prefer the TAA-compliant ('T'-suffix) optic variant if available in the chassis/board compatibility rules.
+
 ## Communication Style
 - **CRITICAL RULE**: When responding to the user, DO NOT output details of the internal tools used to search for text or read files (like `grep`, `cat`, or codebase searching). Focus the response strictly on the logic applied, the actual software changes made, and what the final outcome is.

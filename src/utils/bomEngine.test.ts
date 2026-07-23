@@ -28,7 +28,7 @@ describe('BOM Engine', () => {
       expect(hcNode?.data.optics?.some((o: any) => o.optic.includes('SFP-532') && o.isAutoAdded)).toBe(true);
     });
 
-    it('should auto-add resolved copper optic SFP-501 (1G SFP Copper) when 3 copper links are tapped to TA25E', () => {
+    it('should auto-add resolved TAA copper optic SFP-501T (1G SFP Copper) when 3 copper links are tapped to TA25E', () => {
       const nodes: CustomNode[] = [
         {
           id: 'tap-1',
@@ -60,7 +60,7 @@ describe('BOM Engine', () => {
       expect(taNode?.data.optics?.length).toBe(1);
       expect(taNode?.data.optics?.[0]).toEqual({
         board: 'Base Ports',
-        optic: 'SFP-501 (1G SFP Copper)',
+        optic: 'SFP-501T (1G SFP Copper)',
         qty: 6,
         isAutoAdded: true
       });

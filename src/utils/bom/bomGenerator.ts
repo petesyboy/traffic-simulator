@@ -18,12 +18,17 @@ export interface BomRow {
 
 function resolveOpticForChassis(opticStr: string, chassisModel: string): string {
   const resolvedSku = resolveOpticSku(opticStr, chassisModel);
+  const taaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
   const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
   if (rules && rules['Base Ports']) {
-    const matched = rules['Base Ports'].find(opt => opt.startsWith(resolvedSku + ' ') || opt.startsWith(resolvedSku + 'T ') || opt === resolvedSku);
-    if (matched) return matched;
+    // Prefer TAA-compliant ('T' suffix) option if available on chassis
+    const taaMatch = rules['Base Ports'].find(opt => opt.startsWith(taaSku + ' ') || opt === taaSku);
+    if (taaMatch) return taaMatch;
+
+    const baseMatch = rules['Base Ports'].find(opt => opt.startsWith(resolvedSku + ' ') || opt === resolvedSku);
+    if (baseMatch) return baseMatch;
   }
-  return resolvedSku;
+  return taaSku;
 }
 
 export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
