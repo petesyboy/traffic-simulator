@@ -163,7 +163,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           nextLicenseLabel = '64 Ports (QSFP) License';
         }
       }
-    } else if (model.includes('TA400')) {
+    } else if (model.includes('TA400E')) {
+      // Plain GigaVUE-TA400 (non-E) is a fixed-capacity, unlicensed chassis - no
+      // licensing.tiers in the catalogue and excluded from `isLicensed` elsewhere
+      // (see getCageCapacityBreakdown) - so it has no license to exceed here either.
       if (usedSfp > licensedSfp || usedQsfp > licensedQsfp) {
         isLicenseExceeded = true;
         exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the physical chassis limits (2 SFP / 32 QSFP).`;
