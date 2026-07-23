@@ -204,7 +204,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 FLOW MAPPING DESIGNER
                 <a
                   className="brand-build-link"
-                  href={`https://github.com/petesyboy/traffic-simulator/releases/tag/v${pkg.version}`}
+                  href="https://github.com/petesyboy/traffic-simulator/releases"
                   target="_blank"
                   rel="noreferrer"
                   title={`Build ${pkg.version}`}
