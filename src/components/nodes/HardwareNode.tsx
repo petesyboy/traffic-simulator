@@ -19,7 +19,7 @@ import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
-import { HcSummaryModal } from './HcSummaryModal';
+import { ChassisSummaryModal } from './ChassisSummaryModal';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -79,7 +79,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   );
   
   const isTap = model.includes('TAP');
-  const isHcChassis = model.includes('HC') && !isTap;
+  const isChassis = (model.includes('HC') || model.includes('TA')) && !isTap;
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
@@ -118,7 +118,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <span className="node-title">{data.label as string}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {isHcChassis && (
+            {isChassis && (
               <button
                 className="node-info-icon"
                 style={{ cursor: 'pointer', border: 'none' }}
@@ -301,7 +301,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
       </div>
 
       {showSummary && (
-        <HcSummaryModal
+        <ChassisSummaryModal
           model={model}
           sku={(data.sku as string) || ''}
           displaySku={resolved.hwSku}
