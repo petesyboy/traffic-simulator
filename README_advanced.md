@@ -18,8 +18,15 @@ Designed for high-level logical path mapping. Nodes represent logical objects:
 ### B. Advanced Mode (Physical Hardware Design)
 Transitions the canvas to a physical hardware configuration layout. Users place actual chassis models, physical TAP modules, configure power supplies, and view real-time interface metrics:
 - **Real-time Metrics**: Displays live throughput parameters directly on physical hardware nodes (`In: X.X Gbps` / `Out: X.X Gbps`).
-- **Input Node Aggregation**: TAPs and input nodes on the far-left summarize total ingress bandwidth.
+- **Input Node Aggregation**: TAPs and input nodes on the far-left summarise total ingress bandwidth.
 - **BOM Engine**: Generates a physical inventory, matching optics, licenses, and cables automatically.
+
+### C. Toggling Modes (4-Click Gigamon Logo Toggle)
+- **4-Click Logo Toggle**: Click the **Gigamon logo** in the top-left corner of the header **four times in quick succession** to switch between **Standard View** and **Expert Designer** (Advanced Mode).
+- **Unlocked Features in Advanced Mode**:
+  - **Bill of Materials (BOM)**: The **BOM** tab appears in the top header bar, enabling real-time physical hardware inventory, exact SKU resolution, and optional pricing breakdown.
+  - **Hardware Categories**: The left sidebar expands to reveal physical **Traffic Aggregation (TAs)** appliances, **Optical TAPs**, and **GigaVUE-HC Series Chassis**.
+  - **Detailed Hardware Configuration**: Selecting any hardware node opens advanced configuration side panels to manage board module slots, transceiver cages, license capacity, and power/battery accessories.
 
 ---
 
