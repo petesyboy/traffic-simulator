@@ -3,7 +3,7 @@ import type { CustomNode } from '../../../store/store';
 import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
-import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap } from '../../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
 interface OpticsPanelProps {
@@ -133,6 +133,17 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       if (qty > capacity.remainingSfpCages) {
         setErrorMsg(`Cannot add optic. Not enough free SFP cages. Available: ${capacity.remainingSfpCages}, trying to add: ${qty}.`);
         return;
+      }
+
+      const subCap = getBoardSpeedSubCap(model, targetBoard, newSpeed);
+      if (subCap !== Infinity) {
+        const existingAtSpeed = installedOptics
+          .filter(opt => opt.board === targetBoard && getOpticSpeed(opt.optic) === newSpeed)
+          .reduce((sum, opt) => sum + opt.qty, 0);
+        if (existingAtSpeed + qty > subCap) {
+          setErrorMsg(`Cannot add optic. This board only supports ${newSpeed} on ${subCap} of its cages on ${model} (the rest run at a lower speed). Already installed: ${existingAtSpeed}, trying to add: ${qty}.`);
+          return;
+        }
       }
     }
 

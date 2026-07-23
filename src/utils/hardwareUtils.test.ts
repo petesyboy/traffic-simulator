@@ -12,6 +12,7 @@ import {
   getTaLicenseLimits,
   getCageCapacityBreakdown,
   getMaxFanoutSfpPorts,
+  getBoardSpeedSubCap,
 } from './hardwareUtils';
 import type { HardwareNodeData } from '../store/types';
 
@@ -478,6 +479,21 @@ describe('hardwareUtils', () => {
       expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HC1')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 10/100/1000M Copper)');
       expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HC1-Plus')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 1000M Copper)');
       expect(getBoardDescription('TAP-HC1-G10040', 'GigaVUE-HCT')).toBe('TAP-HC1-G10040 (4x TAP/Bypass Pairs, 1000M Copper)');
+    });
+  });
+
+  describe('getBoardSpeedSubCap', () => {
+    it('caps 25G optics at 4 of the 8 SFP cages on PRT-HC1-Q04X08 when installed on a GigaVUE-HCT', () => {
+      expect(getBoardSpeedSubCap('GigaVUE-HCT', 'PRT-HC1-Q04X08 (Slot 1)', '25G')).toBe(4);
+    });
+
+    it('does not cap 25G on PRT-HC1-Q04X08 for HC1-Plus, which supports 25G on all 8 SFP cages', () => {
+      expect(getBoardSpeedSubCap('GigaVUE-HC1-Plus', 'PRT-HC1-Q04X08 (Slot 1)', '25G')).toBe(Infinity);
+    });
+
+    it('does not cap other speeds or other boards', () => {
+      expect(getBoardSpeedSubCap('GigaVUE-HCT', 'PRT-HC1-Q04X08 (Slot 1)', '10G')).toBe(Infinity);
+      expect(getBoardSpeedSubCap('GigaVUE-HCT', 'PRT-HC1-X12 (Slot 1)', '25G')).toBe(Infinity);
     });
   });
 

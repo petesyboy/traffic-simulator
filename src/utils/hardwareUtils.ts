@@ -181,6 +181,20 @@ export const getBoardDescription = (boardName: string, model: string): string =>
   return boardName + (hasGigaSmart ? ' (GigaSMART Engine)' : '');
 };
 
+/**
+ * Some shared modules split their SFP-form-factor cages across two speed tiers
+ * depending on which chassis they're installed in - e.g. PRT-HC1-Q04X08 on
+ * GigaVUE-HCT only supports 25G on 4 of its 8 SFP cages (the rest cap at 10G),
+ * per its SKU description. The aggregate SFP cage count alone can't express
+ * that split, so this returns a per-speed cap for the given board/model, or
+ * Infinity if no such sub-cap applies.
+ */
+export const getBoardSpeedSubCap = (model: string, boardName: string, speed: string): number => {
+  const name = boardName.toUpperCase();
+  if (model.includes('HCT') && name.includes('Q04X08') && speed === '25G') return 4;
+  return Infinity;
+};
+
 export const getTaLicenseLimits = (modelName: string, capacity: string): { [portType: string]: number; qsfp_400g: number } => {
   const modelLower = modelName.toLowerCase();
   const cap = capacity || 'Full';
