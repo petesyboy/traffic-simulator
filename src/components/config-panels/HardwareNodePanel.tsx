@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType } from '../../utils/hardwareUtils';
+import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
 import {
@@ -74,8 +75,9 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       const allocations = (sourceNode.data?.tappedLinkAllocations as any[]) || [];
       for (const alloc of allocations) {
         const opticToValidate = alloc.toolOptic || alloc.optic;
-        const isCopper = opticToValidate.includes('Copper') || opticToValidate.includes('1G Copper');
-        const isSM = isSMTap;
+        const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === opticToValidate);
+        const isCopper = matched ? !!matched.isCopper : opticToValidate.includes('Copper');
+        const isSM = matched ? matched.isSM : isSMTap;
         if (isCopper) requiredCopperOptics += alloc.qty * 2;
         else if (isSM) requiredSMOptics += alloc.qty * 2;
         else requiredMMOptics += alloc.qty * 2;
