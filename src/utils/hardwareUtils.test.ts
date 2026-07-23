@@ -33,6 +33,23 @@ describe('hardwareUtils', () => {
       expect(breakdown.isLicensed).toBe(false);
     });
 
+    it('should show the 2 built-in QSFP28 cages on a freshly-deployed GigaVUE-HCT with no module installed', () => {
+      // GVS-HCT01's SKU description: "GigaVUE-HCT chassis, 2 x 40/100G QSFP28 cages,
+      // fan tray, 1 AC power brick." A bare HCT with no board in its single slot
+      // should still report those 2 fixed QSFP cages as free, not 0/0.
+      const breakdown = getCageCapacityBreakdown('GigaVUE-HCT', {
+        label: 'Test HCT',
+        configType: 'Hardware',
+        model: 'GigaVUE-HCT',
+        optics: [],
+        installedBoards: {},
+      } as HardwareNodeData);
+
+      expect(breakdown.totalQsfpCages).toBe(2);
+      expect(breakdown.remainingQsfpCages).toBe(2);
+      expect(breakdown.totalSfpCages).toBe(0);
+    });
+
     it('should calculate used capacity for an HC1 with optics', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
         label: 'Test HC1',
@@ -209,7 +226,7 @@ describe('hardwareUtils', () => {
       expect(getChassisBasePortCapacity('GigaVUE-HC1')).toEqual({ 'RJ45': 4, 'SFP+': 12 });
       expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
       expect(getChassisBasePortCapacity('GigaVUE-HC3')).toEqual({});
-      expect(getChassisBasePortCapacity('GigaVUE-HCT')).toEqual({});
+      expect(getChassisBasePortCapacity('GigaVUE-HCT')).toEqual({ 'QSFP28': 2 });
     });
   });
 
@@ -218,7 +235,7 @@ describe('hardwareUtils', () => {
     // derived straight from getChassisBasePortCapacity (RJ45 built-in ports never
     // count toward either cage bucket).
     const baseCages: Record<string, { sfp: number; qsfp: number }> = {
-      'GigaVUE-HCT': { sfp: 0, qsfp: 0 },
+      'GigaVUE-HCT': { sfp: 0, qsfp: 2 },
       'GigaVUE-HC1': { sfp: 12, qsfp: 0 },
       'GigaVUE-HC1-Plus': { sfp: 8, qsfp: 4 },
       'GigaVUE-HC3': { sfp: 0, qsfp: 0 },

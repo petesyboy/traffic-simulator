@@ -304,7 +304,16 @@
       "power": "150W",
       "fans": 4,
       "airflow": "Front-to-Rear",
-      "base_ports": [],
+      "base_ports": [
+        {
+          "type": "QSFP28",
+          "count": 2,
+          "speeds": [
+            "40G",
+            "100G"
+          ]
+        }
+      ],
       "module_slots": 1,
       "image": "./hardware-icons/GigaVUE-HCT.png"
     }
