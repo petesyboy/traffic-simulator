@@ -68,8 +68,17 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     const nextOptics = [...userOptics];
     let changed = currentOptics.length !== userOptics.length;
 
+    // Different taps can express the same physical optic with different raw strings
+    // (picker codes vs. legacy fallback labels). Resolve to the chassis target SKU first
+    // so those variants are combined into a single requirement before topping up nextOptics -
+    // otherwise each raw-key group is topped up independently and produces duplicate/undercounted lines.
+    const resolvedOpticsNeeded: Record<string, number> = {};
     Object.entries(tapOpticsNeeded).forEach(([rawOptic, qty]) => {
       const targetOptic = resolveOpticForChassis(rawOptic, chassisModel);
+      resolvedOpticsNeeded[targetOptic] = (resolvedOpticsNeeded[targetOptic] || 0) + qty;
+    });
+
+    Object.entries(resolvedOpticsNeeded).forEach(([targetOptic, qty]) => {
       const targetSku = resolveOpticSku(targetOptic, chassisModel);
 
       const existingQty = nextOptics

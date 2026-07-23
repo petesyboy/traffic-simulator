@@ -65,6 +65,54 @@ describe('BOM Engine', () => {
         isAutoAdded: true
       });
     });
+
+    it('should merge multiple TAP-M251T modules feeding the same chassis into a single optic line, not split/undercounted lines', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'M251T Module A',
+            configType: 'TAP',
+            model: 'TAP-M251T',
+            sku: 'TAP-M251T',
+            tappedLinksCount: 1,
+            tappedLinkAllocations: [{ qty: 1, optic: '10G-SFP-SR' }]
+          }
+        },
+        {
+          id: 'tap-2',
+          type: 'hardwareNode',
+          position: { x: 0, y: 100 },
+          data: {
+            label: 'M251T Module B',
+            configType: 'TAP',
+            model: 'TAP-M251T',
+            sku: 'TAP-M251T',
+            tappedLinksCount: 5
+            // No tappedLinkAllocations -> exercises the legacy fallback raw-optic string.
+          }
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'HC1', configType: 'HC', model: 'GigaVUE-HC1', optics: [] }
+        }
+      ];
+      const edges = [
+        { id: 'e1', source: 'tap-1', target: 'hc-1' },
+        { id: 'e2', source: 'tap-2', target: 'hc-1' }
+      ];
+
+      const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
+      const hcNode = syncedNodes.find(n => n.id === 'hc-1');
+      const sfpLines = hcNode?.data.optics?.filter((o: any) => o.optic.includes('SFP-532')) || [];
+
+      expect(sfpLines.length).toBe(1);
+      expect(sfpLines[0].qty).toBe(12);
+    });
   });
 
   describe('validateConfiguration', () => {
