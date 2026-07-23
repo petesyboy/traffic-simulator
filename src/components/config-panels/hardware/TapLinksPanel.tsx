@@ -51,7 +51,19 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   const catalogueItem = hardwareCatalogue.taps.find(t => t.sku === tapSku || t.model === tapModel);
   const maxLinks = catalogueItem?.max_links ?? getTapLinkCapacity(tapDescription);
 
+  const isASF = tapModel.includes('A-SF') || tapSku.includes('ASF');
   let availableOptics = SUPPORTED_TAP_OPTICS;
+  if (isASF) {
+    availableOptics = SUPPORTED_TAP_OPTICS.filter(o => {
+      const speed = getOpticSpeed(o.value);
+      return speed === '1G' || speed === '10G';
+    });
+  } else if (isM506T) {
+    availableOptics = SUPPORTED_TAP_OPTICS.filter(o => {
+      const speed = getOpticSpeed(o.value);
+      return speed === '40G' || speed === '100G';
+    });
+  }
 
   const allocations: TappedLinkAllocation[] = hwData.tappedLinkAllocations || [];
   const currentAllocatedCount = hwData.tappedLinkAllocations ? hwData.tappedLinkAllocations.reduce((sum, a) => sum + a.qty, 0) : 0;
@@ -62,7 +74,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   const [addOptic, setAddOptic] = useState('');
   const [addToolOptic, setAddToolOptic] = useState('');
 
-  const activeAddOptic = addOptic || (availableOptics[0]?.value) || (isSMTap ? 'SFP-533' : 'SFP-532');
+  const activeAddOptic = addOptic || (availableOptics.find(o => o.isSM === isSMTap)?.value) || availableOptics[0]?.value || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR');
 
   const networkSpeed = getOpticSpeed(activeAddOptic);
   const hasKnownSpeed = networkSpeed !== 'Unknown';
