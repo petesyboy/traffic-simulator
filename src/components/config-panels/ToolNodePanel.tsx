@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
-import { formatBytes } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 
@@ -21,7 +20,6 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const configType = (node.data?.configType as string) || CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
   const isStorageTool = configType === CONFIG_TYPES.STORAGE_TOOL;
-  const [showEstimates, setShowEstimates] = useState(false);
   const nodes = useStore((state) => state.nodes);
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
 
@@ -148,60 +146,6 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
             : '✓ Idle (No Traffic)'}
         </div>
       </FormGroup>
-
-      {isRunning && (isMetadataTool || isStorageTool) && metrics && metrics.rxMbps > 0 && (
-        <div style={{ marginTop: '15px', padding: '12px', background: 'rgba(0, 229, 255, 0.03)', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.1)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showEstimates ? '10px' : '0' }}>
-            <h3 style={{ fontSize: '11px', margin: '0', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Storage Projections
-            </h3>
-            <button
-              onClick={() => setShowEstimates(!showEstimates)}
-              style={{
-                background: 'rgba(0, 229, 255, 0.08)',
-                border: '1px solid rgba(0, 229, 255, 0.25)',
-                borderRadius: '4px',
-                color: '#00e5ff',
-                fontSize: '10px',
-                padding: '3px 8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontWeight: 'bold',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              {showEstimates ? '🙈 Hide Estimates' : '📊 Show Estimates'}
-            </button>
-          </div>
-
-          {showEstimates && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Current Total:</span>
-                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{formatBytes(node.data?.totalIngestedBytes as number)}</span>
-              </div>
-              <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Daily (est.):</span>
-                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{formatBytes(metrics.rxMbps * 10800000000)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Weekly (est.):</span>
-                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{formatBytes(metrics.rxMbps * 10800000000 * 7)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Monthly (est.):</span>
-                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{formatBytes(metrics.rxMbps * 10800000000 * 30)}</span>
-              </div>
-              <p style={{ margin: '8px 0 0 0', fontSize: '9px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                * Based on current ingestion rate. Estimates assume 24/7 operation at this bandwidth.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
       {(isMetadataTool || isStorageTool) && (
         <MetadataEventViewer selectedNode={node} />
