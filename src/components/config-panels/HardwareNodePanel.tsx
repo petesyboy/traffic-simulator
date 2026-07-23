@@ -109,6 +109,17 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const capVal = hwData.portCapacity || 'Full';
   const limits = getTaLicenseLimits(model || '', capVal);
 
+  // getTaLicenseLimits keys its result by the catalogue's actual port type strings
+  // (e.g. "SFP28", "QSFP28", "SFP+") rather than plain "sfp"/"qsfp", so match by
+  // substring the same way getCageCapacityBreakdown does instead of assuming exact keys.
+  let licensedSfp = 0;
+  let licensedQsfp = 0;
+  for (const portType in limits) {
+    if (portType === 'qsfp_400g') continue;
+    if (portType.toUpperCase().includes('QSFP')) licensedQsfp += limits[portType as keyof typeof limits] as number;
+    else if (portType.toUpperCase().includes('SFP')) licensedSfp += limits[portType as keyof typeof limits] as number;
+  }
+
   let usedSfp = 0;
   let usedQsfp = 0;
   let used400G = 0;
@@ -132,9 +143,9 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   if (model?.includes('TA')) {
     if (model.includes('TA25')) {
-      if (usedSfp > limits.sfp || usedQsfp > limits.qsfp) {
+      if (usedSfp > licensedSfp || usedQsfp > licensedQsfp) {
         isLicenseExceeded = true;
-        exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the licensed port count (${limits.sfp} SFP / ${limits.qsfp} QSFP cages).`;
+        exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the licensed port count (${licensedSfp} SFP / ${licensedQsfp} QSFP cages).`;
         if (capVal === 'Quarter') {
           nextLicenseVal = 'Half';
           nextLicenseLabel = '24 / 4 Ports License';
@@ -144,16 +155,16 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         }
       }
     } else if (model.includes('TA200')) {
-      if (usedQsfp > limits.qsfp) {
+      if (usedQsfp > licensedQsfp) {
         isLicenseExceeded = true;
-        exceedMessage = `Configured optics (${usedQsfp} QSFP) exceed the licensed port count (${limits.qsfp} QSFP cages).`;
+        exceedMessage = `Configured optics (${usedQsfp} QSFP) exceed the licensed port count (${licensedQsfp} QSFP cages).`;
         if (capVal === 'Half') {
           nextLicenseVal = 'Full';
           nextLicenseLabel = '64 Ports (QSFP) License';
         }
       }
     } else if (model.includes('TA400')) {
-      if (usedSfp > limits.sfp || usedQsfp > limits.qsfp) {
+      if (usedSfp > licensedSfp || usedQsfp > licensedQsfp) {
         isLicenseExceeded = true;
         exceedMessage = `Configured optics (${usedSfp} SFP, ${usedQsfp} QSFP) exceed the physical chassis limits (2 SFP / 32 QSFP).`;
       } else if (capVal === '100G' && used400G > 0) {
