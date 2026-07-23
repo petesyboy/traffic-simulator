@@ -24,8 +24,6 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
     return null;
   }, [model, sku]);
 
-  if (!details?.module_slots) return null;
-
   const supportedBoards = useMemo(() => {
     return getSupportedBoards(model || '', hwData.portCapacity as string, installedOptics);
   }, [model, hwData.portCapacity, installedOptics]);
@@ -50,6 +48,13 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
       optics: nextOptics
     });
   }, [installedBoards, installedOptics, selectedNode.id, updateNodeData]);
+
+  // Checked after all hooks above so this component always calls the same hooks on every
+  // render, regardless of node type - an early return before a hook call here previously
+  // caused "Rendered more hooks than during the previous render" (React error #310) when
+  // switching the selected node between a chassis with module_slots (HC-series) and one
+  // without (TA-series) while this panel stayed mounted.
+  if (!details?.module_slots) return null;
 
   const slots = [];
   for (let i = 1; i <= details.module_slots; i++) {
