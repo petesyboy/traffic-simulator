@@ -66,6 +66,46 @@ describe('BOM Engine', () => {
       });
     });
 
+    it('should resolve a fully descriptive optic string (not a bare SKU) and the correct board name for a GigaVUE-HC1, whose base board is not literally named "Base Ports"', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'M251T Module',
+            configType: 'TAP',
+            model: 'TAP-M251T',
+            sku: 'TAP-M251T',
+            tappedLinksCount: 2,
+            tappedLinkAllocations: [
+              { qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: '10G-SFP-SR' }
+            ]
+          }
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'HC1', configType: 'HC', model: 'GigaVUE-HC1', optics: [] }
+        }
+      ];
+      const edges = [{ id: 'e1', source: 'tap-1', target: 'hc-1' }];
+
+      const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
+      const hcNode = syncedNodes.find(n => n.id === 'hc-1');
+
+      // Bare "SFP-532T" (no parenthetical) fails downstream fiber-type classification
+      // (getOpticFiberType), which caused a false "fiber mismatch" warning even though
+      // the correct quantity (2 links x 2 = 4) was already being added.
+      expect(hcNode?.data.optics?.[0]).toEqual({
+        board: 'HC1-X12G4 (Main board)',
+        optic: 'SFP-532T (10G SFP+ SR)',
+        qty: 4,
+        isAutoAdded: true
+      });
+    });
+
     it('should merge multiple TAP-M251T modules feeding the same chassis into a single optic line, not split/undercounted lines', () => {
       const nodes: CustomNode[] = [
         {

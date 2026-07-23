@@ -16,16 +16,27 @@ export interface BomRow {
   site?: string;
 }
 
+// Not every chassis names its always-installed board "Base Ports" - e.g. GigaVUE-HC1's is
+// "HC1-X12G4 (Main board)". Find whichever board key represents it so auto-added optics
+// resolve against the board that's actually there.
+function getMainBoardKey(rules: Record<string, string[]> | undefined): string | undefined {
+  if (!rules) return undefined;
+  const keys = Object.keys(rules);
+  return keys.find(k => /\b(main|base)\b/i.test(k)) || keys[0];
+}
+
 function resolveOpticForChassis(opticStr: string, chassisModel: string): string {
   const resolvedSku = resolveOpticSku(opticStr, chassisModel);
   const taaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
   const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
-  if (rules && rules['Base Ports']) {
+  const mainBoardKey = getMainBoardKey(rules);
+  const group = mainBoardKey ? rules[mainBoardKey] : undefined;
+  if (group) {
     // Prefer TAA-compliant ('T' suffix) option if available on chassis
-    const taaMatch = rules['Base Ports'].find(opt => opt.startsWith(taaSku + ' ') || opt === taaSku);
+    const taaMatch = group.find(opt => opt.startsWith(taaSku + ' ') || opt === taaSku);
     if (taaMatch) return taaMatch;
 
-    const baseMatch = rules['Base Ports'].find(opt => opt.startsWith(resolvedSku + ' ') || opt === resolvedSku);
+    const baseMatch = group.find(opt => opt.startsWith(resolvedSku + ' ') || opt === resolvedSku);
     if (baseMatch) return baseMatch;
   }
   return taaSku;
@@ -36,6 +47,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     if (node.type !== NODE_TYPES.HARDWARE || String(node.data?.model || '').includes('TAP')) return node;
 
     const chassisModel = String(node.data?.model || '');
+    const chassisMainBoard = getMainBoardKey((opticRules as Record<string, Record<string, string[]>>)[chassisModel]) || 'Base Ports';
     const connectedEdges = edges.filter(e => e.target === node.id || e.source === node.id);
     const tapOpticsNeeded: Record<string, number> = {};
 
@@ -86,7 +98,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
         .reduce((sum, o) => sum + o.qty, 0);
 
       if (existingQty < qty) {
-        nextOptics.push({ board: 'Base Ports', optic: targetOptic, qty: qty - existingQty, isAutoAdded: true });
+        nextOptics.push({ board: chassisMainBoard, optic: targetOptic, qty: qty - existingQty, isAutoAdded: true });
         changed = true;
       }
     });
