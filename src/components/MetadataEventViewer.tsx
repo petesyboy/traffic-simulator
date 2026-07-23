@@ -77,83 +77,63 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
   const format = (selectedNode.data?.metadataFormat as MetadataFormat) || 'JSON';
   const [activeFormat, setActiveFormat] = useState<MetadataFormat>(format);
   const [events, setEvents] = useState<EventRecord[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
-  // Update format in store when changed locally
   const handleFormatChange = (newFormat: MetadataFormat) => {
     setActiveFormat(newFormat);
     updateNodeData(selectedNode.id, { metadataFormat: newFormat });
   };
 
+  // Compact single-line summary for each event
+  const formatOneLiner = (evt: EventRecord): string => {
+    if (activeFormat === 'JSON') {
+      return `{"${evt.type}","${evt.jsonDoc.application}","${evt.jsonDoc.src_ip}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}","${evt.jsonDoc.uri_query}",${evt.jsonDoc.response_code},${evt.jsonDoc.latency_ms}ms}`;
+    }
+    if (activeFormat === 'CEF') {
+      return `CEF:0|Gigamon|AMI|${evt.type}|src=${evt.jsonDoc.src_ip} dst=${evt.jsonDoc.dst_ip} req=${evt.jsonDoc.uri_query} rc=${evt.jsonDoc.response_code}`;
+    }
+    return `IPFIX|${evt.jsonDoc.src_ip}:${evt.jsonDoc.src_port}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}|${evt.jsonDoc.application}|${evt.jsonDoc.bytes_sent}B`;
+  };
+
+  const fmtColor = activeFormat === 'JSON' ? 'text-cyan-300' : activeFormat === 'CEF' ? 'text-amber-300' : 'text-blue-300';
+
   useEffect(() => {
     if (!isRunning) return;
-
     const interval = setInterval(() => {
       const tmpl = SAMPLE_TEMPLATES[Math.floor(Math.random() * SAMPLE_TEMPLATES.length)];
       const now = new Date();
-      const timeISO = now.toISOString();
-      const randomSubnet = Math.floor(Math.random() * 254) + 1;
-      const srcIp = `192.168.${randomSubnet}.${Math.floor(Math.random() * 200) + 10}`;
-      const dstIp = `10.0.${randomSubnet}.${Math.floor(Math.random() * 100) + 5}`;
+      const sub = Math.floor(Math.random() * 254) + 1;
+      const srcIp = `192.168.${sub}.${Math.floor(Math.random() * 200) + 10}`;
+      const dstIp = `10.0.${sub}.${Math.floor(Math.random() * 100) + 5}`;
       const srcPort = Math.floor(Math.random() * 40000) + 1024;
-
-      const newJson = {
-        event_type: `${tmpl.type}_EVENT`,
-        timestamp: timeISO,
-        application: tmpl.app,
-        src_ip: srcIp,
-        src_port: srcPort,
-        dst_ip: dstIp,
-        dst_port: tmpl.type === 'HTTP' || tmpl.type === 'TLS' ? 443 : tmpl.type === 'DNS' ? 53 : tmpl.type === 'DB' ? 5432 : 5060,
-        uri_query: tmpl.uri,
-        http_method: tmpl.method,
-        response_code: tmpl.status,
-        latency_ms: tmpl.latency,
-        bytes_sent: tmpl.bytes,
-        format_version: 'GigaSMART AMI v6.4'
-      };
-
-      const newCef = `CEF:0|Gigamon|GigaSMART_AMI|6.4|${tmpl.type}_EVENT|${tmpl.app}|3|src=${srcIp} spt=${srcPort} dst=${dstIp} dpt=${newJson.dst_port} request=${tmpl.uri} cs1=${tmpl.method} outcome=${tmpl.status} duration=${tmpl.latency}`;
-
-      const newIpfix = `IPFIX-REC | FlowID: ${Math.floor(Math.random() * 900000) + 100000} | Src: ${srcIp}:${srcPort} -> Dst: ${dstIp}:${newJson.dst_port} | App: ${tmpl.app} | Octets: ${tmpl.bytes} | Pkts: ${Math.floor(tmpl.bytes / 1400) + 1}`;
-
-      const record: EventRecord = {
+      const dstPort = tmpl.type === 'HTTP' || tmpl.type === 'TLS' ? 443 : tmpl.type === 'DNS' ? 53 : tmpl.type === 'DB' ? 5432 : 5060;
+      setEvents(prev => [{
         id: Math.random().toString(36).slice(2),
         timestamp: now.toLocaleTimeString(),
         type: tmpl.type,
-        jsonDoc: newJson,
-        cefStr: newCef,
-        ipfixStr: newIpfix
-      };
-
-      setEvents(prev => [record, ...prev.slice(0, 7)]);
-    }, 1200);
-
+        jsonDoc: { event_type: `${tmpl.type}_EVENT`, application: tmpl.app, src_ip: srcIp, src_port: srcPort, dst_ip: dstIp, dst_port: dstPort, uri_query: tmpl.uri, http_method: tmpl.method, response_code: tmpl.status, latency_ms: tmpl.latency, bytes_sent: tmpl.bytes },
+        cefStr: `CEF:0|Gigamon|AMI|6.4|${tmpl.type}|${tmpl.app}|3|src=${srcIp} dst=${dstIp} request=${tmpl.uri} outcome=${tmpl.status}`,
+        ipfixStr: `IPFIX|${srcIp}:${srcPort}→${dstIp}:${dstPort}|${tmpl.app}|${tmpl.bytes}B`
+      }, ...prev.slice(0, 3)]);
+    }, 1400);
     return () => clearInterval(interval);
   }, [isRunning]);
 
   return (
-    <div className="panel-section flex-col gap-3 bg-[#161b22] p-3 rounded-lg border border-[#30363d] mt-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
-            📄 Application Event Documents
-          </span>
-          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-            AMI Extracted
-          </span>
-        </div>
-
-        {/* Format Selector Pills */}
-        <div className="flex gap-1 bg-[#0d1117] p-1 rounded-md border border-[#30363d]">
+    <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 8px', marginTop: '8px' }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <span style={{ color: '#ff9800', fontWeight: 700, fontSize: '11px' }}>📄 Event Documents</span>
+        <div style={{ display: 'flex', gap: '2px', background: '#0d1117', padding: '2px', borderRadius: '4px', border: '1px solid #30363d' }}>
           {(['JSON', 'CEF', 'IPFIX'] as MetadataFormat[]).map(fmt => (
             <button
               key={fmt}
               onClick={() => handleFormatChange(fmt)}
-              className={`px-2 py-0.5 text-xs rounded font-semibold transition-colors ${
-                activeFormat === fmt
-                  ? 'bg-[#ff9800] text-black shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
+              style={{
+                padding: '1px 5px', fontSize: '9px', borderRadius: '3px', border: 'none', cursor: 'pointer', fontWeight: 700,
+                background: activeFormat === fmt ? '#ff9800' : 'transparent',
+                color: activeFormat === fmt ? '#000' : '#888',
+              }}
             >
               {fmt}
             </button>
@@ -161,54 +141,34 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
         </div>
       </div>
 
-      <div className="text-xs text-gray-400 leading-normal">
-        Rather than forwarding raw binary packet streams (10 Gbps), GigaSMART extracts key-value <strong>{activeFormat}</strong> event documents (e.g. HTTP, DNS, TLS) for SIEMs and cloud storage tools.
+      {/* Bandwidth savings — single compact line */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px', padding: '3px 6px', marginBottom: '4px', fontSize: '10px' }}>
+        <span style={{ color: '#34d399', fontWeight: 600 }}>⚡ 95% bandwidth saved</span>
+        <span style={{ color: '#9ca3af', fontFamily: 'monospace', fontSize: '9px' }}>~1.4k evt/s</span>
       </div>
 
-      {/* Bandwidth Savings Banner */}
-      <div className="flex items-center justify-between bg-emerald-950/40 border border-emerald-500/30 rounded p-2 text-xs">
-        <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-          <span className="text-sm">⚡</span>
-          <span>95.2% Bandwidth Reduction</span>
+      {/* Collapsible event log */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{ background: '#090d12', border: '1px solid #21262d', borderRadius: '4px', padding: '4px 5px', cursor: 'pointer', fontSize: '9px', fontFamily: 'monospace' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#6b7280', marginBottom: expanded ? '3px' : '0' }}>
+          <span>{expanded ? '▾' : '▸'} Live stream ({events.length} records)</span>
+          <span style={{ fontSize: '8px' }}>{isRunning ? '● LIVE' : '○ IDLE'}</span>
         </div>
-        <div className="text-gray-300 font-mono text-[11px]">
-          ~1,420 events/sec (45 Mbps vs 10 Gbps Raw)
-        </div>
-      </div>
-
-      {/* Live Stream Terminal Log */}
-      <div className="bg-[#090d12] border border-[#21262d] rounded-md p-2 font-mono text-[11px] max-h-56 overflow-y-auto flex-col gap-2">
-        {events.length === 0 ? (
-          <div className="text-gray-500 italic text-center py-4">
-            {isRunning ? 'Listening for network event records...' : 'Start simulation (▶) to stream live metadata event documents.'}
-          </div>
-        ) : (
-          events.map((evt) => (
-            <div key={evt.id} className="p-1.5 rounded bg-[#161b22]/70 border border-[#30363d]/50 text-gray-200">
-              <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                <span className="text-amber-400 font-bold">[{evt.timestamp}] {evt.type} Event Record</span>
-                <span className="text-gray-500 font-mono">{activeFormat}</span>
+        {expanded && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '100px', overflowY: 'auto' }}>
+            {events.length === 0 ? (
+              <div style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '4px 0', fontSize: '9px' }}>
+                {isRunning ? 'Waiting for events…' : 'Press ▶ to start'}
               </div>
-
-              {activeFormat === 'JSON' && (
-                <pre className="text-cyan-300 text-[10px] overflow-x-auto m-0 p-0 leading-tight">
-                  {JSON.stringify(evt.jsonDoc, null, 2)}
-                </pre>
-              )}
-
-              {activeFormat === 'CEF' && (
-                <div className="text-amber-300 text-[10px] break-all leading-tight">
-                  {evt.cefStr}
-                </div>
-              )}
-
-              {activeFormat === 'IPFIX' && (
-                <div className="text-blue-300 text-[10px] break-all leading-tight">
-                  {evt.ipfixStr}
-                </div>
-              )}
-            </div>
-          ))
+            ) : events.map(evt => (
+              <div key={evt.id} style={{ display: 'flex', gap: '4px', lineHeight: '1.3', fontSize: '9px' }}>
+                <span style={{ color: '#ff9800', flexShrink: 0 }}>{evt.timestamp}</span>
+                <span className={fmtColor} style={{ wordBreak: 'break-all' }}>{formatOneLiner(evt)}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
