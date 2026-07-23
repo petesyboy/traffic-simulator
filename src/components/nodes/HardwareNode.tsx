@@ -6,7 +6,7 @@
  * Type casts use the proper typed interfaces from types.ts instead of `any`.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition, HardwareNodeData, GigaSmartNodeData } from '../../store/types';
@@ -19,6 +19,7 @@ import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
+import { HcSummaryModal } from './HcSummaryModal';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -33,7 +34,8 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const exportDiagramMode = useStore((state) => state.exportDiagramMode);
   const advancedMode = useStore((state) => state.advancedMode);
   const resolved = resolveNodeSkus(data, projectLicenseMode);
-  
+  const [showSummary, setShowSummary] = useState(false);
+
   let displaySku = resolved.hwSku;
   if (resolved.swSku) displaySku += ` + ${resolved.swSku}`;
   if (resolved.advSku) displaySku += ` + ${resolved.advSku}`;
@@ -77,6 +79,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   );
   
   const isTap = model.includes('TAP');
+  const isHcChassis = model.includes('HC') && !isTap;
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
@@ -114,9 +117,22 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             {iconComponent}
             <span className="node-title">{data.label as string}</span>
           </div>
-          <div className="node-value-tooltip-container">
-            <span className="node-info-icon">ⓘ</span>
-            <div className="node-value-tooltip">{getNodeValueProposition('hardwareNode')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isHcChassis && (
+              <button
+                className="node-info-icon"
+                style={{ cursor: 'pointer', border: 'none' }}
+                title="View hardware summary"
+                onClick={(e) => { e.stopPropagation(); setShowSummary(true); }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                📋
+              </button>
+            )}
+            <div className="node-value-tooltip-container">
+              <span className="node-info-icon">ⓘ</span>
+              <div className="node-value-tooltip">{getNodeValueProposition('hardwareNode')}</div>
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', marginTop: '2px' }}>
@@ -283,6 +299,17 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         <Handle type="source" position={Position.Right} id="out" />
       </div>
+
+      {showSummary && (
+        <HcSummaryModal
+          model={model}
+          sku={(data.sku as string) || ''}
+          displaySku={resolved.hwSku}
+          label={(data.label as string) || model}
+          hwData={hwData}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
 
       {exportDiagramMode && (
         <div style={{
