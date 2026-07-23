@@ -25,7 +25,45 @@ describe('BOM Engine', () => {
       const hcNode = syncedNodes.find(n => n.id === 'hc-1');
       
       expect(hcNode?.data.optics).toBeDefined();
-      expect(hcNode?.data.optics?.some((o: any) => o.optic === 'SFP-532' && o.isAutoAdded)).toBe(true);
+      expect(hcNode?.data.optics?.some((o: any) => o.optic.includes('SFP-532') && o.isAutoAdded)).toBe(true);
+    });
+
+    it('should auto-add resolved copper optic SFP-501 (1G SFP Copper) when 3 copper links are tapped to TA25E', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'Active Copper TAP',
+            configType: 'TAP',
+            model: 'TAP-A-TX2',
+            sku: 'TAP-A-TX2',
+            tappedLinksCount: 3,
+            tappedLinkOptic: '1G-SFP-CU',
+            tappedLinkAllocations: [{ qty: 3, optic: '1G-SFP-CU' }]
+          }
+        },
+        {
+          id: 'ta25e-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'TA25E', configType: 'TA', model: 'GigaVUE-TA25E', optics: [] }
+        }
+      ];
+      const edges = [{ id: 'e1', source: 'tap-1', target: 'ta25e-1' }];
+
+      const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
+      const taNode = syncedNodes.find(n => n.id === 'ta25e-1');
+
+      expect(taNode?.data.optics).toBeDefined();
+      expect(taNode?.data.optics?.length).toBe(1);
+      expect(taNode?.data.optics?.[0]).toEqual({
+        board: 'Base Ports',
+        optic: 'SFP-501 (1G SFP Copper)',
+        qty: 6,
+        isAutoAdded: true
+      });
     });
   });
 

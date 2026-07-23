@@ -476,4 +476,23 @@ describe('hardwareUtils', () => {
       expect(getTapLinkCapacity("Some description without the phrase")).toBe(1);
     });
   });
+
+  describe('getOpticFiberType', () => {
+    it('correctly identifies copper optics including shorthand codes and SFP-501/531', () => {
+      expect(getOpticFiberType('1G-SFP-CU')).toBe('Copper');
+      expect(getOpticFiberType('10G-SFP-CU6')).toBe('Copper');
+      expect(getOpticFiberType('SFP-501')).toBe('Copper');
+      expect(getOpticFiberType('SFP-501 (1G SFP Copper)')).toBe('Copper');
+      expect(getOpticFiberType('SFP-501T')).toBe('Copper');
+      expect(getOpticFiberType('SFP-531')).toBe('Copper');
+      expect(getOpticFiberType('SFP-531T (10G SFP+ Copper)')).toBe('Copper');
+    });
+
+    it('correctly identifies MM and SM optics', () => {
+      expect(getOpticFiberType('SFP-532 (10G SFP+ SR)')).toBe('MM');
+      expect(getOpticFiberType('10G-SFP-SR')).toBe('MM');
+      expect(getOpticFiberType('SFP-533 (10G SFP+ LR)')).toBe('SM');
+      expect(getOpticFiberType('10G-SFP-LR')).toBe('SM');
+    });
+  });
 });

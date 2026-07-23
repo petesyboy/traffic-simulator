@@ -16,10 +16,21 @@ export interface BomRow {
   site?: string;
 }
 
+function resolveOpticForChassis(opticStr: string, chassisModel: string): string {
+  const resolvedSku = resolveOpticSku(opticStr, chassisModel);
+  const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
+  if (rules && rules['Base Ports']) {
+    const matched = rules['Base Ports'].find(opt => opt.startsWith(resolvedSku + ' ') || opt.startsWith(resolvedSku + 'T ') || opt === resolvedSku);
+    if (matched) return matched;
+  }
+  return resolvedSku;
+}
+
 export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
   return nodes.map(node => {
     if (node.type !== NODE_TYPES.HARDWARE || String(node.data?.model || '').includes('TAP')) return node;
 
+    const chassisModel = String(node.data?.model || '');
     const connectedEdges = edges.filter(e => e.target === node.id || e.source === node.id);
     const tapOpticsNeeded: Record<string, number> = {};
 
@@ -52,10 +63,16 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     const nextOptics = [...userOptics];
     let changed = currentOptics.length !== userOptics.length;
 
-    Object.entries(tapOpticsNeeded).forEach(([optic, qty]) => {
-      const existingQty = nextOptics.filter(o => o.optic === optic).reduce((sum, o) => sum + o.qty, 0);
+    Object.entries(tapOpticsNeeded).forEach(([rawOptic, qty]) => {
+      const targetOptic = resolveOpticForChassis(rawOptic, chassisModel);
+      const targetSku = resolveOpticSku(targetOptic, chassisModel);
+
+      const existingQty = nextOptics
+        .filter(o => o.optic === targetOptic || resolveOpticSku(o.optic, chassisModel) === targetSku)
+        .reduce((sum, o) => sum + o.qty, 0);
+
       if (existingQty < qty) {
-        nextOptics.push({ board: 'Base Ports', optic, qty: qty - existingQty, isAutoAdded: true });
+        nextOptics.push({ board: 'Base Ports', optic: targetOptic, qty: qty - existingQty, isAutoAdded: true });
         changed = true;
       }
     });

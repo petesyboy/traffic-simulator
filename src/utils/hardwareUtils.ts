@@ -96,7 +96,17 @@ export const getChassisBasePortCapacity = (model: string): { [portType: string]:
  */
 export const getOpticFiberType = (opticName: string): string => {
   const upper = opticName.toUpperCase();
-  if (upper.includes('COPPER') || upper.includes('BASE-T') || upper.includes('BASET') || upper.includes('ACTIVE CABLE') || upper.includes('DIRECT ATTACH') || upper.includes('DAC')) {
+  if (
+    upper.includes('COPPER') ||
+    upper.includes('BASE-T') ||
+    upper.includes('BASET') ||
+    upper.includes('ACTIVE CABLE') ||
+    upper.includes('DIRECT ATTACH') ||
+    upper.includes('DAC') ||
+    upper.includes('-CU') ||
+    upper.includes('SFP-501') ||
+    upper.includes('SFP-531')
+  ) {
     return 'Copper';
   }
   if (/\b(SX|SR\d*|LRM|SWDM\d*|BIDI)\b/i.test(upper) || upper.includes(' SX') || upper.includes(' SR') || upper.includes(' LRM') || upper.includes(' SWDM') || upper.includes('BIDI')) {

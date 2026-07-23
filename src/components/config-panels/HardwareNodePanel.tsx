@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
-import { getOpticSpeed, getTaLicenseLimits } from '../../utils/hardwareUtils';
+import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType } from '../../utils/hardwareUtils';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
 import {
@@ -89,13 +89,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   let installedSMOptics = 0;
   let installedCopperOptics = 0;
   installedOptics.forEach(opt => {
-    const name = opt.optic.toUpperCase();
-    const isOpticCopper = name.includes('COPPER') || name.includes('BASE-T') || name.includes('BASET') || name.includes('ACTIVE CABLE') || name.includes('DIRECT ATTACH') || name.includes('DAC');
-    const isOpticMM = !isOpticCopper && (name.includes('SR') || name.includes('SX') || name.includes('SWDM') || name.includes('FX') || name.includes('LRM') || name.includes('BIDI'));
-    const isOpticSM = !isOpticCopper && (name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR'));
-    if (isOpticCopper) installedCopperOptics += opt.qty;
-    else if (isOpticMM) installedMMOptics += opt.qty;
-    else if (isOpticSM) installedSMOptics += opt.qty;
+    const type = getOpticFiberType(opt.optic);
+    if (type === 'Copper') installedCopperOptics += opt.qty;
+    else if (type === 'MM') installedMMOptics += opt.qty;
+    else if (type === 'SM') installedSMOptics += opt.qty;
   });
 
   const missingMM = Math.max(0, requiredMMOptics - installedMMOptics);
