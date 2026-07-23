@@ -183,6 +183,18 @@ export const getTaLicenseLimits = (modelName: string, capacity: string): { [port
   return { qsfp_400g: 0 };
 };
 
+// Per the official Gigamon HC-series datasheet's "Chassis Maximum Capabilities"
+// table, the max achievable 10G/25G port count via QSFP fanout/breakout is
+// capped below what raw "every cage broken out 4x" arithmetic gives on some
+// chassis — e.g. GigaVUE-HC3: 4 slots x 16 QSFP28 cages x 4 = 256 in theory,
+// but the datasheet documents a 128 max (likely an ASIC/SerDes lane-sharing
+// limit not otherwise broken out in Gigamon's public reference material).
+const MAX_FANOUT_SFP_PORTS: Record<string, number> = {
+  'GigaVUE-HC3': 128,
+};
+
+export const getMaxFanoutSfpPorts = (model: string): number => MAX_FANOUT_SFP_PORTS[model] ?? Infinity;
+
 export interface CageCapacityBreakdown {
   totalSfpCages: number;
   totalQsfpCages: number;
@@ -301,7 +313,7 @@ export const getCageCapacityBreakdown = (
   const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
   const remainingQsfpCages = Math.max(0, totalQsfpCages - usedQsfpOptics - usedBreakouts);
   const breakoutSfpExpansion = usedBreakouts * 4;
-  const totalExpandedSfpPorts = totalSfpCages + breakoutSfpExpansion;
+  const totalExpandedSfpPorts = Math.min(totalSfpCages + breakoutSfpExpansion, getMaxFanoutSfpPorts(model));
   const remainingSfpCages = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
 
   const isLicensed = model.includes('TA25') || model.includes('TA200') || model.includes('TA400E');

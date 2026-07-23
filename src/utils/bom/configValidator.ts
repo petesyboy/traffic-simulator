@@ -4,7 +4,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus } from '../skuResolver';
-import { getBoardPortCapacity, getChassisBasePortCapacity } from '../hardwareUtils';
+import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
@@ -190,7 +190,7 @@ export function validateConfiguration(
       if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) totalQsfpCages -= opt.qty;
     });
 
-    totalSfpCages += numBreakouts * 4;
+    totalSfpCages = Math.min(totalSfpCages + numBreakouts * 4, getMaxFanoutSfpPorts(model));
 
     if (installedSfp > totalSfpCages) {
       errors.push({
