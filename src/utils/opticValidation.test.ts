@@ -99,5 +99,19 @@ describe('opticValidation', () => {
         expect(optics.some(o => o.startsWith(sku))).toBe(true);
       }
     });
+
+    it('BPS-HC1-D25A60/D35C60 now offer 1G/10G SFP+ optics (previously missing entirely) - the matrix\'s "Transceiver and Cable Matrices" sheet groups both alongside BPS-HC1-D25A24/PRT-HC1-X12/PRT-HC1-Q04X08 for the 1G and 10G sections on all three chassis', () => {
+      for (const chassis of ['GigaVUE-HC1', 'GigaVUE-HC1-Plus', 'GigaVUE-HCT']) {
+        for (const board of ['BPS-HC1-D25A60', 'BPS-HC1-D35C60']) {
+          const optics = boardOptics(chassis, board);
+          expect(optics.length, `${chassis} ${board} has no supported optics`).toBeGreaterThan(0);
+          for (const sku of ['SFP-501', 'SFP-502', 'SFP-503', 'SFP-531', 'SFP-532', 'SFP-533', 'SFP-534']) {
+            expect(optics.some(o => o.startsWith(sku)), `${chassis} ${board} missing ${sku}`).toBe(true);
+          }
+          // 1G/10G only per the matrix - no 25G support like PRT-HC1-Q04X08 has on HC1-Plus/HCT
+          expect(optics.some(o => o.includes('25G'))).toBe(false);
+        }
+      }
+    });
   });
 });
