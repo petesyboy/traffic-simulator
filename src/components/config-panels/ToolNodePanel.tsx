@@ -3,6 +3,7 @@ import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { formatBytes } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
+import { MetadataEventViewer } from '../MetadataEventViewer';
 
 interface ToolNodePanelProps {
   node: CustomNode;
@@ -200,6 +201,10 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {(isMetadataTool || isStorageTool) && (
+        <MetadataEventViewer selectedNode={node} />
       )}
     </>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { ACTION_TYPES, isMetadataAction, isDedupAction } from '../../constants/nodeTypes';
 import { FormGroup } from './LiveMetrics';
+import { MetadataEventViewer } from '../MetadataEventViewer';
 
 interface GigaSmartPanelProps {
   node: CustomNode;
@@ -113,6 +114,7 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
               Specifies the metadata output traffic size as a percentage of input traffic (typically 1% to 6%).
             </div>
           </FormGroup>
+          <MetadataEventViewer selectedNode={node} />
         </>
       )}
 
