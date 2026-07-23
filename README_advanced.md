@@ -55,13 +55,21 @@ To ensure proper hardware connectivity, the simulator performs real-time interfa
 
 ## 4. Power Supply & Regional Settings
 
-When a physical chassis is selected, configure power supply settings:
+When a physical chassis or active TAP is selected, configure power supply and regional settings:
 
-1. **AC Power**:
-   - Automatically suggests power cords matching the configured **Project Region** (US, EU, UK).
-2. **DC Power**:
-   - Suggests DC wiring terminals instead of regional wall cords.
+1. **Regional Flag Selection**:
+   - Click the flag icon in the top header menu to switch between **US**, **EU**, and **UK** deployment regions.
+   - Changing the region automatically updates the default AC power cord SKUs across all appliances and active TAPs in the project:
+     - **US**: `PCD-00A21` (US Power Cord)
+     - **EU**: `PCD-00A23` (EU Power Cord)
+     - **UK**: `PCD-00A25` (UK Power Cord)
+2. **AC Power**:
+   - Automatically assigns power cords matching the active **Project Region**.
+3. **DC Power**:
+   - Assigns DC wiring terminals instead of regional wall cords.
    - Displays a warning reminder if DC configuration is selected: *"DC wiring must be terminated by a certified electrician."*
+4. **Active TAP Power & Battery Accessories**:
+   - Active TAPs (such as `G-TAP A-SF2` and `G-TAP A-TX2`) support configuring redundant power supply bricks (`PBK-GTA21`), battery backup modules (`BAT-GTA20`), and extra regional power cords directly in the chassis configuration panel.
 
 ---
 
@@ -76,5 +84,16 @@ When a physical chassis is selected, configure power supply settings:
 
 ---
 
-## 6. Presentation Focus Mode
+## 6. Solution Management & Browser Storage
+
+1. **Solution Naming**:
+   - Click the solution title in the top-left corner of the header bar (which defaults to `"Untitled Solution"` or custom project title).
+   - Type in your desired solution name to label the active topology layout.
+2. **Saving to Browser**:
+   - Click the **Save** button or save slot option in the top control bar to save the complete canvas topology, node configurations, and custom solution name directly to your browser's local storage for future retrieval and editing.
+
+---
+
+## 7. Presentation Focus Mode
+
 Double-clicking any node on the canvas highlights it with a bright, pulsing orange halo (`.node-presentation-glow`). This allows presenters to draw focus to specific layout entities during meetings. Double-clicking again or clicking the background canvas clears the glow.
