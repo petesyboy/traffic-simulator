@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { CustomNode } from '../store/store';
 import { useStore } from '../store/store';
 
@@ -135,6 +135,57 @@ const THREAT_RATE = 0.2;
 const BASE_INTERVAL_MS = 900;
 const THREAT_PAUSE_MS = 3200;
 
+/**
+ * FLIP-animates rows as new records push older ones down, instead of them
+ * jumping straight to their new position. When the feed pauses (a threat
+ * event holding at the top), nothing moves — which is what actually makes
+ * the pause read as "stop and look at this line" rather than more jitter.
+ */
+function useFlipRows(events: EventRecord[]) {
+  const rowsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
+
+  useLayoutEffect(() => {
+    // Clear any transform left over from an animation that never got to finish (e.g. the
+    // tab was backgrounded mid-transition) so positions below are measured from each row's
+    // true, untransformed layout position rather than a stale offset.
+    rowsRef.current.forEach((el) => {
+      el.style.transition = 'none';
+      el.style.transform = '';
+    });
+
+    const nextRects = new Map<string, DOMRect>();
+    rowsRef.current.forEach((el, id) => nextRects.set(id, el.getBoundingClientRect()));
+
+    rowsRef.current.forEach((el, id) => {
+      const prevRect = prevRectsRef.current.get(id);
+      const nextRect = nextRects.get(id);
+      if (!prevRect || !nextRect) return;
+      const deltaY = prevRect.top - nextRect.top;
+      if (Math.abs(deltaY) > 0.5) {
+        el.style.transform = `translateY(${deltaY}px)`;
+      }
+    });
+
+    // Force a reflow so the "invert" transforms above are committed before animating away from them.
+    void rowsRef.current.values().next().value?.offsetHeight;
+
+    requestAnimationFrame(() => {
+      rowsRef.current.forEach((el) => {
+        el.style.transition = 'transform 420ms cubic-bezier(0.22, 1, 0.36, 1)';
+        el.style.transform = '';
+      });
+    });
+
+    prevRectsRef.current = nextRects;
+  }, [events]);
+
+  return (id: string) => (el: HTMLDivElement | null) => {
+    if (el) rowsRef.current.set(id, el);
+    else rowsRef.current.delete(id);
+  };
+}
+
 export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ selectedNode }) => {
   const isRunning = useStore(state => state.isRunning);
   const updateNodeData = useStore(state => state.updateNodeData);
@@ -144,6 +195,8 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [isHoveringLog, setIsHoveringLog] = useState(false);
+  const setCompactRowRef = useFlipRows(events);
+  const setEnlargedRowRef = useFlipRows(events);
 
   const handleFormatChange = (newFormat: MetadataFormat) => {
     setActiveFormat(newFormat);
@@ -252,12 +305,14 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
             ) : events.map(evt => (
               <div
                 key={evt.id}
+                ref={setCompactRowRef(evt.id)}
                 style={{
                   display: 'flex', gap: '4px', lineHeight: '1.3', fontSize: '9px',
                   background: evt.isThreat ? 'rgba(239, 83, 80, 0.12)' : 'transparent',
                   borderLeft: evt.isThreat ? '2px solid #ef5350' : '2px solid transparent',
                   padding: evt.isThreat ? '1px 2px' : 0,
                   borderRadius: '2px',
+                  animation: 'fadeSlideIn 320ms ease-out',
                 }}
               >
                 <span style={{ color: evt.isThreat ? '#ef5350' : '#ff9800', flexShrink: 0, fontWeight: evt.isThreat ? 700 : 400 }}>{evt.timestamp}</span>
@@ -299,12 +354,14 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
             {events.map(evt => (
               <div
                 key={evt.id}
+                ref={setEnlargedRowRef(evt.id)}
                 style={{
                   display: 'flex', gap: '10px', lineHeight: '1.5', fontSize: '14px',
                   background: evt.isThreat ? 'rgba(239, 83, 80, 0.14)' : 'transparent',
                   borderLeft: evt.isThreat ? '3px solid #ef5350' : '3px solid transparent',
                   padding: evt.isThreat ? '4px 8px' : '0 8px',
                   borderRadius: '4px',
+                  animation: 'fadeSlideIn 320ms ease-out',
                 }}
               >
                 <span style={{ color: evt.isThreat ? '#ef5350' : '#ff9800', flexShrink: 0, fontWeight: evt.isThreat ? 700 : 400 }}>{evt.timestamp}</span>
