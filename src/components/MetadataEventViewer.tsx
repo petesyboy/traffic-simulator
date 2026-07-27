@@ -129,6 +129,12 @@ const THREAT_TEMPLATES = [
 // Fraction of generated events drawn from THREAT_TEMPLATES instead of normal traffic.
 const THREAT_RATE = 0.2;
 
+// Base pace between events, and the longer pause held after a threat event
+// fires so it stays on screen long enough to actually spot before the next
+// record lands — then the feed ramps back up to its normal pace.
+const BASE_INTERVAL_MS = 900;
+const THREAT_PAUSE_MS = 3200;
+
 export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ selectedNode }) => {
   const isRunning = useStore(state => state.isRunning);
   const updateNodeData = useStore(state => state.updateNodeData);
@@ -160,7 +166,9 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
 
   useEffect(() => {
     if (!isRunning) return;
-    const interval = setInterval(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
       const isThreat = Math.random() < THREAT_RATE;
       const pool = isThreat ? THREAT_TEMPLATES : SAMPLE_TEMPLATES;
       const tmpl = pool[Math.floor(Math.random() * pool.length)];
@@ -183,8 +191,15 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
         severity,
         threatLabel: isThreat ? (tmpl as typeof THREAT_TEMPLATES[number]).threatLabel : undefined
       }, ...prev.slice(0, 8)]);
-    }, 350);
-    return () => clearInterval(interval);
+
+      // Hold on a threat event longer before generating the next record,
+      // then ease back to the normal pace — rather than a flat interval
+      // that can bury a red row before it's been noticed.
+      timeoutId = setTimeout(tick, isThreat ? THREAT_PAUSE_MS : BASE_INTERVAL_MS);
+    };
+
+    timeoutId = setTimeout(tick, BASE_INTERVAL_MS);
+    return () => clearTimeout(timeoutId);
   }, [isRunning]);
 
   return (
