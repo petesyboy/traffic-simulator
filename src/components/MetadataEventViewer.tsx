@@ -11,10 +11,13 @@ export type MetadataFormat = 'JSON' | 'CEF' | 'IPFIX';
 interface EventRecord {
   id: string;
   timestamp: string;
-  type: 'HTTP' | 'DNS' | 'TLS' | 'DB' | 'SIP';
+  type: 'HTTP' | 'DNS' | 'TLS' | 'DB' | 'SIP' | 'SSH' | 'C2' | 'EXFIL';
   jsonDoc: Record<string, any>;
   cefStr: string;
   ipfixStr: string;
+  isThreat?: boolean;
+  severity?: 'critical' | 'high';
+  threatLabel?: string;
 }
 
 const SAMPLE_TEMPLATES = [
@@ -70,6 +73,62 @@ const SAMPLE_TEMPLATES = [
   }
 ];
 
+// Security-relevant events, mixed in at a lower rate and flagged/highlighted
+// differently from ordinary application traffic (see isThreat below).
+const THREAT_TEMPLATES = [
+  {
+    type: 'SSH' as const,
+    app: 'SSH Remote Login',
+    uri: 'root@203.0.113.44 (Unrecognised Geo: RU)',
+    method: 'LOGIN',
+    status: 'AUTH_SUCCESS',
+    domain: 'external-untrusted',
+    bytes: 2100,
+    latency: 180,
+    severity: 'critical' as const,
+    threatLabel: 'Suspicious SSH Login — Root, Unrecognised Geo'
+  },
+  {
+    type: 'SSH' as const,
+    app: 'SSH Brute Force',
+    uri: 'admin@203.0.113.44 (x14 attempts / 30s)',
+    method: 'LOGIN',
+    status: 'AUTH_FAILED',
+    domain: 'external-untrusted',
+    bytes: 340,
+    latency: 40,
+    severity: 'high' as const,
+    threatLabel: 'SSH Brute-Force Attempt Detected'
+  },
+  {
+    type: 'C2' as const,
+    app: 'Suspected C2 Beacon',
+    uri: 'beacon.evil-domain.net/checkin',
+    method: 'POST',
+    status: 200,
+    domain: 'beacon.evil-domain.net',
+    bytes: 512,
+    latency: 90,
+    severity: 'critical' as const,
+    threatLabel: 'Possible C2 Beacon — Periodic Callback Pattern'
+  },
+  {
+    type: 'EXFIL' as const,
+    app: 'Unusual Data Transfer',
+    uri: '/backup/customer_records.zip',
+    method: 'PUT',
+    status: 200,
+    domain: 'unknown-external-host',
+    bytes: 480000000,
+    latency: 3200,
+    severity: 'high' as const,
+    threatLabel: 'Large Outbound Transfer — Possible Data Exfiltration'
+  }
+];
+
+// Fraction of generated events drawn from THREAT_TEMPLATES instead of normal traffic.
+const THREAT_RATE = 0.2;
+
 export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ selectedNode }) => {
   const isRunning = useStore(state => state.isRunning);
   const updateNodeData = useStore(state => state.updateNodeData);
@@ -87,13 +146,14 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
 
   // Compact single-line summary for each event
   const formatOneLiner = (evt: EventRecord): string => {
+    const prefix = evt.isThreat ? `🚨 ${evt.threatLabel} — ` : '';
     if (activeFormat === 'JSON') {
-      return `{"${evt.type}","${evt.jsonDoc.application}","${evt.jsonDoc.src_ip}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}","${evt.jsonDoc.uri_query}",${evt.jsonDoc.response_code},${evt.jsonDoc.latency_ms}ms}`;
+      return `${prefix}{"${evt.type}","${evt.jsonDoc.application}","${evt.jsonDoc.src_ip}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}","${evt.jsonDoc.uri_query}",${evt.jsonDoc.response_code},${evt.jsonDoc.latency_ms}ms}`;
     }
     if (activeFormat === 'CEF') {
-      return `CEF:0|Gigamon|AMI|${evt.type}|src=${evt.jsonDoc.src_ip} dst=${evt.jsonDoc.dst_ip} req=${evt.jsonDoc.uri_query} rc=${evt.jsonDoc.response_code}`;
+      return `${prefix}CEF:0|Gigamon|AMI|${evt.type}|src=${evt.jsonDoc.src_ip} dst=${evt.jsonDoc.dst_ip} req=${evt.jsonDoc.uri_query} rc=${evt.jsonDoc.response_code}`;
     }
-    return `IPFIX|${evt.jsonDoc.src_ip}:${evt.jsonDoc.src_port}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}|${evt.jsonDoc.application}|${evt.jsonDoc.bytes_sent}B`;
+    return `${prefix}IPFIX|${evt.jsonDoc.src_ip}:${evt.jsonDoc.src_port}→${evt.jsonDoc.dst_ip}:${evt.jsonDoc.dst_port}|${evt.jsonDoc.application}|${evt.jsonDoc.bytes_sent}B`;
   };
 
   const fmtColor = activeFormat === 'JSON' ? 'text-cyan-300' : activeFormat === 'CEF' ? 'text-amber-300' : 'text-blue-300';
@@ -101,20 +161,27 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(() => {
-      const tmpl = SAMPLE_TEMPLATES[Math.floor(Math.random() * SAMPLE_TEMPLATES.length)];
+      const isThreat = Math.random() < THREAT_RATE;
+      const pool = isThreat ? THREAT_TEMPLATES : SAMPLE_TEMPLATES;
+      const tmpl = pool[Math.floor(Math.random() * pool.length)];
       const now = new Date();
       const sub = Math.floor(Math.random() * 254) + 1;
-      const srcIp = `192.168.${sub}.${Math.floor(Math.random() * 200) + 10}`;
+      const srcIp = isThreat ? (tmpl as typeof THREAT_TEMPLATES[number]).uri.match(/[\d.]+/)?.[0] || `203.0.113.${Math.floor(Math.random() * 254) + 1}` : `192.168.${sub}.${Math.floor(Math.random() * 200) + 10}`;
       const dstIp = `10.0.${sub}.${Math.floor(Math.random() * 100) + 5}`;
       const srcPort = Math.floor(Math.random() * 40000) + 1024;
-      const dstPort = tmpl.type === 'HTTP' || tmpl.type === 'TLS' ? 443 : tmpl.type === 'DNS' ? 53 : tmpl.type === 'DB' ? 5432 : 5060;
+      const dstPort = tmpl.type === 'HTTP' || tmpl.type === 'TLS' || tmpl.type === 'C2' || tmpl.type === 'EXFIL' ? 443 : tmpl.type === 'DNS' ? 53 : tmpl.type === 'DB' ? 5432 : tmpl.type === 'SSH' ? 22 : 5060;
+      const severity = isThreat ? (tmpl as typeof THREAT_TEMPLATES[number]).severity : undefined;
+      const cefSeverity = severity === 'critical' ? 10 : severity === 'high' ? 8 : 3;
       setEvents(prev => [{
         id: Math.random().toString(36).slice(2),
         timestamp: now.toLocaleTimeString(),
         type: tmpl.type,
         jsonDoc: { event_type: `${tmpl.type}_EVENT`, application: tmpl.app, src_ip: srcIp, src_port: srcPort, dst_ip: dstIp, dst_port: dstPort, uri_query: tmpl.uri, http_method: tmpl.method, response_code: tmpl.status, latency_ms: tmpl.latency, bytes_sent: tmpl.bytes },
-        cefStr: `CEF:0|Gigamon|AMI|6.4|${tmpl.type}|${tmpl.app}|3|src=${srcIp} dst=${dstIp} request=${tmpl.uri} outcome=${tmpl.status}`,
-        ipfixStr: `IPFIX|${srcIp}:${srcPort}→${dstIp}:${dstPort}|${tmpl.app}|${tmpl.bytes}B`
+        cefStr: `CEF:0|Gigamon|AMI|6.4|${tmpl.type}|${tmpl.app}|${cefSeverity}|src=${srcIp} dst=${dstIp} request=${tmpl.uri} outcome=${tmpl.status}`,
+        ipfixStr: `IPFIX|${srcIp}:${srcPort}→${dstIp}:${dstPort}|${tmpl.app}|${tmpl.bytes}B`,
+        isThreat,
+        severity,
+        threatLabel: isThreat ? (tmpl as typeof THREAT_TEMPLATES[number]).threatLabel : undefined
       }, ...prev.slice(0, 8)]);
     }, 350);
     return () => clearInterval(interval);
@@ -168,9 +235,18 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
                 {isRunning ? 'Waiting for events…' : 'Press ▶ to start'}
               </div>
             ) : events.map(evt => (
-              <div key={evt.id} style={{ display: 'flex', gap: '4px', lineHeight: '1.3', fontSize: '9px' }}>
-                <span style={{ color: '#ff9800', flexShrink: 0 }}>{evt.timestamp}</span>
-                <span className={fmtColor} style={{ wordBreak: 'break-all' }}>{formatOneLiner(evt)}</span>
+              <div
+                key={evt.id}
+                style={{
+                  display: 'flex', gap: '4px', lineHeight: '1.3', fontSize: '9px',
+                  background: evt.isThreat ? 'rgba(239, 83, 80, 0.12)' : 'transparent',
+                  borderLeft: evt.isThreat ? '2px solid #ef5350' : '2px solid transparent',
+                  padding: evt.isThreat ? '1px 2px' : 0,
+                  borderRadius: '2px',
+                }}
+              >
+                <span style={{ color: evt.isThreat ? '#ef5350' : '#ff9800', flexShrink: 0, fontWeight: evt.isThreat ? 700 : 400 }}>{evt.timestamp}</span>
+                <span className={evt.isThreat ? '' : fmtColor} style={{ wordBreak: 'break-all', color: evt.isThreat ? '#ff8a80' : undefined, fontWeight: evt.isThreat ? 700 : 400 }}>{formatOneLiner(evt)}</span>
               </div>
             ))}
           </div>
@@ -206,9 +282,18 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
             {events.map(evt => (
-              <div key={evt.id} style={{ display: 'flex', gap: '10px', lineHeight: '1.5', fontSize: '14px' }}>
-                <span style={{ color: '#ff9800', flexShrink: 0 }}>{evt.timestamp}</span>
-                <span className={fmtColor} style={{ wordBreak: 'break-all' }}>{formatOneLiner(evt)}</span>
+              <div
+                key={evt.id}
+                style={{
+                  display: 'flex', gap: '10px', lineHeight: '1.5', fontSize: '14px',
+                  background: evt.isThreat ? 'rgba(239, 83, 80, 0.14)' : 'transparent',
+                  borderLeft: evt.isThreat ? '3px solid #ef5350' : '3px solid transparent',
+                  padding: evt.isThreat ? '4px 8px' : '0 8px',
+                  borderRadius: '4px',
+                }}
+              >
+                <span style={{ color: evt.isThreat ? '#ef5350' : '#ff9800', flexShrink: 0, fontWeight: evt.isThreat ? 700 : 400 }}>{evt.timestamp}</span>
+                <span className={evt.isThreat ? '' : fmtColor} style={{ wordBreak: 'break-all', color: evt.isThreat ? '#ff8a80' : undefined, fontWeight: evt.isThreat ? 700 : 400 }}>{formatOneLiner(evt)}</span>
               </div>
             ))}
           </div>
