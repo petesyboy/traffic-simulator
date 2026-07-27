@@ -78,6 +78,7 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
   const [activeFormat, setActiveFormat] = useState<MetadataFormat>(format);
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [isHoveringLog, setIsHoveringLog] = useState(false);
 
   const handleFormatChange = (newFormat: MetadataFormat) => {
     setActiveFormat(newFormat);
@@ -157,7 +158,11 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
           <span style={{ fontSize: '8px' }}>{isRunning ? '● LIVE' : '○ IDLE'}</span>
         </div>
         {expanded && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '100px', overflowY: 'auto' }}>
+          <div
+            onMouseEnter={() => setIsHoveringLog(true)}
+            onMouseLeave={() => setIsHoveringLog(false)}
+            style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '100px', overflowY: 'auto' }}
+          >
             {events.length === 0 ? (
               <div style={{ color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '4px 0', fontSize: '9px' }}>
                 {isRunning ? 'Waiting for events…' : 'Press ▶ to start'}
@@ -171,6 +176,44 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
           </div>
         )}
       </div>
+
+      {/* Enlarged read-out — shown on hover so the tiny scrolling log becomes legible */}
+      {expanded && isHoveringLog && events.length > 0 && (
+        <div
+          onMouseEnter={() => setIsHoveringLog(true)}
+          onMouseLeave={() => setIsHoveringLog(false)}
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(720px, 90vw)',
+            maxHeight: '70vh',
+            background: '#0d1117',
+            border: '1px solid #ff9800',
+            borderRadius: '8px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            padding: '14px 16px',
+            zIndex: 2000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ color: '#ff9800', fontWeight: 700, fontSize: '15px' }}>📄 Event Documents — {activeFormat}</span>
+            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{isRunning ? '● LIVE' : '○ IDLE'}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
+            {events.map(evt => (
+              <div key={evt.id} style={{ display: 'flex', gap: '10px', lineHeight: '1.5', fontSize: '14px' }}>
+                <span style={{ color: '#ff9800', flexShrink: 0 }}>{evt.timestamp}</span>
+                <span className={fmtColor} style={{ wordBreak: 'break-all' }}>{formatOneLiner(evt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
