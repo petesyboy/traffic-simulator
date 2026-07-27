@@ -213,6 +213,16 @@
   justify-content: center;
 }
 
+.header-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.header-btn:disabled:hover {
+  background-color: #222222;
+  border-color: var(--border-color);
+}
+
 .sim-btn {
   height: 26px;
   background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);

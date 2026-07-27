@@ -72,7 +72,10 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
       nodes: syncedNodes,
       edges: uniqueEdges,
       trafficStreams: trafficStreams || get().trafficStreams,
-      fitViewTrigger: get().fitViewTrigger + 1
+      fitViewTrigger: get().fitViewTrigger + 1,
+      // Undoing "into" a previously-loaded, unrelated topology isn't meaningful.
+      historyPast: [],
+      historyFuture: [],
     };
 
     if (settings) {

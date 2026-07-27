@@ -24,6 +24,8 @@ export {
   GearIcon,
   RefreshIcon,
   TrashIcon,
+  UndoIcon,
+  RedoIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';

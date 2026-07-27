@@ -5,6 +5,7 @@ import { createSimulationSlice } from './simulationSlice';
 import { createTrafficSlice } from './trafficSlice';
 import { createSettingsSlice } from './settingsSlice';
 import { createUISlice } from './uiSlice';
+import { createHistorySlice } from './historySlice';
 
 export * from './types';
 export * from './storeHelpers';
@@ -15,4 +16,5 @@ export const useStore = create<RFState>()((...a) => ({
   ...createTrafficSlice(...a),
   ...createSettingsSlice(...a),
   ...createUISlice(...a),
+  ...createHistorySlice(...a),
 }));

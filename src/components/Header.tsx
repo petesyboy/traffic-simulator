@@ -18,7 +18,7 @@ import {
   ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal,
   PlayIcon, PauseIcon, CopyIcon, ClipboardIcon, GridIcon, ServerRackIcon,
   PresentationIcon, StopIcon, CameraIcon, SaveIcon, FolderOpenIcon,
-  GearIcon, RefreshIcon, TrashIcon,
+  GearIcon, RefreshIcon, TrashIcon, UndoIcon, RedoIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -57,6 +57,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const duplicateSolution = useStore((state) => state.duplicateSolution);
   const isTradeShowDemoActive = useStore((state) => state.isTradeShowDemoActive);
   const setTradeShowDemoActive = useStore((state) => state.setTradeShowDemoActive);
+  const canUndo = useStore((state) => state.historyPast.length > 0);
+  const canRedo = useStore((state) => state.historyFuture.length > 0);
+  const undo = useStore((state) => state.undo);
+  const redo = useStore((state) => state.redo);
 
   // Local UI state for modals
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -247,6 +251,23 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             {/* ── Group 2: Project / View ── */}
             <div className="control-group">
+              <button
+                className="header-btn icon-only"
+                onClick={undo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z)"
+              >
+                <UndoIcon />
+              </button>
+              <button
+                className="header-btn icon-only"
+                onClick={redo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <RedoIcon />
+              </button>
+
               {nodes.length > 0 && (
                 <button
                   className="header-btn header-btn--cyan"

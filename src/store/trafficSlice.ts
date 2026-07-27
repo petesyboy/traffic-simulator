@@ -23,7 +23,7 @@ export const createTrafficSlice: StateCreator<RFState, [], [], TrafficSlice> = (
     }
   })(),
 
-  addTrafficStream: (stream) => set({ trafficStreams: [...get().trafficStreams, stream] }),
+  addTrafficStream: (stream) => { get().pushHistory(); set({ trafficStreams: [...get().trafficStreams, stream] }); },
 
   updateTrafficStream: (id, stream) => {
     set({
@@ -34,6 +34,7 @@ export const createTrafficSlice: StateCreator<RFState, [], [], TrafficSlice> = (
   },
 
   deleteTrafficStream: (id) => {
+    get().pushHistory();
     set({
       trafficStreams: get().trafficStreams.filter((s) => s.id !== id),
     });

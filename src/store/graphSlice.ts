@@ -56,6 +56,8 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   fitViewTrigger: 0,
 
   onNodesChange: (changes) => {
+    if (changes.some((c) => c.type === 'remove')) get().pushHistory();
+
     let nextNodes = applyNodeChanges<CustomNode>(changes, get().nodes);
     const deletedNodeIds = changes
       .filter((c) => c.type === 'remove')
@@ -95,6 +97,8 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   },
 
   onEdgesChange: (changes) => {
+    if (changes.some((c) => c.type === 'remove')) get().pushHistory();
+
     const nextEdges = applyEdgeChanges(changes, get().edges);
     let syncedNodes = syncSplunkLabels(get().nodes, nextEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, nextEdges);
@@ -173,13 +177,14 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     );
     if (isDuplicate) return;
 
+    get().pushHistory();
     const nextEdges = addEdge({ ...connection, id: `e-${uuidv4()}` }, get().edges);
     set({ edges: nextEdges, nodes: syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, nextEdges), nextEdges) });
   },
 
   setEdges: (edges) => set({ edges, nodes: syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, edges), edges) }),
   setDraggedNodeType: (type) => set({ draggedNodeType: type }),
-  addNode: (node) => set({ nodes: [...get().nodes, node] }),
+  addNode: (node) => { get().pushHistory(); set({ nodes: [...get().nodes, node] }); },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
   updateNodeData: (nodeId, data) => {
@@ -191,11 +196,15 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
   setExportDiagramMode: (val) => set({ exportDiagramMode: val }),
-  snapAllNodesToGrid: () => set({ nodes: get().nodes.map((node) => ({ ...node, position: { x: Math.round(node.position.x / 15) * 15, y: Math.round(node.position.y / 15) * 15 } })) }),
-  clearCanvas: () => set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], encryptedEdges: [], decryptedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 }),
+  snapAllNodesToGrid: () => { get().pushHistory(); set({ nodes: get().nodes.map((node) => ({ ...node, position: { x: Math.round(node.position.x / 15) * 15, y: Math.round(node.position.y / 15) * 15 } })) }); },
+  clearCanvas: () => {
+    get().pushHistory();
+    set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], encryptedEdges: [], decryptedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 });
+  },
   groupSelectedNodes: () => {
     const selectedNodes = get().nodes.filter((n) => n.selected && n.type === NODE_TYPES.INPUT);
     if (selectedNodes.length < 2) return;
+    get().pushHistory();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     selectedNodes.forEach((node) => { const { x, y } = node.position; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
     const pX = minX - 25, pY = minY - 45, gId = `group-${uuidv4()}`;
@@ -206,6 +215,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   ungroupGroup: (groupId) => {
     const parentNode = get().nodes.find((n) => n.id === groupId);
     if (!parentNode) return;
+    get().pushHistory();
     const { x: pX, y: pY } = parentNode.position;
     let updatedNodes = get().nodes.map((node) => node.parentId === groupId ? { ...node, parentId: undefined, position: { x: node.position.x + pX, y: node.position.y + pY }, extent: undefined } : node).filter((n) => n.id !== groupId);
     const updatedEdges = get().edges.filter((edge) => edge.source !== groupId && edge.target !== groupId);
@@ -213,6 +223,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   },
   duplicateSolution: (newSiteName) => {
     const result = performDuplicateSolution(newSiteName, get().nodes, get().edges, get().trafficStreams);
-    if (result) set({ nodes: result.nodes, edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
+    if (result) {
+      get().pushHistory();
+      set({ nodes: result.nodes, edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
+    }
   },
 });

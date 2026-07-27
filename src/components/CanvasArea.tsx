@@ -47,7 +47,7 @@ const CanvasArea: React.FC = () => {
     showGrid, snapToGrid, snapAllNodesToGrid, exportDiagramMode,
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
     addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger,
-    advancedMode, updateNodeData, setEdges
+    advancedMode, updateNodeData, setEdges, pushHistory
   } = useStore();
   
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -266,6 +266,10 @@ const CanvasArea: React.FC = () => {
   }, [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData, edges, setEdges]);
 
   const onSelectionChange = useCallback(({ nodes }: any) => setSelectedNodeId(nodes.length === 1 ? nodes[0].id : null), [setSelectedNodeId]);
+
+  // Checkpoint once at the start of a drag gesture (not per-pixel) so undo reverts
+  // the whole move in one step rather than only its last increment.
+  const onNodeDragStart = useCallback(() => pushHistory(), [pushHistory]);
   
   const selectedInputCount = nodes.filter(n => n.selected && n.type === 'inputNode').length;
   const selectedGroupCount = nodes.filter(n => n.selected && n.type === 'groupNode').length;
@@ -277,7 +281,7 @@ const CanvasArea: React.FC = () => {
         nodes={nodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
-        onSelectionChange={onSelectionChange}
+        onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart}
         onNodeDoubleClick={(_, node) => { const s = useStore.getState(); s.setGlowingNodeId(s.glowingNodeId === node.id ? null : node.id); }}
         onPaneClick={() => useStore.getState().setGlowingNodeId(null)}
         deleteKeyCode={['Backspace', 'Delete']} nodeOrigin={[0.5, 0.5]} snapToGrid={snapToGrid} snapGrid={[15, 15]}

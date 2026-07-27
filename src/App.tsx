@@ -412,6 +412,8 @@ function App() {
   const restoreState     = useStore((state) => state.restoreState);
   const toggleSimulation = useStore((state) => state.toggleSimulation);
   const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
+  const undo = useStore((state) => state.undo);
+  const redo = useStore((state) => state.redo);
 
   // State for export, moved up from SaveSlotModal
   const nodes               = useStore((s) => s.nodes);
@@ -526,13 +528,25 @@ function App() {
         setModalMode('save');
       }
 
+      if (isCtrl && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        // Ctrl/Cmd+Z → undo
+        e.preventDefault();
+        undo();
+      }
+
+      if (isCtrl && ((e.shiftKey && e.key.toLowerCase() === 'z') || e.key.toLowerCase() === 'y')) {
+        // Ctrl/Cmd+Shift+Z, or Ctrl+Y → redo
+        e.preventDefault();
+        redo();
+      }
+
       if (e.key === ' ' && !isCtrl) {
         // Space → toggle simulation run/pause
         e.preventDefault();
         toggleSimulation();
       }
     },
-    [toggleSimulation]
+    [toggleSimulation, undo, redo]
   );
 
   useEffect(() => {

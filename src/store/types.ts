@@ -219,6 +219,12 @@ export type AnyNodeData =
 
 export type CustomNode = Node<AnyNodeData>;
 
+export interface HistorySnapshot {
+  nodes: CustomNode[];
+  edges: Edge[];
+  trafficStreams: TrafficStream[];
+}
+
 export interface RFState {
   // Graph State
   nodes: CustomNode[];
@@ -329,4 +335,12 @@ export interface RFState {
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
+
+  // History (Undo/Redo)
+  historyPast: HistorySnapshot[];
+  historyFuture: HistorySnapshot[];
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
 }

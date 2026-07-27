@@ -120,6 +120,20 @@ export const RefreshIcon: React.FC<IconProps> = ({ size = 14 }) => (
   </svg>
 );
 
+export const UndoIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path d="M7 8H16.5A4.5 4.5 0 0121 12.5v0A4.5 4.5 0 0116.5 17H10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10.5 4.5L7 8l3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const RedoIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path d="M17 8H7.5A4.5 4.5 0 003 12.5v0A4.5 4.5 0 007.5 17H14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M13.5 4.5L17 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const TrashIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
     <path d="M5 7h14M9.5 7V5a1 1 0 011-1h3a1 1 0 011 1v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
