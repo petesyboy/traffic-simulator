@@ -19,14 +19,17 @@ const ConfigPanel: React.FC = () => {
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
   const isRunning      = useStore((state) => state.isRunning);
   const panelTextScale = useStore((state) => state.panelTextScale);
+  const advancedMode   = useStore((state) => state.advancedMode);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    if (selectedNodeId) {
+    // In Standard (simple) mode, respect a manual collapse — only Advanced
+    // Mode auto-expands the panel when a new node is selected.
+    if (selectedNodeId && advancedMode) {
       setIsCollapsed(false);
     }
-  }, [selectedNodeId]);
+  }, [selectedNodeId, advancedMode]);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
