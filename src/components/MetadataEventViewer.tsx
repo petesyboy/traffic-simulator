@@ -198,6 +198,51 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
   const setCompactRowRef = useFlipRows(events);
   const setEnlargedRowRef = useFlipRows(events);
 
+  // Anchor rect of the small compact log box, captured on hover, so the
+  // enlarged read-out can be placed right next to it (instead of dead
+  // centre) and connector lines can be drawn between the two.
+  const logBoxRef = useRef<HTMLDivElement>(null);
+  const enlargedPanelRef = useRef<HTMLDivElement>(null);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const [enlargedRect, setEnlargedRect] = useState<DOMRect | null>(null);
+
+  const captureAnchorRect = () => {
+    if (logBoxRef.current) setAnchorRect(logBoxRef.current.getBoundingClientRect());
+  };
+
+  useLayoutEffect(() => {
+    if (expanded && isHoveringLog && enlargedPanelRef.current) {
+      setEnlargedRect(enlargedPanelRef.current.getBoundingClientRect());
+    } else {
+      setEnlargedRect(null);
+    }
+  }, [expanded, isHoveringLog, events]);
+
+  // Prefer placing the enlarged panel just to the left of the anchor (the
+  // config panel lives on the right edge of the screen); fall back to
+  // stacking it above/below the anchor if there isn't enough horizontal room.
+  const GAP = 22;
+  const PANEL_WIDTH = 480;
+  const MIN_USABLE_WIDTH = 320;
+  let placement: { left: number; top: number; width: number; maxHeight: number; side: 'left' | 'stack' } | null = null;
+  if (anchorRect) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const spaceLeft = anchorRect.left - GAP - 16;
+    if (spaceLeft >= MIN_USABLE_WIDTH) {
+      const width = Math.min(PANEL_WIDTH, spaceLeft);
+      const maxHeight = Math.min(vh * 0.7, vh - 32);
+      const top = Math.min(Math.max(16, anchorRect.top - 40), Math.max(16, vh - maxHeight - 16));
+      placement = { left: anchorRect.left - GAP - width, top, width, maxHeight, side: 'left' };
+    } else {
+      const width = Math.min(560, vw - 32);
+      const maxHeight = Math.min(vh * 0.55, vh - anchorRect.bottom - GAP - 16);
+      const left = Math.min(Math.max(16, anchorRect.left + anchorRect.width / 2 - width / 2), vw - width - 16);
+      const top = maxHeight > 200 ? anchorRect.bottom + GAP : Math.max(16, anchorRect.top - Math.min(vh * 0.55, vh - 32) - GAP);
+      placement = { left, top, width, maxHeight: Math.max(maxHeight, 200), side: 'stack' };
+    }
+  }
+
   const handleFormatChange = (newFormat: MetadataFormat) => {
     setActiveFormat(newFormat);
     updateNodeData(selectedNode.id, { metadataFormat: newFormat });
@@ -294,7 +339,8 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
         </div>
         {expanded && (
           <div
-            onMouseEnter={() => setIsHoveringLog(true)}
+            ref={logBoxRef}
+            onMouseEnter={() => { captureAnchorRect(); setIsHoveringLog(true); }}
             onMouseLeave={() => setIsHoveringLog(false)}
             style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '100px', overflowY: 'auto' }}
           >
@@ -323,18 +369,67 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
         )}
       </div>
 
-      {/* Enlarged read-out — shown on hover so the tiny scrolling log becomes legible */}
-      {expanded && isHoveringLog && events.length > 0 && (
+      {/* Connector lines linking the compact log box to its enlarged magnification */}
+      {expanded && isHoveringLog && events.length > 0 && anchorRect && enlargedRect && (
+        <svg
+          style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 1999 }}
+        >
+          {(() => {
+            // Pick the pair of facing corners between the two boxes based on
+            // their actual relative position, so the lines look right whichever
+            // side the enlarged panel ends up placed on.
+            const dx = (anchorRect.left + anchorRect.width / 2) - (enlargedRect.left + enlargedRect.width / 2);
+            const dy = (anchorRect.top + anchorRect.height / 2) - (enlargedRect.top + enlargedRect.height / 2);
+            let p1, p2, a1, a2;
+            if (Math.abs(dx) >= Math.abs(dy)) {
+              if (dx > 0) {
+                p1 = { x: enlargedRect.right, y: enlargedRect.top };
+                p2 = { x: enlargedRect.right, y: enlargedRect.bottom };
+                a1 = { x: anchorRect.left, y: anchorRect.top };
+                a2 = { x: anchorRect.left, y: anchorRect.bottom };
+              } else {
+                p1 = { x: enlargedRect.left, y: enlargedRect.top };
+                p2 = { x: enlargedRect.left, y: enlargedRect.bottom };
+                a1 = { x: anchorRect.right, y: anchorRect.top };
+                a2 = { x: anchorRect.right, y: anchorRect.bottom };
+              }
+            } else if (dy > 0) {
+              p1 = { x: enlargedRect.left, y: enlargedRect.bottom };
+              p2 = { x: enlargedRect.right, y: enlargedRect.bottom };
+              a1 = { x: anchorRect.left, y: anchorRect.top };
+              a2 = { x: anchorRect.right, y: anchorRect.top };
+            } else {
+              p1 = { x: enlargedRect.left, y: enlargedRect.top };
+              p2 = { x: enlargedRect.right, y: enlargedRect.top };
+              a1 = { x: anchorRect.left, y: anchorRect.bottom };
+              a2 = { x: anchorRect.right, y: anchorRect.bottom };
+            }
+            return (
+              <>
+                <polygon
+                  points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${a2.x},${a2.y} ${a1.x},${a1.y}`}
+                  fill="rgba(255,152,0,0.06)"
+                />
+                <line x1={p1.x} y1={p1.y} x2={a1.x} y2={a1.y} stroke="#ff9800" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
+                <line x1={p2.x} y1={p2.y} x2={a2.x} y2={a2.y} stroke="#ff9800" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.7} />
+              </>
+            );
+          })()}
+        </svg>
+      )}
+
+      {/* Enlarged read-out — shown on hover so the tiny scrolling log becomes legible, anchored near the compact panel */}
+      {expanded && isHoveringLog && events.length > 0 && placement && (
         <div
+          ref={enlargedPanelRef}
           onMouseEnter={() => setIsHoveringLog(true)}
           onMouseLeave={() => setIsHoveringLog(false)}
           style={{
             position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 'min(720px, 90vw)',
-            maxHeight: '70vh',
+            top: `${placement.top}px`,
+            left: `${placement.left}px`,
+            width: `${placement.width}px`,
+            maxHeight: `${placement.maxHeight}px`,
             background: '#0d1117',
             border: '1px solid #ff9800',
             borderRadius: '8px',
