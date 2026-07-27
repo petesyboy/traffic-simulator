@@ -1,5 +1,5 @@
 import { type StateCreator } from 'zustand';
-import { type RFState, type NodeMetrics } from './types';
+import { type RFState, type NodeMetrics, type TrafficStream } from './types';
 import { syncSplunkLabels, initialNodes, initialEdges, initialTraffic } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { NODE_TYPES } from '../constants/nodeTypes';
@@ -27,7 +27,7 @@ export interface SimulationSlice {
     blockedEdges: string[],
     deliveredStreams?: string[],
     nodeDataPatches?: Record<string, Record<string, unknown>>,
-    streamPatches?: Record<string, Partial<any>>,
+    streamPatches?: Record<string, Partial<TrafficStream>>,
     uniqueEgressMbps?: number,
     encryptedEdges?: string[],
     decryptedEdges?: string[],

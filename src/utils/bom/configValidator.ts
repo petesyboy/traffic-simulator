@@ -3,7 +3,7 @@ import { type CustomNode } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
-import { resolveNodeSkus } from '../skuResolver';
+import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
 import skusMetadata from '../../constants/skus_metadata.json';
 
@@ -75,7 +75,7 @@ export function validateConfiguration(
     const label = (hwNode.data?.label as string) || model;
     
     // 1. Check Chassis/TAP SKU
-    const resolved = resolveNodeSkus(hwNode.data || {}, 'Perpetual');
+    const resolved = resolveNodeSkus((hwNode.data as HardwareNodeSkuData) || {}, 'Perpetual');
     if (resolved && resolved.hwSku) {
       checkSkuStatus(resolved.hwSku, 'Chassis/TAP', label, hwNode.id, errors);
     }
@@ -210,7 +210,7 @@ export function validateConfiguration(
       });
     }
 
-    const apps = (chassis.data?.gigaSmartApps as any[]) || [];
+    const apps = (chassis.data?.gigaSmartApps as { actionType: string }[]) || [];
     if (apps.length >= 2) {
       for (let i = 0; i < apps.length; i++) {
         for (let j = i + 1; j < apps.length; j++) {

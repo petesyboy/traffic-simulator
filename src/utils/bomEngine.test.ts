@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { syncOpticsOnTapConnection, validateConfiguration, setMockSkusMetadata } from './bomEngine';
-import { type CustomNode } from '../store/types';
+import { type CustomNode, type InstalledOptic } from '../store/types';
 
 describe('BOM Engine', () => {
   describe('syncOpticsOnTapConnection', () => {
@@ -25,7 +25,7 @@ describe('BOM Engine', () => {
       const hcNode = syncedNodes.find(n => n.id === 'hc-1');
       
       expect(hcNode?.data.optics).toBeDefined();
-      expect(hcNode?.data.optics?.some((o: any) => o.optic.includes('SFP-532') && o.isAutoAdded)).toBe(true);
+      expect(hcNode?.data.optics?.some((o: InstalledOptic) => o.optic.includes('SFP-532') && o.isAutoAdded)).toBe(true);
     });
 
     it('should auto-add resolved TAA copper optic SFP-501T (1G SFP Copper) when 3 copper links are tapped to TA25E', () => {
@@ -148,7 +148,7 @@ describe('BOM Engine', () => {
 
       const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
       const hcNode = syncedNodes.find(n => n.id === 'hc-1');
-      const sfpLines = hcNode?.data.optics?.filter((o: any) => o.optic.includes('SFP-532')) || [];
+      const sfpLines = hcNode?.data.optics?.filter((o: InstalledOptic) => o.optic.includes('SFP-532')) || [];
 
       expect(sfpLines.length).toBe(1);
       expect(sfpLines[0].qty).toBe(12);

@@ -26,7 +26,7 @@ export const processHardwareNode: NodeProcessor = (
         return 30;
       };
       
-      const totalLoad = node.data.gigaSmartApps.reduce((acc: number, app: any) => acc + getEngineLoad(app.actionType as string), 0);
+      const totalLoad = node.data.gigaSmartApps.reduce((acc: number, app: { actionType?: string }) => acc + getEngineLoad(app.actionType || ''), 0);
       const isMultiPass = totalLoad > 100;
       
       if (isMultiPass) {

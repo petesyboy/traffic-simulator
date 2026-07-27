@@ -7,6 +7,7 @@
 import React from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
+import type { CustomNode } from '../../store/types';
 import { formatBandwidth, formatBytes } from '../../utils/format';
 import {
   GreenCircleIcon, PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
@@ -60,7 +61,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const glowClass = useGlowClass(id);
 
-  const nodeObj = { id, type: 'toolNode', data } as any;
+  const nodeObj = { id, type: 'toolNode', position: { x: 0, y: 0 }, data } as CustomNode;
   const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes);
   
   let tooltipText = `${data.label} Configuration BOM:\n`;

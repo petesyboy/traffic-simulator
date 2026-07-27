@@ -5,7 +5,7 @@
  */
 
 import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from './nodeTypes';
-import type { CustomNode } from '../store/store';
+import type { CustomNode, TrafficStream } from '../store/store';
 import type { Edge } from '@xyflow/react';
 
 export interface PresetScenario {
@@ -13,7 +13,7 @@ export interface PresetScenario {
   description: string;
   nodes: CustomNode[];
   edges: Edge[];
-  trafficStreams: any[];
+  trafficStreams: TrafficStream[];
 }
 
 export const PRESET_SCENARIOS: PresetScenario[] = [

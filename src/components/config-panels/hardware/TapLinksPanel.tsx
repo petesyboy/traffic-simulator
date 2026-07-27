@@ -128,7 +128,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     const effectiveOptic = isBuiltInOptics ? builtInOpticLabel : opticVal;
     const effectiveToolOptic = toolOpticVal;
     const existingIndex = allocations.findIndex(a => a.optic === effectiveOptic && (a.toolOptic || a.optic) === effectiveToolOptic);
-    let newAllocations = [...allocations];
+    const newAllocations = [...allocations];
     if (existingIndex > -1) {
       newAllocations[existingIndex] = {
         ...newAllocations[existingIndex],
@@ -201,7 +201,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   };
 
   const handleRemoveAllocation = (index: number) => {
-    let newAllocations = allocations.filter((_, idx) => idx !== index);
+    const newAllocations = allocations.filter((_, idx) => idx !== index);
     const totalLinks = newAllocations.reduce((sum, a) => sum + a.qty, 0);
     updateNodeData(selectedNode.id, {
       tappedLinkAllocations: newAllocations,

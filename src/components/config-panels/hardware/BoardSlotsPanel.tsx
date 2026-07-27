@@ -14,13 +14,13 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
   const model = selectedNode.data?.model as string;
   const sku = selectedNode.data?.sku as string;
   const hwData = selectedNode.data as HardwareNodeData;
-  const installedBoards = hwData.installedBoards || {};
-  const installedOptics: InstalledOptic[] = hwData.optics || [];
+  const installedBoards = useMemo(() => hwData.installedBoards || {}, [hwData.installedBoards]);
+  const installedOptics: InstalledOptic[] = useMemo(() => hwData.optics || [], [hwData.optics]);
 
-  // Find catalogue details to get module_slots count
-  const details = useMemo(() => {
-    if (model?.includes('TA')) return (hardwareCatalogue as any).ta_series?.find((t: { sku: string }) => t.sku === sku) || null;
-    if (model?.includes('HC')) return (hardwareCatalogue as any).hc_series?.find((t: { sku: string }) => t.sku === sku) || null;
+  // Find catalogue details to get module_slots count (only hc_series entries have it)
+  const details = useMemo((): { model?: string; module_slots?: number } | null => {
+    if (model?.includes('TA')) return hardwareCatalogue.ta_series?.find((t) => t.sku === sku) || null;
+    if (model?.includes('HC')) return hardwareCatalogue.hc_series?.find((t) => t.sku === sku) || null;
     return null;
   }, [model, sku]);
 

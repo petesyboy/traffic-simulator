@@ -269,16 +269,16 @@ const Sidebar: React.FC = () => {
                     <React.Fragment key={gIdx}>
                       <div className="demo-group-label" style={{ padding: '8px 12px 2px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{group.label}</div>
                       {filteredItems.map((item, iIdx) => (
-                        <div key={iIdx} className="tree-draggable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '8px' }} draggable onDragStart={(e) => onDragStart(e, item.type, item.desc, (item as any).initial)}>
+                        <div key={iIdx} className="tree-draggable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '8px' }} draggable onDragStart={(e) => onDragStart(e, item.type, item.desc, (item as { initial?: Record<string, unknown> }).initial)}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <item.icon size={18} />
                             <span>{item.label}</span>
                           </div>
-                          {(item as any).isCustom && (
+                          {(item as { isCustom?: boolean }).isCustom && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteCustomTool((item as any).id);
+                                deleteCustomTool((item as { id: string }).id);
                               }}
                               style={{
                                 background: 'transparent',
@@ -350,7 +350,7 @@ const Sidebar: React.FC = () => {
                       <label style={{ fontSize: '9px', color: '#888' }}>Input Data Format</label>
                       <select
                         value={newToolFormat}
-                        onChange={(e) => setNewToolFormat(e.target.value as any)}
+                        onChange={(e) => setNewToolFormat(e.target.value as 'packets' | 'AMI' | 'objects')}
                         style={{
                           padding: '4px 6px',
                           background: '#121212',

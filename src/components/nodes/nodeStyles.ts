@@ -49,7 +49,7 @@ export const getTapDetails = (sku: string, model: string) => {
 export const getConditionsSummary = (conditions: MapCondition[]) => {
   if (!conditions || conditions.length === 0) return 'No rules';
   return conditions.map((c) => {
-    let fieldLabel = '';
+    let fieldLabel: string;
     switch (c.field) {
       case 'vlan': fieldLabel = 'VLAN'; break;
       case 'protocol': fieldLabel = 'Proto'; break;

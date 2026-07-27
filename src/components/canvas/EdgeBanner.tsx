@@ -1,8 +1,9 @@
 import React from 'react';
+import type { Edge } from '@xyflow/react';
 import { useStore } from '../../store/store';
 
 interface EdgeBannerProps {
-  selectedEdges: any[];
+  selectedEdges: Edge[];
   onDelete: () => void;
   topOffset: boolean;
 }

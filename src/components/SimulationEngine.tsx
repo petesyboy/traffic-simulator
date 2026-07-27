@@ -53,7 +53,7 @@ const SimulationEngine: React.FC = () => {
           } else if (driftProfile === 'static') {
             // Keep rate static, do not drift
           } else if (now - lastUpdate >= 2000) {
-            let delta = 0;
+            let delta: number;
             if (driftProfile === 'stable') {
               delta = Math.floor(Math.random() * 5) - 2; // slow drift +/- 2%
             } else {
@@ -70,7 +70,7 @@ const SimulationEngine: React.FC = () => {
 
         if (node.data?.gigaSmartApps && Array.isArray(node.data.gigaSmartApps)) {
           let appsUpdated = false;
-          const updatedApps = node.data.gigaSmartApps.map((app: any) => {
+          const updatedApps = node.data.gigaSmartApps.map((app: Record<string, unknown> & { actionType?: string; lastDedupUpdate?: number; dedupRate?: number; dedupDriftProfile?: string }) => {
             if (isDedupAction(app.actionType || '')) {
               const lastUpdate = app.lastDedupUpdate || 0;
               const currentRate = app.dedupRate;
@@ -86,7 +86,7 @@ const SimulationEngine: React.FC = () => {
               } else if (driftProfile === 'static') {
                 return app;
               } else if (now - lastUpdate >= 2000) {
-                let delta = 0;
+                let delta: number;
                 if (driftProfile === 'stable') {
                   delta = Math.floor(Math.random() * 5) - 2;
                 } else {
@@ -123,7 +123,7 @@ const SimulationEngine: React.FC = () => {
           } else {
             import('../constants/gigaSmartRules').then(({ isActionSupportedOnNode, areActionsCompatible }) => {
               for (const app of updatedApps) {
-                if (!isActionSupportedOnNode(app.actionType, chassisModel, installedModules)) {
+                if (!isActionSupportedOnNode(app.actionType || '', chassisModel, installedModules)) {
                   hasGigaSmartError = true;
                   gigaSmartErrorMsg = `Unsupported GigaSMART operation: ${app.actionType}`;
                   break;
@@ -133,7 +133,7 @@ const SimulationEngine: React.FC = () => {
               if (!hasGigaSmartError && updatedApps.length >= 2) {
                 for (let i = 0; i < updatedApps.length; i++) {
                   for (let j = i + 1; j < updatedApps.length; j++) {
-                    const comp = areActionsCompatible(updatedApps[i].actionType, updatedApps[j].actionType);
+                    const comp = areActionsCompatible(updatedApps[i].actionType || '', updatedApps[j].actionType || '');
                     if (!comp.compatible) {
                       hasGigaSmartError = true;
                       gigaSmartErrorMsg = comp.reason || 'Incompatible GigaSMART operations';

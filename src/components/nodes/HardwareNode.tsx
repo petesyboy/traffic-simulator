@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
-import type { MapCondition, HardwareNodeData, GigaSmartNodeData } from '../../store/types';
+import type { MapCondition, HardwareNodeData, GigaSmartNodeData, CustomNode } from '../../store/types';
 import { formatBandwidth } from '../../utils/format';
 import {
   MapIcon, GreenCircleIcon, TapIcon, AppIcon,
@@ -83,7 +83,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
-  const nodeObj = { id, type: 'hardwareNode', data } as any;
+  const nodeObj = { id, type: 'hardwareNode', position: { x: 0, y: 0 }, data } as CustomNode;
   const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes);
   
   let tooltipText = `${model} Configuration BOM:\n`;

@@ -25,7 +25,7 @@ export const isMetadataEdge = (
 
   // Check for hardware nodes with metadata apps
   if (srcNode.type === 'hardwareNode') {
-    const apps = (srcNode.data?.gigaSmartApps as any[]) || [];
+    const apps = (srcNode.data?.gigaSmartApps as { actionType: string }[]) || [];
     const hasMetadataApp = apps.some(app => 
       app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI'
     );
@@ -57,7 +57,7 @@ export const isMetadataEdge = (
         hasPacketOrigin = true;
       }
     } else if (currNode.type === 'hardwareNode') {
-      const apps = (currNode.data?.gigaSmartApps as any[]) || [];
+      const apps = (currNode.data?.gigaSmartApps as { actionType: string }[]) || [];
       if (apps.some(app => app.actionType === 'Application Metadata' || app.actionType === 'AMX' || app.actionType === 'AMI')) {
         hasMetadataOrigin = true;
       }

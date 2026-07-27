@@ -1,4 +1,5 @@
 import { type StateCreator } from 'zustand';
+import { type Edge } from '@xyflow/react';
 import { type RFState, type CustomNode, type TrafficStream } from './types';
 import { syncSplunkLabels } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
@@ -21,7 +22,7 @@ export interface SettingsSlice {
   setPanelTextScale: (scale: number) => void;
   restoreState: (
     nodes: CustomNode[],
-    edges: any[],
+    edges: Edge[],
     trafficStreams?: TrafficStream[],
     settings?: {
       advancedMode?: boolean;
@@ -55,7 +56,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
 
   restoreState: (nodes, edges, trafficStreams, settings) => {
     // Filter out duplicate edges that connect the exact same source/target handles
-    const uniqueEdges: any[] = [];
+    const uniqueEdges: Edge[] = [];
     const seen = new Set<string>();
     edges.forEach((edge) => {
       const key = `${edge.source}_${edge.sourceHandle || ''}_${edge.target}_${edge.targetHandle || ''}`;
@@ -68,7 +69,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
     let syncedNodes = syncSplunkLabels(nodes, uniqueEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, uniqueEdges);
     
-    const updateObj: any = {
+    const updateObj: Partial<RFState> = {
       nodes: syncedNodes,
       edges: uniqueEdges,
       trafficStreams: trafficStreams || get().trafficStreams,

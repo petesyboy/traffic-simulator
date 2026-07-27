@@ -18,9 +18,9 @@ export const TradeShowDemo: React.FC = () => {
 
   const { fitView } = useReactFlow();
 
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
-  const countdownIntervalRef = useRef<any>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopDemo = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -241,10 +241,10 @@ export const TradeShowDemo: React.FC = () => {
           timerRef.current = setTimeout(() => runStep(10), 3000);
           break;
 
-        case 10:
+        case 10: {
           setDemoStatus('Step 10: Launching traffic flow simulation! Watch the live statistics...');
           if (!useStore.getState().isRunning) toggleSimulation();
-          
+
           let secondsLeft = 25;
           setCountdown(secondsLeft);
           countdownIntervalRef.current = setInterval(() => {
@@ -256,6 +256,7 @@ export const TradeShowDemo: React.FC = () => {
             }
           }, 1000);
           break;
+        }
 
         default:
           runStep(0);
@@ -277,7 +278,7 @@ export const TradeShowDemo: React.FC = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
-  }, [isDemoActive]);
+  }, [isDemoActive, addNode, addTrafficStream, clearCanvas, fitView, setAdvancedMode, setDemoStatus, setDemoStep, setEdges, toggleSimulation]);
 
   if (!isDemoActive) return null;
 

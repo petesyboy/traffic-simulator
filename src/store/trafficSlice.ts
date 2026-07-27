@@ -18,7 +18,7 @@ export const createTrafficSlice: StateCreator<RFState, [], [], TrafficSlice> = (
     try {
       const saved = localStorage.getItem('fm_simulator_custom_tools');
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   })(),

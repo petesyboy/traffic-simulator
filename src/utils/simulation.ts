@@ -121,7 +121,7 @@ export const calculateSimulationStep = (
     }
 
     streamsToProcess.forEach(stream => {
-      const encryptedTrafficPercentage = (sourceNode?.data as any)?.encryptedTrafficPercentage;
+      const encryptedTrafficPercentage = (sourceNode?.data as { encryptedTrafficPercentage?: number })?.encryptedTrafficPercentage;
       const encryptionRatio = encryptedTrafficPercentage !== undefined 
         ? encryptedTrafficPercentage / 100 
         : (stream.isEncrypted ? 1 : 0);

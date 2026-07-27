@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore, type MapCondition } from '../store/store';
 import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from '../constants/nodeTypes';
 
@@ -23,13 +23,18 @@ const ConfigPanel: React.FC = () => {
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  useEffect(() => {
-    // In Standard (simple) mode, respect a manual collapse — only Advanced
-    // Mode auto-expands the panel when a new node is selected.
+  // In Standard (simple) mode, respect a manual collapse — only Advanced Mode
+  // auto-expands the panel when a new node is selected. Adjusted during render
+  // (rather than in an effect) to avoid an extra commit-and-rerender pass.
+  const [prevSelectedNodeId, setPrevSelectedNodeId] = useState(selectedNodeId);
+  const [prevAdvancedMode, setPrevAdvancedMode] = useState(advancedMode);
+  if (selectedNodeId !== prevSelectedNodeId || advancedMode !== prevAdvancedMode) {
+    setPrevSelectedNodeId(selectedNodeId);
+    setPrevAdvancedMode(advancedMode);
     if (selectedNodeId && advancedMode) {
       setIsCollapsed(false);
     }
-  }, [selectedNodeId, advancedMode]);
+  }
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -190,12 +195,7 @@ const ConfigPanel: React.FC = () => {
           )}
 
           {selectedNode.type === NODE_TYPES.HARDWARE && (
-            <HardwareNodePanel 
-              node={selectedNode} 
-              onConditionChange={handleConditionChange}
-              onAddCondition={handleAddCondition}
-              onRemoveCondition={handleRemoveCondition}
-            />
+            <HardwareNodePanel node={selectedNode} />
           )}
           {selectedNode.type === NODE_TYPES.INPUT && (
             <div className="config-card">

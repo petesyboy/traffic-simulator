@@ -148,7 +148,7 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     }
 
     const existingOpticIdx = installedOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic);
-    let newOptics = [...installedOptics];
+    const newOptics = [...installedOptics];
     if (existingOpticIdx >= 0) {
       newOptics[existingOpticIdx] = { ...newOptics[existingOpticIdx], qty: newOptics[existingOpticIdx].qty + qty };
     } else {

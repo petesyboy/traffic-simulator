@@ -12,7 +12,7 @@ interface EventRecord {
   id: string;
   timestamp: string;
   type: 'HTTP' | 'DNS' | 'TLS' | 'DB' | 'SIP' | 'SSH' | 'C2' | 'EXFIL';
-  jsonDoc: Record<string, any>;
+  jsonDoc: Record<string, unknown>;
   cefStr: string;
   ipfixStr: string;
   isThreat?: boolean;

@@ -5,7 +5,17 @@ export interface ResolvedSkus {
   advSku?: string;
 }
 
-export function resolveNodeSkus(nodeData: any, globalLicenseMode: 'HTL' | 'Perpetual'): ResolvedSkus {
+export interface HardwareNodeSkuData {
+  model?: string;
+  sku?: string;
+  licenseModeOverride?: string;
+  powerSupply?: string;
+  portCapacity?: string;
+  tapPower?: string;
+  advancedFeatures?: boolean;
+}
+
+export function resolveNodeSkus(nodeData: HardwareNodeSkuData, globalLicenseMode: 'HTL' | 'Perpetual'): ResolvedSkus {
   const model = nodeData.model || '';
   const baseSku = nodeData.sku || '';
   const licenseMode = nodeData.licenseModeOverride && nodeData.licenseModeOverride !== 'default'

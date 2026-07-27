@@ -16,6 +16,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore, type TrafficStream } from '../store/store';
+import type { TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from '../utils/hardwareUtils';
 
 const TrafficGenerator: React.FC = () => {
@@ -90,7 +91,7 @@ const TrafficGenerator: React.FC = () => {
     let defaultBandwidth = 10000;
     
     if (sourceNode.type === 'hardwareNode' && typeof sourceNode.data.model === 'string' && sourceNode.data.model.includes('TAP')) {
-      const allocations = sourceNode.data.tappedLinkAllocations as any[];
+      const allocations = sourceNode.data.tappedLinkAllocations as TappedLinkAllocation[];
       let totalLinkBandwidth = 0;
 
       if (allocations && allocations.length > 0) {

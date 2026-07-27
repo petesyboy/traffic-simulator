@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType } from '../../utils/hardwareUtils';
@@ -13,21 +13,13 @@ import {
   TapLinksPanel,
   PowerSupplyPanel
 } from './hardware';
-import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData } from '../../store/types';
+import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData, TappedLinkAllocation } from '../../store/types';
 
 interface HardwareNodePanelProps {
   node: CustomNode;
-  onConditionChange: (index: number, key: string, value: string) => void;
-  onAddCondition: () => void;
-  onRemoveCondition: (index: number) => void;
 }
 
-export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({ 
-  node, 
-  onConditionChange: _onConditionChange, 
-  onAddCondition: _onAddCondition, 
-  onRemoveCondition: _onRemoveCondition 
-}) => {
+export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({ node }) => {
   const model = node.data?.model as string;
   const sku = node.data?.sku as string;
   const hwData = node.data as HardwareNodeData;
@@ -42,13 +34,23 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const [activeTab, setActiveTab] = useState<'general' | 'optics' | 'apps'>('general');
   const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
 
-  useEffect(() => {
+  // Reset to the General tab when a TAP node becomes selected. Adjusted during
+  // render (rather than in an effect) to avoid an extra commit-and-rerender pass.
+  const [prevNodeId, setPrevNodeId] = useState(node.id);
+  const [prevModel, setPrevModel] = useState(model);
+  if (node.id !== prevNodeId || model !== prevModel) {
+    setPrevNodeId(node.id);
+    setPrevModel(model);
     if (model?.includes('TAP')) {
       setActiveTab('general');
     }
-  }, [node.id, model]);
+  }
 
-  // Determine catalogue details
+  // Determine catalogue details. The three catalogue arrays (taps/ta_series/hc_series) have
+  // divergent, per-category shapes (e.g. `ports` is a plain count for taps but an array of
+  // port-group objects for ta_series), so this stays untyped rather than modelling a union
+  // that would need to match every JSON variant.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let details: any = null;
   if (model?.includes('TAP')) details = hardwareCatalogue.taps.find(t => t.sku === sku);
   else if (model?.includes('TA')) details = hardwareCatalogue.ta_series.find(t => t.sku === sku);
@@ -72,7 +74,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') ||
         tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
-      const allocations = (sourceNode.data?.tappedLinkAllocations as any[]) || [];
+      const allocations = (sourceNode.data?.tappedLinkAllocations as TappedLinkAllocation[]) || [];
       for (const alloc of allocations) {
         const opticToValidate = alloc.toolOptic || alloc.optic;
         const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === opticToValidate);

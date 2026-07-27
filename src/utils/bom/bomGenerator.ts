@@ -3,7 +3,7 @@ import { type CustomNode } from '../../store/types';
 import { NODE_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import opticRules from '../../constants/opticRules.json';
-import { resolveNodeSkus } from '../skuResolver';
+import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { resolveOpticSku, getSkus } from './skuUtils';
 
 export interface BomRow {
@@ -136,7 +136,7 @@ export function generateBom(
     if (reqMatch && reqMatch[1]) {
       const depSku = reqMatch[1];
       if (depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E')) {
-        let depTerm = depSku.endsWith('-SW-TM') ? (term || globalTermDuration) : undefined;
+        const depTerm = depSku.endsWith('-SW-TM') ? (term || globalTermDuration) : undefined;
         const depKey = (groupByNode && nodeId) ? `${nodeId}_${depSku}` : `${site}_${depSku}`;
         if (rowMap[depKey]) rowMap[depKey].qty += qty;
         else rowMap[depKey] = { sku: depSku, qty, description: skus[depSku] || 'Required Dependency', term: depTerm, type: 'Dependency', nodeId: groupByNode ? (nodeId || 'global') : undefined, site };
@@ -160,7 +160,7 @@ export function generateBom(
     const model = (node.data?.model as string) || '';
     const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
     const licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual' : globalLicenseMode;
-    const resolved = resolveNodeSkus(node.data || {}, globalLicenseMode);
+    const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
 
     if (model.includes('TAP')) {
       addRow(node.id, resolved.hwSku, 1, 'TAP');
@@ -196,8 +196,8 @@ export function generateBom(
       } else if (isSeries2) {
         if (node.data.tapDualPower) addRow(node.id, 'PBK-GTA21', 1, 'Dependency');
         if (node.data.tapBattery) addRow(node.id, 'BAT-GTA20', 1, 'Dependency');
-        let cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
-        let cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
+        const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
+        const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
         if (cordQty > 0) addRow(node.id, cordSku, cordQty, 'Dependency');
       }
       if (hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku)?.type === 'module') tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + 1;
@@ -228,7 +228,7 @@ export function generateBom(
     });
 
     if (model.includes('HC')) {
-      const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as any[], edges, syncedNodes);
+      const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string }[], edges, syncedNodes);
       gsActions.forEach(action => {
         const gsSku = resolveGigaSmartSku(action, model, licenseMode);
         if (gsSku) addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
@@ -238,7 +238,8 @@ export function generateBom(
 
   for (const [siteKey, totalTapModules] of Object.entries(tapModulesPerSite)) {
     if (totalTapModules > 0) {
-      let numM200T = Math.floor(totalTapModules / 6), remainder = totalTapModules % 6, numM100T = 0;
+      let numM200T = Math.floor(totalTapModules / 6), numM100T = 0;
+      const remainder = totalTapModules % 6;
       if (remainder > 0) { if (remainder <= 3) numM100T = 1; else numM200T += 1; }
       if (numM100T > 0) addRow(null, 'TAP-M100T', numM100T, 'Dependency', undefined, siteKey);
       if (numM200T > 0) addRow(null, 'TAP-M200T', numM200T, 'Dependency', undefined, siteKey);
@@ -246,7 +247,7 @@ export function generateBom(
   }
 
   const getChassisMaxOpticSpeed = (chassisModel: string): '100G' | '40G' | '10G' => {
-    const rules = (opticRules as any)[chassisModel];
+    const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
     if (!rules) return '10G';
     let has100G = false, has40G = false;
     for (const group of Object.values(rules)) { if (Array.isArray(group)) { for (const opt of group) { if (opt.includes('100G')) has100G = true; if (opt.includes('40G')) has40G = true; } } }
@@ -254,7 +255,7 @@ export function generateBom(
   };
 
   const findOpticSkuForSpeed = (chassisModel: string, speed: '100G' | '40G' | '10G'): string | null => {
-    const rules = (opticRules as any)[chassisModel];
+    const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
     if (!rules) return null;
     for (const group of Object.values(rules)) if (Array.isArray(group)) for (const opt of group) if (opt.includes(speed) && (opt.includes('SR') || opt.includes('SX') || opt.includes('SR4'))) return opt.split(' ')[0];
     for (const group of Object.values(rules)) if (Array.isArray(group)) for (const opt of group) if (opt.includes(speed)) return opt.split(' ')[0];
@@ -267,7 +268,7 @@ export function generateBom(
       const srcModel = String(sourceNode.data?.model || ''), dstModel = String(targetNode.data?.model || '');
       if ((srcModel.includes('TA') && !srcModel.includes('TAP') && dstModel.includes('HC')) || (srcModel.includes('HC') && dstModel.includes('TA') && !dstModel.includes('TAP'))) {
         const srcSpeed = getChassisMaxOpticSpeed(srcModel), dstSpeed = getChassisMaxOpticSpeed(dstModel);
-        let mutualSpeed: '100G' | '40G' | '10G' = (srcSpeed === '100G' && dstSpeed === '100G') ? '100G' : ((srcSpeed === '100G' && dstSpeed === '40G' || srcSpeed === '40G' && dstSpeed === '100G' || srcSpeed === '40G' && dstSpeed === '40G') ? '40G' : '10G');
+        const mutualSpeed: '100G' | '40G' | '10G' = (srcSpeed === '100G' && dstSpeed === '100G') ? '100G' : ((srcSpeed === '100G' && dstSpeed === '40G' || srcSpeed === '40G' && dstSpeed === '100G' || srcSpeed === '40G' && dstSpeed === '40G') ? '40G' : '10G');
         const srcOpticSku = findOpticSkuForSpeed(srcModel, mutualSpeed), dstOpticSku = findOpticSkuForSpeed(dstModel, mutualSpeed);
         if (srcOpticSku) addRow(sourceNode.id, srcOpticSku, 1, 'Optic');
         if (dstOpticSku) addRow(targetNode.id, dstOpticSku, 1, 'Optic');
@@ -277,12 +278,12 @@ export function generateBom(
 
   for (const [siteKey, series1RackTaps] of Object.entries(series1RackTapsPerSite)) if (series1RackTaps > 0) addRow(null, 'RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency', undefined, siteKey);
   for (const [siteKey, series1PstAcTaps] of Object.entries(series1PstAcTapsPerSite)) if (series1PstAcTaps > 0) {
-    let numPstAC = Math.ceil(series1PstAcTaps / 24);
+    const numPstAC = Math.ceil(series1PstAcTaps / 24);
     addRow(null, 'PST-GTA01', numPstAC, 'Dependency', undefined, siteKey);
     addRow(null, globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21'), numPstAC * 2, 'Dependency', undefined, siteKey);
   }
   for (const [siteKey, series1PstDcTaps] of Object.entries(series1PstDcTapsPerSite)) if (series1PstDcTaps > 0) {
-    let numPstDC = Math.ceil(series1PstDcTaps / 24);
+    const numPstDC = Math.ceil(series1PstDcTaps / 24);
     addRow(null, 'PST-GTA02', numPstDC, 'Dependency', undefined, siteKey);
     addRow(null, 'PCD-00051', numPstDC * 2, 'Dependency', undefined, siteKey);
   }
@@ -344,12 +345,12 @@ function resolveGigaSmartSku(
 /** Walk the graph from a given HC node and collect all GigaSMART actions */
 function resolveGsActionsFromGraph(
   nodeId: string,
-  localApps: any[] | undefined,
+  localApps: { actionType?: string }[] | undefined,
   edges: Edge[],
   nodes: CustomNode[],
 ): Set<string> {
   const gsActions = new Set<string>();
-  if (Array.isArray(localApps)) localApps.forEach((app: any) => app.actionType && gsActions.add(app.actionType));
+  if (Array.isArray(localApps)) localApps.forEach((app) => app.actionType && gsActions.add(app.actionType));
 
   const visited = new Set<string>([nodeId]);
   const queue = [nodeId];
@@ -407,7 +408,7 @@ export function generateSingleNodeBom(
     return Object.values(rowMap);
   }
 
-  const resolved = resolveNodeSkus(node.data || {}, globalLicenseMode);
+  const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
   if (model.includes('TAP')) {
     addRow(resolved.hwSku, 1, 'TAP');
     if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
@@ -425,8 +426,8 @@ export function generateSingleNodeBom(
     } else if (isSeries2) {
       if (node.data.tapDualPower) addRow('PBK-GTA21', 1, 'Dependency');
       if (node.data.tapBattery) addRow('BAT-GTA20', 1, 'Dependency');
-      let cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
-      let cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
+      const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
+      const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
       if (cordQty > 0) addRow(cordSku, cordQty, 'Dependency');
     }
     return Object.values(rowMap);
@@ -444,13 +445,14 @@ export function generateSingleNodeBom(
   let totalTapModules = 0;
   ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; const opticSku = resolveOpticSku(opt.optic, model); addRow(opticSku, opt.qty, 'Optic'); if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) totalTapModules += opt.qty; });
   if (totalTapModules > 0) {
-    let numM200T = Math.floor(totalTapModules / 6), remainder = totalTapModules % 6, numM100T = 0;
+    let numM200T = Math.floor(totalTapModules / 6), numM100T = 0;
+    const remainder = totalTapModules % 6;
     if (remainder > 0) { if (remainder <= 3) numM100T = 1; else numM200T += 1; }
     if (numM100T > 0) addRow('TAP-M100T', numM100T, 'Dependency');
     if (numM200T > 0) addRow('TAP-M200T', numM200T, 'Dependency');
   }
   if (model.includes('HC')) {
-    const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as any[], edges, nodes);
+    const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string }[], edges, nodes);
     gsActions.forEach(action => {
       const gsSku = resolveGigaSmartSku(action, model, licenseMode);
       if (gsSku) addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);

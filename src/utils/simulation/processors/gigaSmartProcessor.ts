@@ -107,7 +107,7 @@ export const processGigaSmartNode: NodeProcessor = (
     return { forwardStream: null, handledQueueExternally: true };
   }
 
-  let forwardStream: TrajectoryStream | null = item.stream;
+  let forwardStream: TrajectoryStream | null;
   let dropBandwidth = 0;
   
   if (actionType === 'Deduplication' || actionType === 'Dedup') {

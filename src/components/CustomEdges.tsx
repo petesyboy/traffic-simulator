@@ -2,6 +2,10 @@ import React from 'react';
 import type { EdgeProps } from '@xyflow/react';
 import { getBezierPath, EdgeLabelRenderer } from '@xyflow/react';
 
+// ReactFlow's labelStyle/labelBgStyle are typed as CSSProperties, but this app
+// passes SVG presentation attributes (fill/stroke) through them, not CSS props.
+type SvgLabelStyle = React.CSSProperties & { fill?: string; stroke?: string };
+
 export const DoubleEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
@@ -59,14 +63,14 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: (labelBgStyle as any)?.fill || '#121212',
-              border: `1px solid ${(labelBgStyle as any)?.stroke || '#2a2a2a'}`,
+              background: (labelBgStyle as SvgLabelStyle)?.fill || '#121212',
+              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || '#2a2a2a'}`,
               padding: '2px 6px',
               borderRadius: '4px',
-              color: (labelStyle as any)?.fill || '#fff',
-              fontSize: (labelStyle as any)?.fontSize || '9px',
-              fontWeight: (labelStyle as any)?.fontWeight || 'bold',
-              fontFamily: (labelStyle as any)?.fontFamily || 'system-ui, -apple-system, sans-serif',
+              color: (labelStyle as SvgLabelStyle)?.fill || '#fff',
+              fontSize: (labelStyle as SvgLabelStyle)?.fontSize || '9px',
+              fontWeight: (labelStyle as SvgLabelStyle)?.fontWeight || 'bold',
+              fontFamily: (labelStyle as SvgLabelStyle)?.fontFamily || 'system-ui, -apple-system, sans-serif',
               pointerEvents: 'all',
               zIndex: 1000,
             }}
@@ -95,13 +99,13 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
   markerEnd,
   className,
   data
-}: EdgeProps & { className?: string; data?: any }) => {
+}: EdgeProps & { className?: string; data?: { parallelIndex?: number; totalParallel?: number } }) => {
   const parallelIndex = data?.parallelIndex ?? 0;
   const totalParallel = data?.totalParallel ?? 1;
 
-  let edgePath = '';
-  let labelX = (sourceX + targetX) / 2;
-  let labelY = (sourceY + targetY) / 2;
+  let edgePath: string;
+  let labelX: number;
+  let labelY: number;
 
   if (totalParallel > 1) {
     const dx = targetX - sourceX;
@@ -157,14 +161,14 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: (labelBgStyle as any)?.fill || '#121212',
-              border: `1px solid ${(labelBgStyle as any)?.stroke || '#2a2a2a'}`,
+              background: (labelBgStyle as SvgLabelStyle)?.fill || '#121212',
+              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || '#2a2a2a'}`,
               padding: '2px 6px',
               borderRadius: '4px',
-              color: (labelStyle as any)?.fill || '#fff',
-              fontSize: (labelStyle as any)?.fontSize || '9px',
-              fontWeight: (labelStyle as any)?.fontWeight || 'bold',
-              fontFamily: (labelStyle as any)?.fontFamily || 'system-ui, -apple-system, sans-serif',
+              color: (labelStyle as SvgLabelStyle)?.fill || '#fff',
+              fontSize: (labelStyle as SvgLabelStyle)?.fontSize || '9px',
+              fontWeight: (labelStyle as SvgLabelStyle)?.fontWeight || 'bold',
+              fontFamily: (labelStyle as SvgLabelStyle)?.fontFamily || 'system-ui, -apple-system, sans-serif',
               pointerEvents: 'all',
               zIndex: 1000,
             }}

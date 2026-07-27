@@ -217,7 +217,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (!parentNode) return;
     get().pushHistory();
     const { x: pX, y: pY } = parentNode.position;
-    let updatedNodes = get().nodes.map((node) => node.parentId === groupId ? { ...node, parentId: undefined, position: { x: node.position.x + pX, y: node.position.y + pY }, extent: undefined } : node).filter((n) => n.id !== groupId);
+    const updatedNodes = get().nodes.map((node) => node.parentId === groupId ? { ...node, parentId: undefined, position: { x: node.position.x + pX, y: node.position.y + pY }, extent: undefined } : node).filter((n) => n.id !== groupId);
     const updatedEdges = get().edges.filter((edge) => edge.source !== groupId && edge.target !== groupId);
     set({ nodes: syncSplunkLabels(updatedNodes, updatedEdges), edges: updatedEdges, selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId });
   },

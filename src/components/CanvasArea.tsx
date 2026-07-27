@@ -5,11 +5,13 @@ import {
   Background,
   Controls,
   BackgroundVariant,
-  Panel
+  Panel,
+  type Edge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
+import type { GigaSmartNodeData } from '../store/types';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './nodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
@@ -167,7 +169,7 @@ const CanvasArea: React.FC = () => {
         const ax = srcNode.position.x + srcW, ay = srcNode.position.y + srcH / 2;
         const targetH = targetNode.measured?.height || targetNode.height || 75, bx = targetNode.position.x, by = targetNode.position.y + targetH / 2;
         const px = position.x, py = position.y, dx = bx - ax, dy = by - ay, lenSq = dx * dx + dy * dy;
-        let t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
+        const t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
         const cx = ax + t * dx, cy = ay + t * dy, distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
         if (Math.sqrt(distSq) < 80) { foundEdgeId = edge.id; break; }
       }
@@ -195,7 +197,7 @@ const CanvasArea: React.FC = () => {
         const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || '');
         const installedModules = Object.values((targetNode.data?.installedBoards as Record<string, string>) || {});
         if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) { alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`); return; }
-        const apps = targetNode.data.gigaSmartApps || [], incompatibleApp = apps.find((a: any) => !areActionsCompatible(actionType, a.actionType).compatible);
+        const apps = targetNode.data.gigaSmartApps || [], incompatibleApp = apps.find((a: GigaSmartNodeData) => !areActionsCompatible(actionType, a.actionType).compatible);
         if (incompatibleApp) { alert(`🚫 COMBINATION REFUSED: ${areActionsCompatible(actionType, incompatibleApp.actionType).reason}`); return; }
         updateNodeData(targetNode.id, { gigaSmartApps: [...apps, { id: `gs-${Date.now()}`, label, actionType, dedupRate: 20, metadataFormat: 'CEF' }] });
       } else alert(advancedMode && !nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC')) ? "GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first." : "In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
@@ -223,7 +225,7 @@ const CanvasArea: React.FC = () => {
     if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) { mergedData.dedupRate = Math.floor(Math.random() * 41) + 10; mergedData.lastDedupUpdate = Date.now(); }
     if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
 
-    let edgeToInterpose: any = null;
+    let edgeToInterpose: Edge | null = null;
     if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
       for (const edge of edges) {
         const srcNode = nodes.find(n => n.id === edge.source), targetNode = nodes.find(n => n.id === edge.target);
@@ -232,7 +234,7 @@ const CanvasArea: React.FC = () => {
         const ax = srcNode.position.x + srcW, ay = srcNode.position.y + srcH / 2;
         const targetH = targetNode.measured?.height || targetNode.height || 75, bx = targetNode.position.x, by = targetNode.position.y + targetH / 2;
         const px = position.x, py = position.y, dx = bx - ax, dy = by - ay, lenSq = dx * dx + dy * dy;
-        let t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
+        const t = lenSq > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq)) : 0;
         const cx = ax + t * dx, cy = ay + t * dy, distSq = (px - cx) * (px - cx) + (py - cy) * (py - cy);
         if (Math.sqrt(distSq) < 80) { edgeToInterpose = edge; break; }
       }
@@ -249,7 +251,7 @@ const CanvasArea: React.FC = () => {
     setHoveredEdgeId(null);
 
     if (type === NODE_TYPES.INPUT || (type === NODE_TYPES.HARDWARE && String(newNode.data?.model || '').includes('TAP'))) {
-      let speedLimitMbps = 10000;
+      let speedLimitMbps: number;
       if (type === NODE_TYPES.INPUT) { const m = String(newNode.data?.portSpeed || '').match(/(\d+)G/i); speedLimitMbps = m ? parseInt(m[1], 10) * 1000 : Number(newNode.data.linkSpeed || 10000); }
       else { const m = String(newNode.data?.model || ''); speedLimitMbps = m.includes('25') ? 25000 : (m.includes('40') ? 40000 : (m.includes('100') ? 100000 : (m.includes('400') ? 400000 : 10000))); }
       const tappedLinksCount = type === NODE_TYPES.HARDWARE ? ((newNode.data?.tappedLinksCount as number) ?? 1) : 1;
@@ -260,12 +262,12 @@ const CanvasArea: React.FC = () => {
         if (bw > speedLimitMbps) bw = Math.floor(speedLimitMbps * 0.75);
         const sub = Math.floor(Math.random() * 254) + 1, vlan = String(Math.floor(Math.random() * 900) + 100);
         const gLabel = bw >= 1000 ? `${(bw / 1000).toFixed(1).replace('.0', '')} Gbps` : `${bw} Mbps`;
-        addTrafficStream({ id: `t-${uuidv4()}`, name: numStreamsToCreate > 1 ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${gLabel})` : `${labelToUse} - ${profile.name} (${gLabel})`, sourceNodeId: newNode.id, vlan, ipSrc: `192.168.${sub}.25`, ipDst: `10.10.${sub}.5`, portSrc: String(Math.floor(Math.random() * 50000) + 1024), portDst: profile.port, protocol: profile.proto as any, bandwidth: bw, active: true, drift: 1, lastDriftUpdate: 0 });
+        addTrafficStream({ id: `t-${uuidv4()}`, name: numStreamsToCreate > 1 ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${gLabel})` : `${labelToUse} - ${profile.name} (${gLabel})`, sourceNodeId: newNode.id, vlan, ipSrc: `192.168.${sub}.25`, ipDst: `10.10.${sub}.5`, portSrc: String(Math.floor(Math.random() * 50000) + 1024), portDst: profile.port, protocol: profile.proto, bandwidth: bw, active: true, drift: 1, lastDriftUpdate: 0 });
       }
     }
   }, [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData, edges, setEdges]);
 
-  const onSelectionChange = useCallback(({ nodes }: any) => setSelectedNodeId(nodes.length === 1 ? nodes[0].id : null), [setSelectedNodeId]);
+  const onSelectionChange = useCallback(({ nodes }: { nodes: CustomNode[] }) => setSelectedNodeId(nodes.length === 1 ? nodes[0].id : null), [setSelectedNodeId]);
 
   // Checkpoint once at the start of a drag gesture (not per-pixel) so undo reverts
   // the whole move in one step rather than only its last increment.

@@ -10,7 +10,7 @@ import { useStore } from '../../store/store';
 import { generateBom, validateConfiguration } from '../../utils/bomEngine';
 import type { HardwareNodeData } from '../../store/types';
 
-export const parseAndConvertDimensions = (dimStr: string) => {
+const parseAndConvertDimensions = (dimStr: string) => {
   const regex = /([\d.]+)\s*in\s*x\s*([\d.]+)\s*in\s*x\s*([\d.]+)\s*in/i;
   const match = dimStr.match(regex);
   if (match) {
