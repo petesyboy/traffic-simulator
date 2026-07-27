@@ -115,8 +115,8 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
         jsonDoc: { event_type: `${tmpl.type}_EVENT`, application: tmpl.app, src_ip: srcIp, src_port: srcPort, dst_ip: dstIp, dst_port: dstPort, uri_query: tmpl.uri, http_method: tmpl.method, response_code: tmpl.status, latency_ms: tmpl.latency, bytes_sent: tmpl.bytes },
         cefStr: `CEF:0|Gigamon|AMI|6.4|${tmpl.type}|${tmpl.app}|3|src=${srcIp} dst=${dstIp} request=${tmpl.uri} outcome=${tmpl.status}`,
         ipfixStr: `IPFIX|${srcIp}:${srcPort}→${dstIp}:${dstPort}|${tmpl.app}|${tmpl.bytes}B`
-      }, ...prev.slice(0, 3)]);
-    }, 1400);
+      }, ...prev.slice(0, 8)]);
+    }, 350);
     return () => clearInterval(interval);
   }, [isRunning]);
 
