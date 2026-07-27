@@ -11,6 +11,7 @@ import {
   type NodeProcessor 
 } from './simulation/types';
 import { getHardwareOpticCapacity, isPacketToolConfig, isMetadataToolConfig, isStorageToolConfig } from './simulation/utils';
+import { CONFIG_TYPES } from '../constants/nodeTypes';
 import { processToolNode } from './simulation/processors/toolProcessor';
 import { processFilterNode } from './simulation/processors/filterProcessor';
 import { processMapNode } from './simulation/processors/mapProcessor';
@@ -98,9 +99,14 @@ export const calculateSimulationStep = (
 
   Object.entries(streamsBySource).forEach(([nodeId, nodeStreams]) => {
     const sourceNode = nodes.find(n => n.id === nodeId);
-    const linkSpeed = (sourceNode?.data?.linkSpeed as number) || Infinity;
+    const sourceConfigType = String(sourceNode?.data?.configType || '');
+    // Only SPAN and ERSPAN sources are subject to link-speed oversubscription drops.
+    // A TAP is a passive fail-safe device that copies wire traffic at line rate and never drops.
+    const canDropAtSource = sourceNode?.type === 'inputNode' &&
+      (sourceConfigType.startsWith(CONFIG_TYPES.SPAN) || sourceConfigType.startsWith(CONFIG_TYPES.ERSPAN));
+    const linkSpeed = canDropAtSource ? ((sourceNode?.data?.linkSpeed as number) || Infinity) : Infinity;
     const totalRequested = nodeStreams.reduce((sum, s) => sum + s.bandwidth, 0);
-    
+
     let streamsToProcess: TrajectoryStream[] = [];
     if (totalRequested > linkSpeed) {
       const droppedBps = totalRequested - linkSpeed;
@@ -343,12 +349,14 @@ export const calculateSimulationStep = (
 
       if (received.length > 0) {
         let hasValid = false, hasMismatch = false, mismatchMsg = '';
+        let packetBandwidth = 0, encryptedPacketBandwidth = 0;
         for (const rStream of received) {
           const rType = rStream.trafficType || 'packet';
           const rFormat = rStream.metadataFormat;
           if (isPacketTool) {
             if (rType === 'packet') {
-              if (rStream.isEncrypted) { hasMismatch = true; if (!mismatchMsg) mismatchMsg = '⚠️ Blind Spot: Encrypted Traffic Detected'; }
+              packetBandwidth += rStream.bandwidth;
+              if (rStream.isEncrypted) { hasMismatch = true; encryptedPacketBandwidth += rStream.bandwidth; }
               else hasValid = true;
             } else { hasMismatch = true; if (!mismatchMsg) mismatchMsg = 'Expected packets, got metadata'; }
           } else if (isMetadataTool) {
@@ -357,6 +365,13 @@ export const calculateSimulationStep = (
               else { hasValid = true; receivedFormat = rFormat || 'Metadata'; }
             } else { hasMismatch = true; if (!mismatchMsg) mismatchMsg = 'Expected metadata, got packets'; }
           }
+        }
+        // Quantify the post-decryption blind spot: not all encrypted traffic reaching a
+        // packet tool has necessarily skipped SSL Decrypt (some streams may bypass it),
+        // so report what fraction of what actually arrived is still opaque.
+        if (encryptedPacketBandwidth > 0 && !mismatchMsg) {
+          const blindSpotPercent = packetBandwidth > 0 ? Math.round((encryptedPacketBandwidth / packetBandwidth) * 100) : 100;
+          mismatchMsg = `⚠️ Blind Spot: ${blindSpotPercent}% of Traffic Still Encrypted`;
         }
         if (hasMismatch) { nextStatus = 'warning'; nextStatusMessage = mismatchMsg; }
         else if (hasValid) { nextStatus = 'optimal'; nextStatusMessage = isPacketTool ? 'Receiving packet traffic' : `Receiving ${receivedFormat} metadata`; }

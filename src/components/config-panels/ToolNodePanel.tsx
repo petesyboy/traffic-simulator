@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
+import { isPacketToolConfig } from '../../utils/simulation/utils';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 
@@ -20,6 +21,10 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const configType = (node.data?.configType as string) || CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
   const isStorageTool = configType === CONFIG_TYPES.STORAGE_TOOL;
+  const isPacketTool = isPacketToolConfig(configType);
+  // Gigamon has no input on the optics used by a customer's own packet-consuming tools,
+  // so those default to customer-supplied rather than a Gigamon-quoted optic.
+  const defaultIngestOptic = isPacketTool ? 'Customer Supplied Optic' : '';
   const nodes = useStore((state) => state.nodes);
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
 
@@ -81,7 +86,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
 
       <FormGroup label="Ingest Optic Type">
         <select
-          value={(node.data?.ingestOptic as string) || ''}
+          value={(node.data?.ingestOptic as string) || defaultIngestOptic}
           onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
         >
           <option value="">-- No Optic (Direct Cable) --</option>

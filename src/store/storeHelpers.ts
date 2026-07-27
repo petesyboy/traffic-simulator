@@ -2,6 +2,7 @@ import { type Edge } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
 import { type CustomNode, type TrafficStream } from './types';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
+import { CONFIG_TYPES } from '../constants/nodeTypes';
 
 export const initialNodes: CustomNode[] = [
   {
@@ -10,7 +11,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 27.5, y: 61.5 },
     data: {
       label: "TAP Device 1/1/x1 - Main Hall",
-      configType: "TAP Device",
+      configType: CONFIG_TYPES.TAP,
       linkSpeed: 40000
     }
   },
@@ -20,7 +21,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 26.5, y: 136.5 },
     data: {
       label: "TAP Device 1/1/x2 - Site Two",
-      configType: "TAP Device",
+      configType: CONFIG_TYPES.TAP,
       linkSpeed: 10000
     }
   },
@@ -30,7 +31,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 50, y: 220 },
     data: {
       label: "TAP Device 1/1/x3 - Production Floor A",
-      configType: "TAP Device",
+      configType: CONFIG_TYPES.TAP,
       linkSpeed: 10000
     }
   },
@@ -40,7 +41,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 49.5, y: 301.5 },
     data: {
       label: "TAP Device 1/1/x4 Production Floor B",
-      configType: "TAP Device",
+      configType: CONFIG_TYPES.TAP,
       linkSpeed: 1000
     }
   },
@@ -50,7 +51,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 41, y: 376.5 },
     data: {
       label: "TAP Device 1/1/x5 - Comms Room",
-      configType: "TAP Device",
+      configType: CONFIG_TYPES.TAP,
       linkSpeed: 25000
     }
   },
@@ -60,7 +61,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 23, y: 451.5 },
     data: {
       label: "Juniper SPAN Port 1/1/x6 ",
-      configType: "SPAN Port",
+      configType: CONFIG_TYPES.SPAN,
       linkSpeed: 40000
     }
   },
@@ -70,7 +71,7 @@ export const initialNodes: CustomNode[] = [
     position: { x: 428, y: 217 },
     data: {
       label: "Core Traffic Map",
-      configType: "Traffic Map",
+      configType: CONFIG_TYPES.TRAFFIC_MAP,
       conditions: [
         { logic: "AND", field: "protocol", value: "tcp" },
         { logic: "AND", field: "vlan", value: "100, 200, 999" }
@@ -83,7 +84,8 @@ export const initialNodes: CustomNode[] = [
     position: { x: 758, y: 145.5 },
     data: {
       label: "ExtraHop Tool",
-      configType: "ExtraHop",
+      configType: CONFIG_TYPES.PACKET_TOOL,
+      toolName: "ExtraHop",
       totalIngestedBytes: 81632270614.26353,
       statusMessage: "",
       receivedFormat: ""
