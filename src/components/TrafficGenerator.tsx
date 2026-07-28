@@ -134,6 +134,18 @@ const TrafficGenerator: React.FC = () => {
   };
 
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
+  const advancedMode = useStore((state) => state.advancedMode);
+
+  // Minimized by default in Standard mode to keep the canvas uncluttered; expanded
+  // by default in Advanced mode where the traffic controls are more likely needed.
+  // A manual toggle is respected until the mode itself changes again (same pattern
+  // ConfigPanel.tsx uses for its own collapse-on-mode-change behaviour).
+  const [isCollapsed, setIsCollapsed] = useState(!advancedMode);
+  const [prevAdvancedMode, setPrevAdvancedMode] = useState(advancedMode);
+  if (advancedMode !== prevAdvancedMode) {
+    setPrevAdvancedMode(advancedMode);
+    setIsCollapsed(!advancedMode);
+  }
 
   return (
     <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
@@ -143,32 +155,57 @@ const TrafficGenerator: React.FC = () => {
         drags it upward/downward, the drawer height changes.
         The cursor: 'ns-resize' signal makes the intent obvious.
       */}
-      <div
-        onMouseDown={onDragHandleMouseDown}
-        style={{
-          height: '6px',
-          background: 'rgba(255,255,255,0.04)',
-          borderTop: '1px solid var(--border-color)',
-          cursor: 'ns-resize',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Visual grip indicator — three dots */}
-        <div style={{ width: '32px', height: '2px', borderRadius: '1px', background: 'rgba(255,255,255,0.15)' }} />
-      </div>
+      {!isCollapsed && (
+        <div
+          onMouseDown={onDragHandleMouseDown}
+          style={{
+            height: '6px',
+            background: 'rgba(255,255,255,0.04)',
+            borderTop: '1px solid var(--border-color)',
+            cursor: 'ns-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Visual grip indicator — three dots */}
+          <div style={{ width: '32px', height: '2px', borderRadius: '1px', background: 'rgba(255,255,255,0.15)' }} />
+        </div>
+      )}
 
       {/* ── Drawer body ──────────────────────────────────────────────────────── */}
       <div
         className="bottom-drawer"
-        style={{ maxHeight: `${drawerHeight}px`, height: `${drawerHeight}px`, overflow: 'hidden' }}
+        style={{
+          maxHeight: isCollapsed ? '36px' : `${drawerHeight}px`,
+          height: isCollapsed ? '36px' : `${drawerHeight}px`,
+          padding: isCollapsed ? '8px 16px' : undefined,
+          overflow: 'hidden',
+          transition: 'height 0.2s ease, max-height 0.2s ease',
+        }}
       >
         {/* Header row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            📊 Live Traffic Generator &amp; Injector
-          </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isCollapsed ? 0 : '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              title={isCollapsed ? 'Expand traffic generator' : 'Minimize traffic generator'}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                padding: '2px 4px',
+              }}
+            >
+              {isCollapsed ? '▸' : '▾'}
+            </button>
+            <h3 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              📊 Live Traffic Generator &amp; Injector
+            </h3>
+          </div>
+          {!isCollapsed && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {/* Inline error notice (replaces alert()) */}
             {noPortError && (
@@ -202,10 +239,11 @@ const TrafficGenerator: React.FC = () => {
               + Inject Traffic Stream
             </button>
           </div>
+          )}
         </div>
 
         {/* Stream table or empty state */}
-        {trafficStreams.length === 0 ? (
+        {!isCollapsed && (trafficStreams.length === 0 ? (
           <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '15px 0', fontSize: '13px' }}>
             No traffic streams currently injected. Click &quot;+ Inject Traffic Stream&quot; to simulate network load.
           </div>
@@ -369,7 +407,7 @@ const TrafficGenerator: React.FC = () => {
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
