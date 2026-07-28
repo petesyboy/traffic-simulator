@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { isPacketToolConfig } from '../../utils/simulation/utils';
+import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
+import { formatBandwidth } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 
@@ -27,6 +29,30 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const defaultIngestOptic = isPacketTool ? 'Customer Supplied Optic' : '';
   const nodes = useStore((state) => state.nodes);
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
+
+  const toolName = (node.data?.toolName as string) || '';
+  const storedIngestLimit = node.data?.ingestLimitMbps as number | undefined;
+  const effectiveIngestLimit = (typeof storedIngestLimit === 'number' && storedIngestLimit > 0)
+    ? storedIngestLimit
+    : getDefaultIngestLimitMbps(toolName);
+
+  // Raw string kept in local state so a mid-edit "" or partial number doesn't
+  // get eagerly clamped back to the last valid value — parsing is deferred to blur.
+  // Resynced during render (not an effect) when the selected node changes, matching
+  // the pattern ConfigPanel.tsx uses for its own selected-node-changed reset.
+  const [prevNodeId, setPrevNodeId] = useState(node.id);
+  const [ingestLimitStr, setIngestLimitStr] = useState(String(effectiveIngestLimit));
+  if (node.id !== prevNodeId) {
+    setPrevNodeId(node.id);
+    setIngestLimitStr(String(effectiveIngestLimit));
+  }
+
+  const commitIngestLimit = () => {
+    const parsed = parseInt(ingestLimitStr, 10);
+    const finalValue = (!isNaN(parsed) && parsed > 0) ? parsed : effectiveIngestLimit;
+    setIngestLimitStr(String(finalValue));
+    onGenericChange('ingestLimitMbps', String(finalValue));
+  };
 
   return (
     <>
@@ -81,6 +107,23 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
             <option value="256MB">256 MB Buffer</option>
             <option value="1GB">1 GB Circular Buffer</option>
           </select>
+        </FormGroup>
+      )}
+
+      {isPacketTool && (
+        <FormGroup label="Ingest Rate Limit (Mbps)">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={ingestLimitStr}
+            onChange={(e) => setIngestLimitStr(e.target.value)}
+            onBlur={commitIngestLimit}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+            ≈ {formatBandwidth(effectiveIngestLimit)}
+            {storedIngestLimit === undefined && toolName && ` — default for ${toolName}, editable`}
+          </div>
         </FormGroup>
       )}
 

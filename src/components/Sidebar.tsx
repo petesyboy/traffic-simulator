@@ -20,6 +20,7 @@ import {
   PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import { DEFAULT_TOOL_INGEST_LIMITS_MBPS } from '../constants/toolIngestLimits';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import skusData from '../constants/skus.json';
 import CatalogueSection from './sidebar/CatalogueSection';
@@ -232,13 +233,14 @@ const Sidebar: React.FC = () => {
                   {
                     label: 'Packet Consumers',
                     items: [
-                      { label: 'ExtraHop', desc: 'ExtraHop Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ExtraHop', expectedType: 'packet' } },
-                      { label: 'Vectra', desc: 'Vectra Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Vectra', expectedType: 'packet' } },
-                      { label: 'Corelight', desc: 'Corelight Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Corelight', expectedType: 'packet' } },
-                      { label: 'Endace Capture', desc: 'Endace Capture Appliance', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Endace Packet Capture Appliance', expectedType: 'packet' } },
-                      { label: 'Wireshark', desc: 'Wireshark Tool', type: NODE_TYPES.TOOL, icon: WiresharkIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Wireshark', expectedType: 'packet' } },
-                      { label: 'ForeScout', desc: 'ForeScout Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ForeScout', expectedType: 'packet' } },
-                      { label: 'Nozomi', desc: 'Nozomi Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Nozomi', expectedType: 'packet' } },
+                      { label: 'ExtraHop', desc: 'ExtraHop Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ExtraHop', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['ExtraHop'] } },
+                      { label: 'Vectra', desc: 'Vectra Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Vectra', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Vectra'] } },
+                      { label: 'Darktrace', desc: 'Darktrace Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Darktrace', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Darktrace'] } },
+                      { label: 'Corelight', desc: 'Corelight Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Corelight', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Corelight'] } },
+                      { label: 'Endace Capture', desc: 'Endace Capture Appliance', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Endace Packet Capture Appliance', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Endace Packet Capture Appliance'] } },
+                      { label: 'Wireshark', desc: 'Wireshark Tool', type: NODE_TYPES.TOOL, icon: WiresharkIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Wireshark', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Wireshark'] } },
+                      { label: 'ForeScout', desc: 'ForeScout Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ForeScout', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['ForeScout'] } },
+                      { label: 'Nozomi', desc: 'Nozomi Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Nozomi', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Nozomi'] } },
                       ...packetCustom
                     ]
                   },

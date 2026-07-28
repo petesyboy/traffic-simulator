@@ -12,6 +12,8 @@ import {
 } from './simulation/types';
 import { getHardwareOpticCapacity, isPacketToolConfig, isMetadataToolConfig, isStorageToolConfig } from './simulation/utils';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
+import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
+import { formatBandwidth } from './format';
 import { processToolNode } from './simulation/processors/toolProcessor';
 import { processFilterNode } from './simulation/processors/filterProcessor';
 import { processMapNode } from './simulation/processors/mapProcessor';
@@ -364,6 +366,17 @@ export const calculateSimulationStep = (
               if (expectedFormat !== 'Any' && rFormat !== expectedFormat) { hasMismatch = true; if (!mismatchMsg) mismatchMsg = `Format mismatch: got ${rFormat}, expected ${expectedFormat}`; }
               else { hasValid = true; receivedFormat = rFormat || 'Metadata'; }
             } else { hasMismatch = true; if (!mismatchMsg) mismatchMsg = 'Expected metadata, got packets'; }
+          }
+        }
+        // Flag when the tool's configured (or vendor-default) ingest ceiling is exceeded —
+        // takes priority over the blind-spot note below since a dropped/overloaded ingest
+        // engine is the more actionable problem.
+        if (isPacketTool && packetBandwidth > 0 && !mismatchMsg) {
+          const rawLimit = data.ingestLimitMbps as number | undefined;
+          const ingestLimit = (typeof rawLimit === 'number' && rawLimit > 0) ? rawLimit : getDefaultIngestLimitMbps(data.toolName as string | undefined);
+          if (packetBandwidth > ingestLimit) {
+            hasMismatch = true;
+            mismatchMsg = `⚠️ Ingest Overloaded: ${formatBandwidth(packetBandwidth)} exceeds ${formatBandwidth(ingestLimit)} limit`;
           }
         }
         // Quantify the post-decryption blind spot: not all encrypted traffic reaching a

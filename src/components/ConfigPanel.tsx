@@ -63,6 +63,10 @@ const ConfigPanel: React.FC = () => {
       updates.sliceSize = parseInt(val, 10) || 128;
     }
 
+    if (key === 'ingestLimitMbps') {
+      updates.ingestLimitMbps = parseInt(val, 10) || undefined;
+    }
+
     if (key === 'tappedLinksCount') {
       updates.tappedLinksCount = parseInt(val, 10) || 1;
     }

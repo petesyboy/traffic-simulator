@@ -14,6 +14,7 @@ import {
 } from '../Icons';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
+import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass } from './nodeStyles';
 
@@ -147,6 +148,11 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         {isRunning && !isFederatedSearch && (
           <div className="node-metrics" style={{ marginTop: '8px' }}>
             <span>Rx: {formatBandwidth(metrics?.rxMbps)}</span>
+            {isPacketTool && (
+              <span style={{ color: '#888', display: 'block', fontSize: '9px', marginTop: '2px' }}>
+                Ingest Limit: {formatBandwidth((data.ingestLimitMbps as number) || getDefaultIngestLimitMbps(toolName))}
+              </span>
+            )}
             {(isMetadataTool || isStorageTool) && (
               <span style={{ color: '#00e5ff', display: 'block', fontSize: '9px', marginTop: '2px' }}>
                 Ingested: {formatBytes(data.totalIngestedBytes as number)}
