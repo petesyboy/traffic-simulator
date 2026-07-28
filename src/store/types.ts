@@ -45,6 +45,8 @@ export interface CustomTool {
   label: string;
   inputFormat: 'packets' | 'AMI' | 'objects';
   description?: string;
+  // Ingest-rate ceiling in Mbps, only meaningful for inputFormat === 'packets'.
+  ingestLimitMbps?: number;
 }
 
 export interface GigaSmartApp {

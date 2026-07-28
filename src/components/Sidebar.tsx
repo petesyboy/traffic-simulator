@@ -20,7 +20,7 @@ import {
   PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
-import { DEFAULT_TOOL_INGEST_LIMITS_MBPS } from '../constants/toolIngestLimits';
+import { DEFAULT_TOOL_INGEST_LIMITS_MBPS, GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS } from '../constants/toolIngestLimits';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import skusData from '../constants/skus.json';
 import CatalogueSection from './sidebar/CatalogueSection';
@@ -72,6 +72,7 @@ const Sidebar: React.FC = () => {
   const [showAddTool, setShowAddTool] = useState(false);
   const [newToolName, setNewToolName] = useState('');
   const [newToolFormat, setNewToolFormat] = useState<'packets' | 'AMI' | 'objects'>('packets');
+  const [newToolIngestLimit, setNewToolIngestLimit] = useState(String(GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS));
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -185,7 +186,7 @@ const Sidebar: React.FC = () => {
                     icon: PacketToolIcon,
                     isCustom: true,
                     id: t.id,
-                    initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: t.label, expectedType: 'packet' }
+                    initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: t.label, expectedType: 'packet', ingestLimitMbps: t.ingestLimitMbps ?? GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS }
                   }));
 
                 const metadataCustom = (customTools || [])
@@ -368,15 +369,41 @@ const Sidebar: React.FC = () => {
                         <option value="objects">Objects (Object Consuming)</option>
                       </select>
                     </div>
+                    {newToolFormat === 'packets' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '9px', color: '#888' }}>Ingest Rate Limit (Mbps)</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={String(GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS)}
+                          value={newToolIngestLimit}
+                          onChange={(e) => setNewToolIngestLimit(e.target.value)}
+                          style={{
+                            padding: '4px 6px',
+                            background: '#121212',
+                            border: '1px solid #444',
+                            borderRadius: '3px',
+                            color: '#fff',
+                            fontSize: '11px',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
                       <button
                         onClick={() => {
                           if (!newToolName.trim()) return;
+                          const parsedLimit = parseInt(newToolIngestLimit, 10);
                           addCustomTool({
                             label: newToolName.trim(),
-                            inputFormat: newToolFormat
+                            inputFormat: newToolFormat,
+                            ...(newToolFormat === 'packets'
+                              ? { ingestLimitMbps: (!isNaN(parsedLimit) && parsedLimit > 0) ? parsedLimit : GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS }
+                              : {})
                           });
                           setNewToolName('');
+                          setNewToolIngestLimit(String(GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS));
                           setShowAddTool(false);
                         }}
                         style={{
