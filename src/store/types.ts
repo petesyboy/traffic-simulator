@@ -238,7 +238,9 @@ export interface RFState {
   snapToGrid: boolean;
   exportDiagramMode: boolean;
   fitViewTrigger: number;
-  
+  zoomToNodeId: string | null;
+  zoomToNodeTrigger: number;
+
   // Simulation State
   isRunning: boolean;
   simulationSpeed: number;

@@ -26,6 +26,8 @@ export interface GraphSlice {
   snapToGrid: boolean;
   exportDiagramMode: boolean;
   fitViewTrigger: number;
+  zoomToNodeId: string | null;
+  zoomToNodeTrigger: number;
 
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -57,6 +59,8 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   snapToGrid: false,
   exportDiagramMode: false,
   fitViewTrigger: 0,
+  zoomToNodeId: null,
+  zoomToNodeTrigger: 0,
 
   onNodesChange: (changes) => {
     if (changes.some((c) => c.type === 'remove')) get().pushHistory();

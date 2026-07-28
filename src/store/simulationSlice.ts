@@ -163,7 +163,8 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
       trafficStreams: initialTraffic,
       deliveredStreams: [],
       uniqueEgressMbps: 0,
-      fitViewTrigger: get().fitViewTrigger + 1
+      zoomToNodeId: 'node-tool-1',
+      zoomToNodeTrigger: get().zoomToNodeTrigger + 1
     });
   },
 });
