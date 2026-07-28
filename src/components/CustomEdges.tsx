@@ -56,6 +56,9 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
         fill="none"
       />
 
+      {/* Invisible wide hit-area so the edge is easy to click without lining up on the thin visible stroke */}
+      <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={20} className="react-flow__edge-interaction" />
+
       {/* Label rendering */}
       {label && (
         <EdgeLabelRenderer>
@@ -155,6 +158,8 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
         style={style}
         fill="none"
       />
+      {/* Invisible wide hit-area so the edge is easy to click without lining up on the thin visible stroke */}
+      <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={20} className="react-flow__edge-interaction" />
       {label && (
         <EdgeLabelRenderer>
           <div
