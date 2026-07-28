@@ -337,6 +337,7 @@ export interface RFState {
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
+  autoScaleToolForFeed: (nodeId: string) => { ok: boolean; message: string };
 
   // History (Undo/Redo)
   historyPast: HistorySnapshot[];

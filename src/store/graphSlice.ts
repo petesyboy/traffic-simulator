@@ -13,6 +13,8 @@ import { type RFState, type CustomNode, type AnyNodeData, type HardwareNodeData,
 import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { NODE_TYPES } from '../constants/nodeTypes';
+import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
+import { formatBandwidth } from '../utils/format';
 
 export interface GraphSlice {
   nodes: CustomNode[];
@@ -42,6 +44,7 @@ export interface GraphSlice {
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
+  autoScaleToolForFeed: (nodeId: string) => { ok: boolean; message: string };
 }
 
 export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set, get) => ({
@@ -227,5 +230,90 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       get().pushHistory();
       set({ nodes: result.nodes, edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
     }
+  },
+
+  // Advanced-mode helper: given a tool node that's currently overloaded, work out how
+  // many instances of it are needed to absorb the feed it's receiving, insert a
+  // load-balancer (GigaStream) upstream of it if one isn't already there, and add
+  // that many duplicate tool instances wired off the load balancer's outputs — so the
+  // feed gets split evenly rather than teed in full to every copy.
+  autoScaleToolForFeed: (nodeId) => {
+    const state = get();
+    const toolNode = state.nodes.find((n) => n.id === nodeId);
+    if (!toolNode || toolNode.type !== NODE_TYPES.TOOL) {
+      return { ok: false, message: 'This action is only available on a tool node.' };
+    }
+
+    const currentRx = state.nodeMetrics[nodeId]?.rxMbps || 0;
+    if (currentRx <= 0) {
+      return { ok: false, message: 'Run the simulation first so the feed size reaching this tool can be measured.' };
+    }
+
+    const rawLimit = toolNode.data?.ingestLimitMbps as number | undefined;
+    const effectiveLimit = (typeof rawLimit === 'number' && rawLimit > 0)
+      ? rawLimit
+      : getDefaultIngestLimitMbps(toolNode.data?.toolName as string | undefined);
+
+    const MAX_INSTANCES = 16;
+    const requiredCount = Math.min(MAX_INSTANCES, Math.ceil(currentRx / effectiveLimit));
+    if (requiredCount <= 1) {
+      return { ok: false, message: 'This tool already has enough ingest capacity for the current feed.' };
+    }
+
+    const upstreamEdges = state.edges.filter((e) => e.target === nodeId);
+    if (upstreamEdges.length !== 1) {
+      return { ok: false, message: 'Auto-scale requires exactly one upstream connection into this tool (found ' + upstreamEdges.length + ').' };
+    }
+    const upstreamEdge = upstreamEdges[0];
+    const upstreamSource = state.nodes.find((n) => n.id === upstreamEdge.source);
+    if (!upstreamSource) {
+      return { ok: false, message: 'Could not find the upstream source feeding this tool.' };
+    }
+
+    state.pushHistory();
+
+    const addedNodes: CustomNode[] = [];
+    const addedEdges: Edge[] = [];
+    const removedEdgeIds: string[] = [];
+    let loadBalancerId: string;
+
+    if (upstreamSource.type === NODE_TYPES.GIGASTREAM) {
+      // A load balancer is already feeding this tool — reuse it rather than stacking a second one.
+      loadBalancerId = upstreamSource.id;
+    } else {
+      loadBalancerId = uuidv4();
+      addedNodes.push({
+        id: loadBalancerId,
+        type: NODE_TYPES.GIGASTREAM,
+        position: { x: toolNode.position.x - 220, y: toolNode.position.y },
+        data: { label: 'Load Balancer', algorithm: 'Round Robin' },
+      } as CustomNode);
+      removedEdgeIds.push(upstreamEdge.id);
+      addedEdges.push({ id: `e-${uuidv4()}`, source: upstreamEdge.source, sourceHandle: upstreamEdge.sourceHandle, target: loadBalancerId, targetHandle: 'in' } as Edge);
+      addedEdges.push({ id: `e-${uuidv4()}`, source: loadBalancerId, sourceHandle: 'out', target: nodeId, targetHandle: upstreamEdge.targetHandle || 'in' } as Edge);
+    }
+
+    const duplicateCount = requiredCount - 1;
+    const baseLabel = String(toolNode.data?.label || toolNode.data?.toolName || 'Tool');
+    for (let i = 0; i < duplicateCount; i++) {
+      const dupId = uuidv4();
+      addedNodes.push({
+        id: dupId,
+        type: toolNode.type,
+        position: { x: toolNode.position.x, y: toolNode.position.y + (i + 1) * 130 },
+        data: { ...toolNode.data, label: `${baseLabel} (${i + 2})` },
+      } as CustomNode);
+      addedEdges.push({ id: `e-${uuidv4()}`, source: loadBalancerId, sourceHandle: 'out', target: dupId, targetHandle: 'in' } as Edge);
+    }
+
+    set({
+      nodes: [...state.nodes, ...addedNodes],
+      edges: [...state.edges.filter((e) => !removedEdgeIds.includes(e.id)), ...addedEdges],
+    });
+
+    return {
+      ok: true,
+      message: `Added ${duplicateCount} more instance${duplicateCount > 1 ? 's' : ''} of ${baseLabel} behind a load balancer — ${requiredCount}x @ ${formatBandwidth(effectiveLimit)} each now share the ${formatBandwidth(currentRx)} feed.`,
+    };
   },
 });

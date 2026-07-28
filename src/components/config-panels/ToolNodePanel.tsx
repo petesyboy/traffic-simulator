@@ -29,6 +29,8 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const defaultIngestOptic = isPacketTool ? 'Customer Supplied Optic' : '';
   const nodes = useStore((state) => state.nodes);
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
+  const advancedMode = useStore((state) => state.advancedMode);
+  const autoScaleToolForFeed = useStore((state) => state.autoScaleToolForFeed);
 
   const toolName = (node.data?.toolName as string) || '';
   const storedIngestLimit = node.data?.ingestLimitMbps as number | undefined;
@@ -205,6 +207,34 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
             : '✓ Idle (No Traffic)'}
         </div>
       </FormGroup>
+
+      {advancedMode && isPacketTool && (
+        <FormGroup label="Advanced: Capacity Planning">
+          <button
+            type="button"
+            onClick={() => {
+              const result = autoScaleToolForFeed(node.id);
+              window.alert(result.message);
+            }}
+            style={{
+              width: '100%',
+              padding: '6px',
+              background: '#2b2b2b',
+              border: '1px dashed #ff9800',
+              borderRadius: '4px',
+              color: '#ff9800',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            🧮 Auto-Scale to Match Feed
+          </button>
+          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+            Duplicates this tool behind a load balancer until enough instances exist to absorb its current feed at {formatBandwidth(effectiveIngestLimit)} each. Requires the simulation to be running and exactly one upstream connection.
+          </div>
+        </FormGroup>
+      )}
 
       {(isMetadataTool || isStorageTool) && (
         <MetadataEventViewer selectedNode={node} />
