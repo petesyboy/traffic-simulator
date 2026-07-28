@@ -45,6 +45,9 @@ describe('autoScaleToolForFeed', () => {
 
     const loadBalancer = nodes.find((n) => n.type === NODE_TYPES.GIGASTREAM);
     expect(loadBalancer).toBeDefined();
+    // Configured Links must match what's actually wired (5: original tool + 4 duplicates),
+    // otherwise the node shows a false "Port mismatch" warning.
+    expect(loadBalancer!.data.linkCount).toBe(5);
 
     // The original map->tool edge should be gone, replaced by map->LB and LB->tool.
     expect(edges.find((e) => e.id === 'e-map-tool')).toBeUndefined();
@@ -88,6 +91,9 @@ describe('autoScaleToolForFeed', () => {
     expect(state.edges).toHaveLength(2 + 2);
     expect(state.edges.find((e) => e.id === 'e-map-lb')).toBeDefined();
     expect(state.edges.find((e) => e.id === 'e-lb-tool')).toBeDefined();
+
+    // linkCount must reflect the load balancer's new total (1 original + 2 duplicates), not just the duplicates.
+    expect(loadBalancers[0].data.linkCount).toBe(3);
   });
 
   it('refuses when the tool already has enough capacity', () => {

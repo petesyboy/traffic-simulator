@@ -277,20 +277,23 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const removedEdgeIds: string[] = [];
     let loadBalancerId: string;
 
+    let existingOutboundCount: number;
     if (upstreamSource.type === NODE_TYPES.GIGASTREAM) {
       // A load balancer is already feeding this tool — reuse it rather than stacking a second one.
       loadBalancerId = upstreamSource.id;
+      existingOutboundCount = state.edges.filter((e) => e.source === loadBalancerId).length;
     } else {
       loadBalancerId = uuidv4();
       addedNodes.push({
         id: loadBalancerId,
         type: NODE_TYPES.GIGASTREAM,
         position: { x: toolNode.position.x - 220, y: toolNode.position.y },
-        data: { label: 'Load Balancer', algorithm: 'Round Robin' },
+        data: { label: 'Load Balancer', configType: 'GigaStream', algorithm: 'Round Robin', linkCount: requiredCount },
       } as CustomNode);
       removedEdgeIds.push(upstreamEdge.id);
       addedEdges.push({ id: `e-${uuidv4()}`, source: upstreamEdge.source, sourceHandle: upstreamEdge.sourceHandle, target: loadBalancerId, targetHandle: 'in' } as Edge);
       addedEdges.push({ id: `e-${uuidv4()}`, source: loadBalancerId, sourceHandle: 'out', target: nodeId, targetHandle: upstreamEdge.targetHandle || 'in' } as Edge);
+      existingOutboundCount = 1; // the LB->original-tool edge just added above
     }
 
     const duplicateCount = requiredCount - 1;
@@ -306,8 +309,15 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       addedEdges.push({ id: `e-${uuidv4()}`, source: loadBalancerId, sourceHandle: 'out', target: dupId, targetHandle: 'in' } as Edge);
     }
 
+    // Keep the load balancer's "Configured Links" figure honest — it's whatever this
+    // node ends up actually wired to, whether newly created or an existing one we just
+    // added more outbound edges to.
+    const finalLinkCount = existingOutboundCount + duplicateCount;
+
     set({
-      nodes: [...state.nodes, ...addedNodes],
+      nodes: [...state.nodes, ...addedNodes].map((n) =>
+        n.id === loadBalancerId ? { ...n, data: { ...n.data, linkCount: finalLinkCount } } : n
+      ),
       edges: [...state.edges.filter((e) => !removedEdgeIds.includes(e.id)), ...addedEdges],
     });
 
