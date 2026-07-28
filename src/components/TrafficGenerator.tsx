@@ -177,9 +177,9 @@ const TrafficGenerator: React.FC = () => {
       <div
         className="bottom-drawer"
         style={{
-          maxHeight: isCollapsed ? '36px' : `${drawerHeight}px`,
-          height: isCollapsed ? '36px' : `${drawerHeight}px`,
-          padding: isCollapsed ? '8px 16px' : undefined,
+          maxHeight: isCollapsed ? '48px' : `${drawerHeight}px`,
+          height: isCollapsed ? '48px' : `${drawerHeight}px`,
+          padding: isCollapsed ? '10px 16px' : undefined,
           overflow: 'hidden',
           transition: 'height 0.2s ease, max-height 0.2s ease',
         }}
@@ -191,12 +191,19 @@ const TrafficGenerator: React.FC = () => {
               onClick={() => setIsCollapsed(!isCollapsed)}
               title={isCollapsed ? 'Expand traffic generator' : 'Minimize traffic generator'}
               style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
-                fontSize: '11px',
-                padding: '2px 4px',
+                fontSize: '18px',
+                lineHeight: 1,
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
               }}
             >
               {isCollapsed ? '▸' : '▾'}
