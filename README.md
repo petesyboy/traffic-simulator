@@ -6,6 +6,19 @@ This application allows sales teams to quickly build flow maps, simulate live tr
 
 ---
 
+## 🎯 60-Second Demo Script (Start Here)
+
+The simulator loads with a ready-made scenario, so you can walk straight into the story without configuring anything. Here's the flow:
+
+1. **Load the page and reset the demo.** Click the reset icon in the top-right of the toolbar to load the default layout.
+2. **Start with connectivity.** On the left you'll see six traffic sources — five TAPs and a SPAN port. The ExtraHop appliance can't take six direct inputs on its own, so notice how Gigamon's **Core Traffic Map** aggregates all six sources into a single, clean feed it *can* accept. That's the first problem Gigamon solves: connectivity.
+3. **Click "▶ Run Simulation."** Traffic starts flowing, and the ExtraHop node immediately flags itself as overloaded — it's rated for 100 Gbps, but it's currently receiving over that.
+4. **Click the Core Traffic Map**, then find the VLAN rule in the panel on the right. Remove **VLAN 999** — that's traffic which shouldn't be reaching ExtraHop in the first place. Traffic drops back under the 100 Gbps limit.
+5. **Add deduplication.** Drag **Deduplication** from the sidebar and drop it directly onto the connection between the Core Traffic Map and ExtraHop. Watch the duplicate-traffic percentage reduce the load even further.
+6. **Click an empty area of the canvas** to close the side panel, then let the simulation keep running. With nothing selected, the full canvas is on display and the live throughput numbers tell the rest of the story: Gigamon delivered exactly the traffic the tool needed — no more, no less — without anyone touching the tool itself.
+
+---
+
 ## Key Features (Sales Demo)
 
 1. **Interactive Node Canvas**: Drag-and-drop network elements (SPAN Port, TAP Device), Traffic Maps, Filters (VLAN, Subnet, Port), GigaSMART engines (Deduplication, Slicing), and target tools (Vectra, Splunk).
@@ -20,7 +33,7 @@ This application allows sales teams to quickly build flow maps, simulate live tr
 
 ## How to Run the Simulator
 
-To run the simulator, simply locate the file named **`dop_illustration.html`** (found inside the `dist` directory of this folder or on your desktop) and double-click to open it in any web browser. 
+To run the simulator, simply locate the file named **`traffic-reduction-simulator.html`** (found in the root of this folder, or as `dist/index.html`, or on your desktop) and double-click to open it in any web browser. 
 
 This standalone HTML file requires no server setup, installation, or internet access to run.
 
