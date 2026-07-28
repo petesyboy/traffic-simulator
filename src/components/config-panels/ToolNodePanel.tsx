@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { isPacketToolConfig } from '../../utils/simulation/utils';
-import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
+import { getDefaultIngestLimitMbps, getToolConnectivity, getToolApplianceModel } from '../../constants/toolIngestLimits';
 import { formatBandwidth } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
@@ -53,6 +53,9 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
     setIngestLimitStr(String(finalValue));
     onGenericChange('ingestLimitMbps', String(finalValue));
   };
+
+  const applianceModel = getToolApplianceModel(toolName);
+  const connectivity = getToolConnectivity(toolName);
 
   return (
     <>
@@ -122,8 +125,16 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
           />
           <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '3px' }}>
             ≈ {formatBandwidth(effectiveIngestLimit)}
-            {storedIngestLimit === undefined && toolName && ` — default for ${toolName}, editable`}
+            {storedIngestLimit === undefined && toolName && ` — default for ${toolName}${applianceModel ? ` (${applianceModel})` : ''}, editable`}
           </div>
+          {connectivity.length > 0 && (
+            <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.5' }}>
+              Typical connectivity:
+              <ul style={{ margin: '2px 0 0 0', paddingLeft: '16px' }}>
+                {connectivity.map((c) => <li key={c}>{c}</li>)}
+              </ul>
+            </div>
+          )}
         </FormGroup>
       )}
 
