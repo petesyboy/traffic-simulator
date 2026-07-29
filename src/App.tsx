@@ -433,7 +433,7 @@ function App() {
   const [modalMode, setModalMode] = useState<'save' | 'load' | null>(null);
   const [saveToast, setSaveToast] = useState('');
 
-  const handleExportStateToFile = useCallback(() => {
+  const handleExportStateToFile = useCallback(async () => {
     const name = currentScenarioName || 'fm-scenario';
     const flow = {
       nodes,
@@ -450,21 +450,57 @@ function App() {
         snapToGrid
       }
     };
-    const blob = new Blob([JSON.stringify(flow, null, 2)], { type: 'application/json' });
+    const json = JSON.stringify(flow, null, 2);
+    const filename = `${name}.json`;
+
+    // Chromium browsers support showSaveFilePicker, which brings up the native
+    // "Save As" dialog so the user can pick a location/filename instead of it
+    // silently landing in the default downloads folder. Firefox/Safari don't
+    // implement it, and this app is mainly distributed as a standalone HTML
+    // file opened directly via file:// - where the picker API can exist on
+    // `window` but throw when actually invoked (no real origin to attach the
+    // permission to) - so any failure other than the user cancelling falls
+    // through to the anchor-download approach below rather than failing silently.
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await (window as unknown as {
+          showSaveFilePicker: (options: {
+            suggestedName: string;
+            types: { description: string; accept: Record<string, string[]> }[];
+          }) => Promise<FileSystemFileHandle>;
+        }).showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'JSON Topology File', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        setSaveToast(`Saved topology to "${handle.name}"`);
+        setTimeout(() => setSaveToast(''), 5000);
+        return;
+      } catch (err) {
+        // AbortError means the user cancelled the picker - respect that instead
+        // of falling back to a download they didn't ask for.
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.warn('showSaveFilePicker unavailable, falling back to anchor download:', err);
+      }
+    }
+
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `${name}.json`);
+    downloadAnchor.setAttribute('download', filename);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
     URL.revokeObjectURL(url);
 
-    setSaveToast(`Saved topology to "${name}.json"`);
+    setSaveToast(`Saved topology to "${filename}"`);
     setTimeout(() => setSaveToast(''), 5000);
   }, [
-    nodes, edges, trafficStreams, advancedMode, projectLicenseMode, defaultTermDuration, 
-    projectRegion, disableDcWarnings, panelTextScale, showGrid, snapToGrid, 
+    nodes, edges, trafficStreams, advancedMode, projectLicenseMode, defaultTermDuration,
+    projectRegion, disableDcWarnings, panelTextScale, showGrid, snapToGrid,
     currentScenarioName
   ]);
 
