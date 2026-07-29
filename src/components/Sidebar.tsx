@@ -78,6 +78,25 @@ const Sidebar: React.FC = () => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
+  // Per-group collapse state for the "Demonstration" section's sub-groups
+  // (Sources, Traffic Routing, Packet Consumers, etc). Absence of a key means
+  // "expanded" so the groups all start open without needing every label
+  // pre-populated here. Packet Consumers in particular has 15+ entries, so
+  // being able to collapse it (individually or via "Collapse All") keeps the
+  // palette scannable.
+  const DEMO_GROUP_LABELS = ['Sources', 'Traffic Routing', 'Packet Consumers', 'Metadata Consumers', 'Objects'];
+  const [openDemoGroups, setOpenDemoGroups] = useState<Record<string, boolean>>({});
+  const isDemoGroupOpen = (label: string) => openDemoGroups[label] !== false;
+  const toggleDemoGroup = (label: string) => {
+    setOpenDemoGroups((prev) => ({ ...prev, [label]: !isDemoGroupOpen(label) }));
+  };
+  const allDemoGroupsCollapsed = DEMO_GROUP_LABELS.every((label) => openDemoGroups[label] === false);
+  const toggleAllDemoGroups = () => {
+    const nextState: Record<string, boolean> = {};
+    DEMO_GROUP_LABELS.forEach((label) => { nextState[label] = allDemoGroupsCollapsed; });
+    setOpenDemoGroups(nextState);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -165,9 +184,12 @@ const Sidebar: React.FC = () => {
           />
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {/* ── Collapsible Section: Demonstration ── */}
-        <div className="tree-section">
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* ── Collapsible Section: Demonstration ──
+              Ordered via CSS `order` (not JSX position) so Advanced Mode can
+              place the Physical Hardware section first without duplicating
+              this section's markup for each mode. */}
+        <div className="tree-section" style={{ order: 2 }}>
           <div className="tree-header" onClick={() => toggleSection('demo')}>
             <span className={`chevron ${openSections.demo ? 'open' : ''}`}>▶</span>
             <span>Demonstration</span>
@@ -176,6 +198,22 @@ const Sidebar: React.FC = () => {
 
           {openSections.demo && (
             <div className="tree-content">
+              <button
+                onClick={toggleAllDemoGroups}
+                style={{
+                  alignSelf: 'flex-end',
+                  background: 'transparent',
+                  border: '1px solid #444',
+                  borderRadius: '3px',
+                  color: '#999',
+                  fontSize: '9px',
+                  padding: '3px 6px',
+                  cursor: 'pointer',
+                  marginBottom: '2px'
+                }}
+              >
+                {allDemoGroupsCollapsed ? '▾ Expand All' : '▸ Collapse All'}
+              </button>
               {(() => {
                 const packetCustom = (customTools || [])
                   .filter(t => t.inputFormat === 'packets')
@@ -273,11 +311,40 @@ const Sidebar: React.FC = () => {
                 return demoGroups.map((group, gIdx) => {
                   const filteredItems = group.items.filter(item => item.label.toLowerCase().includes(searchQuery));
                   if (filteredItems.length === 0) return null;
-                  
+
+                  // A search query force-opens every matching group, regardless of its
+                  // collapsed state, so search results are never hidden.
+                  const isGroupOpen = searchQuery ? true : isDemoGroupOpen(group.label);
+
                   return (
                     <React.Fragment key={gIdx}>
-                      <div className="demo-group-label" style={{ padding: '8px 12px 2px 12px', fontSize: '10px', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{group.label}</div>
-                      {filteredItems.map((item, iIdx) => (
+                      <div
+                        className="demo-group-label"
+                        onClick={() => toggleDemoGroup(group.label)}
+                        style={{
+                          padding: '8px 12px 2px 12px',
+                          fontSize: '10px',
+                          color: '#999',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <span style={{
+                          fontSize: '8px',
+                          display: 'inline-block',
+                          transform: isGroupOpen ? 'rotate(90deg)' : 'none',
+                          transition: 'transform 0.15s ease'
+                        }}>▶</span>
+                        <span>{group.label}</span>
+                        <span style={{ marginLeft: 'auto', color: '#666', fontWeight: 400 }}>{filteredItems.length}</span>
+                      </div>
+                      {isGroupOpen && filteredItems.map((item, iIdx) => (
                         <div key={iIdx} className="tree-draggable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '8px' }} draggable onDragStart={(e) => onDragStart(e, item.type, item.desc, (item as { initial?: Record<string, unknown> }).initial)}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <item.icon size={18} />
@@ -453,7 +520,7 @@ const Sidebar: React.FC = () => {
         </div>
 
         {/* ── Collapsible Section: Applications (15 GigaSMART applications) ── */}
-        <div className="tree-section">
+        <div className="tree-section" style={{ order: 3 }}>
           <div className="tree-header" onClick={() => toggleSection('apps')}>
             <span className={`chevron ${openSections.apps ? 'open' : ''}`}>▶</span>
             <span>Applications</span>
@@ -493,9 +560,11 @@ const Sidebar: React.FC = () => {
           )}
         </div>
 
-        {/* ── Collapsible Section: Hardware (Advanced Mode) ── */}
+        {/* ── Collapsible Section: Hardware (Advanced Mode) ──
+            Placed first (order: 1) in Advanced Mode, since physical hardware
+            configuration is the primary concern there. */}
         {advancedMode && (
-          <div className="tree-section">
+          <div className="tree-section" style={{ order: 1 }}>
             <div className="tree-header" onClick={() => toggleSection('advanced')}>
               <span className={`chevron ${openSections.advanced ? 'open' : ''}`}>▶</span>
               <span>Physical Hardware (SE)</span>
