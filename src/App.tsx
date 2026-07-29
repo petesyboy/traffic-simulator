@@ -434,7 +434,11 @@ function App() {
   const [saveToast, setSaveToast] = useState('');
 
   const handleExportStateToFile = useCallback(async () => {
-    const name = currentScenarioName || 'fm-scenario';
+    // Matches the header's own "Untitled Project" fallback (Header.tsx) so the
+    // suggested filename always tracks whatever project name is shown on screen.
+    // Characters invalid in Windows/macOS filenames are stripped since the name
+    // comes from a free-text rename field with no character restrictions.
+    const name = (currentScenarioName || 'Untitled Project').replace(/[<>:"/\\|?*]+/g, '_').trim() || 'Untitled Project';
     const flow = {
       nodes,
       edges,
