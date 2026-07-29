@@ -64,6 +64,7 @@ const Sidebar: React.FC = () => {
     hwTaps: false,
     hwTa: false,
     hwHc: true,
+    hwGsa: false,
   });
 
   const [width, setWidth] = useState(260); // increased default width to fit grid
@@ -272,9 +273,6 @@ const Sidebar: React.FC = () => {
                   {
                     label: 'Packet Consumers',
                     items: [
-                      { label: 'GigaSMART Appliance', desc: 'Gigamon GigaSMART Appliance (GSA) — AMI only for now (more GigaSMART apps coming)', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'GigaSMART Appliance', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['GigaSMART Appliance'], gigaSmartApps: [
-                        { id: 'ami-1', actionType: ACTION_TYPES.AMI, label: 'Application Metadata Intelligence', metadataFormat: 'CEF', metadataRate: 1.5 },
-                      ] } },
                       { label: 'ExtraHop', desc: 'ExtraHop Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ExtraHop', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['ExtraHop'] } },
                       { label: 'Vectra', desc: 'Vectra Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Vectra', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Vectra'] } },
                       { label: 'Darktrace', desc: 'Darktrace Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Darktrace', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Darktrace'] } },
@@ -615,6 +613,31 @@ const Sidebar: React.FC = () => {
                   nodeType={NODE_TYPES.HARDWARE}
                   fallbackIcon={MapIcon}
                   skus={skus}
+                />
+
+                {/* Appliances Sub-accordion — external Gigamon appliances (not
+                    chassis hardware) that still belong alongside TAPs/TA/HC
+                    since they're Gigamon-branded gear, not general-purpose tools. */}
+                <CatalogueSection
+                  title="Appliances"
+                  items={[{ model: 'GigaSMART Appliance', sku: 'GSA' }]}
+                  isOpen={openSections.hwGsa}
+                  onToggle={() => toggleSection('hwGsa')}
+                  searchQuery={searchQuery}
+                  onDragStart={onDragStart}
+                  nodeType={NODE_TYPES.TOOL}
+                  fallbackIcon={PacketToolIcon}
+                  skus={skus}
+                  renderLabel={() => <>GigaSMART Appliance (GSA)</>}
+                  buildInitialData={() => ({
+                    configType: CONFIG_TYPES.PACKET_TOOL,
+                    toolName: 'GigaSMART Appliance',
+                    expectedType: 'packet',
+                    ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['GigaSMART Appliance'],
+                    gigaSmartApps: [
+                      { id: 'ami-1', actionType: ACTION_TYPES.AMI, label: 'Application Metadata Intelligence', metadataFormat: 'CEF', metadataRate: 1.5 },
+                    ],
+                  })}
                 />
               </div>
             )}

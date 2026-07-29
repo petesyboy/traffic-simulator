@@ -232,7 +232,9 @@ const CanvasArea: React.FC = () => {
     }
 
     if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) { mergedData.dedupRate = Math.floor(Math.random() * 41) + 10; mergedData.lastDedupUpdate = Date.now(); }
-    if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
+    // The GSA is a Gigamon appliance, not a customer-supplied tool, so it's excluded here -
+    // ToolNodePanel gives it its own Gigamon-optic default instead (see defaultIngestOptic).
+    if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && initialData?.toolName !== 'GigaSMART Appliance' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
 
     let edgeToInterpose: Edge | null = null;
     if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
