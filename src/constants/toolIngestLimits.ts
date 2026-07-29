@@ -92,9 +92,14 @@ export const TOOL_INGEST_PROFILES: Record<string, ToolIngestProfile> = {
   },
   'GigaSMART Appliance': {
     applianceModel: 'GigaSMART Appliance (GSA)',
-    ingestLimitMbps: 400000, // primary 400GbE data port - native speed depends on the attached TA/HC chassis (400G on TA400/TA400E, 100G on HC1P/HC3/TA25(E)/TA200(E), 40G on HC1)
+    // Both 400GbE data ports can be used for packet ingress - up to 800 Gbps
+    // aggregate when running AMI/AMX-only (metadata exported via the separate
+    // SFP28 bank, no packet-return path needed). If a processed-packet return
+    // path back to the TA/HC is also wired up, one port is used for that
+    // instead, capping ingress at 400 Gbps - editable per node either way.
+    ingestLimitMbps: 800000,
     connectivity: [
-      '2x 400GbE QSFP-DD data ports (400G/100G/40G depending on attached TA/HC chassis)',
+      '2x 400GbE QSFP-DD data ports - both usable for packet ingress (800G aggregate, AMI/AMX metadata-only mode), or 1 ingress + 1 processed-packet return (400G) if returning packets to the TA/HC',
       '4x 10/25GbE SFP28 (metadata/NetFlow export to tools — not individually modelled yet)',
       '4x 10GBASE-T management ports (not modelled)',
     ],
