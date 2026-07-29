@@ -215,11 +215,12 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
 
       {isGigaSmartAppliance && (
         <div className="panel-section">
-          <h3 className="text-base font-semibold mb-2">🎯 GigaSMART Pipeline (Fixed)</h3>
+          <h3 className="text-base font-semibold mb-2">🎯 GigaSMART Pipeline</h3>
           <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: '1.4' }}>
-            Ships with Dedup → AFI → AMI → AMX → AppViz across the appliance's two GS
-            Engines. Reordering/removing stages is possible here but isn't
-            representative of the physical appliance.
+            Currently modeled with AMI only, to keep this simple while the
+            feature beds in. The real appliance also supports Dedup, AFI, AMX,
+            and AppViz across its two GS Engines — these will be added here as
+            support for them is extended.
           </div>
           <GigaSmartAppsPanel selectedNode={node} updateNodeData={updateNodeData} />
         </div>
