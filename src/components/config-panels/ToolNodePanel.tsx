@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
-import type { BaseNodeData } from '../../store/types';
-import { CONFIG_TYPES } from '../../constants/nodeTypes';
+import type { BaseNodeData, GigaSmartNodeData } from '../../store/types';
+import { CONFIG_TYPES, ACTION_TYPES } from '../../constants/nodeTypes';
 import { isPacketToolConfig } from '../../utils/simulation/utils';
 import { getDefaultIngestLimitMbps, getToolConnectivity, getToolApplianceModel } from '../../constants/toolIngestLimits';
 import { formatBandwidth } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 import { GigaSmartAppsPanel } from './hardware';
+
+// Every GigaSMART application the physical appliance is capable of running.
+// A fresh appliance only ships with AMI (see Sidebar.tsx), but the rest can be
+// added here as optional apps — this is the full catalogue "add" offers.
+const GSA_APP_CATALOGUE: { actionType: string; label: string; defaults?: Partial<GigaSmartNodeData> }[] = [
+  { actionType: ACTION_TYPES.DEDUPLICATION, label: 'Deduplication', defaults: { dedupRate: 20 } },
+  { actionType: ACTION_TYPES.APPLICATION_FILTERING_INTELLIGENCE, label: 'Application Filtering Intelligence' },
+  { actionType: ACTION_TYPES.AMI, label: 'Application Metadata Intelligence', defaults: { metadataFormat: 'CEF', metadataRate: 1.5 } },
+  { actionType: ACTION_TYPES.AMX, label: 'Application Metadata Exporter', defaults: { metadataFormat: 'CEF', metadataRate: 1.5 } },
+  { actionType: ACTION_TYPES.APP_VIS, label: 'Application Visualization' },
+];
 
 interface ToolNodePanelProps {
   node: CustomNode;
@@ -63,6 +74,31 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
 
   const applianceModel = getToolApplianceModel(toolName);
   const connectivity = getToolConnectivity(toolName);
+
+  const gigaSmartApps = (node.data?.gigaSmartApps as GigaSmartNodeData[]) || [];
+  const installedActionTypes = new Set(gigaSmartApps.map((app) => app.actionType));
+  const availableAppsToAdd = GSA_APP_CATALOGUE.filter((app) => !installedActionTypes.has(app.actionType));
+  const [selectedAppToAdd, setSelectedAppToAdd] = useState('');
+  if (node.id !== prevNodeId) {
+    setSelectedAppToAdd('');
+  }
+
+  const handleAddApp = () => {
+    const catalogueEntry = availableAppsToAdd.find((app) => app.actionType === selectedAppToAdd) || availableAppsToAdd[0];
+    if (!catalogueEntry) return;
+    // A slug of the action type is a stable, unique-enough id here since
+    // availableAppsToAdd already excludes any actionType already installed.
+    const idSlug = catalogueEntry.actionType.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const newApp: GigaSmartNodeData = {
+      id: `gsa-app-${idSlug}`,
+      configType: 'GigaSMART',
+      actionType: catalogueEntry.actionType,
+      label: catalogueEntry.label,
+      ...catalogueEntry.defaults,
+    };
+    updateNodeData(node.id, { gigaSmartApps: [...gigaSmartApps, newApp] });
+    setSelectedAppToAdd('');
+  };
 
   return (
     <>
@@ -217,12 +253,40 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
         <div className="panel-section">
           <h3 className="text-base font-semibold mb-2">🎯 GigaSMART Pipeline</h3>
           <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: '1.4' }}>
-            Currently modeled with AMI only, to keep this simple while the
-            feature beds in. The real appliance also supports Dedup, AFI, AMX,
-            and AppViz across its two GS Engines — these will be added here as
-            support for them is extended.
+            A fresh appliance defaults to AMI only, to keep this simple while
+            the feature beds in. Dedup, AFI, AMX, and AppViz are all functions
+            the real appliance also performs — add any of them below.
           </div>
           <GigaSmartAppsPanel selectedNode={node} updateNodeData={updateNodeData} />
+          {availableAppsToAdd.length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+              <select
+                value={selectedAppToAdd || availableAppsToAdd[0].actionType}
+                onChange={(e) => setSelectedAppToAdd(e.target.value)}
+                style={{ flex: 1, fontSize: '11px', padding: '4px' }}
+              >
+                {availableAppsToAdd.map((app) => (
+                  <option key={app.actionType} value={app.actionType}>{app.label}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleAddApp}
+                style={{
+                  padding: '4px 10px',
+                  background: 'rgba(255, 152, 0, 0.15)',
+                  border: '1px solid rgba(255, 152, 0, 0.4)',
+                  borderRadius: '3px',
+                  color: '#ffb74d',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                + Add
+              </button>
+            </div>
+          )}
         </div>
       )}
 
