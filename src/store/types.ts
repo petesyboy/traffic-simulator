@@ -211,6 +211,11 @@ export interface ToolNodeData extends BaseNodeData {
   // Only populated for the GigaSMART Appliance (GSA) tool - reuses the same shape
   // as HardwareNodeData.gigaSmartApps so GigaSmartAppsPanel works unchanged here.
   gigaSmartApps?: GigaSmartNodeData[];
+  // GSA-only: optic fitted to the 4x 10/25GbE SFP28 metadata/NetFlow export
+  // bank, kept separate from ingestOptic (the 400G/100G data ports) since
+  // they're physically different cages - informational only, not in the BOM.
+  metadataOptic?: string;
+  metadataOpticQty?: string;
 }
 
 export type AnyNodeData = 

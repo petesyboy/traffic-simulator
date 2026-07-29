@@ -9,6 +9,36 @@ import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 import { GigaSmartAppsPanel } from './hardware';
 
+// Real Gigamon transceiver part numbers for the GSA's 2x 400GbE QSFP-DD data
+// ports. Native speed is 400G on TA400/TA400E; the 100G QSFP28 options cover
+// attaching to a smaller chassis (HC1P/HC3/TA25(E)/TA200(E)), which runs the
+// same cage at 100G. Pulled from opticRules.json's GigaVUE-TA400 port list.
+const GSA_DATA_PORT_OPTICS = [
+  'QDD-503 (400G QSFP-DD LR4)',
+  'QDD-511 (400G QSFP-DD DR4)',
+  'QDD-512 (400G QSFP-DD DR4+)',
+  'QDD-514 (400G QSFP-DD FR4)',
+  'Q28-502T (100G QSFP28 SR4)',
+  'Q28-503T (100G QSFP28 LR4)',
+  'Q28-504T (100G QSFP28 ER4-lite)',
+  'Q28-511T (100G QSFP28 DR1)',
+  'Q28-513 (100G QSFP28 CWDM4)',
+  'Q28-514 (100G QSFP28 FR1)',
+];
+
+// Real Gigamon part numbers for the GSA's 4x 10/25GbE SFP28 metadata/NetFlow
+// export bank (per the GigaSMART Appliance Guide) — informational only, this
+// bank isn't individually modelled in the BOM yet.
+const GSA_METADATA_PORT_OPTICS = [
+  'SFP-552 (25G SFP28 SR)',
+  'SFP-552T (25G SFP28 SR)',
+  'SFP-553T (25G SFP28 LR)',
+  'SFP-531T (10G SFP+ Copper)',
+  'SFP-532T (10G SFP+ SR)',
+  'SFP-533T (10G SFP+ LR)',
+  'SFP-534T (10G SFP+ ER)',
+];
+
 // Every GigaSMART application the physical appliance is capable of running.
 // A fresh appliance only ships with AMI (see Sidebar.tsx), but the rest can be
 // added here as optional apps — this is the full catalogue "add" offers.
@@ -42,7 +72,8 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const isGigaSmartAppliance = (node.data?.toolName as string) === 'GigaSMART Appliance';
   // Gigamon has no input on the optics used by a customer's own packet-consuming tools,
   // so those default to customer-supplied rather than a Gigamon-quoted optic.
-  const defaultIngestOptic = isPacketTool ? 'Customer Supplied Optic' : '';
+  // The GSA is a Gigamon appliance though, so it gets a real Gigamon part number instead.
+  const defaultIngestOptic = isGigaSmartAppliance ? GSA_DATA_PORT_OPTICS[0] : (isPacketTool ? 'Customer Supplied Optic' : '');
   const nodes = useStore((state) => state.nodes);
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
   const advancedMode = useStore((state) => state.advancedMode);
@@ -181,41 +212,95 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
         </FormGroup>
       )}
 
-      <FormGroup label="Ingest Optic Type">
-        <select
-          value={(node.data?.ingestOptic as string) || defaultIngestOptic}
-          onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
-        >
-          <option value="">-- No Optic (Direct Cable) --</option>
-          <option value="1G Copper">1G Copper</option>
-          <option value="1G Multimode SX">1G Multimode SX</option>
-          <option value="1G Singlemode LX">1G Singlemode LX</option>
-          <option value="10G Multimode SR">10G Multimode SR</option>
-          <option value="10G Singlemode LR">10G Singlemode LR</option>
-          <option value="25G Multimode SR">25G Multimode SR</option>
-          <option value="25G Singlemode LR">25G Singlemode LR</option>
-          <option value="40G Multimode SR4">40G Multimode SR4</option>
-          <option value="40G Singlemode LR4">40G Singlemode LR4</option>
-          <option value="100G Multimode SR4">100G Multimode SR4</option>
-          <option value="100G Singlemode LR4">100G Singlemode LR4</option>
-          <option value="Customer Supplied Optic">Customer Supplied Optic</option>
-        </select>
-      </FormGroup>
+      {isGigaSmartAppliance ? (
+        <>
+          <FormGroup label="Data Port Optic (2x 400GbE QSFP-DD)">
+            <select
+              value={(node.data?.ingestOptic as string) || defaultIngestOptic}
+              onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
+            >
+              <option value="">-- No Optic (Direct Cable / DAC) --</option>
+              {GSA_DATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </FormGroup>
 
-      {(node.data?.ingestOptic as string) && (
-        <FormGroup label="Ingest Optic Quantity">
-          <select
-            value={(node.data?.ingestOpticQty as string) || '1'}
-            onChange={(e) => onGenericChange('ingestOpticQty', e.target.value)}
-          >
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="4">4</option>
-            <option value="8">8</option>
-            <option value="12">12</option>
-            <option value="16">16</option>
-          </select>
-        </FormGroup>
+          {(node.data?.ingestOptic as string) && (
+            <FormGroup label="Data Port Optic Quantity">
+              <select
+                value={(node.data?.ingestOpticQty as string) || '1'}
+                onChange={(e) => onGenericChange('ingestOpticQty', e.target.value)}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </FormGroup>
+          )}
+
+          <FormGroup label="Metadata Export Optic (4x 10/25GbE SFP28)">
+            <select
+              value={(node.data?.metadataOptic as string) || ''}
+              onChange={(e) => onGenericChange('metadataOptic', e.target.value)}
+            >
+              <option value="">-- No Optic (Direct Cable) --</option>
+              {GSA_METADATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+              Informational only — this port bank isn't individually costed in the BOM yet.
+            </div>
+          </FormGroup>
+
+          {(node.data?.metadataOptic as string) && (
+            <FormGroup label="Metadata Export Optic Quantity">
+              <select
+                value={(node.data?.metadataOpticQty as string) || '1'}
+                onChange={(e) => onGenericChange('metadataOpticQty', e.target.value)}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+              </select>
+            </FormGroup>
+          )}
+        </>
+      ) : (
+        <>
+          <FormGroup label="Ingest Optic Type">
+            <select
+              value={(node.data?.ingestOptic as string) || defaultIngestOptic}
+              onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
+            >
+              <option value="">-- No Optic (Direct Cable) --</option>
+              <option value="1G Copper">1G Copper</option>
+              <option value="1G Multimode SX">1G Multimode SX</option>
+              <option value="1G Singlemode LX">1G Singlemode LX</option>
+              <option value="10G Multimode SR">10G Multimode SR</option>
+              <option value="10G Singlemode LR">10G Singlemode LR</option>
+              <option value="25G Multimode SR">25G Multimode SR</option>
+              <option value="25G Singlemode LR">25G Singlemode LR</option>
+              <option value="40G Multimode SR4">40G Multimode SR4</option>
+              <option value="40G Singlemode LR4">40G Singlemode LR4</option>
+              <option value="100G Multimode SR4">100G Multimode SR4</option>
+              <option value="100G Singlemode LR4">100G Singlemode LR4</option>
+              <option value="Customer Supplied Optic">Customer Supplied Optic</option>
+            </select>
+          </FormGroup>
+
+          {(node.data?.ingestOptic as string) && (
+            <FormGroup label="Ingest Optic Quantity">
+              <select
+                value={(node.data?.ingestOpticQty as string) || '1'}
+                onChange={(e) => onGenericChange('ingestOpticQty', e.target.value)}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+                <option value="12">12</option>
+                <option value="16">16</option>
+              </select>
+            </FormGroup>
+          )}
+        </>
       )}
 
       {configType === CONFIG_TYPES.METADATA_TOOL && (
