@@ -199,7 +199,12 @@ const ConfigPanel: React.FC = () => {
           )}
 
           {selectedNode.type === NODE_TYPES.HARDWARE && (
-            <HardwareNodePanel node={selectedNode} />
+            <HardwareNodePanel
+              node={selectedNode}
+              onConditionChange={handleConditionChange}
+              onAddCondition={handleAddCondition}
+              onRemoveCondition={handleRemoveCondition}
+            />
           )}
           {selectedNode.type === NODE_TYPES.INPUT && (
             <div className="config-card">

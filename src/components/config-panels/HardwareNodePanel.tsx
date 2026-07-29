@@ -13,18 +13,28 @@ import {
   TapLinksPanel,
   PowerSupplyPanel
 } from './hardware';
-import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData, TappedLinkAllocation } from '../../store/types';
+import { MapNodePanel } from './MapNodePanel';
+import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData, TappedLinkAllocation, MapCondition } from '../../store/types';
 
 interface HardwareNodePanelProps {
   node: CustomNode;
+  onConditionChange: (index: number, key: string, value: string) => void;
+  onAddCondition: () => void;
+  onRemoveCondition: (index: number) => void;
 }
 
-export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({ node }) => {
+export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
+  node,
+  onConditionChange,
+  onAddCondition,
+  onRemoveCondition
+}) => {
   const model = node.data?.model as string;
   const sku = node.data?.sku as string;
   const hwData = node.data as HardwareNodeData;
   const installedOptics: InstalledOptic[] = hwData.optics || [];
   const gigaSmartApps: GigaSmartNodeData[] = hwData.gigaSmartApps || [];
+  const conditions: MapCondition[] = hwData.conditions || [];
   
   const updateNodeData = useStore(state => state.updateNodeData);
   const edges = useStore(state => state.edges);
@@ -200,15 +210,15 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({ node }) =>
       `}</style>
       {!model?.includes('TAP') && (
         <div className="flex-row gap-2 mb-3 border-b border-subtle pb-2 flex-wrap">
-          <button 
-            onClick={() => setActiveTab('general')} 
+          <button
+            onClick={() => setActiveTab('general')}
             className="btn btn-sm"
-            style={{ 
-              background: activeTab === 'general' ? '#333' : 'transparent', 
-              color: activeTab === 'general' ? '#fff' : '#888' 
+            style={{
+              background: activeTab === 'general' ? '#333' : 'transparent',
+              color: activeTab === 'general' ? '#fff' : '#888'
             }}
           >
-            General
+            General{conditions.length > 0 ? ` (${conditions.length} rule${conditions.length > 1 ? 's' : ''})` : ''}
           </button>
           <button 
             onClick={() => setActiveTab('optics')} 
@@ -335,6 +345,18 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({ node }) =>
 
         {model?.includes('TAP') && (
           <TapLinksPanel selectedNode={node} updateNodeData={updateNodeData} nodes={nodes} edges={edges} />
+        )}
+
+        {!model?.includes('TAP') && (
+          <div className="panel-section">
+            <h3 className="text-base font-semibold mb-2">🎯 Traffic Map Filter Rules</h3>
+            <MapNodePanel
+              node={node}
+              onConditionChange={onConditionChange}
+              onAddCondition={onAddCondition}
+              onRemoveCondition={onRemoveCondition}
+            />
+          </div>
         )}
       </div>
 
