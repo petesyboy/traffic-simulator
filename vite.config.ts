@@ -18,6 +18,8 @@ function getGitCommit(): string {
 // Stamps the built HTML with <meta> tags for the app version, build timestamp,
 // and git commit — visible directly in GitHub's file view (or any text editor)
 // on dist/index.html / traffic-reduction-simulator.html without running the app.
+// Also appends the version to <title> so it shows in the browser tab and window
+// title without opening the file at all.
 function buildInfoPlugin(): Plugin {
   return {
     name: 'inject-build-info',
@@ -27,7 +29,9 @@ function buildInfoPlugin(): Plugin {
         `<meta name="build-date" content="${new Date().toISOString()}" />`,
         `<meta name="build-commit" content="${getGitCommit()}" />`,
       ].join('\n    ')
-      return html.replace('</head>', `    ${meta}\n  </head>`)
+      return html
+        .replace('</head>', `    ${meta}\n  </head>`)
+        .replace(/<title>(.*?)<\/title>/, `<title>$1 (v${pkg.version})</title>`)
     },
   }
 }
