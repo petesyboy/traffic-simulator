@@ -13,8 +13,16 @@ export interface OpticSupport {
  * Returns a list of boards/modules and their supported optics for a given hardware model.
  */
 export function getSupportedBoards(model: string, portCapacity?: string, installedOptics?: { optic: string }[]): OpticSupport[] {
-  const keys = Object.keys(opticRules).sort((a, b) => b.length - a.length);
-  const match = keys.find(k => k === model || k.startsWith(model) || model.startsWith(k.split(' ')[0]));
+  const keys = Object.keys(opticRules);
+  // An exact match must win outright before falling back to prefix matching below -
+  // otherwise a longer key that happens to start with this model's name (e.g. the
+  // "GigaVUE-HC1-Plus" rules block starting with "GigaVUE-HC1") would shadow the
+  // model's own exact rules block once sorted longest-first, silently handing a base
+  // chassis a variant's optic/speed capabilities (e.g. 100G cages HC1 doesn't have).
+  const exactMatch = keys.find(k => k === model);
+  const match = exactMatch ?? [...keys]
+    .sort((a, b) => b.length - a.length)
+    .find(k => k.startsWith(model + ' ') || model.startsWith(k.split(' ')[0]));
   if (!match) return [];
   
   const rules = opticRules[match];

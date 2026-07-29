@@ -137,5 +137,27 @@ describe('opticValidation', () => {
       expect(names).not.toContain('PRT-HC3-C08Q16');
       expect(names).toContain('PRT-HC3-C08Q08');
     });
+
+    it('a base chassis is never shadowed by a longer sibling key it happens to prefix-match', () => {
+      // getSupportedBoards used to sort keys longest-first and accept any key
+      // k where k.startsWith(model) - so for model "GigaVUE-HC1", the key
+      // "GigaVUE-HC1-Plus" (which does start with "GigaVUE-HC1") was tried before
+      // the exact "GigaVUE-HC1" key ever got a chance, silently handing every
+      // plain HC1 node HC1-Plus's rules instead - including a "Main Board" with
+      // built-in 40G/100G QSFP+ cages a base HC1 doesn't physically have (its
+      // Main Board is 100M/1G/10G SFP-only per hardwareCatalogue.json).
+      // (excluding the PNL-M341/M343 breakout panel entries, which every TA/HC
+      // board gets appended regardless of speed and whose "40/100G" label text
+      // otherwise trips up a naive "100G" substring check)
+      const isRealQsfpOptic = (o: string) => o.startsWith('QSF-') || o.startsWith('Q28-');
+
+      const hc1MainBoard = getSupportedBoards('GigaVUE-HC1').find(b => b.board.toLowerCase().includes('main'));
+      expect(hc1MainBoard?.board).toBe('HC1-X12G4 (Main board)');
+      expect(hc1MainBoard?.supportedOptics.some(isRealQsfpOptic)).toBe(false);
+
+      const hc1PlusMainBoard = getSupportedBoards('GigaVUE-HC1-Plus').find(b => b.board.toLowerCase().includes('main'));
+      expect(hc1PlusMainBoard?.board).toBe('HC1P-BASE (Main Board)');
+      expect(hc1PlusMainBoard?.supportedOptics.some(o => o.startsWith('Q28-'))).toBe(true);
+    });
   });
 });
