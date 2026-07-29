@@ -4,7 +4,7 @@
  * Destination tool node renderer (Packet, Metadata, Storage tools).
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { CustomNode, GigaSmartNodeData } from '../../store/types';
@@ -15,6 +15,7 @@ import {
 import { CONFIG_TYPES, isMetadataAction } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
+import { GSA_DEFAULT_DATA_PORT_OPTIC, isValidGsaDataPortOptic } from '../../constants/gsaOptics';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass } from './nodeStyles';
 
@@ -30,6 +31,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const edges = useStore((state) => state.edges);
   const exportDiagramMode = useStore((state) => state.exportDiagramMode);
   const advancedMode = useStore((state) => state.advancedMode);
+  const updateNodeData = useStore((state) => state.updateNodeData);
 
   const isPacketTool = configType === CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
@@ -48,6 +50,18 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   // a metadata-generating app configured (AMI/AMX/Application Metadata).
   const hasMetadataApp = isGigaSmartAppliance &&
     ((data.gigaSmartApps as GigaSmartNodeData[] | undefined) || []).some((app) => isMetadataAction(app.actionType));
+
+  // The GSA is a Gigamon appliance, so "Customer Supplied Optic" (the default
+  // every other packet tool gets on drop) never applies to it. Nodes created
+  // before this distinction existed can still carry that stale value in a
+  // saved project — correct it in place the first time the node renders.
+  const storedIngestOptic = data.ingestOptic as string | undefined;
+  const storedIngestOpticQty = data.ingestOpticQty as string | undefined;
+  useEffect(() => {
+    if (isGigaSmartAppliance && !isValidGsaDataPortOptic(storedIngestOptic)) {
+      updateNodeData(id, { ingestOptic: GSA_DEFAULT_DATA_PORT_OPTIC, ingestOpticQty: storedIngestOpticQty || '1' });
+    }
+  }, [id, isGigaSmartAppliance, storedIngestOptic, storedIngestOpticQty, updateNodeData]);
 
   const renderIcon = () => {
     if (isStorageTool) return <S3StorageIcon size={20} />;
@@ -246,7 +260,9 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             const incoming = edges.filter(e => e.target === id);
             const connDesc = incoming.map(e => {
               const src = nodes.find(n => n.id === e.source);
-              const optic = (data.ingestOptic as string) || '';
+              const optic = isGigaSmartAppliance
+                ? (isValidGsaDataPortOptic(storedIngestOptic) ? storedIngestOptic! : GSA_DEFAULT_DATA_PORT_OPTIC)
+                : ((data.ingestOptic as string) || '');
               const qty = data.ingestOpticQty || 1;
               const opticLabel = optic ? `${qty}x ${optic}` : 'Direct Cable';
               return `Ingests from ${src?.data?.label || src?.data?.model || 'Chassis'} via ${opticLabel}`;
