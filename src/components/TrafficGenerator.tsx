@@ -19,6 +19,16 @@ import { useStore, type TrafficStream } from '../store/store';
 import type { TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from '../utils/hardwareUtils';
 
+// Sub-1Gbps presets are only offered in Advanced Mode - they exist to model
+// ingest-limited sensors (e.g. ForeScout, capped at 1Gbps) that need a feed
+// throttled below a full 1Gbps link, which Standard mode users don't need
+// to see.
+const STANDARD_BANDWIDTH_PRESETS = [1000, 10000, 25000, 40000, 100000];
+const ADVANCED_BANDWIDTH_PRESETS = [100, 250, 500, ...STANDARD_BANDWIDTH_PRESETS];
+
+const formatBandwidthOption = (mbps: number): string =>
+  mbps >= 1000 ? `${(mbps / 1000).toFixed(1).replace('.0', '')} Gbps` : `${mbps} Mbps`;
+
 const TrafficGenerator: React.FC = () => {
   const trafficStreams    = useStore((state) => state.trafficStreams);
   const nodes            = useStore((state) => state.nodes);
@@ -349,16 +359,19 @@ const TrafficGenerator: React.FC = () => {
                            onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
                         >
-                           {![1000, 10000, 25000, 40000, 100000].includes(stream.bandwidth) && (
-                             <option value={stream.bandwidth}>
-                               {stream.bandwidth >= 1000 ? `${(stream.bandwidth / 1000).toFixed(1).replace('.0', '')} Gbps` : `${stream.bandwidth} Mbps`}
-                             </option>
-                           )}
-                           <option value={1000}>1 Gbps</option>
-                           <option value={10000}>10 Gbps</option>
-                           <option value={25000}>25 Gbps</option>
-                           <option value={40000}>40 Gbps</option>
-                           <option value={100000}>100 Gbps</option>
+                           {(() => {
+                             const presets = advancedMode ? ADVANCED_BANDWIDTH_PRESETS : STANDARD_BANDWIDTH_PRESETS;
+                             return (
+                               <>
+                                 {!presets.includes(stream.bandwidth) && (
+                                   <option value={stream.bandwidth}>{formatBandwidthOption(stream.bandwidth)}</option>
+                                 )}
+                                 {presets.map((mbps) => (
+                                   <option key={mbps} value={mbps}>{formatBandwidthOption(mbps)}</option>
+                                 ))}
+                               </>
+                             );
+                           })()}
                         </select>
                         {/* Live drifted rate (shown while simulation is running) */}
                         {isRunning && stream.active && (
