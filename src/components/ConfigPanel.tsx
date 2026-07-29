@@ -255,6 +255,7 @@ const ConfigPanel: React.FC = () => {
               <ToolNodePanel
                 node={selectedNode}
                 onGenericChange={handleGenericChange}
+                updateNodeData={updateNodeData}
                 isRunning={isRunning}
                 metrics={selectedNodeMetric}
               />

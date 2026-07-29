@@ -272,6 +272,13 @@ const Sidebar: React.FC = () => {
                   {
                     label: 'Packet Consumers',
                     items: [
+                      { label: 'GigaSMART Appliance', desc: 'Gigamon GigaSMART Appliance (GSA) — Dedup, AFI, AMI, AMX', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'GigaSMART Appliance', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['GigaSMART Appliance'], gigaSmartApps: [
+                        { id: 'dedup-1', actionType: ACTION_TYPES.DEDUPLICATION, label: 'Deduplication', dedupRate: 20 },
+                        { id: 'afi-1', actionType: ACTION_TYPES.APPLICATION_FILTERING_INTELLIGENCE, label: 'Application Filtering Intelligence' },
+                        { id: 'ami-1', actionType: ACTION_TYPES.AMI, label: 'Application Metadata Intelligence', metadataFormat: 'CEF', metadataRate: 1.5 },
+                        { id: 'amx-1', actionType: ACTION_TYPES.AMX, label: 'Application Metadata Exporter', metadataFormat: 'CEF', metadataRate: 1.5 },
+                        { id: 'appviz-1', actionType: ACTION_TYPES.APP_VIS, label: 'Application Visualization' },
+                      ] } },
                       { label: 'ExtraHop', desc: 'ExtraHop Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'ExtraHop', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['ExtraHop'] } },
                       { label: 'Vectra', desc: 'Vectra Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Vectra', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Vectra'] } },
                       { label: 'Darktrace', desc: 'Darktrace Tool', type: NODE_TYPES.TOOL, icon: PacketToolIcon, initial: { configType: CONFIG_TYPES.PACKET_TOOL, toolName: 'Darktrace', expectedType: 'packet', ingestLimitMbps: DEFAULT_TOOL_INGEST_LIMITS_MBPS['Darktrace'] } },

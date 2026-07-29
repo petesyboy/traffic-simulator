@@ -7,12 +7,12 @@
 import React from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
-import type { CustomNode } from '../../store/types';
+import type { CustomNode, GigaSmartNodeData } from '../../store/types';
 import { formatBandwidth, formatBytes } from '../../utils/format';
 import {
   GreenCircleIcon, PacketToolIcon, MetadataToolIcon, S3StorageIcon, WiresharkIcon,
 } from '../Icons';
-import { CONFIG_TYPES } from '../../constants/nodeTypes';
+import { CONFIG_TYPES, isMetadataAction } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
@@ -38,7 +38,16 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   // Splunk and S3 can link to each other — they need a source handle
   const isSplunk = toolName === 'Splunk';
-  const canLinkOut = isSplunk || isStorageTool;
+  // The GigaSMART Appliance (GSA) is a hybrid tool: it consumes packets, runs a
+  // fixed GigaSMART pipeline on them, and sends the processed packet stream back
+  // out (e.g. to the TA/HC or a downstream probe) — it needs the same source
+  // handle Splunk/S3 use for their onward link.
+  const isGigaSmartAppliance = toolName === 'GigaSMART Appliance';
+  const canLinkOut = isSplunk || isStorageTool || isGigaSmartAppliance;
+  // Separate metadata-egress handle, shown only once the appliance actually has
+  // a metadata-generating app configured (AMI/AMX/Application Metadata).
+  const hasMetadataApp = isGigaSmartAppliance &&
+    ((data.gigaSmartApps as GigaSmartNodeData[] | undefined) || []).some((app) => isMetadataAction(app.actionType));
 
   const renderIcon = () => {
     if (isStorageTool) return <S3StorageIcon size={20} />;
@@ -198,7 +207,22 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
 
         {canLinkOut && (
-          <Handle type="source" position={Position.Right} id="out" />
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="out"
+            style={hasMetadataApp ? { top: '30%' } : undefined}
+            title={isGigaSmartAppliance ? 'Processed packets (e.g. back to the TA/HC, or onward to a probe)' : undefined}
+          />
+        )}
+        {hasMetadataApp && (
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="metadata-out"
+            style={{ top: '70%', background: '#ffb74d' }}
+            title="Generated metadata (AMI/AMX) to metadata tools"
+          />
         )}
       </div>
 

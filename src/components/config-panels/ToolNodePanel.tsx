@@ -1,29 +1,34 @@
 import React, { useState } from 'react';
 import { useStore, type CustomNode, type NodeMetrics } from '../../store/store';
+import type { BaseNodeData } from '../../store/types';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { isPacketToolConfig } from '../../utils/simulation/utils';
 import { getDefaultIngestLimitMbps, getToolConnectivity, getToolApplianceModel } from '../../constants/toolIngestLimits';
 import { formatBandwidth } from '../../utils/format';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
+import { GigaSmartAppsPanel } from './hardware';
 
 interface ToolNodePanelProps {
   node: CustomNode;
   onGenericChange: (key: string, val: string) => void;
+  updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
   isRunning: boolean;
   metrics?: NodeMetrics;
 }
 
-export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({ 
-  node, 
-  onGenericChange, 
-  isRunning, 
-  metrics 
+export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
+  node,
+  onGenericChange,
+  updateNodeData,
+  isRunning,
+  metrics
 }) => {
   const configType = (node.data?.configType as string) || CONFIG_TYPES.PACKET_TOOL;
   const isMetadataTool = configType === CONFIG_TYPES.METADATA_TOOL;
   const isStorageTool = configType === CONFIG_TYPES.STORAGE_TOOL;
   const isPacketTool = isPacketToolConfig(configType);
+  const isGigaSmartAppliance = (node.data?.toolName as string) === 'GigaSMART Appliance';
   // Gigamon has no input on the optics used by a customer's own packet-consuming tools,
   // so those default to customer-supplied rather than a Gigamon-quoted optic.
   const defaultIngestOptic = isPacketTool ? 'Customer Supplied Optic' : '';
@@ -208,7 +213,19 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
         </div>
       </FormGroup>
 
-      {advancedMode && isPacketTool && (
+      {isGigaSmartAppliance && (
+        <div className="panel-section">
+          <h3 className="text-base font-semibold mb-2">🎯 GigaSMART Pipeline (Fixed)</h3>
+          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: '1.4' }}>
+            Ships with Dedup → AFI → AMI → AMX → AppViz across the appliance's two GS
+            Engines. Reordering/removing stages is possible here but isn't
+            representative of the physical appliance.
+          </div>
+          <GigaSmartAppsPanel selectedNode={node} updateNodeData={updateNodeData} />
+        </div>
+      )}
+
+      {advancedMode && isPacketTool && !isGigaSmartAppliance && (
         <FormGroup label="Advanced: Capacity Planning">
           <button
             type="button"

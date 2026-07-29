@@ -628,6 +628,93 @@ describe('Simulation Utils', () => {
     });
   });
 
+  describe('GigaSMART Appliance (GSA)', () => {
+    it('routes processed packets and generated metadata onto separate edges without cross-contamination', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 40000 },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'HC Chassis', configType: 'HC', model: 'GigaVUE-HC1' },
+        },
+        {
+          id: 'gsa-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: {
+            label: 'GigaSMART Appliance',
+            configType: 'Packet Tool',
+            toolName: 'GigaSMART Appliance',
+            gigaSmartApps: [
+              { id: 'dedup-1', actionType: 'Deduplication', label: 'Deduplication', dedupRate: 20 },
+              { id: 'afi-1', actionType: 'Application Filtering Intelligence', label: 'AFI' },
+              { id: 'ami-1', actionType: 'AMI', label: 'AMI', metadataFormat: 'CEF', metadataRate: 1.5 },
+            ],
+          },
+        },
+        // Standing in for "back to the fabric" / a probe - a plain leaf packet
+        // tool, rather than literally routing back to hc-1, since hc-1 would
+        // just re-forward onto the same e-hc-gsa edge, creating an unrelated
+        // ping-pong loop that isn't what this test is about.
+        {
+          id: 'vectra-1',
+          type: 'toolNode',
+          position: { x: 600, y: -100 },
+          data: { label: 'Vectra', configType: 'Packet Tool', toolName: 'Vectra' },
+        },
+        {
+          id: 'splunk-1',
+          type: 'toolNode',
+          position: { x: 600, y: 100 },
+          data: { label: 'Splunk', configType: 'Metadata Tool', toolName: 'Splunk' },
+        },
+      ];
+
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
+        { id: 'e-hc-gsa', source: 'hc-1', target: 'gsa-1' },
+        { id: 'e-gsa-vectra', source: 'gsa-1', target: 'vectra-1', sourceHandle: 'out' },
+        { id: 'e-gsa-splunk', source: 'gsa-1', target: 'splunk-1', sourceHandle: 'metadata-out' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '80',
+          protocol: 'tcp',
+          bandwidth: 10000, // 10 Gbps
+          active: true,
+        },
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+
+      // Dedup 20% -> 8000 Mbps; AFI is a no-op pass-through
+      expect(result.edgeMetrics['e-gsa-vectra']).toBe(8000);
+      expect(result.metrics['vectra-1'].rxMbps).toBe(8000);
+
+      // AMI metadata is 1.5% of the already-deduped 8000 Mbps = 120 Mbps
+      expect(result.edgeMetrics['e-gsa-splunk']).toBe(120);
+      expect(result.metrics['splunk-1'].rxMbps).toBe(120);
+
+      // The packet-return edge must carry exactly the packet figure - not
+      // packet+metadata combined - proving metadata didn't leak onto it.
+      expect(result.edgeMetrics['e-gsa-vectra']).not.toBe(8120);
+    });
+  });
+
   describe('BOM Engine Baseline Optics', () => {
     it('should automatically suggest SFP-532 for MM TAP connected to GigaVUE-HC1', () => {
       const nodes: CustomNode[] = [

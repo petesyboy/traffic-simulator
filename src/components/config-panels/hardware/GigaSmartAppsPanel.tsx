@@ -179,8 +179,15 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
+            {/* AFI / AppViz — currently modeled as a pass-through */}
+            {(actionType === 'Application Filtering Intelligence' || actionType === 'Application Visualization') && (
+              <div style={{ fontSize: '11px', color: '#aaa' }}>
+                {actionType}: pass-through in this simulation (filtering/visualization behavior not yet modeled).
+              </div>
+            )}
+
             {/* Default — no additional config */}
-            {actionType !== 'Deduplication' && actionType !== 'Dedup' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && actionType !== 'Packet Slicing' && (
+            {actionType !== 'Deduplication' && actionType !== 'Dedup' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && actionType !== 'Packet Slicing' && actionType !== 'Application Filtering Intelligence' && actionType !== 'Application Visualization' && (
               <div style={{ fontSize: '11px', color: '#aaa' }}>
                 No additional configuration required for {actionType}.
               </div>

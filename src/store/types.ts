@@ -207,6 +207,10 @@ export interface ToolNodeData extends BaseNodeData {
   ingestOptic?: string;
   ingestOpticQty?: string;
   toolName?: string;
+  ingestLimitMbps?: number;
+  // Only populated for the GigaSMART Appliance (GSA) tool - reuses the same shape
+  // as HardwareNodeData.gigaSmartApps so GigaSmartAppsPanel works unchanged here.
+  gigaSmartApps?: GigaSmartNodeData[];
 }
 
 export type AnyNodeData = 

@@ -217,25 +217,40 @@ export const calculateSimulationStep = (
       const gigaStreamChild = nodes.find(n => n.parentId === node.id && n.type === 'gigaStreamNode');
       const isChassisLoadBalancing = !!gigaStreamChild;
 
-      if (isChassisLoadBalancing && hasForwardStream) {
-        const splitBandwidth = forwardStream!.bandwidth / outboundEdges.length;
+      // Nodes with a dedicated metadata-egress handle (currently only the
+      // GigaSMART Appliance's "metadata-out") must not have their generated
+      // metadata streams leak down the same edges as the main forward stream
+      // (e.g. the packet-return edge to a TA/HC). For every other node type,
+      // no outbound edge ever has this sourceHandle, so these two sets both
+      // just equal the full outboundEdges list - identical to prior behavior.
+      const metadataOutboundEdges = outboundEdges.filter((e) => e.sourceHandle === 'metadata-out');
+      const hasMetadataOutboundEdges = metadataOutboundEdges.length > 0;
+      const packetOutboundEdges = hasMetadataOutboundEdges
+        ? outboundEdges.filter((e) => e.sourceHandle !== 'metadata-out')
+        : outboundEdges;
+      const metadataTargetEdges = hasMetadataOutboundEdges ? metadataOutboundEdges : outboundEdges;
+      const packetEdgeIdSet = new Set(packetOutboundEdges.map((e) => e.id));
+      const metadataEdgeIdSet = new Set(metadataTargetEdges.map((e) => e.id));
 
-        outboundEdges.forEach((edge) => {
+      if (isChassisLoadBalancing && hasForwardStream) {
+        const splitBandwidth = packetOutboundEdges.length > 0 ? forwardStream!.bandwidth / packetOutboundEdges.length : 0;
+
+        packetOutboundEdges.forEach((edge) => {
           const targetNode = nodes.find(n => n.id === edge.target);
           activeEdgeSet.add(edge.id);
-          
+
           if (forwardStream!.isEncrypted) { encryptedEdgeSet.add(edge.id); edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + splitBandwidth; }
           else decryptedEdgeSet.add(edge.id);
 
           edgeTraffic[edge.id] = (edgeTraffic[edge.id] || 0) + splitBandwidth;
-          
+
           let canAccept = true;
           if (targetNode && targetNode.type === 'toolNode') {
             const toolConfig = targetNode.data?.configType || '';
             const supportsPackets = isPacketToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
             canAccept = supportsPackets;
           }
-          
+
           if (canAccept) {
             queue.push({
               nodeId: edge.target,
@@ -246,7 +261,7 @@ export const calculateSimulationStep = (
         });
 
         if (hasMetadataStreams) {
-          outboundEdges.forEach((edge) => {
+          metadataTargetEdges.forEach((edge) => {
             const targetNode = nodes.find(n => n.id === edge.target);
             const toolConfig = targetNode?.data?.configType || '';
             const supportsMetadata = isMetadataToolConfig(toolConfig) || isStorageToolConfig(toolConfig);
@@ -265,17 +280,17 @@ export const calculateSimulationStep = (
         });
       } else {
         const edgesPerTarget: Record<string, number> = {};
-        outboundEdges.forEach(e => {
+        packetOutboundEdges.forEach(e => {
           edgesPerTarget[e.target] = (edgesPerTarget[e.target] || 0) + 1;
         });
 
         outboundEdges.forEach((edge) => {
           const targetNode = nodes.find(n => n.id === edge.target);
           activeEdgeSet.add(edge.id);
-          
+
           const numLinks = edgesPerTarget[edge.target] || 1;
-          const edgeForwardStream = hasForwardStream ? { ...forwardStream!, bandwidth: forwardStream!.bandwidth / numLinks } : null;
-          const edgeMetadataStreams = generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / numLinks }));
+          const edgeForwardStream = (hasForwardStream && packetEdgeIdSet.has(edge.id)) ? { ...forwardStream!, bandwidth: forwardStream!.bandwidth / numLinks } : null;
+          const edgeMetadataStreams = metadataEdgeIdSet.has(edge.id) ? generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / numLinks })) : [];
 
           if (!targetNode || targetNode.type !== 'toolNode') {
             if (edgeForwardStream) {

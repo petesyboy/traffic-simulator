@@ -90,6 +90,15 @@ export const TOOL_INGEST_PROFILES: Record<string, ToolIngestProfile> = {
     ingestLimitMbps: 1000,
     connectivity: [],
   },
+  'GigaSMART Appliance': {
+    applianceModel: 'GigaSMART Appliance (GSA)',
+    ingestLimitMbps: 400000, // primary 400GbE data port - native speed depends on the attached TA/HC chassis (400G on TA400/TA400E, 100G on HC1P/HC3/TA25(E)/TA200(E), 40G on HC1)
+    connectivity: [
+      '2x 400GbE QSFP-DD data ports (400G/100G/40G depending on attached TA/HC chassis)',
+      '4x 10/25GbE SFP28 (metadata/NetFlow export to tools — not individually modelled yet)',
+      '4x 10GBASE-T management ports (not modelled)',
+    ],
+  },
 };
 
 // Flat lookup kept for callers that only need the Mbps figure.
