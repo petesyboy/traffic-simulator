@@ -5,6 +5,7 @@ import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import opticRules from '../../constants/opticRules.json';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { resolveOpticSku, getSkus } from './skuUtils';
+import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 
 export interface BomRow {
   sku: string;
@@ -155,9 +156,11 @@ export function generateBom(
         } else {
           addRow(node.id, resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
         }
+        const ingestLimitMbps = (node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance');
+        const appLicenseQty = resolveGsaAppLicenseQty(ingestLimitMbps);
         ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
           const sku = resolveGsaAppLicenseSku(app.actionType || '', globalLicenseMode, !!app.gsa5gDecode);
-          if (sku) addRow(node.id, sku, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+          if (sku) addRow(node.id, sku, appLicenseQty, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
         });
         return;
       }
@@ -365,6 +368,18 @@ function resolveGsaChassisSku(power: string, licenseMode: 'HTL' | 'Perpetual'): 
 }
 
 /**
+ * Each SMT-GSA110-*-100G-* app licence only covers 100 Gbps of throughput -
+ * pushing more traffic through the appliance requires that many more licences
+ * of the same SKU (e.g. 400 Gbps of ingest needs 4x the AMI licence), not just
+ * one. The base GVOS chassis licence (GVS-GSA110-SW-TM) isn't capacity-tiered
+ * this way, so it's excluded from this calculation.
+ */
+function resolveGsaAppLicenseQty(ingestLimitMbps: number): number {
+  const licenseCapacityMbps = 100000; // 100 Gbps per licence
+  return Math.max(1, Math.ceil(ingestLimitMbps / licenseCapacityMbps));
+}
+
+/**
  * Resolve a GigaSMART Appliance (GSA) app licence SKU. Only AMI, AFI, and
  * Deduplication have known SMT-GSA110-* licence SKUs so far - AMX and AppViz
  * return '' (not yet billed) until those SKUs are confirmed.
@@ -454,9 +469,11 @@ export function generateSingleNodeBom(
       } else {
         addRow(resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
       }
+      const ingestLimitMbps = (node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance');
+      const appLicenseQty = resolveGsaAppLicenseQty(ingestLimitMbps);
       ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
         const sku = resolveGsaAppLicenseSku(app.actionType || '', licenseMode, !!app.gsa5gDecode);
-        if (sku) addRow(sku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+        if (sku) addRow(sku, appLicenseQty, 'License', licenseMode === 'HTL' ? termOverride : undefined);
       });
       return Object.values(rowMap);
     }

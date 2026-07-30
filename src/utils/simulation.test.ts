@@ -1040,7 +1040,9 @@ describe('Simulation Utils', () => {
   });
 
   describe('GigaSMART Appliance (GSA) BOM', () => {
-    const gsaNode = (apps: { actionType: string; gsa5gDecode?: boolean }[], powerSupply?: string): CustomNode => ({
+    // Defaults ingestLimitMbps to 100000 (1x license) so the other tests here
+    // aren't incidentally exercising the scaling behavior.
+    const gsaNode = (apps: { actionType: string; gsa5gDecode?: boolean }[], powerSupply?: string, ingestLimitMbps = 100000): CustomNode => ({
       id: 'gsa-1',
       type: 'toolNode',
       position: { x: 0, y: 0 },
@@ -1049,11 +1051,12 @@ describe('Simulation Utils', () => {
         configType: 'Packet Tool',
         toolName: 'GigaSMART Appliance',
         powerSupply,
+        ingestLimitMbps,
         gigaSmartApps: apps.map((a, i) => ({ id: `app-${i}`, label: a.actionType, ...a })),
       },
     });
 
-    it('quotes hardware-only chassis + term base license + per-app term licenses in HTL mode', () => {
+    it('quotes hardware-only chassis + term base license + one 100G per-app term license at a 100G ingest limit in HTL mode', () => {
       const bom = generateBom([gsaNode([{ actionType: 'AMI' }, { actionType: 'Deduplication' }])], [], 'HTL', '12');
 
       expect(bom.find(r => r.sku === 'GVS-GSA110-2AC-HW')?.qty).toBe(1);
@@ -1065,7 +1068,7 @@ describe('Simulation Utils', () => {
       expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-PL')).toBeUndefined();
     });
 
-    it('quotes the bundled hw+GVOS chassis and perpetual per-app licenses in Perpetual mode', () => {
+    it('quotes the bundled hw+GVOS chassis and one 100G perpetual per-app license at a 100G ingest limit', () => {
       const bom = generateBom([gsaNode([{ actionType: 'AMI' }, { actionType: 'Application Filtering Intelligence' }])], [], 'Perpetual', '12');
 
       expect(bom.find(r => r.sku === 'GVS-GSA110-2AC')?.qty).toBe(1);
@@ -1091,6 +1094,34 @@ describe('Simulation Utils', () => {
       const bom = generateBom([gsaNode([{ actionType: 'AMX' }, { actionType: 'Application Visualization' }])], [], 'HTL', '12');
       const licenseRows = bom.filter(r => r.type === 'License' && r.sku !== 'GVS-GSA110-SW-TM');
       expect(licenseRows).toHaveLength(0);
+    });
+
+    it('scales per-app license quantity in 100G increments, rounded up, as ingest limit grows', () => {
+      // 400 Gbps of ingest needs 4x the AMI license, not one - and the base
+      // GVOS chassis licence is unaffected, staying at qty 1.
+      const bom400 = generateBom([gsaNode([{ actionType: 'AMI' }], undefined, 400000)], [], 'HTL', '12');
+      expect(bom400.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+      expect(bom400.find(r => r.sku === 'GVS-GSA110-SW-TM')?.qty).toBe(1);
+
+      // 350 Gbps doesn't divide evenly - rounds up to 4 licenses, not 3.5 or 3.
+      const bom350 = generateBom([gsaNode([{ actionType: 'AMI' }], undefined, 350000)], [], 'HTL', '12');
+      expect(bom350.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+
+      // Falls back to the GSA's own 800 Gbps default ingest limit when the
+      // field was never set at all, requiring 8x the license - not a bare 1x.
+      const nodeWithNoIngestLimit: CustomNode = {
+        id: 'gsa-2',
+        type: 'toolNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaSMART Appliance',
+          configType: 'Packet Tool',
+          toolName: 'GigaSMART Appliance',
+          gigaSmartApps: [{ id: 'app-0', actionType: 'Deduplication', label: 'Deduplication' }],
+        },
+      };
+      const bomDefault = generateBom([nodeWithNoIngestLimit], [], 'HTL', '12');
+      expect(bomDefault.find(r => r.sku === 'SMT-GSA110-DD-100G-SW-TM')?.qty).toBe(8);
     });
   });
 

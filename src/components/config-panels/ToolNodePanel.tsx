@@ -180,6 +180,11 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
               </ul>
             </div>
           )}
+          {isGigaSmartAppliance && (
+            <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              Each SMT-GSA110-*-100G-* app license covers 100 Gbps - the BOM quotes {Math.max(1, Math.ceil(effectiveIngestLimit / 100000))}x of every configured app's license at this ingest limit.
+            </div>
+          )}
         </FormGroup>
       )}
 
