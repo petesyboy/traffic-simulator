@@ -713,6 +713,68 @@ describe('Simulation Utils', () => {
       // packet+metadata combined - proving metadata didn't leak onto it.
       expect(result.edgeMetrics['e-gsa-vectra']).not.toBe(8120);
     });
+
+    it('load-balances across two parallel edges to the same downstream tool instead of dropping the second link', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 40000 },
+        },
+        {
+          id: 'gsa-1',
+          type: 'toolNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'GigaSMART Appliance',
+            configType: 'Packet Tool',
+            toolName: 'GigaSMART Appliance',
+            gigaSmartApps: [
+              { id: 'ami-1', actionType: 'AMI', label: 'AMI', metadataFormat: 'CEF', metadataRate: 1.5 },
+            ],
+          },
+        },
+        {
+          id: 'splunk-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: { label: 'Splunk', configType: 'Metadata Tool', toolName: 'Splunk' },
+        },
+      ];
+
+      // Two edges from the GSA's metadata-out handle onto the same Splunk node -
+      // modeling a user wiring up two links for load balancing.
+      const edges = [
+        { id: 'e-tap-gsa', source: 'tap-1', target: 'gsa-1' },
+        { id: 'e-gsa-splunk-a', source: 'gsa-1', target: 'splunk-1', sourceHandle: 'metadata-out' },
+        { id: 'e-gsa-splunk-b', source: 'gsa-1', target: 'splunk-1', sourceHandle: 'metadata-out' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '80',
+          protocol: 'tcp',
+          bandwidth: 10000, // 10 Gbps
+          active: true,
+        },
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+
+      // AMI metadata is 1.5% of 10000 Mbps = 150 Mbps total, split evenly
+      // across both parallel links rather than all going down just one.
+      expect(result.edgeMetrics['e-gsa-splunk-a']).toBe(75);
+      expect(result.edgeMetrics['e-gsa-splunk-b']).toBe(75);
+      expect(result.metrics['splunk-1'].rxMbps).toBe(150);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {

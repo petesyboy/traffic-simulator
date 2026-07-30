@@ -197,6 +197,13 @@ export const calculateSimulationStep = (
         const parallelEdges = outboundEdges.filter(e => e.target === edge.target);
         if (parallelEdges.length > 1) return true;
       }
+      // A tool node (e.g. the GSA) wired with two edges to the same downstream
+      // tool is user-intent load balancing, not an accidental duplicate link -
+      // keep both and let the split-bandwidth logic below share the load.
+      if (node.type === 'toolNode') {
+        const parallelEdges = outboundEdges.filter(e => e.target === edge.target);
+        if (parallelEdges.length > 1) return true;
+      }
       if (seenTargets.has(edge.target)) return false;
       seenTargets.add(edge.target);
       return true;
@@ -279,9 +286,16 @@ export const calculateSimulationStep = (
           nodeMetric.txPackets += ms.bandwidth * 250;
         });
       } else {
+        // Tracked separately so a node fanning out on both handles (e.g. the
+        // GSA's packet "out" and metadata "metadata-out") doesn't let one
+        // handle's link count affect the other's split when load-balanced.
         const edgesPerTarget: Record<string, number> = {};
         packetOutboundEdges.forEach(e => {
           edgesPerTarget[e.target] = (edgesPerTarget[e.target] || 0) + 1;
+        });
+        const metadataEdgesPerTarget: Record<string, number> = {};
+        metadataTargetEdges.forEach(e => {
+          metadataEdgesPerTarget[e.target] = (metadataEdgesPerTarget[e.target] || 0) + 1;
         });
 
         outboundEdges.forEach((edge) => {
@@ -289,8 +303,9 @@ export const calculateSimulationStep = (
           activeEdgeSet.add(edge.id);
 
           const numLinks = edgesPerTarget[edge.target] || 1;
+          const metadataNumLinks = metadataEdgesPerTarget[edge.target] || 1;
           const edgeForwardStream = (hasForwardStream && packetEdgeIdSet.has(edge.id)) ? { ...forwardStream!, bandwidth: forwardStream!.bandwidth / numLinks } : null;
-          const edgeMetadataStreams = metadataEdgeIdSet.has(edge.id) ? generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / numLinks })) : [];
+          const edgeMetadataStreams = metadataEdgeIdSet.has(edge.id) ? generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / metadataNumLinks })) : [];
 
           if (!targetNode || targetNode.type !== 'toolNode') {
             if (edgeForwardStream) {
