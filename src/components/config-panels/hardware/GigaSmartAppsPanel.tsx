@@ -19,21 +19,6 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
     );
   }
 
-  // Engine Load Calculation
-  const getEngineLoad = (actionType: string) => {
-    if (actionType.includes('Decapsulation')) return 40;
-    if (actionType.includes('Slicing')) return 20;
-    if (actionType.includes('Masking')) return 30;
-    if (actionType.includes('Dedup')) return 50;
-    if (actionType.includes('NetFlow')) return 60;
-    if (actionType.includes('Metadata') || actionType.includes('AMI')) return 80;
-    return 30;
-  };
-
-  const totalLoad = gigaSmartApps.reduce((acc, app) => acc + getEngineLoad(app.actionType as string || ''), 0);
-  const maxSinglePassLoad = 100;
-  const isMultiPass = totalLoad > maxSinglePassLoad;
-
   const handleUpdateApp = (idx: number, patch: Partial<GigaSmartNodeData>) => {
     const newApps = [...gigaSmartApps];
     newApps[idx] = { ...newApps[idx], ...patch } as GigaSmartNodeData;
@@ -58,22 +43,6 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <h4 style={{ margin: 0, fontSize: '13px', color: '#ffb74d' }}>GigaSMART Pipeline</h4>
-      </div>
-
-      {/* Engine Load Bar */}
-      <div style={{ marginBottom: '12px' }}>
-        <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '6px' }}>
-          Engine Load: {totalLoad} / {maxSinglePassLoad}
-        </div>
-        <div style={{ width: '100%', background: '#222', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-          <div style={{ width: `${Math.min(100, (totalLoad / maxSinglePassLoad) * 100)}%`, background: isMultiPass ? '#f44336' : '#4caf50', height: '100%' }} />
-        </div>
-        {isMultiPass && (
-          <div style={{ marginTop: '6px', padding: '6px', background: '#300', border: '1px solid #600', borderRadius: '4px', fontSize: '10px', color: '#f88', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-            <span>⚠️</span>
-            <span><strong>Hardware limit exceeded.</strong> Engaging multi-pass loopback. Effective throughput will be halved.</span>
-          </div>
-        )}
       </div>
 
       {/* App Cards */}
