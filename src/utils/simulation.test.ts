@@ -1199,11 +1199,11 @@ describe('Simulation Utils', () => {
       expect(bomDefault.find(r => r.sku === 'SMT-GSA110-DD-100G-SW-TM')?.qty).toBe(8);
     });
 
-    it('sizes per-app licenses off simulated delivered traffic instead of the fixed ingest limit, once a simulation has run', () => {
+    it('sizes per-app licenses off peak delivered traffic instead of the fixed ingest limit, once a simulation has run', () => {
       // The node's ingest ceiling is 800 Gbps (unset -> default), but only
-      // 350 Gbps is actually being delivered to it in this simulation - the
-      // license count should track the variable delivered traffic (4x,
-      // rounded up from 350G), not the fixed 800G ceiling (which would be 8x).
+      // 350 Gbps has been delivered to it at peak - the license count should
+      // track the delivered traffic (4x, rounded up from 350G), not the fixed
+      // 800G ceiling (which would be 8x).
       const node: CustomNode = {
         id: 'gsa-1',
         type: 'toolNode',
@@ -1215,17 +1215,17 @@ describe('Simulation Utils', () => {
           gigaSmartApps: [{ id: 'app-0', actionType: 'AMI', label: 'AMI' }],
         },
       };
-      const bom = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': { rxMbps: 350000, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 } });
+      const bom = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': 350000 });
       expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
     });
 
-    it('falls back to the static ingest limit for per-app license sizing when no simulation has run yet (rxMbps 0 or absent)', () => {
+    it('falls back to the static ingest limit for per-app license sizing when no simulation has run yet (no peak recorded)', () => {
       const node = gsaNode([{ actionType: 'AMI' }], undefined, 400000);
-      const bomNoMetrics = generateBom([node], [], 'HTL', '12');
-      expect(bomNoMetrics.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+      const bomNoPeaks = generateBom([node], [], 'HTL', '12');
+      expect(bomNoPeaks.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
 
-      const bomZeroRx = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 } });
-      expect(bomZeroRx.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+      const bomZeroPeak = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': 0 });
+      expect(bomZeroPeak.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
     });
   });
 

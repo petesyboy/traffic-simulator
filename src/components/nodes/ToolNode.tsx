@@ -32,6 +32,7 @@ const GSA_APP_ABBREVIATIONS: Record<string, string> = {
 const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
+  const peakRxMbps = useStore((state) => state.peakNodeRxMbps[id]);
   const configType = (data.configType as string) || '';
   const toolName = (data.toolName as string) || '';
   const projectLicenseMode = useStore((state) => state.projectLicenseMode);
@@ -103,7 +104,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const glowClass = useGlowClass(id);
 
   const nodeObj = { id, type: 'toolNode', position: { x: 0, y: 0 }, data } as CustomNode;
-  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes, metrics?.rxMbps);
+  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes, peakRxMbps);
   
   let tooltipText = `${data.label} Configuration BOM:\n`;
   if (nodeBom.length > 0) {

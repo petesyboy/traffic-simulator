@@ -49,6 +49,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))) as string[];
   const advancedMode = useStore((state) => state.advancedMode);
   const autoScaleToolForFeed = useStore((state) => state.autoScaleToolForFeed);
+  const peakRxMbps = useStore((state) => state.peakNodeRxMbps[node.id]);
 
   const toolName = (node.data?.toolName as string) || '';
   const storedIngestLimit = node.data?.ingestLimitMbps as number | undefined;
@@ -75,9 +76,10 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
   };
 
   // GSA app licences are capacity-tiered against the traffic actually reaching
-  // the appliance, falling back to its static ingest ceiling before a run.
-  const gsaLicenceFromDeliveredTraffic = typeof metrics?.rxMbps === 'number' && metrics.rxMbps > 0;
-  const gsaLicenceBasisMbps = gsaLicenceFromDeliveredTraffic ? metrics!.rxMbps : effectiveIngestLimit;
+  // the appliance - specifically its session peak, so the quote doesn't shrink
+  // when traffic dips - falling back to the static ingest ceiling before a run.
+  const gsaLicenceFromDeliveredTraffic = typeof peakRxMbps === 'number' && peakRxMbps > 0;
+  const gsaLicenceBasisMbps = gsaLicenceFromDeliveredTraffic ? peakRxMbps : effectiveIngestLimit;
 
   const applianceModel = getToolApplianceModel(toolName);
   const connectivity = getToolConnectivity(toolName);
@@ -190,7 +192,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
               Each SMT-GSA110-*-100G-* app license covers 100 Gbps - the BOM quotes{' '}
               {Math.max(1, Math.ceil(gsaLicenceBasisMbps / 100000))}x of every configured app's license, sized off{' '}
               {gsaLicenceFromDeliveredTraffic
-                ? `the ${formatBandwidth(gsaLicenceBasisMbps)} currently being delivered to this appliance`
+                ? `the ${formatBandwidth(gsaLicenceBasisMbps)} peak delivered to this appliance so far (peak, so the quote doesn't drop when traffic dips)`
                 : `this ${formatBandwidth(gsaLicenceBasisMbps)} ingest limit (run the simulation to size it off the traffic actually delivered instead)`}.
             </div>
           )}

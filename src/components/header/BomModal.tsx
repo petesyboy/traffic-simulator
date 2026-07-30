@@ -228,13 +228,13 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const globalTermDuration = useStore((s) => s.defaultTermDuration);
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
-  const nodeMetrics = useStore((s) => s.nodeMetrics);
+  const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
 
-  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, nodeMetrics);
+  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps);
   const validationErrors = validateConfiguration(nodes, edges);
 
   const physicalItems = buildPhysicalItems(nodes, items);

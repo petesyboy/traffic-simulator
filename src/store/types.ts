@@ -260,6 +260,7 @@ export interface RFState {
   isRunning: boolean;
   simulationSpeed: number;
   nodeMetrics: Record<string, NodeMetrics>;
+  peakNodeRxMbps: Record<string, number>;
   edgeMetrics: Record<string, number>;
   edgeEncryptedMbps: Record<string, number>;
   activeEdges: string[];

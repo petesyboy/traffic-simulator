@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react';
-import { type CustomNode, type NodeMetrics } from '../../store/types';
+import { type CustomNode } from '../../store/types';
 import { NODE_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import opticRules from '../../constants/opticRules.json';
@@ -115,7 +115,7 @@ export function generateBom(
   globalTermDuration: string,
   globalRegion: 'US' | 'EU' | 'UK' = 'US',
   groupByNode: boolean = false,
-  nodeMetrics: Record<string, NodeMetrics> = {}
+  peakNodeRxMbps: Record<string, number> = {}
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -157,9 +157,9 @@ export function generateBom(
         } else {
           addRow(node.id, resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
         }
-        const deliveredMbps = nodeMetrics[node.id]?.rxMbps;
-        const licensableMbps = (typeof deliveredMbps === 'number' && deliveredMbps > 0)
-          ? deliveredMbps
+        const peakMbps = peakNodeRxMbps[node.id];
+        const licensableMbps = (typeof peakMbps === 'number' && peakMbps > 0)
+          ? peakMbps
           : ((node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance'));
         const appLicenseQty = resolveGsaAppLicenseQty(licensableMbps);
         ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
@@ -378,11 +378,13 @@ function resolveGsaChassisSku(power: string, licenseMode: 'HTL' | 'Perpetual'): 
  * base GVOS chassis licence (GVS-GSA110-SW-TM) isn't capacity-tiered this way,
  * so it's excluded from this calculation.
  *
- * Sized off the traffic actually delivered to the appliance (the simulated
- * rxMbps), not the appliance's fixed hardware ingest ceiling - the ceiling is
- * a worst-case ports limit, but licences only need to cover what's really
- * flowing through it. Callers fall back to the ingest ceiling when no
- * simulation has been run yet, so the BOM isn't 1x before anyone hits Run.
+ * Sized off the traffic actually delivered to the appliance, not its fixed
+ * hardware ingest ceiling - the ceiling is a worst-case ports limit, but
+ * licences only need to cover what's really flowing through it. Callers pass
+ * the session's *peak* rxMbps rather than the live figure, so a quote never
+ * shrinks just because traffic dipped when the BOM happened to be opened,
+ * and fall back to the ingest ceiling before any simulation has run so the
+ * BOM isn't a misleading 1x before anyone hits Run.
  */
 function resolveGsaAppLicenseQty(licensableMbps: number): number {
   const licenseCapacityMbps = 100000; // 100 Gbps per licence
@@ -448,7 +450,7 @@ export function generateSingleNodeBom(
   globalRegion: 'US' | 'EU' | 'UK' = 'US',
   edges: Edge[] = [],
   nodes: CustomNode[] = [],
-  deliveredMbps?: number
+  peakRxMbps?: number
 ): BomRow[] {
   const rowMap: Record<string, BomRow> = {};
   const skus = getSkus();
@@ -480,8 +482,8 @@ export function generateSingleNodeBom(
       } else {
         addRow(resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
       }
-      const licensableMbps = (typeof deliveredMbps === 'number' && deliveredMbps > 0)
-        ? deliveredMbps
+      const licensableMbps = (typeof peakRxMbps === 'number' && peakRxMbps > 0)
+        ? peakRxMbps
         : ((node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance'));
       const appLicenseQty = resolveGsaAppLicenseQty(licensableMbps);
       ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {

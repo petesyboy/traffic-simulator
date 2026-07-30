@@ -8,6 +8,11 @@ export interface SimulationSlice {
   isRunning: boolean;
   simulationSpeed: number;
   nodeMetrics: Record<string, NodeMetrics>;
+  // High-water mark of each node's rxMbps across the session. Capacity-tiered
+  // licences (the GSA's 100G-per-unit app SKUs) are quoted off this rather
+  // than the live figure, so a quote never shrinks just because traffic
+  // happened to dip when the BOM was opened. Cleared by resetMetrics.
+  peakNodeRxMbps: Record<string, number>;
   edgeMetrics: Record<string, number>;
   edgeEncryptedMbps: Record<string, number>;
   activeEdges: string[];
@@ -40,6 +45,7 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
   isRunning: false,
   simulationSpeed: 1,
   nodeMetrics: {},
+  peakNodeRxMbps: {},
   edgeMetrics: {},
   edgeEncryptedMbps: {},
   activeEdges: [],
@@ -77,6 +83,7 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
     const resetNodes = get().nodes.map(n => ({ ...n, data: { ...n.data, totalIngestedBytes: 0 } }));
     set({
       nodeMetrics: {},
+      peakNodeRxMbps: {},
       activeEdges: [],
       blockedEdges: [],
       encryptedEdges: [],
@@ -135,8 +142,19 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
       );
     }
 
+    const prevPeaks = get().peakNodeRxMbps;
+    let peaksChanged = false;
+    const nextPeaks = { ...prevPeaks };
+    Object.entries(metrics).forEach(([nodeId, m]) => {
+      if (m.rxMbps > (nextPeaks[nodeId] || 0)) {
+        nextPeaks[nodeId] = m.rxMbps;
+        peaksChanged = true;
+      }
+    });
+
     set({
       nodeMetrics: metrics,
+      peakNodeRxMbps: peaksChanged ? nextPeaks : prevPeaks,
       edgeMetrics,
       edgeEncryptedMbps: edgeEncryptedMbps || {},
       activeEdges,
@@ -158,6 +176,8 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
       edges: initialEdges,
       selectedNodeId: null,
       isRunning: false,
+      nodeMetrics: {},
+      peakNodeRxMbps: {},
       activeEdges: [],
       blockedEdges: [],
       trafficStreams: initialTraffic,
