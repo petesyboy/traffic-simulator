@@ -52,16 +52,18 @@ export const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes,
       {groups.map((groupNodes) => {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const n of groupNodes) {
-          // node.position is the node's top-left corner, not its center - and
-          // nodes are resizable (NodeResizer), so use the live measured size
-          // rather than a fixed estimate, or the enclosure clips whichever
-          // side the node has grown past the guess.
+          // The canvas's <ReactFlow> is configured with nodeOrigin={[0.5, 0.5]},
+          // so node.position is each node's CENTER here, not the library's
+          // usual top-left-corner default - half-width/height either side of
+          // it is correct. Nodes are resizable (NodeResizer) though, so use
+          // the live measured size rather than a fixed estimate, or the
+          // enclosure clips whichever side the node has grown past the guess.
           const w = n.measured?.width || n.width || NODE_EST_WIDTH;
           const h = n.measured?.height || n.height || NODE_EST_HEIGHT;
-          minX = Math.min(minX, n.position.x);
-          minY = Math.min(minY, n.position.y);
-          maxX = Math.max(maxX, n.position.x + w);
-          maxY = Math.max(maxY, n.position.y + h);
+          minX = Math.min(minX, n.position.x - w / 2);
+          minY = Math.min(minY, n.position.y - h / 2);
+          maxX = Math.max(maxX, n.position.x + w / 2);
+          maxY = Math.max(maxY, n.position.y + h / 2);
         }
 
         const left = (minX - ENCLOSURE_PAD) * zoom + vpX, top = (minY - ENCLOSURE_PAD) * zoom + vpY;
