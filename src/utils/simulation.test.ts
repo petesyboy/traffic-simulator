@@ -714,6 +714,81 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-gsa-hc2']).not.toBe(8120);
     });
 
+    it('routes a GSA round trip back through the same chassis without looping or double-delivering to the tool', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 40000 },
+        },
+        {
+          id: 'hc-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'HC Chassis', configType: 'HC', model: 'GigaVUE-HC1' },
+        },
+        {
+          id: 'gsa-1',
+          type: 'toolNode',
+          position: { x: 400, y: 0 },
+          data: {
+            label: 'GigaSMART Appliance',
+            configType: 'Packet Tool',
+            toolName: 'GigaSMART Appliance',
+            gigaSmartApps: [
+              { id: 'dedup-1', actionType: 'Deduplication', label: 'Deduplication', dedupRate: 20 },
+            ],
+          },
+        },
+        {
+          id: 'tool-1',
+          type: 'toolNode',
+          position: { x: 200, y: 200 },
+          data: { label: 'NDR Tool', configType: 'Packet Tool', toolName: 'ExtraHop' },
+        },
+      ];
+
+      // hc-1 sends its ingest to the GSA, the GSA hands the deduped stream
+      // straight back to the same hc-1, which then distributes it onward to
+      // a directly-attached tool - the "new paradigm" round trip.
+      const edges = [
+        { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
+        { id: 'e-hc-gsa', source: 'hc-1', target: 'gsa-1' },
+        { id: 'e-gsa-hc', source: 'gsa-1', target: 'hc-1', sourceHandle: 'out' },
+        { id: 'e-hc-tool', source: 'hc-1', target: 'tool-1' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '80',
+          protocol: 'tcp',
+          bandwidth: 10000, // 10 Gbps
+          active: true,
+        },
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+
+      // The raw 10 Gbps ingest goes only to the GSA on the way in.
+      expect(result.edgeMetrics['e-hc-gsa']).toBe(10000);
+
+      // Dedup 20% -> 8000 Mbps comes back through hc-1 and reaches the tool
+      // exactly once - not looped back into the GSA again (which would keep
+      // re-deduping it), and not summed with the raw pass (which would show
+      // 18000 here instead of 8000).
+      expect(result.edgeMetrics['e-gsa-hc']).toBe(8000);
+      expect(result.edgeMetrics['e-hc-tool']).toBe(8000);
+      expect(result.metrics['tool-1'].rxMbps).toBe(8000);
+    });
+
     it('load-balances across two parallel edges to the same downstream tool instead of dropping the second link', () => {
       const nodes: CustomNode[] = [
         {

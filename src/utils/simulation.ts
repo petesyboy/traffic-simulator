@@ -195,8 +195,43 @@ export const calculateSimulationStep = (
     if (outboundEdges.length === 0 && node.parentId) {
       outboundEdges = edges.filter((e) => e.source === node.parentId);
     }
+
+    // A GSA hands processed packets back to a TA/HC over the same kind of edge
+    // used for onward distribution to a tool - a genuine round trip through
+    // the same chassis. Without special-casing this, the chassis would treat
+    // both directions as ordinary fan-out: the raw, unprocessed stream would
+    // reach the tool directly on the way in (bypassing the GSA entirely) and
+    // the GSA's processed return would reach it a second time, double-
+    // counting the traffic; the return would also loop straight back into
+    // the GSA it just came from, re-running dedup on it forever. Once a
+    // chassis has a paired round-trip GSA, its other ports are treated as
+    // that GSA's distribution ports for this flow: the raw pass goes only to
+    // the GSA, and only the GSA's return is fanned out everywhere else.
+    const incomingEdge = item.edgePath.length > 0 ? edges.find((e) => e.id === item.edgePath[item.edgePath.length - 1]) : undefined;
+    const incomingNode = incomingEdge ? nodes.find((n) => n.id === incomingEdge.source) : undefined;
+    const incomingIsGsa = incomingNode?.type === 'toolNode' && incomingNode.data?.toolName === 'GigaSMART Appliance';
+
+    const pairedGsaTargetIds = new Set(
+      node.type === 'hardwareNode'
+        ? outboundEdges
+            .filter((edge) => {
+              const targetNode = nodes.find((n) => n.id === edge.target);
+              if (targetNode?.type !== 'toolNode' || targetNode.data?.toolName !== 'GigaSMART Appliance') return false;
+              return edges.some((re) => re.source === edge.target && re.target === node.id);
+            })
+            .map((edge) => edge.target)
+        : []
+    );
+
     const seenTargets = new Set<string>();
     outboundEdges = outboundEdges.filter((edge) => {
+      if (node.type === 'hardwareNode' && pairedGsaTargetIds.size > 0) {
+        if (incomingIsGsa && pairedGsaTargetIds.has(incomingNode!.id)) {
+          if (edge.target === incomingNode!.id) return false;
+        } else if (!pairedGsaTargetIds.has(edge.target)) {
+          return false;
+        }
+      }
       if (node.type === 'gigaStreamNode') return true;
       if (node.type === 'gigaSmartNode') {
         const actionType = String(node.data?.actionType || '');
