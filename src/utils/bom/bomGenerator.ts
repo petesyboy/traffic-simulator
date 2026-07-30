@@ -108,6 +108,21 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
   });
 }
 
+/**
+ * Dependency rows are inferred by scanning a SKU's description for phrases like
+ * "requires X". That heuristic also catches plain prose that merely looks like a
+ * part number - e.g. the GSA's "requires a separate GigaVUE-OS license" yields
+ * "GigaVUE-OS", which isn't orderable (the GVOS licence is quoted explicitly as
+ * GVS-GSA110-SW-TM), and several TA upgrade SKUs yield "Elite-Plus". Requiring
+ * the token to be a real catalogue SKU drops those without touching the ~75
+ * genuine dependencies, which all resolve. TAP trays and CLS-TAX20E are
+ * separately excluded because they're quoted by their own aggregate logic.
+ */
+function isQuotableDependency(depSku: string, skus: Record<string, string>): boolean {
+  if (!skus[depSku]) return false;
+  return depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E');
+}
+
 export function generateBom(
   nodes: CustomNode[],
   edges: Edge[],
@@ -137,11 +152,11 @@ export function generateBom(
 
     if (reqMatch && reqMatch[1]) {
       const depSku = reqMatch[1];
-      if (depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E')) {
+      if (isQuotableDependency(depSku, skus)) {
         const depTerm = depSku.endsWith('-SW-TM') ? (term || globalTermDuration) : undefined;
         const depKey = (groupByNode && nodeId) ? `${nodeId}_${depSku}` : `${site}_${depSku}`;
         if (rowMap[depKey]) rowMap[depKey].qty += qty;
-        else rowMap[depKey] = { sku: depSku, qty, description: skus[depSku] || 'Required Dependency', term: depTerm, type: 'Dependency', nodeId: groupByNode ? (nodeId || 'global') : undefined, site };
+        else rowMap[depKey] = { sku: depSku, qty, description: skus[depSku], term: depTerm, type: 'Dependency', nodeId: groupByNode ? (nodeId || 'global') : undefined, site };
       }
     }
   };
@@ -465,9 +480,9 @@ export function generateSingleNodeBom(
     else rowMap[sku] = { sku, qty, description, term, type };
     if (reqMatch && reqMatch[1]) {
       const depSku = reqMatch[1];
-      if (depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E')) {
+      if (isQuotableDependency(depSku, skus)) {
         if (rowMap[depSku]) rowMap[depSku].qty += qty;
-        else rowMap[depSku] = { sku: depSku, qty, description: (skus[depSku] || 'Required Dependency') + ' | Purpose: Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.', term: depSku.endsWith('-SW-TM') ? (term || globalTermDuration) : undefined, type: 'Dependency' };
+        else rowMap[depSku] = { sku: depSku, qty, description: skus[depSku] + ' | Purpose: Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.', term: depSku.endsWith('-SW-TM') ? (term || globalTermDuration) : undefined, type: 'Dependency' };
       }
     }
   };

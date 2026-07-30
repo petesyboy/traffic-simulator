@@ -1171,6 +1171,19 @@ describe('Simulation Utils', () => {
       expect(licenseRows).toHaveLength(0);
     });
 
+    it('does not raise a bogus "GigaVUE-OS" dependency row from the hardware-only chassis description', () => {
+      // GVS-GSA110-2AC-HW's description reads "...requires a separate
+      // GigaVUE-OS license", which the dependency scanner used to mistake for
+      // an orderable part number. GVOS is already quoted explicitly as
+      // GVS-GSA110-SW-TM, so no extra row belongs here.
+      const bom = generateBom([gsaNode([{ actionType: 'AMI' }])], [], 'HTL', '12');
+
+      expect(bom.find(r => r.sku === 'GigaVUE-OS')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'GVS-GSA110-SW-TM')?.qty).toBe(1);
+      // Nothing unorderable should ever reach the BOM, whatever its type.
+      expect(bom.filter(r => r.description === 'Unknown SKU' || r.description === 'Required Dependency')).toHaveLength(0);
+    });
+
     it('scales per-app license quantity in 100G increments, rounded up, as ingest limit grows', () => {
       // 400 Gbps of ingest needs 4x the AMI license, not one - and the base
       // GVOS chassis licence is unaffected, staying at qty 1.
