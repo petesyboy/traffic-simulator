@@ -185,6 +185,16 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
 
       {isGigaSmartAppliance ? (
         <>
+          <FormGroup label="Power Supply">
+            <select
+              value={(node.data?.powerSupply as string) || 'AC'}
+              onChange={(e) => onGenericChange('powerSupply', e.target.value)}
+            >
+              <option value="AC">AC (GVS-GSA110-2AC)</option>
+              <option value="DC">DC (GVS-GSA110-2DC)</option>
+            </select>
+          </FormGroup>
+
           <FormGroup label="Data Port Optic (2x 400GbE QSFP-DD)">
             <select
               value={isValidGsaDataPortOptic(node.data?.ingestOptic as string) ? (node.data?.ingestOptic as string) : defaultIngestOptic}

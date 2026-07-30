@@ -175,6 +175,9 @@ export interface GigaSmartNodeData extends BaseNodeData {
   metadataRate?: number;
   decryptionRate?: number;
   sliceSize?: number;
+  // GSA-only: an AMI app can add the 5G mobile protocol decoding bundle
+  // (SMT-GSA110-AMI-5G-100G-*) instead of the plain AMI license.
+  gsa5gDecode?: boolean;
 }
 
 export interface GigaStreamNodeData extends BaseNodeData {
@@ -216,6 +219,9 @@ export interface ToolNodeData extends BaseNodeData {
   // they're physically different cages - informational only, not in the BOM.
   metadataOptic?: string;
   metadataOpticQty?: string;
+  // GSA-only: AC vs DC power supply, drives which GVS-GSA110-2xx chassis SKU
+  // the BOM engine quotes. Defaults to AC.
+  powerSupply?: 'AC' | 'DC';
 }
 
 export type AnyNodeData = 

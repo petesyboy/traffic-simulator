@@ -1039,6 +1039,61 @@ describe('Simulation Utils', () => {
     });
   });
 
+  describe('GigaSMART Appliance (GSA) BOM', () => {
+    const gsaNode = (apps: { actionType: string; gsa5gDecode?: boolean }[], powerSupply?: string): CustomNode => ({
+      id: 'gsa-1',
+      type: 'toolNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'GigaSMART Appliance',
+        configType: 'Packet Tool',
+        toolName: 'GigaSMART Appliance',
+        powerSupply,
+        gigaSmartApps: apps.map((a, i) => ({ id: `app-${i}`, label: a.actionType, ...a })),
+      },
+    });
+
+    it('quotes hardware-only chassis + term base license + per-app term licenses in HTL mode', () => {
+      const bom = generateBom([gsaNode([{ actionType: 'AMI' }, { actionType: 'Deduplication' }])], [], 'HTL', '12');
+
+      expect(bom.find(r => r.sku === 'GVS-GSA110-2AC-HW')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'GVS-GSA110-SW-TM')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'SMT-GSA110-DD-100G-SW-TM')?.qty).toBe(1);
+      // Perpetual-only chassis/license SKUs must not also appear
+      expect(bom.find(r => r.sku === 'GVS-GSA110-2AC')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-PL')).toBeUndefined();
+    });
+
+    it('quotes the bundled hw+GVOS chassis and perpetual per-app licenses in Perpetual mode', () => {
+      const bom = generateBom([gsaNode([{ actionType: 'AMI' }, { actionType: 'Application Filtering Intelligence' }])], [], 'Perpetual', '12');
+
+      expect(bom.find(r => r.sku === 'GVS-GSA110-2AC')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-PL')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AFI-100G-PL')?.qty).toBe(1);
+      // No separate base software license or HTL hardware-only SKU in Perpetual mode
+      expect(bom.find(r => r.sku === 'GVS-GSA110-SW-TM')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'GVS-GSA110-2AC-HW')).toBeUndefined();
+    });
+
+    it('quotes the DC chassis SKU when powerSupply is DC', () => {
+      const bom = generateBom([gsaNode([{ actionType: 'AMI' }], 'DC')], [], 'Perpetual', '12');
+      expect(bom.find(r => r.sku === 'GVS-GSA110-2DC')?.qty).toBe(1);
+    });
+
+    it('quotes the 5G decoding add-on SKU for AMI instead of the plain AMI SKU when enabled', () => {
+      const bom = generateBom([gsaNode([{ actionType: 'AMI', gsa5gDecode: true }])], [], 'HTL', '12');
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-5G-100G-SW-TM')?.qty).toBe(1);
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')).toBeUndefined();
+    });
+
+    it('does not quote a license for AMX or AppViz, which have no known SKU yet', () => {
+      const bom = generateBom([gsaNode([{ actionType: 'AMX' }, { actionType: 'Application Visualization' }])], [], 'HTL', '12');
+      const licenseRows = bom.filter(r => r.type === 'License' && r.sku !== 'GVS-GSA110-SW-TM');
+      expect(licenseRows).toHaveLength(0);
+    });
+  });
+
   describe('GigaSMART Load Balancing parallel edges', () => {
     it('should split traffic across multiple edges to the same destination tool node', () => {
       const nodes: CustomNode[] = [

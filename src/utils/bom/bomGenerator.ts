@@ -146,6 +146,22 @@ export function generateBom(
 
   syncedNodes.forEach(node => {
     if (node.type === 'toolNode') {
+      if (node.data?.toolName === 'GigaSMART Appliance') {
+        const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
+        const power = (node.data?.powerSupply as string) || 'AC';
+        if (globalLicenseMode === 'HTL') {
+          addRow(node.id, resolveGsaChassisSku(power, 'HTL'), 1, 'Chassis');
+          addRow(node.id, 'GVS-GSA110-SW-TM', 1, 'License', termOverride);
+        } else {
+          addRow(node.id, resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
+        }
+        ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
+          const sku = resolveGsaAppLicenseSku(app.actionType || '', globalLicenseMode, !!app.gsa5gDecode);
+          if (sku) addRow(node.id, sku, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+        });
+        return;
+      }
+
       const isPacketTool = node.data?.configType === 'Packet Tool';
       const optic = (node.data?.ingestOptic as string) || '';
       const isCustomerSupplied = optic.includes('Customer Supplied');
@@ -342,6 +358,36 @@ function resolveGigaSmartSku(
   }
 }
 
+/** Resolve the GVS-GSA110 chassis SKU for the GigaSMART Appliance (GSA), by power supply + licence mode */
+function resolveGsaChassisSku(power: string, licenseMode: 'HTL' | 'Perpetual'): string {
+  const base = power === 'DC' ? 'GVS-GSA110-2DC' : 'GVS-GSA110-2AC';
+  return licenseMode === 'HTL' ? `${base}-HW` : base;
+}
+
+/**
+ * Resolve a GigaSMART Appliance (GSA) app licence SKU. Only AMI, AFI, and
+ * Deduplication have known SMT-GSA110-* licence SKUs so far - AMX and AppViz
+ * return '' (not yet billed) until those SKUs are confirmed.
+ */
+function resolveGsaAppLicenseSku(
+  action: string,
+  licenseMode: 'HTL' | 'Perpetual',
+  is5gDecode: boolean,
+): string {
+  const isHtl = licenseMode === 'HTL';
+  switch (action) {
+    case 'AMI':
+      if (is5gDecode) return isHtl ? 'SMT-GSA110-AMI-5G-100G-SW-TM' : 'SMT-GSA110-AMI-5G-100G-PL';
+      return isHtl ? 'SMT-GSA110-AMI-100G-SW-TM' : 'SMT-GSA110-AMI-100G-PL';
+    case 'Application Filtering Intelligence':
+      return isHtl ? 'SMT-GSA110-AFI-100G-SW-TM' : 'SMT-GSA110-AFI-100G-PL';
+    case 'Deduplication':
+      return isHtl ? 'SMT-GSA110-DD-100G-SW-TM' : 'SMT-GSA110-DD-100G-PL';
+    default:
+      return '';
+  }
+}
+
 /** Walk the graph from a given HC node and collect all GigaSMART actions */
 function resolveGsActionsFromGraph(
   nodeId: string,
@@ -400,6 +446,21 @@ export function generateSingleNodeBom(
 
   const model = (node.data?.model as string) || '', termOverride = (node.data?.termDurationOverride as string) || globalTermDuration, licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual' : globalLicenseMode;
   if (node.type === 'toolNode') {
+    if (node.data?.toolName === 'GigaSMART Appliance') {
+      const power = (node.data?.powerSupply as string) || 'AC';
+      if (licenseMode === 'HTL') {
+        addRow(resolveGsaChassisSku(power, 'HTL'), 1, 'Chassis');
+        addRow('GVS-GSA110-SW-TM', 1, 'License', termOverride);
+      } else {
+        addRow(resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
+      }
+      ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
+        const sku = resolveGsaAppLicenseSku(app.actionType || '', licenseMode, !!app.gsa5gDecode);
+        if (sku) addRow(sku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+      });
+      return Object.values(rowMap);
+    }
+
     const isPacketTool = node.data?.configType === 'Packet Tool', optic = (node.data?.ingestOptic as string) || '', isCustomerSupplied = optic.includes('Customer Supplied');
     if (!isPacketTool && !isCustomerSupplied) {
       const qty = parseInt(node.data?.ingestOpticQty as string || '0');

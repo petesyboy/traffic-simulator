@@ -10,6 +10,9 @@ interface GigaSmartAppsPanelProps {
 export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selectedNode, updateNodeData }) => {
   const hwData = selectedNode.data as HardwareNodeData;
   const gigaSmartApps: GigaSmartNodeData[] = hwData.gigaSmartApps || [];
+  // The 5G mobile protocol decoding add-on (SMT-GSA110-AMI-5G-100G-*) is only
+  // a real SKU on the GigaSMART Appliance - not on an HC's onboard AMI.
+  const isGsa = selectedNode.type === 'toolNode' && selectedNode.data?.toolName === 'GigaSMART Appliance';
 
   if (gigaSmartApps.length === 0) {
     return (
@@ -122,6 +125,17 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
                     {(app as Record<string, unknown>).metadataRate !== undefined ? (app as Record<string, unknown>).metadataRate as number : (actionType === 'Application Metadata' ? 3 : 1.5)}%
                   </span>
                 </div>
+
+                {isGsa && actionType === 'AMI' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#ccc', marginTop: '4px' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!app.gsa5gDecode}
+                      onChange={e => handleUpdateApp(idx, { gsa5gDecode: e.target.checked })}
+                    />
+                    5G Mobile Protocol Decoding add-on
+                  </label>
+                )}
               </div>
             )}
 
