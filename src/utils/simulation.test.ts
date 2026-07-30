@@ -658,15 +658,15 @@ describe('Simulation Utils', () => {
             ],
           },
         },
-        // Standing in for "back to the fabric" / a probe - a plain leaf packet
-        // tool, rather than literally routing back to hc-1, since hc-1 would
-        // just re-forward onto the same e-hc-gsa edge, creating an unrelated
-        // ping-pong loop that isn't what this test is about.
+        // The GSA only ever hands processed packets back to a TA/HC chassis
+        // over one of its 400G ports - a second, separate HC here stands in
+        // for "the fabric it returns to", distinct from the ingest hc-1, so
+        // this doesn't create an unrelated ping-pong loop back onto e-hc-gsa.
         {
-          id: 'vectra-1',
-          type: 'toolNode',
+          id: 'hc-2',
+          type: 'hardwareNode',
           position: { x: 600, y: -100 },
-          data: { label: 'Vectra', configType: 'Packet Tool', toolName: 'Vectra' },
+          data: { label: 'HC Chassis 2', configType: 'HC', model: 'GigaVUE-HC1' },
         },
         {
           id: 'splunk-1',
@@ -679,7 +679,7 @@ describe('Simulation Utils', () => {
       const edges = [
         { id: 'e-tap-hc', source: 'tap-1', target: 'hc-1' },
         { id: 'e-hc-gsa', source: 'hc-1', target: 'gsa-1' },
-        { id: 'e-gsa-vectra', source: 'gsa-1', target: 'vectra-1', sourceHandle: 'out' },
+        { id: 'e-gsa-hc2', source: 'gsa-1', target: 'hc-2', sourceHandle: 'out' },
         { id: 'e-gsa-splunk', source: 'gsa-1', target: 'splunk-1', sourceHandle: 'metadata-out' },
       ];
 
@@ -702,8 +702,8 @@ describe('Simulation Utils', () => {
       const result = calculateSimulationStep(nodes, edges, streams);
 
       // Dedup 20% -> 8000 Mbps; AFI is a no-op pass-through
-      expect(result.edgeMetrics['e-gsa-vectra']).toBe(8000);
-      expect(result.metrics['vectra-1'].rxMbps).toBe(8000);
+      expect(result.edgeMetrics['e-gsa-hc2']).toBe(8000);
+      expect(result.metrics['hc-2'].rxMbps).toBe(8000);
 
       // AMI metadata is 1.5% of the already-deduped 8000 Mbps = 120 Mbps
       expect(result.edgeMetrics['e-gsa-splunk']).toBe(120);
@@ -711,7 +711,7 @@ describe('Simulation Utils', () => {
 
       // The packet-return edge must carry exactly the packet figure - not
       // packet+metadata combined - proving metadata didn't leak onto it.
-      expect(result.edgeMetrics['e-gsa-vectra']).not.toBe(8120);
+      expect(result.edgeMetrics['e-gsa-hc2']).not.toBe(8120);
     });
 
     it('load-balances across two parallel edges to the same downstream tool instead of dropping the second link', () => {
@@ -776,7 +776,7 @@ describe('Simulation Utils', () => {
       expect(result.metrics['splunk-1'].rxMbps).toBe(150);
     });
 
-    it('delivers packets to an S3 object store on the packet-out edge even when metadata is generated for a separate Splunk edge', () => {
+    it('blocks the packet-out edge when wired to a leaf tool instead of a TA/HC chassis, while metadata still reaches Splunk', () => {
       const nodes: CustomNode[] = [
         {
           id: 'tap-1',
@@ -811,9 +811,11 @@ describe('Simulation Utils', () => {
         },
       ];
 
-      // Packets go to S3 on the default "out" handle; the AMI metadata generated
-      // alongside them goes to Splunk on the dedicated "metadata-out" handle -
-      // two different targets, not a load-balancing pair.
+      // The GSA only returns processed packets to a TA/HC chassis - wiring the
+      // "out" handle straight to S3 (a leaf tool, no GigaSMART engine of its
+      // own to receive a fabric return) is not a valid deployment, so this
+      // edge should carry no traffic and show up as blocked. The AMI metadata
+      // on the separate "metadata-out" handle to Splunk is unaffected.
       const edges = [
         { id: 'e-tap-gsa', source: 'tap-1', target: 'gsa-1' },
         { id: 'e-gsa-s3', source: 'gsa-1', target: 's3-1', sourceHandle: 'out' },
@@ -838,10 +840,9 @@ describe('Simulation Utils', () => {
 
       const result = calculateSimulationStep(nodes, edges, streams);
 
-      // The packet-out edge to S3 must carry the full 10000 Mbps - it must not
-      // be starved just because the node also generated metadata this tick.
-      expect(result.edgeMetrics['e-gsa-s3']).toBe(10000);
-      expect(result.metrics['s3-1'].rxMbps).toBe(10000);
+      expect(result.edgeMetrics['e-gsa-s3']).toBeUndefined();
+      expect(result.metrics['s3-1'].rxMbps).toBe(0);
+      expect(result.blockedEdges).toContain('e-gsa-s3');
 
       // AMI metadata (1.5% of 10000) still reaches Splunk on its own edge.
       expect(result.edgeMetrics['e-gsa-splunk']).toBe(150);

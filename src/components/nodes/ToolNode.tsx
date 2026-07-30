@@ -42,8 +42,8 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isSplunk = toolName === 'Splunk';
   // The GigaSMART Appliance (GSA) is a hybrid tool: it consumes packets, runs a
   // fixed GigaSMART pipeline on them, and sends the processed packet stream back
-  // out (e.g. to the TA/HC or a downstream probe) — it needs the same source
-  // handle Splunk/S3 use for their onward link.
+  // out to a TA/HC chassis (its only valid packet destination) — it needs the
+  // same source handle Splunk/S3 use for their onward link.
   const isGigaSmartAppliance = toolName === 'GigaSMART Appliance';
   const canLinkOut = isSplunk || isStorageTool || isGigaSmartAppliance;
   // Separate metadata-egress handle, shown only once the appliance actually has
@@ -226,7 +226,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             position={Position.Right}
             id="out"
             style={hasMetadataApp ? { top: '30%' } : undefined}
-            title={isGigaSmartAppliance ? 'Processed packets (e.g. back to the TA/HC, or onward to a probe)' : undefined}
+            title={isGigaSmartAppliance ? 'Processed packets - must return to a GigaVUE TA/HC chassis (400G data port)' : undefined}
           />
         )}
         {hasMetadataApp && (

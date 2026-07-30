@@ -18,8 +18,9 @@ export const processToolNode: NodeProcessor = (
 
   // The GigaSMART Appliance (GSA) is a hybrid: it consumes packets, runs a
   // fixed GigaSMART pipeline (Dedup/AFI/AMI/AMX/AppViz) on them, sends the
-  // processed packet stream back out (e.g. to the TA/HC or a downstream probe),
-  // and separately emits any generated metadata streams - unlike every other
+  // processed packet stream back out to a TA/HC chassis (its only valid packet
+  // destination - enforced in simulation.ts's isValidGsaPacketTarget), and
+  // separately emits any generated metadata streams - unlike every other
   // packet-consuming tool, which is a pure leaf/sink node.
   if (data.toolName === 'GigaSMART Appliance' && Array.isArray(data.gigaSmartApps) && rType === 'packet') {
     return runGigaSmartApps(item.stream, data.gigaSmartApps, nodeMetric);

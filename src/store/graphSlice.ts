@@ -117,6 +117,19 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const nodeB = get().nodes.find(n => n.id === connection.target);
     if (!nodeA || !nodeB) return;
 
+    // The GSA only returns processed packets to a TA/HC chassis over one of its
+    // 400G data ports - it has no valid path to hand packets to a leaf tool
+    // (S3, Splunk, an NDR, etc.) directly. Metadata (AMI/AMX) is the only
+    // output meant for those destinations, via the separate "metadata-out" handle.
+    if (nodeA.type === 'toolNode' && nodeA.data?.toolName === 'GigaSMART Appliance' && connection.sourceHandle === 'out') {
+      const targetModel = String((nodeB.data as HardwareNodeData)?.model || '');
+      const isTaHc = nodeB.type === 'hardwareNode' && (targetModel.includes('TA') || targetModel.includes('HC')) && !targetModel.includes('TAP');
+      if (!isTaHc) {
+        window.alert(`🚫 CONNECTION REFUSED: The GigaSMART Appliance only returns processed packets to a GigaVUE TA/HC chassis over one of its 400G data ports. ${nodeB.data?.label || 'This node'} can't receive them directly - route metadata (AMI/AMX) to tools via the appliance's separate metadata-out handle instead.`);
+        return;
+      }
+    }
+
     // Block TA appliances from connecting directly to a GigaSMART node — TAs have no GigaSMART engine.
     if (nodeB.type === NODE_TYPES.GIGASMART && nodeA.type === 'hardwareNode') {
       const model = String((nodeA.data as HardwareNodeData)?.model || '');

@@ -42,6 +42,17 @@ const PROCESSORS: Record<string, NodeProcessor> = {
   hardwareNode: processHardwareNode,
 };
 
+// The GigaSMART Appliance (GSA) only returns processed packets to a GigaVUE
+// TA/HC chassis over one of its 400G data ports - it has no valid path to
+// hand packets directly to a leaf tool (S3, Splunk, an NDR, etc.). Metadata
+// (AMI/AMX) is the only output meant for those destinations, via the
+// appliance's separate "metadata-out" handle.
+const isValidGsaPacketTarget = (targetNode: CustomNode | undefined): boolean => {
+  if (!targetNode || targetNode.type !== 'hardwareNode') return false;
+  const model = String(targetNode.data?.model || '');
+  return (model.includes('TA') || model.includes('HC')) && !model.includes('TAP');
+};
+
 export const calculateSimulationStep = (
   nodes: CustomNode[],
   edges: Edge[],
@@ -223,6 +234,7 @@ export const calculateSimulationStep = (
     if ((hasForwardStream || hasMetadataStreams) && outboundEdges.length > 0) {
       const gigaStreamChild = nodes.find(n => n.parentId === node.id && n.type === 'gigaStreamNode');
       const isChassisLoadBalancing = !!gigaStreamChild;
+      const isGigaSmartApplianceSource = node.type === 'toolNode' && node.data?.toolName === 'GigaSMART Appliance';
 
       // Nodes with a dedicated metadata-egress handle (currently only the
       // GigaSMART Appliance's "metadata-out") must not have their generated
@@ -300,6 +312,15 @@ export const calculateSimulationStep = (
 
         outboundEdges.forEach((edge) => {
           const targetNode = nodes.find(n => n.id === edge.target);
+
+          // The GSA's processed-packet edge only goes to a TA/HC chassis -
+          // any other target (a leaf tool, a TAP, etc.) gets no packets at
+          // all and shows as a blocked link rather than silently "working".
+          if (isGigaSmartApplianceSource && packetEdgeIdSet.has(edge.id) && !isValidGsaPacketTarget(targetNode)) {
+            blockedEdgeSet.add(edge.id);
+            return;
+          }
+
           activeEdgeSet.add(edge.id);
 
           const numLinks = edgesPerTarget[edge.target] || 1;
