@@ -1,6 +1,15 @@
 import React from 'react';
 import type { EdgeProps } from '@xyflow/react';
-import { getBezierPath, EdgeLabelRenderer } from '@xyflow/react';
+import { getBezierPath, getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react';
+
+// How far past the source/target node the path drops before turning, when
+// looping a "backward" edge (e.g. a GigaSMART Appliance's packet return to a
+// TA/HC placed to its left) around underneath the row instead of letting a
+// bezier curve fold back over the nodes it connects.
+const BACKWARD_LOOP_DROP = 120;
+// Minimum gap (source.x - target.x) before an edge is treated as backward -
+// avoids flipping routing for edges that are only trivially reversed.
+const BACKWARD_MARGIN = 40;
 
 // ReactFlow's labelStyle/labelBgStyle are typed as CSSProperties, but this app
 // passes SVG presentation attributes (fill/stroke) through them, not CSS props.
@@ -105,6 +114,11 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
 }: EdgeProps & { className?: string; data?: { parallelIndex?: number; totalParallel?: number } }) => {
   const parallelIndex = data?.parallelIndex ?? 0;
   const totalParallel = data?.totalParallel ?? 1;
+  // A bezier curve assumes left-to-right flow and folds back over the nodes
+  // it connects when the source sits to the right of the target (e.g. a GSA
+  // returning packets to a TA/HC placed to its left) - route those as a
+  // stepped path that loops underneath the row instead.
+  const isBackward = totalParallel <= 1 && sourceX > targetX + BACKWARD_MARGIN;
 
   let edgePath: string;
   let labelX: number;
@@ -134,6 +148,21 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
     const mt = 1 - t;
     labelX = mt * mt * sourceX + 2 * mt * t * controlX + t * t * targetX;
     labelY = mt * mt * sourceY + 2 * mt * t * controlY + t * t * targetY;
+  } else if (isBackward) {
+    const [path, lx, ly] = getSmoothStepPath({
+      sourceX,
+      sourceY,
+      sourcePosition,
+      targetX,
+      targetY,
+      targetPosition,
+      centerY: Math.max(sourceY, targetY) + BACKWARD_LOOP_DROP,
+      borderRadius: 12,
+      offset: 30,
+    });
+    edgePath = path;
+    labelX = lx;
+    labelY = ly;
   } else {
     const [path, lx, ly] = getBezierPath({
       sourceX,
