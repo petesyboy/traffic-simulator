@@ -330,7 +330,12 @@ export const calculateSimulationStep = (
           if (edgeForwardStream) {
             const isMetadata = edgeForwardStream.trafficType === 'metadata';
             let canAccept = isMetadata ? supportsMetadata : supportsPackets;
-            if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata) canAccept = false;
+            // A storage tool fed packets *and* metadata down the same edge is
+            // ambiguous, so packets lose out to metadata in that case - but a
+            // node with a dedicated metadata-egress handle (the GSA's
+            // "metadata-out") already routes metadata to its own edges, so an
+            // S3 target on a separate packet-out edge should still get its packets.
+            if (isStorageToolConfig(toolConfig) && hasMetadataStreams && !isMetadata && !hasMetadataOutboundEdges) canAccept = false;
 
             if (canAccept) {
               if (edgeForwardStream.isEncrypted) { encryptedEdgeSet.add(edge.id); edgeEncryptedTraffic[edge.id] = (edgeEncryptedTraffic[edge.id] || 0) + edgeForwardStream.bandwidth; }

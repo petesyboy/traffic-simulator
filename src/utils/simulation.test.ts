@@ -775,6 +775,78 @@ describe('Simulation Utils', () => {
       expect(result.edgeMetrics['e-gsa-splunk-b']).toBe(75);
       expect(result.metrics['splunk-1'].rxMbps).toBe(150);
     });
+
+    it('delivers packets to an S3 object store on the packet-out edge even when metadata is generated for a separate Splunk edge', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'inputNode',
+          position: { x: 0, y: 0 },
+          data: { label: 'TAP', configType: 'TAP', linkSpeed: 40000 },
+        },
+        {
+          id: 'gsa-1',
+          type: 'toolNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'GigaSMART Appliance',
+            configType: 'Packet Tool',
+            toolName: 'GigaSMART Appliance',
+            gigaSmartApps: [
+              { id: 'ami-1', actionType: 'AMI', label: 'AMI', metadataFormat: 'CEF', metadataRate: 1.5 },
+            ],
+          },
+        },
+        {
+          id: 's3-1',
+          type: 'toolNode',
+          position: { x: 400, y: -100 },
+          data: { label: 'S3 / Object Storage', configType: 'Objects', toolName: 'S3 Object Storage' },
+        },
+        {
+          id: 'splunk-1',
+          type: 'toolNode',
+          position: { x: 400, y: 100 },
+          data: { label: 'Splunk', configType: 'Metadata Tool', toolName: 'Splunk' },
+        },
+      ];
+
+      // Packets go to S3 on the default "out" handle; the AMI metadata generated
+      // alongside them goes to Splunk on the dedicated "metadata-out" handle -
+      // two different targets, not a load-balancing pair.
+      const edges = [
+        { id: 'e-tap-gsa', source: 'tap-1', target: 'gsa-1' },
+        { id: 'e-gsa-s3', source: 'gsa-1', target: 's3-1', sourceHandle: 'out' },
+        { id: 'e-gsa-splunk', source: 'gsa-1', target: 'splunk-1', sourceHandle: 'metadata-out' },
+      ];
+
+      const streams: TrafficStream[] = [
+        {
+          id: 'stream-1',
+          name: 'Traffic Flow',
+          sourceNodeId: 'tap-1',
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '80',
+          protocol: 'tcp',
+          bandwidth: 10000, // 10 Gbps
+          active: true,
+        },
+      ];
+
+      const result = calculateSimulationStep(nodes, edges, streams);
+
+      // The packet-out edge to S3 must carry the full 10000 Mbps - it must not
+      // be starved just because the node also generated metadata this tick.
+      expect(result.edgeMetrics['e-gsa-s3']).toBe(10000);
+      expect(result.metrics['s3-1'].rxMbps).toBe(10000);
+
+      // AMI metadata (1.5% of 10000) still reaches Splunk on its own edge.
+      expect(result.edgeMetrics['e-gsa-splunk']).toBe(150);
+      expect(result.metrics['splunk-1'].rxMbps).toBe(150);
+    });
   });
 
   describe('BOM Engine Baseline Optics', () => {
