@@ -19,6 +19,16 @@ import { GSA_DEFAULT_DATA_PORT_OPTIC, isValidGsaDataPortOptic } from '../../cons
 import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass } from './nodeStyles';
 
+// Short on-canvas tags for each GigaSMART app, shown next to the GSA's title
+// so its pipeline is visible at a glance without opening the config panel.
+const GSA_APP_ABBREVIATIONS: Record<string, string> = {
+  'Deduplication': 'DD',
+  'Application Filtering Intelligence': 'AFI',
+  'AMI': 'AMI',
+  'AMX': 'AMX',
+  'Application Visualization': 'AppViz',
+};
+
 const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
@@ -50,6 +60,13 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   // a metadata-generating app configured (AMI/AMX/Application Metadata).
   const hasMetadataApp = isGigaSmartAppliance &&
     ((data.gigaSmartApps as GigaSmartNodeData[] | undefined) || []).some((app) => isMetadataAction(app.actionType));
+  // Tag the title with whatever's actually configured (in pipeline order),
+  // e.g. "AMI, DD" once Deduplication is added alongside AMI.
+  const gsaAppTag = isGigaSmartAppliance
+    ? ((data.gigaSmartApps as GigaSmartNodeData[] | undefined) || [])
+        .map((app) => GSA_APP_ABBREVIATIONS[app.actionType as string] || (app.actionType as string))
+        .join(', ')
+    : '';
 
   // The GSA is a Gigamon appliance, so "Customer Supplied Optic" (the default
   // every other packet tool gets on drop) never applies to it. Nodes created
@@ -114,7 +131,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}
-            <span className="node-title">{data.label as string}</span>
+            <span className="node-title">{data.label as string}{gsaAppTag ? ` — ${gsaAppTag}` : ''}</span>
             {isStorageTool && (
               <span style={{
                 marginLeft: '6px',
