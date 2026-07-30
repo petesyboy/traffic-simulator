@@ -74,6 +74,11 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
     onGenericChange('ingestLimitMbps', String(finalValue));
   };
 
+  // GSA app licences are capacity-tiered against the traffic actually reaching
+  // the appliance, falling back to its static ingest ceiling before a run.
+  const gsaLicenceFromDeliveredTraffic = typeof metrics?.rxMbps === 'number' && metrics.rxMbps > 0;
+  const gsaLicenceBasisMbps = gsaLicenceFromDeliveredTraffic ? metrics!.rxMbps : effectiveIngestLimit;
+
   const applianceModel = getToolApplianceModel(toolName);
   const connectivity = getToolConnectivity(toolName);
 
@@ -182,7 +187,11 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
           )}
           {isGigaSmartAppliance && (
             <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Each SMT-GSA110-*-100G-* app license covers 100 Gbps - the BOM quotes {Math.max(1, Math.ceil(effectiveIngestLimit / 100000))}x of every configured app's license at this ingest limit.
+              Each SMT-GSA110-*-100G-* app license covers 100 Gbps - the BOM quotes{' '}
+              {Math.max(1, Math.ceil(gsaLicenceBasisMbps / 100000))}x of every configured app's license, sized off{' '}
+              {gsaLicenceFromDeliveredTraffic
+                ? `the ${formatBandwidth(gsaLicenceBasisMbps)} currently being delivered to this appliance`
+                : `this ${formatBandwidth(gsaLicenceBasisMbps)} ingest limit (run the simulation to size it off the traffic actually delivered instead)`}.
             </div>
           )}
         </FormGroup>

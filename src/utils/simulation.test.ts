@@ -1198,6 +1198,35 @@ describe('Simulation Utils', () => {
       const bomDefault = generateBom([nodeWithNoIngestLimit], [], 'HTL', '12');
       expect(bomDefault.find(r => r.sku === 'SMT-GSA110-DD-100G-SW-TM')?.qty).toBe(8);
     });
+
+    it('sizes per-app licenses off simulated delivered traffic instead of the fixed ingest limit, once a simulation has run', () => {
+      // The node's ingest ceiling is 800 Gbps (unset -> default), but only
+      // 350 Gbps is actually being delivered to it in this simulation - the
+      // license count should track the variable delivered traffic (4x,
+      // rounded up from 350G), not the fixed 800G ceiling (which would be 8x).
+      const node: CustomNode = {
+        id: 'gsa-1',
+        type: 'toolNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaSMART Appliance',
+          configType: 'Packet Tool',
+          toolName: 'GigaSMART Appliance',
+          gigaSmartApps: [{ id: 'app-0', actionType: 'AMI', label: 'AMI' }],
+        },
+      };
+      const bom = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': { rxMbps: 350000, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 } });
+      expect(bom.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+    });
+
+    it('falls back to the static ingest limit for per-app license sizing when no simulation has run yet (rxMbps 0 or absent)', () => {
+      const node = gsaNode([{ actionType: 'AMI' }], undefined, 400000);
+      const bomNoMetrics = generateBom([node], [], 'HTL', '12');
+      expect(bomNoMetrics.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+
+      const bomZeroRx = generateBom([node], [], 'HTL', '12', 'US', false, { 'gsa-1': { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 } });
+      expect(bomZeroRx.find(r => r.sku === 'SMT-GSA110-AMI-100G-SW-TM')?.qty).toBe(4);
+    });
   });
 
   describe('GigaSMART Load Balancing parallel edges', () => {

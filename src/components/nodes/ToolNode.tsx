@@ -103,7 +103,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const glowClass = useGlowClass(id);
 
   const nodeObj = { id, type: 'toolNode', position: { x: 0, y: 0 }, data } as CustomNode;
-  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes);
+  const nodeBom = generateSingleNodeBom(nodeObj, projectLicenseMode, globalTermDuration, globalRegion, edges, nodes, metrics?.rxMbps);
   
   let tooltipText = `${data.label} Configuration BOM:\n`;
   if (nodeBom.length > 0) {

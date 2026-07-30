@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react';
-import { type CustomNode } from '../../store/types';
+import { type CustomNode, type NodeMetrics } from '../../store/types';
 import { NODE_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import opticRules from '../../constants/opticRules.json';
@@ -114,7 +114,8 @@ export function generateBom(
   globalLicenseMode: 'HTL' | 'Perpetual',
   globalTermDuration: string,
   globalRegion: 'US' | 'EU' | 'UK' = 'US',
-  groupByNode: boolean = false
+  groupByNode: boolean = false,
+  nodeMetrics: Record<string, NodeMetrics> = {}
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -156,8 +157,11 @@ export function generateBom(
         } else {
           addRow(node.id, resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
         }
-        const ingestLimitMbps = (node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance');
-        const appLicenseQty = resolveGsaAppLicenseQty(ingestLimitMbps);
+        const deliveredMbps = nodeMetrics[node.id]?.rxMbps;
+        const licensableMbps = (typeof deliveredMbps === 'number' && deliveredMbps > 0)
+          ? deliveredMbps
+          : ((node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance'));
+        const appLicenseQty = resolveGsaAppLicenseQty(licensableMbps);
         ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
           const sku = resolveGsaAppLicenseSku(app.actionType || '', globalLicenseMode, !!app.gsa5gDecode);
           if (sku) addRow(node.id, sku, appLicenseQty, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
@@ -370,13 +374,19 @@ function resolveGsaChassisSku(power: string, licenseMode: 'HTL' | 'Perpetual'): 
 /**
  * Each SMT-GSA110-*-100G-* app licence only covers 100 Gbps of throughput -
  * pushing more traffic through the appliance requires that many more licences
- * of the same SKU (e.g. 400 Gbps of ingest needs 4x the AMI licence), not just
- * one. The base GVOS chassis licence (GVS-GSA110-SW-TM) isn't capacity-tiered
- * this way, so it's excluded from this calculation.
+ * of the same SKU (e.g. 400 Gbps needs 4x the AMI licence), not just one. The
+ * base GVOS chassis licence (GVS-GSA110-SW-TM) isn't capacity-tiered this way,
+ * so it's excluded from this calculation.
+ *
+ * Sized off the traffic actually delivered to the appliance (the simulated
+ * rxMbps), not the appliance's fixed hardware ingest ceiling - the ceiling is
+ * a worst-case ports limit, but licences only need to cover what's really
+ * flowing through it. Callers fall back to the ingest ceiling when no
+ * simulation has been run yet, so the BOM isn't 1x before anyone hits Run.
  */
-function resolveGsaAppLicenseQty(ingestLimitMbps: number): number {
+function resolveGsaAppLicenseQty(licensableMbps: number): number {
   const licenseCapacityMbps = 100000; // 100 Gbps per licence
-  return Math.max(1, Math.ceil(ingestLimitMbps / licenseCapacityMbps));
+  return Math.max(1, Math.ceil(licensableMbps / licenseCapacityMbps));
 }
 
 /**
@@ -437,7 +447,8 @@ export function generateSingleNodeBom(
   globalTermDuration: string,
   globalRegion: 'US' | 'EU' | 'UK' = 'US',
   edges: Edge[] = [],
-  nodes: CustomNode[] = []
+  nodes: CustomNode[] = [],
+  deliveredMbps?: number
 ): BomRow[] {
   const rowMap: Record<string, BomRow> = {};
   const skus = getSkus();
@@ -469,8 +480,10 @@ export function generateSingleNodeBom(
       } else {
         addRow(resolveGsaChassisSku(power, 'Perpetual'), 1, 'Chassis');
       }
-      const ingestLimitMbps = (node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance');
-      const appLicenseQty = resolveGsaAppLicenseQty(ingestLimitMbps);
+      const licensableMbps = (typeof deliveredMbps === 'number' && deliveredMbps > 0)
+        ? deliveredMbps
+        : ((node.data?.ingestLimitMbps as number) || getDefaultIngestLimitMbps('GigaSMART Appliance'));
+      const appLicenseQty = resolveGsaAppLicenseQty(licensableMbps);
       ((node.data?.gigaSmartApps as { actionType?: string; gsa5gDecode?: boolean }[]) || []).forEach(app => {
         const sku = resolveGsaAppLicenseSku(app.actionType || '', licenseMode, !!app.gsa5gDecode);
         if (sku) addRow(sku, appLicenseQty, 'License', licenseMode === 'HTL' ? termOverride : undefined);
