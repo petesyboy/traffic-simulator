@@ -620,7 +620,7 @@ const Sidebar: React.FC = () => {
                     since they're Gigamon-branded gear, not general-purpose tools. */}
                 <CatalogueSection
                   title="Appliances"
-                  items={[{ model: 'GigaSMART Appliance', sku: 'GSA' }]}
+                  items={[{ model: 'GigaSMART Appliance', sku: 'GSA', image: 'GigaVUE-GSA.png' }]}
                   isOpen={openSections.hwGsa}
                   onToggle={() => toggleSection('hwGsa')}
                   searchQuery={searchQuery}
