@@ -9,6 +9,11 @@ interface FederatedEnclosuresProps {
 }
 
 const ENCLOSURE_PAD = 28;
+// getNodesBounds gives the exact node bounds, but the enclosure still needs
+// extra breathing room on the left (handles/labels sit right at the edge)
+// and bottom (vs. the default pad used on top/right).
+const ENCLOSURE_PAD_LEFT = ENCLOSURE_PAD + 25;
+const ENCLOSURE_PAD_BOTTOM = ENCLOSURE_PAD + 15;
 
 export const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges, onShowDashboard }) => {
   const { x: vpX, y: vpY, zoom } = useViewport();
@@ -53,8 +58,8 @@ export const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes,
     <>
       {groups.map((groupNodes) => {
         const bounds = getNodesBounds(groupNodes);
-        const left = (bounds.x - ENCLOSURE_PAD) * zoom + vpX, top = (bounds.y - ENCLOSURE_PAD) * zoom + vpY;
-        const width = (bounds.width + ENCLOSURE_PAD * 2) * zoom, height = (bounds.height + ENCLOSURE_PAD * 2) * zoom;
+        const left = (bounds.x - ENCLOSURE_PAD_LEFT) * zoom + vpX, top = (bounds.y - ENCLOSURE_PAD) * zoom + vpY;
+        const width = (bounds.width + ENCLOSURE_PAD_LEFT + ENCLOSURE_PAD) * zoom, height = (bounds.height + ENCLOSURE_PAD + ENCLOSURE_PAD_BOTTOM) * zoom;
         const groupKey = groupNodes.map(n => n.id).sort().join('-');
 
         return (
