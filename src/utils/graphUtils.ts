@@ -15,6 +15,11 @@ export const isMetadataEdge = (
 
   if (!srcNode) return false;
 
+  // A dedicated metadata-egress handle (currently only the GigaSMART
+  // Appliance's "metadata-out") unambiguously marks the edge as metadata -
+  // no need to infer it from ancestor node types.
+  if (edge.sourceHandle === 'metadata-out') return true;
+
   // Immediate check for GigaSMART metadata nodes
   if (srcNode.type === 'gigaSmartNode') {
     const actionType = srcNode.data?.actionType;

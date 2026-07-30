@@ -97,7 +97,12 @@ const CanvasArea: React.FC = () => {
       }
     }
 
-    const parallelEdges = edges.filter(e => e.source === edge.source && e.target === edge.target);
+    // Only group edges sharing the same source handle as "parallel" links -
+    // a node with two distinct output handles (e.g. the GSA's packet "out"
+    // and metadata "metadata-out") that both happen to target the same node
+    // isn't load-balancing, it's two different traffic types on one target,
+    // so those shouldn't be labelled "Link 1/2" as if they were interchangeable.
+    const parallelEdges = edges.filter(e => e.source === edge.source && e.target === edge.target && e.sourceHandle === edge.sourceHandle);
     const totalParallel = parallelEdges.length;
     const parallelIndex = parallelEdges.findIndex(e => e.id === edge.id);
 
