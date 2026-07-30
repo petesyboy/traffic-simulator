@@ -50,13 +50,18 @@ export const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes,
   return (
     <>
       {groups.map((groupNodes) => {
-        const halfW = NODE_EST_WIDTH / 2, halfH = NODE_EST_HEIGHT / 2;
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const n of groupNodes) {
-          minX = Math.min(minX, n.position.x - halfW);
-          minY = Math.min(minY, n.position.y - halfH);
-          maxX = Math.max(maxX, n.position.x + halfW);
-          maxY = Math.max(maxY, n.position.y + halfH);
+          // node.position is the node's top-left corner, not its center - and
+          // nodes are resizable (NodeResizer), so use the live measured size
+          // rather than a fixed estimate, or the enclosure clips whichever
+          // side the node has grown past the guess.
+          const w = n.measured?.width || n.width || NODE_EST_WIDTH;
+          const h = n.measured?.height || n.height || NODE_EST_HEIGHT;
+          minX = Math.min(minX, n.position.x);
+          minY = Math.min(minY, n.position.y);
+          maxX = Math.max(maxX, n.position.x + w);
+          maxY = Math.max(maxY, n.position.y + h);
         }
 
         const left = (minX - ENCLOSURE_PAD) * zoom + vpX, top = (minY - ENCLOSURE_PAD) * zoom + vpY;
