@@ -13,7 +13,7 @@ const ENCLOSURE_PAD = 28;
 // extra breathing room on the left (handles/labels sit right at the edge)
 // and bottom (vs. the default pad used on top/right).
 const ENCLOSURE_PAD_LEFT = ENCLOSURE_PAD + 25;
-const ENCLOSURE_PAD_BOTTOM = ENCLOSURE_PAD + 15;
+const ENCLOSURE_PAD_BOTTOM = ENCLOSURE_PAD + 80;
 
 export const FederatedEnclosures: React.FC<FederatedEnclosuresProps> = ({ nodes, edges, onShowDashboard }) => {
   const { x: vpX, y: vpY, zoom } = useViewport();
