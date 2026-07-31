@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { CustomNode } from '../store/store';
 import { useStore } from '../store/store';
+import { computeEnlargedPanelPlacement, type PanelPlacement } from '../utils/panelPlacement';
 
 interface MetadataEventViewerProps {
   selectedNode: CustomNode;
@@ -229,36 +230,9 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
     return () => window.removeEventListener('resize', onResize);
   }, [isHoveringLog]);
 
-  // Prefer placing the enlarged panel just to the left of the anchor (the
-  // config panel lives on the right edge of the screen); fall back to
-  // stacking it above/below the anchor if there isn't enough horizontal room.
-  const GAP = 22;
-  const PANEL_WIDTH = 480;
-  const MIN_USABLE_WIDTH = 320;
-  let placement: { left: number; top: number; width: number; maxHeight: number; side: 'left' | 'stack' } | null = null;
-  if (anchorRect) {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const spaceLeft = anchorRect.left - GAP - 16;
-    if (spaceLeft >= MIN_USABLE_WIDTH) {
-      const width = Math.min(PANEL_WIDTH, spaceLeft);
-      const maxHeight = Math.min(vh * 0.7, vh - 32);
-      const top = Math.min(Math.max(16, anchorRect.top - 40), Math.max(16, vh - maxHeight - 16));
-      // anchorRect is only captured on hover-start and never refreshed, so if the
-      // window is narrowed (or the anchor otherwise moves) while the panel stays
-      // open, a value derived purely from anchorRect can drift off-screen. Clamp
-      // against the live viewport, same as the 'stack' branch below, rather than
-      // trusting the anchor position unconditionally.
-      const left = Math.min(Math.max(16, anchorRect.left - GAP - width), vw - width - 16);
-      placement = { left, top, width, maxHeight, side: 'left' };
-    } else {
-      const width = Math.min(560, vw - 32);
-      const maxHeight = Math.min(vh * 0.55, vh - anchorRect.bottom - GAP - 16);
-      const left = Math.min(Math.max(16, anchorRect.left + anchorRect.width / 2 - width / 2), vw - width - 16);
-      const top = maxHeight > 200 ? anchorRect.bottom + GAP : Math.max(16, anchorRect.top - Math.min(vh * 0.55, vh - 32) - GAP);
-      placement = { left, top, width, maxHeight: Math.max(maxHeight, 200), side: 'stack' };
-    }
-  }
+  const placement: PanelPlacement | null = anchorRect
+    ? computeEnlargedPanelPlacement(anchorRect, window.innerWidth, window.innerHeight)
+    : null;
 
   const handleFormatChange = (newFormat: MetadataFormat) => {
     setActiveFormat(newFormat);
