@@ -11,9 +11,10 @@ const skuSet = skus as Record<string, string>;
 describe('getTapTerminationClass', () => {
   it('classifies the LC module TAPs by fibre type', () => {
     expect(getTapTerminationClass('TAP-M251T', 'TAP-M251T')).toBe('multimode-lc');
-    expect(getTapTerminationClass('TAP-M251ULT', 'TAP-M251ULT')).toBe('multimode-lc');
     expect(getTapTerminationClass('TAP-M253T', 'TAP-M253T')).toBe('singlemode-lc');
+    // Singlemode ULT shares the M253T range; multimode ULT is capped at 25G.
     expect(getTapTerminationClass('TAP-M253ULT', 'TAP-M253ULT')).toBe('singlemode-lc');
+    expect(getTapTerminationClass('TAP-M251ULT', 'TAP-M251ULT')).toBe('multimode-lc-ult');
   });
 
   it('classifies the BiDi tap separately', () => {
@@ -87,6 +88,47 @@ describe('TAP-M253T (singlemode LC)', () => {
     expect(skusOf).not.toContain('Q28-508');
     expect(skusOf).not.toContain('QSF-506T');
     expect(skusOf.some(s => s.startsWith('QSB-'))).toBe(false);
+  });
+});
+
+describe('TAP-M251ULT (multimode LC, unidirectional)', () => {
+  const optics = getCompatibleTapOptics('TAP-M251ULT', 'TAP-M251ULT');
+  const skusOf = optics.map(o => o.sku);
+
+  it('offers the multimode SX/SR range up to 25G', () => {
+    expect(skusOf).toEqual(expect.arrayContaining([
+      'SFP-502', 'SFP-502T', 'SFP-532', 'SFP-532T', 'SFP-552', 'SFP-552T',
+    ]));
+  });
+
+  it('stops at 25G, unlike the M251T', () => {
+    // The ULT documentation describes M251ULT as 1/10/25G; older pricing text
+    // claiming 40/100G is deliberately not followed.
+    expect(optics.every(o => o.speed === '1G' || o.speed === '10G' || o.speed === '25G')).toBe(true);
+    expect(skusOf).not.toContain('QSF-508');
+    expect(skusOf).not.toContain('Q28-508');
+    // ...whereas the standard M251T does carry them.
+    expect(getCompatibleTapOptics('TAP-M251T', 'TAP-M251T').map(o => o.sku)).toContain('Q28-508');
+  });
+
+  it('rejects the 40/100G SWDM4 parts its non-ULT sibling accepts', () => {
+    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'Q28-508')).toBe(false);
+    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'SFP-552T')).toBe(true);
+  });
+});
+
+describe('TAP-M253ULT (singlemode LC, unidirectional)', () => {
+  const skusOf = getCompatibleTapOptics('TAP-M253ULT', 'TAP-M253ULT').map(o => o.sku);
+
+  it('shares the full singlemode LC range with the M253T', () => {
+    expect(skusOf).toEqual(getCompatibleTapOptics('TAP-M253T', 'TAP-M253T').map(o => o.sku));
+    expect(skusOf).toEqual(expect.arrayContaining(['SFP-503T', 'SFP-533T', 'SFP-553T', 'QSF-503T', 'Q28-503T', 'Q28-514']));
+  });
+
+  it('offers nothing above 100G on a TA25E, whatever the module supports', () => {
+    // The module itself reaches 400G, but a TA25/TA25E has no QSFP-DD cage.
+    const onTa25e = getCompatibleTapOptics('TAP-M253ULT', 'TAP-M253ULT', 'GigaVUE-TA25E');
+    expect(onTa25e.some(o => o.speed === '400G')).toBe(false);
   });
 });
 
