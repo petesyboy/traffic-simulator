@@ -29,8 +29,23 @@ const sumPortCounts = (ports: (PortInfo | number)[]): { [portType: string]: numb
 /**
  * Determines the speed tier of an optic based on its SKU/name.
  */
+// QSB-* BiDi optics carry no speed digit in their bare SKU (e.g. "QSB-521"),
+// so they fall through every substring/prefix check below and used to resolve
+// to 'Unknown' - which getOpticCage then defaulted to an SFP cage instead of
+// the QSFP+ /QSFP28 cage every QSB part actually is. Keep this in step with
+// the BIDI_OPTICS table in constants/tapOpticRules.ts.
+const QSB_SPEED: Record<string, '40G' | '100G'> = {
+  'QSB-501': '40G', 'QSB-502': '40G', 'QSB-504': '40G',
+  'QSB-512': '100G', 'QSB-521': '100G', 'QSB-522': '100G',
+  'QSB-523T': '100G', 'QSB-524T': '100G', 'QSB-531': '100G', 'QSB-532': '100G',
+};
+
 export const getOpticSpeed = (opticName: string): '1G' | '10G' | '25G' | '40G' | '100G' | '400G' | 'Unknown' => {
   const name = opticName.toUpperCase();
+  if (name.startsWith('QSB-')) {
+    const sku = name.split(' ')[0];
+    return QSB_SPEED[sku] || '100G'; // every QSB part is 40G or 100G; 100G is the more common/newer default
+  }
   if (name.includes('400G') || name.startsWith('QDD-')) return '400G';
   if (name.includes('100G') || name.startsWith('Q28-')) return '100G';
   if (name.includes('40G') || name.startsWith('QSF-')) return '40G';

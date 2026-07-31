@@ -178,6 +178,15 @@ describe('hardwareUtils', () => {
       expect(getOpticSpeed('Unknown-Optic')).toBe('Unknown');
     });
 
+    it('recognises the QSB-* BiDi optics, which carry no speed digit in the bare SKU', () => {
+      // A bare "QSB-521" used to fall through every check to 'Unknown', which
+      // getOpticCage then defaulted to an SFP cage instead of QSFP.
+      expect(getOpticSpeed('QSB-501')).toBe('40G');
+      expect(getOpticSpeed('QSB-521')).toBe('100G');
+      expect(getOpticSpeed('QSB-523T')).toBe('100G');
+      expect(getOpticSpeed('QSB-531')).toBe('100G');
+    });
+
     it('should return correct speed in Mbps', () => {
       expect(getOpticSpeedMbps('QDD-502')).toBe(400000);
       expect(getOpticSpeedMbps('Q28-502')).toBe(100000);

@@ -103,6 +103,14 @@ describe('getOpticCage', () => {
     expect(getOpticCage('PNL-M341')).toBe('QSFP');
     expect(getOpticCage('PNL-M343')).toBe('QSFP');
   });
+
+  it('places every QSB-* BiDi optic in a QSFP cage, never SFP', () => {
+    // A bare "QSB-521" carries no speed digit, so it used to fall through to
+    // 'Unknown' in getOpticSpeed and land in an SFP cage on a TA25E.
+    ['QSB-501', 'QSB-521', 'QSB-523T', 'QSB-531'].forEach(sku => {
+      expect(getOpticCage(sku)).toBe('QSFP');
+    });
+  });
 });
 
 describe('getPortOpticMap', () => {

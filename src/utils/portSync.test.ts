@@ -315,6 +315,20 @@ describe('module TAP optics (TAP-M506T BiDi)', () => {
       expect(opticRow?.sku).not.toBe(toolOptic + 'T');
     },
   );
+
+  it.each(['QSB-501', 'QSB-521', 'QSB-523T', 'QSB-531'])(
+    'allocates a QSFP cage (c-prefix) for %s, never an SFP cage',
+    (toolOptic) => {
+      // getOpticSpeed used to return 'Unknown' for a bare QSB-* SKU (no speed
+      // digit in the string), so preferredCage fell through and the tap landed
+      // on an SFP (x-prefix) port on a TA25E instead of a QSFP one.
+      const nodes = [m506t(toolOptic), chassis()];
+      const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+
+      expect(links).toHaveLength(2); // one tapped link = 2 chassis ports
+      links.forEach(link => expect(link.targetPortId).toMatch(/^1\/1\/c\d+$/));
+    },
+  );
 });
 
 describe('BOM regression', () => {

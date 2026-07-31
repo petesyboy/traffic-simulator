@@ -31,6 +31,9 @@ export function getCageFamily(portType: string): ChassisPort['cage'] {
 /** Which cage an optic needs, by speed. Breakout panels occupy a QSFP cage. */
 export function getOpticCage(optic: string): ChassisPort['cage'] {
   if (optic.includes('PNL-M341') || optic.includes('PNL-M343')) return 'QSFP';
+  // Every QSB-* BiDi part is QSFP+ (40G) or QSFP28 (100G) form factor - never
+  // SFP - regardless of whether getOpticSpeed's map recognises the exact SKU.
+  if (optic.toUpperCase().includes('QSB-')) return 'QSFP';
   const speed = getOpticSpeed(optic);
   return speed === '40G' || speed === '100G' || speed === '400G' ? 'QSFP' : 'SFP';
 }
