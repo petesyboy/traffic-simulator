@@ -85,6 +85,43 @@ export interface PortInfo {
   speeds: string[];
 }
 
+/**
+ * A single physical port (cage) on a chassis. Derived on demand from the
+ * hardware catalogue plus the node's installedBoards/portCapacity - never
+ * stored on the node, so saved projects need no migration and the port list
+ * can't drift out of sync with the modules actually fitted.
+ */
+export interface ChassisPort {
+  /** GigaVUE-OS style id, unique within the node - e.g. '1/1/x1', '1/2/c16'. */
+  id: string;
+  /** Matches InstalledOptic.board exactly, so optics can be tied to ports. */
+  board: string;
+  /** '1' for base ports, otherwise the module slot index. */
+  slot: string;
+  /** Catalogue port type, e.g. 'SFP28' | 'QSFP28' | 'QSFP-DD' | 'SFP+' | 'RJ45'. */
+  type: string;
+  /** Coarse cage family an optic must match to fit. */
+  cage: 'SFP' | 'QSFP' | 'RJ45';
+  /** 1-based position within this board's group of that cage family. */
+  index: number;
+  speeds: string[];
+  /** False when the port is physically present but outside the licence tier. */
+  licensed: boolean;
+}
+
+/**
+ * One physical port-to-port connection carried by an edge. A single edge holds
+ * many of these - a 4-link TAP consumes 8 chassis ports over one edge.
+ */
+export interface PortLink {
+  /** Port id at the edge's source. TAP ends use 'L<n>-N'/'L<n>-S'. */
+  sourcePortId: string;
+  targetPortId: string;
+  opticSku?: string;
+  /** Set once the user picks a port by hand; auto-allocation then leaves it be. */
+  pinned?: boolean;
+}
+
 export interface LicensingInfo {
   ports: PortInfo[];
 }

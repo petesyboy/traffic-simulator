@@ -8,6 +8,7 @@ import skusData from '../../constants/skus.json';
 import {
   BoardSlotsPanel,
   CageSummaryPanel,
+  PortMapPanel,
   OpticsPanel,
   GigaSmartAppsPanel,
   TapLinksPanel,
@@ -366,6 +367,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           <>
             <BoardSlotsPanel selectedNode={node} updateNodeData={updateNodeData} />
             <CageSummaryPanel selectedNode={node} />
+            <PortMapPanel selectedNode={node} />
             <OpticsPanel selectedNode={node} updateNodeData={updateNodeData} nodes={nodes} edges={edges} />
           </>
         )}

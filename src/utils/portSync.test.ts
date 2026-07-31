@@ -1,0 +1,186 @@
+import { describe, it, expect } from 'vitest';
+import type { Edge } from '@xyflow/react';
+import type { CustomNode, PortLink } from '../store/types';
+import { syncPortAssignments } from './portSync';
+import { generateBom } from './bom/bomGenerator';
+
+const tapNode = (id = 'tap', links = 4, optic = 'SFP-532T (10G SFP+ SR)'): CustomNode => ({
+  id,
+  type: 'hardwareNode',
+  position: { x: 0, y: 0 },
+  data: {
+    label: 'G-TAP A-SF2',
+    model: 'G-TAP A-SF2',
+    sku: 'GTP-ASF22',
+    tappedLinkAllocations: [{ qty: links, optic }],
+    tappedLinksCount: links,
+  },
+} as CustomNode);
+
+const ta25eNode = (id = 'ta', opticQty = 8, optic = 'SFP-532T (10G SFP+ SR)'): CustomNode => ({
+  id,
+  type: 'hardwareNode',
+  position: { x: 0, y: 0 },
+  data: {
+    label: 'Core TA25E',
+    model: 'GigaVUE-TA25E',
+    sku: 'TA25E-BASE',
+    optics: [{ board: 'Base Ports', optic, qty: opticQty }],
+  },
+} as CustomNode);
+
+const linksOf = (edge: Edge): PortLink[] => (edge.data?.portLinks as PortLink[]) || [];
+
+describe('syncPortAssignments', () => {
+  it('allocates two chassis ports per tapped link - 4 links become 8 ports', () => {
+    const nodes = [tapNode(), ta25eNode()];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+
+    expect(links).toHaveLength(8);
+    // Each tapped link contributes a north and a south feed.
+    expect(links.map(l => l.sourcePortId)).toEqual([
+      'L1-N', 'L1-S', 'L2-N', 'L2-S', 'L3-N', 'L3-S', 'L4-N', 'L4-S',
+    ]);
+    // ...landing on eight consecutive SFP cages on the chassis.
+    expect(links.map(l => l.targetPortId)).toEqual([
+      '1/1/x1', '1/1/x2', '1/1/x3', '1/1/x4', '1/1/x5', '1/1/x6', '1/1/x7', '1/1/x8',
+    ]);
+    // Every allocated port reports the optic actually fitted to it.
+    expect(links.every(l => l.opticSku?.startsWith('SFP-532T'))).toBe(true);
+  });
+
+  it('picks a QSFP cage when the TAP is running 100G optics', () => {
+    const nodes = [tapNode('tap', 2, 'Q28-502T (100G QSFP28 SR4)'), ta25eNode('ta', 4, 'Q28-502T (100G QSFP28 SR4)')];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+    expect(links).toHaveLength(4);
+    expect(links.map(l => l.targetPortId)).toEqual(['1/1/c1', '1/1/c2', '1/1/c3', '1/1/c4']);
+  });
+
+  it('does not hand the same port to two different links', () => {
+    const nodes = [tapNode('tapA', 2), tapNode('tapB', 2), ta25eNode()];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'tapA', target: 'ta' },
+      { id: 'e2', source: 'tapB', target: 'ta' },
+    ];
+
+    const synced = syncPortAssignments(nodes, edges);
+    const allTargets = synced.flatMap(e => linksOf(e).map(l => l.targetPortId));
+
+    expect(allTargets).toHaveLength(8);
+    expect(new Set(allTargets).size).toBe(8);
+  });
+
+  it('keeps a pinned assignment through a re-sync after the graph changes', () => {
+    const nodes = [tapNode('tap', 1), ta25eNode()];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    const first = syncPortAssignments(nodes, edges);
+    // Pin the first link onto a port well away from the auto-allocated x1.
+    const pinned: Edge[] = first.map(e => ({
+      ...e,
+      data: {
+        ...e.data,
+        portLinks: linksOf(e).map((l, i) => (i === 0 ? { ...l, targetPortId: '1/1/x40', pinned: true } : l)),
+      },
+    }));
+
+    const withExtraNode = [...nodes, ta25eNode('ta2')];
+    const resynced = syncPortAssignments(withExtraNode, pinned);
+
+    expect(linksOf(resynced[0])[0].targetPortId).toBe('1/1/x40');
+    expect(linksOf(resynced[0])[0].pinned).toBe(true);
+  });
+
+  it('routes an auto link around a port another link has pinned', () => {
+    const nodes = [tapNode('tap', 2), ta25eNode()];
+
+    const pinnedEdges: Edge[] = [{
+      id: 'e1',
+      source: 'tap',
+      target: 'ta',
+      data: { portLinks: [{ sourcePortId: 'L1-N', targetPortId: '1/1/x2', pinned: true }] },
+    }];
+
+    const links = linksOf(syncPortAssignments(nodes, pinnedEdges)[0]);
+    const targets = links.map(l => l.targetPortId);
+
+    expect(targets).toContain('1/1/x2');
+    // x2 is spoken for, so auto allocation must skip over it.
+    expect(targets.filter(t => t === '1/1/x2')).toHaveLength(1);
+    expect(new Set(targets).size).toBe(targets.length);
+  });
+
+  it('returns the identical array reference when nothing changed', () => {
+    const nodes = [tapNode(), ta25eNode()];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    const first = syncPortAssignments(nodes, edges);
+    const second = syncPortAssignments(nodes, first);
+
+    // Re-render safety: an unchanged sync must not churn the store.
+    expect(second).toBe(first);
+  });
+
+  it('preserves unrelated edge data rather than clobbering it', () => {
+    const nodes = [tapNode('tap', 1), ta25eNode()];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta', data: { parallelIndex: 0, totalParallel: 1 } }];
+
+    const synced = syncPortAssignments(nodes, edges);
+    expect(synced[0].data?.parallelIndex).toBe(0);
+    expect(synced[0].data?.totalParallel).toBe(1);
+    expect(linksOf(synced[0])).toHaveLength(2);
+  });
+
+  it('allocates nothing for a purely logical edge between non-chassis nodes', () => {
+    const nodes: CustomNode[] = [
+      { id: 'gs', type: 'gigaSmartNode', position: { x: 0, y: 0 }, data: { actionType: 'Deduplication' } } as CustomNode,
+      { id: 'tool', type: 'toolNode', position: { x: 0, y: 0 }, data: { configType: 'Packet Tool' } } as CustomNode,
+    ];
+    const edges: Edge[] = [{ id: 'e1', source: 'gs', target: 'tool' }];
+
+    expect(linksOf(syncPortAssignments(nodes, edges)[0])).toHaveLength(0);
+  });
+
+  it('still consumes a chassis port when the far end is a leaf tool with no ports', () => {
+    const nodes: CustomNode[] = [
+      ta25eNode(),
+      { id: 'tool', type: 'toolNode', position: { x: 0, y: 0 }, data: { label: 'Splunk', configType: 'Metadata Tool' } } as CustomNode,
+    ];
+    const edges: Edge[] = [{ id: 'e1', source: 'ta', target: 'tool' }];
+
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+
+    // The chassis end burns a real port; the tool end has none to record.
+    expect(links).toHaveLength(1);
+    expect(links[0].sourcePortId).toBe('1/1/x1');
+    expect(links[0].targetPortId).toBe('');
+  });
+
+  it('stops allocating once the chassis physically runs out of cages', () => {
+    // 30 tapped links would need 60 SFP ports; a TA25E only has 48.
+    const nodes = [tapNode('tap', 30), ta25eNode('ta', 48)];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+    expect(links).toHaveLength(48);
+    expect(new Set(links.map(l => l.targetPortId)).size).toBe(48);
+  });
+});
+
+describe('BOM regression', () => {
+  it('leaves BOM output untouched by port assignment', () => {
+    const nodes = [tapNode(), ta25eNode()];
+    const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ta' }];
+
+    // Port assignment consumes the optics the BOM already quotes; it must never
+    // add, remove or re-count a line. The double-optic rule stays as it was.
+    const before = generateBom(nodes, edges, 'HTL', '12');
+    const after = generateBom(nodes, syncPortAssignments(nodes, edges), 'HTL', '12');
+
+    expect(after).toEqual(before);
+  });
+});

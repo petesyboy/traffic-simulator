@@ -166,7 +166,10 @@ const CanvasArea: React.FC = () => {
       style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
-    return { ...edge, className, type: 'default', data: { parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
+    // Spread the stored data through rather than replacing it - it carries the
+    // edge's port assignments (portLinks), which would otherwise be wiped on
+    // every render.
+    return { ...edge, className, type: 'default', data: { ...edge.data, parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: '#121212', fillOpacity: 0.95, stroke: '#2a2a2a', strokeWidth: 1 } };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {

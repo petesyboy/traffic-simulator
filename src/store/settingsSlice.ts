@@ -3,6 +3,7 @@ import { type Edge } from '@xyflow/react';
 import { type RFState, type CustomNode, type TrafficStream } from './types';
 import { syncSplunkLabels } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
+import { syncPortAssignments } from '../utils/portSync';
 
 export interface SettingsSlice {
   advancedMode: boolean;
@@ -71,7 +72,9 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
     
     const updateObj: Partial<RFState> = {
       nodes: syncedNodes,
-      edges: uniqueEdges,
+      // Saves predating port assignments have none stored; re-deriving on load
+      // backfills them rather than leaving old projects with blank faceplates.
+      edges: syncPortAssignments(syncedNodes, uniqueEdges),
       trafficStreams: trafficStreams || get().trafficStreams,
       fitViewTrigger: get().fitViewTrigger + 1,
       // Undoing "into" a previously-loaded, unrelated topology isn't meaningful.

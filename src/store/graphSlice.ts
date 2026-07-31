@@ -12,6 +12,7 @@ import { type StateCreator } from 'zustand';
 import { type RFState, type CustomNode, type AnyNodeData, type HardwareNodeData, type InputNodeData } from './types';
 import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
+import { syncPortAssignments } from '../utils/portSync';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
@@ -109,7 +110,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const nextEdges = applyEdgeChanges(changes, get().edges);
     let syncedNodes = syncSplunkLabels(get().nodes, nextEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, nextEdges);
-    set({ edges: nextEdges, nodes: syncedNodes });
+    // Ports are allocated against the freshly synced optics, so this has to run
+    // after syncOpticsOnTapConnection rather than alongside it.
+    set({ edges: syncPortAssignments(syncedNodes, nextEdges), nodes: syncedNodes });
   },
 
   onConnect: (connection) => {
@@ -199,10 +202,14 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
 
     get().pushHistory();
     const nextEdges = addEdge({ ...connection, id: `e-${uuidv4()}` }, get().edges);
-    set({ edges: nextEdges, nodes: syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, nextEdges), nextEdges) });
+    const connectedNodes = syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, nextEdges), nextEdges);
+    set({ edges: syncPortAssignments(connectedNodes, nextEdges), nodes: connectedNodes });
   },
 
-  setEdges: (edges) => set({ edges, nodes: syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, edges), edges) }),
+  setEdges: (edges) => {
+    const syncedNodes = syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, edges), edges);
+    set({ edges: syncPortAssignments(syncedNodes, edges), nodes: syncedNodes });
+  },
   setDraggedNodeType: (type) => set({ draggedNodeType: type }),
   addNode: (node) => { get().pushHistory(); set({ nodes: [...get().nodes, node] }); },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
@@ -211,7 +218,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const updatedNodes = get().nodes.map((node) => node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node);
     let syncedNodes = syncSplunkLabels(updatedNodes, get().edges);
     if (data.optics === undefined) syncedNodes = syncOpticsOnTapConnection(syncedNodes, get().edges);
-    set({ nodes: syncedNodes });
+    // Editing optics, modules or the licence tier changes what ports exist and
+    // what's fitted in them, so assignments are re-derived here too.
+    set({ nodes: syncedNodes, edges: syncPortAssignments(syncedNodes, get().edges) });
   },
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),

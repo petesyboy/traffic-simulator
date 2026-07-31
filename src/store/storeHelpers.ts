@@ -2,6 +2,7 @@ import { type Edge } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
 import { type CustomNode, type TrafficStream } from './types';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
+import { syncPortAssignments } from '../utils/portSync';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
 
 export const initialNodes: CustomNode[] = [
@@ -392,7 +393,7 @@ export function performDuplicateSolution(
 
   return {
     nodes: syncedNodes,
-    edges: combinedEdges,
+    edges: syncPortAssignments(syncedNodes, combinedEdges),
     trafficStreams: [...allStreams, ...newStreams]
   };
 }

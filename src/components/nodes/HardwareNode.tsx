@@ -6,7 +6,7 @@
  * Type casts use the proper typed interfaces from types.ts instead of `any`.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition, HardwareNodeData, GigaSmartNodeData, CustomNode } from '../../store/types';
@@ -20,6 +20,8 @@ import { generateSingleNodeBom } from '../../utils/bomEngine';
 import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisSummaryModal } from './ChassisSummaryModal';
+import { ChassisFaceplate } from './ChassisFaceplate';
+import { getChassisPorts, getPortOccupancy } from '../../utils/ports';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -42,6 +44,20 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const hwData = data as HardwareNodeData;
   const image = resolveHardwareIcon(hwData.image);
+
+  // Ports are derived rather than stored, so recompute only when the inputs
+  // that shape them actually change - not on every metrics tick.
+  const chassisPorts = useMemo(
+    () => (advancedMode ? getChassisPorts(model, hwData) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hwData is a fresh object each render; these are the fields getChassisPorts reads
+    [advancedMode, model, hwData.installedBoards, hwData.portCapacity, hwData.optics],
+  );
+  const portOccupancy = useMemo(
+    () => (chassisPorts.length > 0
+      ? getPortOccupancy({ id, type: 'hardwareNode', position: { x: 0, y: 0 }, data } as CustomNode, nodes, edges, chassisPorts)
+      : new Map()),
+    [chassisPorts, id, data, nodes, edges],
+  );
 
   let rawIcon = image ? (
     <img src={image} alt={model} style={{ height: '32px', display: 'block', objectFit: 'contain' }} />
@@ -157,6 +173,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
               <span>SKU: {displaySku}</span>
             </div>
+            <ChassisFaceplate ports={chassisPorts} occupancy={portOccupancy} />
             {isTap && tapInfo && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
                 {tapInfo.splitRatio && (

@@ -1,14 +1,15 @@
 import { type Edge } from '@xyflow/react';
-import { type CustomNode } from '../../store/types';
+import { type CustomNode, type HardwareNodeData } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
+import { getChassisPorts, getOpticCage, getPortOpticMap, getRequiredPortCount } from '../ports';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -344,5 +345,87 @@ export function validateConfiguration(
     }
   });
 
+  validatePortAssignments(nodes, edges, errors);
+
   return errors;
+}
+
+/**
+ * Checks that come from the per-port assignment layer, which the aggregate
+ * capacity checks above can't see: a chassis physically running out of cages,
+ * and links landing on a cage that's empty or holds the wrong optic type.
+ */
+function validatePortAssignments(
+  nodes: CustomNode[],
+  edges: Edge[],
+  errors: ConfigurationValidationError[],
+) {
+  const portsByNode = new Map<string, ReturnType<typeof getChassisPorts>>();
+  const opticsByNode = new Map<string, Map<string, string>>();
+
+  nodes.filter(n => n.type === NODE_TYPES.HARDWARE).forEach(node => {
+    const model = String(node.data?.model || '');
+    const hwData = node.data as HardwareNodeData;
+    const ports = getChassisPorts(model, hwData);
+    portsByNode.set(node.id, ports);
+    opticsByNode.set(node.id, getPortOpticMap(ports, hwData.optics));
+  });
+
+  edges.forEach(edge => {
+    const sourceNode = nodes.find(n => n.id === edge.source);
+    const targetNode = nodes.find(n => n.id === edge.target);
+    const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
+
+    ([
+      { node: targetNode, key: 'targetPortId' as const, peer: sourceNode },
+      { node: sourceNode, key: 'sourcePortId' as const, peer: targetNode },
+    ]).forEach(({ node, key, peer }) => {
+      if (!node || node.type !== NODE_TYPES.HARDWARE) return;
+      const ports = portsByNode.get(node.id) || [];
+      if (ports.length === 0) return; // TAPs carry no catalogue ports
+
+      const label = String(node.data?.label || node.data?.model || node.id);
+      const required = getRequiredPortCount(sourceNode, targetNode);
+      const allocated = links.filter(l => l[key]).length;
+
+      if (allocated < required) {
+        errors.push({
+          type: 'port_capacity_exceeded',
+          nodeId: node.id,
+          nodeLabel: label,
+          message: `Chassis "${label}" has run out of physical ports: the link from "${String(peer?.data?.label || peer?.data?.model || 'peer')}" needs ${required} port${required === 1 ? '' : 's'} but only ${allocated} could be allocated.`,
+        });
+      }
+
+      const opticMap = opticsByNode.get(node.id) || new Map<string, string>();
+      links.forEach(link => {
+        const portId = link[key];
+        if (!portId) return;
+        const port = ports.find(p => p.id === portId);
+        if (!port) return;
+        const optic = opticMap.get(portId);
+
+        if (!optic) {
+          errors.push({
+            type: 'port_missing_optic',
+            nodeId: node.id,
+            nodeLabel: label,
+            message: `Port ${portId} on "${label}" carries a link but has no transceiver fitted.`,
+          });
+          return;
+        }
+
+        // Auto-allocation always picks a matching cage, so a mismatch here means
+        // the port was pinned by hand to a cage the optic can't physically fit.
+        if (getOpticCage(optic) !== port.cage) {
+          errors.push({
+            type: 'port_optic_mismatch',
+            nodeId: node.id,
+            nodeLabel: label,
+            message: `Port ${portId} on "${label}" is a ${port.cage} cage but is assigned a ${getOpticCage(optic)} transceiver (${optic.split(' ')[0]}).`,
+          });
+        }
+      });
+    });
+  });
 }
