@@ -6,10 +6,11 @@ import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
 import { getChassisPorts, getOpticCage, getPortOpticMap, getRequiredPortCount, isTapNode, isTapUnconfigured } from '../ports';
+import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch' | 'tap_not_configured';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch' | 'tap_not_configured' | 'tap_optic_incompatible';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -381,6 +382,57 @@ function validateTapConfiguration(
       nodeId: tap.id,
       nodeLabel: label,
       message: `TAP "${label}" is connected to "${String(peer?.data?.label || peerModel)}" but has no tapped links configured, so it contributes no optics, ports or BOM lines. Set the number of links and their speed in the TAP's "Tapped Links" panel.`,
+    });
+  });
+
+  validateTapOpticCompatibility(nodes, edges, errors);
+}
+
+/**
+ * A passive TAP's monitor output can only terminate into an optic matching its
+ * fibre type and connector - a multimode M251T can't be landed on a singlemode
+ * LR, and neither LC tap accepts the MPO or Rx-only BiDi parts.
+ */
+function validateTapOpticCompatibility(
+  nodes: CustomNode[],
+  edges: Edge[],
+  errors: ConfigurationValidationError[],
+) {
+  const chassisFor = new Map<string, CustomNode>();
+  edges.forEach(edge => {
+    const a = nodes.find(n => n.id === edge.source);
+    const b = nodes.find(n => n.id === edge.target);
+    const tap = isTapNode(a) ? a : (isTapNode(b) ? b : undefined);
+    const peer = tap === a ? b : a;
+    if (tap && peer?.type === NODE_TYPES.HARDWARE && !chassisFor.has(tap.id)) chassisFor.set(tap.id, peer);
+  });
+
+  chassisFor.forEach((chassis, tapId) => {
+    const tap = nodes.find(n => n.id === tapId);
+    if (!tap) return;
+    const data = tap.data as HardwareNodeData;
+    const model = String(data.model || '');
+    const sku = String(data.sku || '');
+    const compatible = getCompatibleTapOptics(model, sku, String(chassis.data?.model || ''));
+    if (compatible.length === 0) return; // not a TAP this matrix governs
+
+    const label = String(data.label || model || tapId);
+    const seen = new Set<string>();
+
+    (data.tappedLinkAllocations || []).forEach(alloc => {
+      // The chassis-side optic is the tool optic; the network side of a passive
+      // TAP is a descriptive label, not a part number.
+      const optic = alloc.toolOptic || alloc.optic;
+      if (!optic || String(optic).startsWith('Passive Optical Splitter')) return;
+      if (seen.has(optic) || isTapOpticCompatible(model, sku, optic)) return;
+      seen.add(optic);
+
+      errors.push({
+        type: 'tap_optic_incompatible',
+        nodeId: tapId,
+        nodeLabel: label,
+        message: `TAP "${label}" (${model}) cannot be terminated into ${optic.split(' ')[0]}. Valid options on "${String(chassis.data?.label || chassis.data?.model)}": ${compatible.map(o => o.sku).join(', ')}.`,
+      });
     });
   });
 }

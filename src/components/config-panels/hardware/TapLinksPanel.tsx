@@ -4,6 +4,7 @@ import type { CustomNode } from '../../../store/store';
 import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
+import { describeTapOptic, getCompatibleTapOptics, getTapTerminationClass } from '../../../constants/tapOpticRules';
 import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../../../utils/hardwareUtils';
 import skusData from '../../../constants/skus.json';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
@@ -82,16 +83,25 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     ? availableOptics.filter(o => getOpticSpeed(o.value) === networkSpeed)
     : availableOptics.filter(o => o.isSM === isSMTap && !o.isCopper);
 
-  const activeAddToolOptic = (addToolOptic && (isPassiveOpticalTap || getOpticSpeed(addToolOptic) === networkSpeed))
-    ? addToolOptic
-    : speedFilteredToolOptics[0]?.value || activeAddOptic;
-
   // Find the chassis (HC/TA) this TAP is physically connected to, so we can cap the
   // link selector by however many free SFP/QSFP cages it actually has left.
   const connectedChassis = edges
     .filter(e => e.source === selectedNode.id || e.target === selectedNode.id)
     .map(e => nodes.find(n => n.id === (e.source === selectedNode.id ? e.target : e.source)))
     .find(n => n?.type === 'hardwareNode' && (String(n.data?.model || '').includes('HC') || String(n.data?.model || '').includes('TA')));
+
+  // Passive module TAPs terminate into a fixed, fibre-type-specific optic set -
+  // a multimode M251T can't land on a singlemode LR, and neither LC tap takes
+  // the MPO or Rx-only BiDi parts. Where the matrix governs this TAP it replaces
+  // the generic speed-matched picker entirely.
+  const terminationClass = getTapTerminationClass(tapModel, tapSku);
+  const matrixOptics = getCompatibleTapOptics(tapModel, tapSku, String(connectedChassis?.data?.model || '') || undefined);
+
+  const activeAddToolOptic = matrixOptics.length > 0
+    ? (matrixOptics.some(o => o.sku === addToolOptic) ? addToolOptic : matrixOptics[0].sku)
+    : ((addToolOptic && (isPassiveOpticalTap || getOpticSpeed(addToolOptic) === networkSpeed))
+      ? addToolOptic
+      : speedFilteredToolOptics[0]?.value || activeAddOptic);
 
   let remainingLinksByCageCapacity = Infinity;
   let cageLimitReason = '';
@@ -312,12 +322,21 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
                 disabled={isM506T}
                 className="form-select text-md p-1 bg-[#222] w-full"
               >
-                {!isPassiveOpticalTap && <option value={activeAddOptic}>Match Network Optic</option>}
-                {speedFilteredToolOptics.filter(opt => isPassiveOpticalTap || opt.value !== activeAddOptic).map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
+                {!isPassiveOpticalTap && !matrixOptics.length && <option value={activeAddOptic}>Match Network Optic</option>}
+                {matrixOptics.length > 0
+                  ? matrixOptics.map(o => (
+                      <option key={o.sku} value={o.sku}>{describeTapOptic(o)}</option>
+                    ))
+                  : speedFilteredToolOptics.filter(opt => isPassiveOpticalTap || opt.value !== activeAddOptic).map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
               </select>
-              {(networkSpeed && !isPassiveOpticalTap) && (
+              {matrixOptics.length > 0 ? (
+                <span className="text-xs text-muted mt-1">
+                  {tapModel} is a {terminationClass === 'singlemode-lc' ? 'singlemode LC' : terminationClass === 'bidi' ? 'BiDi' : 'multimode LC'} tap
+                  {connectedChassis ? ` — showing only optics ${String(connectedChassis.data?.label || connectedChassis.data?.model)} can terminate` : ''}. Two optics are needed per tapped link (Rx side only).
+                </span>
+              ) : (networkSpeed && !isPassiveOpticalTap) && (
                 <span className="text-xs text-muted mt-1">Filtered to {networkSpeed} optics (tool must match network speed)</span>
               )}
             </div>

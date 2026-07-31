@@ -227,6 +227,34 @@ describe('module TAP optics (TAP-M251T)', () => {
     expect(warning?.message).toContain('no tapped links configured');
   });
 
+  it('rejects a singlemode optic on the multimode M251T', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'Q28-503T' }] }), chassis()];
+    const err = validateConfiguration(nodes, edges).find(e => e.type === 'tap_optic_incompatible');
+
+    expect(err).toBeDefined();
+    expect(err?.message).toContain('Q28-503T');
+    // The message names the valid alternatives on this chassis.
+    expect(err?.message).toContain('Q28-508');
+  });
+
+  it('rejects the Rx-only BiDi parts on a normal M251T', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'QSB-523T' }] }), chassis()];
+    expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_optic_incompatible')).toBeDefined();
+  });
+
+  it('accepts the SWDM4 multimode optic the M251T actually terminates into', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'Q28-508' }] }), chassis()];
+    expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_optic_incompatible')).toBeUndefined();
+  });
+
+  it('leaves an A-SF2 alone, since the matrix does not govern it', () => {
+    const asf: CustomNode = {
+      id: 'tap', type: 'hardwareNode', position: { x: 0, y: 0 },
+      data: { label: 'A-SF2', model: 'G-TAP A-SF2', sku: 'GTP-ASF22', tappedLinkAllocations: [{ qty: 1, optic: '10G-SFP-SR' }] },
+    } as CustomNode;
+    expect(validateConfiguration([asf, chassis()], edges).find(e => e.type === 'tap_optic_incompatible')).toBeUndefined();
+  });
+
   it('raises no such warning once the TAP is configured', () => {
     const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: '100G-QSFP28-SR4' }] }), chassis()];
     expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_not_configured')).toBeUndefined();
