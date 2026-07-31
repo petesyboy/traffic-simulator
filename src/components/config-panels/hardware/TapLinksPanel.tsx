@@ -4,7 +4,21 @@ import type { CustomNode } from '../../../store/store';
 import { useStore } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, TappedLinkAllocation } from '../../../store/types';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
-import { describeTapOptic, getCompatibleTapOptics, getTapTerminationClass } from '../../../constants/tapOpticRules';
+import {
+  describeTapOptic,
+  getCompatibleTapOptics,
+  getMpoBreakoutOption,
+  getTapTerminationClass,
+  type TapTerminationClass,
+} from '../../../constants/tapOpticRules';
+
+const TERMINATION_CLASS_LABEL: Record<TapTerminationClass, string> = {
+  'multimode-lc': 'multimode LC',
+  'singlemode-lc': 'singlemode LC',
+  'multimode-mpo': 'multimode MPO',
+  'singlemode-mpo': 'singlemode MPO',
+  'bidi': 'BiDi',
+};
 import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../../../utils/hardwareUtils';
 import skusData from '../../../constants/skus.json';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
@@ -96,6 +110,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   // the generic speed-matched picker entirely.
   const terminationClass = getTapTerminationClass(tapModel, tapSku);
   const matrixOptics = getCompatibleTapOptics(tapModel, tapSku, String(connectedChassis?.data?.model || '') || undefined);
+  const mpoBreakoutOption = getMpoBreakoutOption(tapModel, tapSku);
 
   const activeAddToolOptic = matrixOptics.length > 0
     ? (matrixOptics.some(o => o.sku === addToolOptic) ? addToolOptic : matrixOptics[0].sku)
@@ -331,8 +346,9 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
               </select>
               {matrixOptics.length > 0 ? (
                 <span className="text-xs text-muted mt-1">
-                  {tapModel} is a {terminationClass === 'singlemode-lc' ? 'singlemode LC' : terminationClass === 'bidi' ? 'BiDi' : 'multimode LC'} tap
+                  {tapModel} is a {TERMINATION_CLASS_LABEL[terminationClass!] || 'LC'} tap
                   {connectedChassis ? ` — showing only optics ${String(connectedChassis.data?.label || connectedChassis.data?.model)} can terminate` : ''}. Two optics are needed per tapped link (Rx side only).
+                  {mpoBreakoutOption && ` An LC breakout option exists via ${mpoBreakoutOption.sku}, terminating instead into ${mpoBreakoutOption.opticsWhenBrokenOut.filter((s: string) => s.endsWith('T')).join(' / ')}.`}
                 </span>
               ) : (networkSpeed && !isPassiveOpticalTap) && (
                 <span className="text-xs text-muted mt-1">Filtered to {networkSpeed} optics (tool must match network speed)</span>

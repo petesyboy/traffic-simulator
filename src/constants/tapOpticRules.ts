@@ -47,8 +47,6 @@ const MULTIMODE_LC_OPTICS: TapOpticSpec[] = [
   spec('SFP-502T', '1G', 'SX', 'SFP', '200-550m'),
   spec('SFP-532', '10G', 'SR', 'SFP', '300m'),
   spec('SFP-532T', '10G', 'SR', 'SFP', '300m'),
-  spec('SFP-532-20P', '10G', 'SR', 'SFP', '300m (20-pack)'),
-  spec('SFP-532T-20P', '10G', 'SR', 'SFP', '300m (20-pack)'),
   spec('SFP-552', '25G', 'SR', 'SFP', '100m'),
   spec('SFP-552T', '25G', 'SR', 'SFP', '100m'),
   // 40G/100G multimode termination is SWDM4 over LC - not SR4, which is MPO.
@@ -66,13 +64,10 @@ const SINGLEMODE_LC_OPTICS: TapOpticSpec[] = [
   spec('SFP-503T', '1G', 'LX', 'SFP', '10km'),
   spec('SFP-533', '10G', 'LR', 'SFP', '10km'),
   spec('SFP-533T', '10G', 'LR', 'SFP', '10km'),
-  spec('SFP-533-20P', '10G', 'LR', 'SFP', '10km (20-pack)'),
-  spec('SFP-533T-20P', '10G', 'LR', 'SFP', '10km (20-pack)'),
   spec('SFP-534', '10G', 'ER', 'SFP', '40km'),
   spec('SFP-534T', '10G', 'ER', 'SFP', '40km'),
   spec('SFP-553T', '25G', 'LR', 'SFP', '10km'),
   spec('QSF-503T', '40G', 'LR4', 'QSFP', '10km'),
-  spec('QSF-503T-5P', '40G', 'LR4', 'QSFP', '10km (5-pack)'),
   spec('QSF-504', '40G', 'ER4', 'QSFP', '40km'),
   spec('Q28-503', '100G', 'LR4', 'QSFP', '10km'),
   spec('Q28-503T', '100G', 'LR4', 'QSFP', '10km'),
@@ -131,20 +126,6 @@ const BIDI_OPTICS: TapOpticSpec[] = [
   spec('QSB-523T', '100G', 'BiDi', 'QSFP', 'multimode'),
   spec('QSB-531', '100G', 'BiDi', 'QSFP', 'multimode'),
 ];
-
-/**
- * Full-duplex live-side optics corresponding to each Rx-only monitor optic:
- * - QSB-501 (40G Rx-only) <-> QSB-502 (40G Full Duplex)
- * - QSB-521 (Legacy 40/100G Rx-only) <-> QSB-522 (Legacy 40/100G Full Duplex)
- * - QSB-523T (Dual-rate 40/100G TAA Rx-only) <-> QSB-524T (Dual-rate 40/100G Full Duplex)
- * - QSB-531 (100G SR1.2 Rx-only) <-> QSB-532 (100G SR1.2 Full Duplex)
- */
-export const BIDI_LIVE_SIDE_MAP: Record<string, string> = {
-  'QSB-501': 'QSB-502',
-  'QSB-521': 'QSB-522',
-  'QSB-523T': 'QSB-524T',
-  'QSB-531': 'QSB-532',
-};
 
 export type TapTerminationClass = 'multimode-lc' | 'singlemode-lc' | 'multimode-mpo' | 'singlemode-mpo' | 'bidi';
 
