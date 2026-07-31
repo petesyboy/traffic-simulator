@@ -169,7 +169,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       const defaultOptic = isSMTap ? 'SFP-533' : 'SFP-532';
       let selectedOpticVal = (srcData.tappedLinkOptic as string) || defaultOptic;
-      if (String(srcData.model || '').includes('TAP-M506T') || String(srcData.sku || '').includes('TAP-M506T')) selectedOpticVal = 'QSB-523T';
+      if (String(srcData.model || '').includes('TAP-M506T') || String(srcData.sku || '').includes('TAP-M506T')) {
+        selectedOpticVal = (srcData.tappedLinkOptic as string) || 'QSB-523T';
+      }
 
       if (selectedOpticVal.includes('SFP') && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
         window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances only feature high-speed QSFP+/QSFP28 cages.`);

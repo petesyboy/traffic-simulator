@@ -80,18 +80,13 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
             ? (String(sourceNode.data?.sku || '').includes('253') || String(sourceNode.data?.sku || '').includes('273') || String(sourceNode.data?.sku || '').includes('453') || String(sourceNode.data?.model || '').toLowerCase().includes('single-mode') || String(sourceNode.data?.model || '').toLowerCase().includes('sm'))
             : (sourceNode.data?.tapFiberMode === 'Singlemode');
           
-          const defaultOptic = isSMTap ? 'SFP-533' : 'SFP-532';
+          const isM506T = String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T');
+          const defaultOptic = isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533' : 'SFP-532');
           const allocations = resolveTapAllocations(sourceNode.data as HardwareNodeData, defaultOptic);
 
           for (const alloc of allocations) {
             let selectedOpticVal = alloc.toolOptic || alloc.optic;
-            // A passive module TAP records its network side as a descriptive
-            // label ("Passive Optical Splitter (Multimode)") rather than a part
-            // number, because a fused splitter has no transceiver of its own.
-            // Without this the label resolved to a bogus "PassiveT" BOM line;
-            // the chassis end still needs a real optic, so use the fibre default.
-            if (isPassiveSplitterLabel(selectedOpticVal)) selectedOpticVal = defaultOptic;
-            if (String(sourceNode.data?.model || '').includes('TAP-M506T')) selectedOpticVal = 'QSB-523T';
+            if (isPassiveSplitterLabel(selectedOpticVal) || (isM506T && selectedOpticVal.startsWith('SFP'))) selectedOpticVal = defaultOptic;
             tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + alloc.qty * 2;
           }
         }

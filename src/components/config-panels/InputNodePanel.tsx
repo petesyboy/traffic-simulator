@@ -15,9 +15,7 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
   const tapFiberMode = (node.data?.tapFiberMode as string) || 'Multimode';
   const isSMTap = tapFiberMode === 'Singlemode';
   const isM506T = String(node.data?.model || '').includes('TAP-M506T') || String(node.data?.sku || '').includes('TAP-M506T');
-  const selectedOpticVal = isM506T
-    ? 'SFP-532'
-    : ((node.data?.tappedLinkOptic as string) || (isSMTap ? 'SFP-533' : 'SFP-532'));
+  const selectedOpticVal = (node.data?.tappedLinkOptic as string) || (isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533' : 'SFP-532'));
   const cleanOpticVal = selectedOpticVal ? selectedOpticVal.split(' ')[0] : '';
   const matchedOptic = SUPPORTED_TAP_OPTICS.find(o => o.value === cleanOpticVal);
   const hasMismatch = !isM506T && matchedOptic ? (matchedOptic.isSM !== isSMTap) : false;
@@ -159,10 +157,17 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
             <select
               value={cleanOpticVal}
               onChange={(e) => onGenericChange('tappedLinkOptic', e.target.value)}
-              disabled={isM506T}
-              style={{ opacity: isM506T ? 0.7 : 1 }}
             >
-              {SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              {isM506T ? (
+                <>
+                  <option value="QSB-501">QSB-501 — 40Gb BiDi Multimode QSFP+</option>
+                  <option value="QSB-521">QSB-521 — 100Gb BiDi Multimode QSFP28</option>
+                  <option value="QSB-523T">QSB-523T — 100Gb Dual-Rate BiDi Multimode [TAA]</option>
+                  <option value="QSB-531">QSB-531 — 100Gb BiDi Multimode QSFP28</option>
+                </>
+              ) : (
+                SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)
+              )}
             </select>
           </FormGroup>
 

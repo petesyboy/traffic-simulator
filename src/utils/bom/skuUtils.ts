@@ -23,6 +23,10 @@ const TAP_OPTIC_SKU_MAP: Record<string, string> = {
   '100G-QSFP28-SR4': 'Q28-502T',
   '100G-QSFP28-SWDM4': 'Q28-508',
   '100G-QSFP28-LR4': 'Q28-503T',
+  'QSB-501': 'QSB-501',
+  'QSB-521': 'QSB-521',
+  'QSB-523T': 'QSB-523T',
+  'QSB-531': 'QSB-531',
 };
 
 export function resolveOpticSku(opticStr: string, chassisModel: string): string {

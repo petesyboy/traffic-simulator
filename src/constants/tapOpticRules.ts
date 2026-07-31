@@ -114,13 +114,37 @@ const SINGLEMODE_MPO_OPTICS: TapOpticSpec[] = [
   spec('QDD-512', '400G', 'DR4+', 'QSFP', 'singlemode'),
 ];
 
-/** TAP-M506T: BiDi tap, terminated with the Rx-only QSB-* multimode BiDi parts. */
+/** 
+ * TAP-M506T: 40/100G multimode BiDi tap (LC connectors, 840-910nm OM5).
+ * Connects to Rx-only LC BiDi optics on the monitor side (two optics per full-duplex tapped link).
+ * 
+ * - 40G BiDi: QSB-501 (Rx-only, legacy)
+ * - 40/100G proprietary BiDi: QSB-521 (Rx-only, legacy)
+ * - 40/100G dual-rate BiDi: QSB-523T (Rx-only, TAA-compliant, current recommendation)
+ * - 100G SR1.2/KP4 BiDi: QSB-531 (Rx-only, 100G only)
+ * 
+ * Standard QSF/Q28 SR4 MPO optics must NOT be used with TAP-M506T.
+ */
 const BIDI_OPTICS: TapOpticSpec[] = [
   spec('QSB-501', '40G', 'BiDi', 'QSFP', 'multimode'),
   spec('QSB-521', '100G', 'BiDi', 'QSFP', 'multimode'),
   spec('QSB-523T', '100G', 'BiDi', 'QSFP', 'multimode'),
   spec('QSB-531', '100G', 'BiDi', 'QSFP', 'multimode'),
 ];
+
+/**
+ * Full-duplex live-side optics corresponding to each Rx-only monitor optic:
+ * - QSB-501 (40G Rx-only) <-> QSB-502 (40G Full Duplex)
+ * - QSB-521 (Legacy 40/100G Rx-only) <-> QSB-522 (Legacy 40/100G Full Duplex)
+ * - QSB-523T (Dual-rate 40/100G TAA Rx-only) <-> QSB-524T (Dual-rate 40/100G Full Duplex)
+ * - QSB-531 (100G SR1.2 Rx-only) <-> QSB-532 (100G SR1.2 Full Duplex)
+ */
+export const BIDI_LIVE_SIDE_MAP: Record<string, string> = {
+  'QSB-501': 'QSB-502',
+  'QSB-521': 'QSB-522',
+  'QSB-523T': 'QSB-524T',
+  'QSB-531': 'QSB-532',
+};
 
 export type TapTerminationClass = 'multimode-lc' | 'singlemode-lc' | 'multimode-mpo' | 'singlemode-mpo' | 'bidi';
 

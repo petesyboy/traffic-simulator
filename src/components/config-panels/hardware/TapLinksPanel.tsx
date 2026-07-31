@@ -303,7 +303,6 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
                       setAddOptic(e.target.value);
                       setAddToolOptic('');
                     }} 
-                    disabled={isM506T}
                     className="form-select text-md p-1 bg-[#222] w-full"
                   >
                     {availableOptics.map(opt => (
@@ -319,7 +318,6 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
               <select 
                 value={activeAddToolOptic} 
                 onChange={e => setAddToolOptic(e.target.value)} 
-                disabled={isM506T}
                 className="form-select text-md p-1 bg-[#222] w-full"
               >
                 {!isPassiveOpticalTap && !matrixOptics.length && <option value={activeAddOptic}>Match Network Optic</option>}
@@ -361,7 +359,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
       <div className="text-xs text-muted mt-1">
         {isM506T 
-          ? 'Note: TAP-M506T requires termination with QSB-523T optics in the TA/HC unit.' 
+          ? 'Note: TAP-M506T requires termination with 40G/100G BiDi optics (QSB-501, QSB-521, QSB-523T, QSB-531) in the TA/HC unit.' 
           : `Specifies link allocations for this TAP (up to a maximum of ${maxLinks} links for this model).`}
       </div>
       

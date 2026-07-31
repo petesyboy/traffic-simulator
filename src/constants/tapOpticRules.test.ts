@@ -5,6 +5,7 @@ import {
   getTapTerminationClass,
   isTapOpticCompatible,
   getMpoBreakoutOption,
+  BIDI_LIVE_SIDE_MAP,
 } from './tapOpticRules';
 
 const skuSet = skus as Record<string, string>;
@@ -225,5 +226,19 @@ describe('TAP-M471T and TAP-M473T (70/30 MPO modules)', () => {
     const m473Breakout = getMpoBreakoutOption('TAP-M473T', 'TAP-M473T');
     expect(m473Breakout?.sku).toBe('PNL-M343T');
     expect(m473Breakout?.opticsWhenBrokenOut).toEqual(expect.arrayContaining(['SFP-533', 'SFP-533T', 'SFP-553T']));
+  });
+});
+
+describe('TAP-M506T live-side optic matching rules', () => {
+  it('maps Rx-only monitor optics to their full-duplex live-side equivalents', () => {
+    expect(BIDI_LIVE_SIDE_MAP['QSB-501']).toBe('QSB-502');
+    expect(BIDI_LIVE_SIDE_MAP['QSB-521']).toBe('QSB-522');
+    expect(BIDI_LIVE_SIDE_MAP['QSB-523T']).toBe('QSB-524T');
+    expect(BIDI_LIVE_SIDE_MAP['QSB-531']).toBe('QSB-532');
+  });
+
+  it('rejects standard MPO optics on TAP-M506T', () => {
+    expect(isTapOpticCompatible('TAP-M506T', 'TAP-M506T', 'Q28-502T')).toBe(false);
+    expect(isTapOpticCompatible('TAP-M506T', 'TAP-M506T', 'QSF-502T')).toBe(false);
   });
 });
