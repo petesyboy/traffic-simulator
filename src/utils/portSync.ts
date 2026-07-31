@@ -37,8 +37,15 @@ function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, Chassi
 function preferredCage(peer: CustomNode | undefined): ChassisPort['cage'] | undefined {
   if (!peer) return undefined;
   const data = peer.data as HardwareNodeData | undefined;
-  const optic = data?.tappedLinkAllocations?.[0]?.optic || data?.tappedLinkOptic;
-  return optic ? getOpticCage(String(optic)) : undefined;
+  const alloc = data?.tappedLinkAllocations?.[0];
+  // The *tool*-side optic is the one that lands in the chassis cage, so it wins
+  // over the network side - matching how syncOpticsOnTapConnection picks. A
+  // passive module TAP also records its network side as a descriptive label
+  // ("Passive Optical Splitter (Multimode)") that carries no speed at all, and
+  // reading that would wrongly place a 100G link into an SFP cage.
+  const optic = alloc?.toolOptic || alloc?.optic || data?.tappedLinkOptic;
+  if (!optic || String(optic).startsWith('Passive Optical Splitter')) return undefined;
+  return getOpticCage(String(optic));
 }
 
 function sameLinks(a: PortLink[] | undefined, b: PortLink[]): boolean {

@@ -8,6 +8,7 @@ import {
   getRequiredPortCount,
   getTappedLinkCount,
   isTapNode,
+  isTapUnconfigured,
 } from './ports';
 
 const hw = (data: Partial<HardwareNodeData>): HardwareNodeData => data as HardwareNodeData;
@@ -159,6 +160,42 @@ describe('getTappedLinkCount / getRequiredPortCount', () => {
     expect(isTapNode(node('b', { model: 'GigaVUE-TA25E' }))).toBe(false);
     expect(isTapNode({ id: 'c', type: 'inputNode', position: { x: 0, y: 0 }, data: { configType: 'TAP' } } as CustomNode)).toBe(true);
     expect(isTapNode(undefined)).toBe(false);
+  });
+});
+
+describe('unconfigured TAPs', () => {
+  // The sidebar palette drops every TAP with exactly this shape.
+  const freshlyDropped = { configType: 'Hardware', model: 'TAP-M251T', sku: 'TAP-M251T', tappedLinksCount: 0, tappedLinkAllocations: [] };
+
+  it('treats a freshly dropped TAP as unconfigured rather than as one link', () => {
+    const tap = node('tap', freshlyDropped);
+    // An empty array is truthy, so a plain `allocations || [fallback]` used to
+    // skip the fallback and silently produce nothing anywhere.
+    expect(getTappedLinkCount(tap)).toBe(0);
+    expect(isTapUnconfigured(tap)).toBe(true);
+    expect(getRequiredPortCount(tap, node('ta', { model: 'GigaVUE-TA25E' }))).toBe(0);
+  });
+
+  it('still honours a legacy tappedLinksCount with no allocations array', () => {
+    const legacy = node('tap', { model: 'G-TAP A-SF2', tappedLinksCount: 4, tappedLinkOptic: '10G-SFP-SR' });
+    expect(getTappedLinkCount(legacy)).toBe(4);
+    expect(isTapUnconfigured(legacy)).toBe(false);
+  });
+
+  it('still assumes a single link for data predating both fields', () => {
+    const ancient = node('tap', { model: 'G-TAP A-SF2' });
+    expect(getTappedLinkCount(ancient)).toBe(1);
+    expect(isTapUnconfigured(ancient)).toBe(false);
+  });
+
+  it('is configured again as soon as links are allocated', () => {
+    const configured = node('tap', { ...freshlyDropped, tappedLinkAllocations: [{ qty: 2, optic: '100G-QSFP28-SR4' }] });
+    expect(getTappedLinkCount(configured)).toBe(2);
+    expect(isTapUnconfigured(configured)).toBe(false);
+  });
+
+  it('does not treat a chassis as an unconfigured TAP', () => {
+    expect(isTapUnconfigured(node('ta', { model: 'GigaVUE-TA25E' }))).toBe(false);
   });
 });
 

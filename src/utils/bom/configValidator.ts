@@ -5,11 +5,11 @@ import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
-import { getChassisPorts, getOpticCage, getPortOpticMap, getRequiredPortCount } from '../ports';
+import { getChassisPorts, getOpticCage, getPortOpticMap, getRequiredPortCount, isTapNode, isTapUnconfigured } from '../ports';
 import skusMetadata from '../../constants/skus_metadata.json';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch';
+  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch' | 'tap_not_configured';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -345,9 +345,44 @@ export function validateConfiguration(
     }
   });
 
+  validateTapConfiguration(nodes, edges, errors);
   validatePortAssignments(nodes, edges, errors);
 
   return errors;
+}
+
+/**
+ * A TAP wired to a chassis but with no tapped links set up yields nothing at
+ * all - no optics, no BOM lines, no port allocations. That silence is easy to
+ * mistake for a bug in the BOM, so say plainly that the TAP needs configuring.
+ */
+function validateTapConfiguration(
+  nodes: CustomNode[],
+  edges: Edge[],
+  errors: ConfigurationValidationError[],
+) {
+  const flagged = new Set<string>();
+
+  edges.forEach(edge => {
+    const a = nodes.find(n => n.id === edge.source);
+    const b = nodes.find(n => n.id === edge.target);
+    const tap = isTapNode(a) ? a : (isTapNode(b) ? b : undefined);
+    const peer = tap === a ? b : a;
+    if (!tap || flagged.has(tap.id)) return;
+
+    const peerModel = String(peer?.data?.model || '');
+    const peerIsChassis = peer?.type === NODE_TYPES.HARDWARE && (peerModel.includes('HC') || peerModel.includes('TA')) && !peerModel.includes('TAP');
+    if (!peerIsChassis || !isTapUnconfigured(tap)) return;
+
+    flagged.add(tap.id);
+    const label = String(tap.data?.label || tap.data?.model || tap.id);
+    errors.push({
+      type: 'tap_not_configured',
+      nodeId: tap.id,
+      nodeLabel: label,
+      message: `TAP "${label}" is connected to "${String(peer?.data?.label || peerModel)}" but has no tapped links configured, so it contributes no optics, ports or BOM lines. Set the number of links and their speed in the TAP's "Tapped Links" panel.`,
+    });
+  });
 }
 
 /**

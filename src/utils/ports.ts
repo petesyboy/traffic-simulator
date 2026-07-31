@@ -137,16 +137,46 @@ export function getChassisPorts(model: string, hwData: HardwareNodeData): Chassi
 }
 
 /**
- * How many tapped links a TAP node expresses, following the same
- * allocations-then-legacy-scalar fallback used across the BOM and panels.
+ * The tapped-link allocations a TAP actually expresses, normalised across the
+ * three shapes that exist in the wild:
+ *
+ *  - `tappedLinkAllocations` populated  -> use it
+ *  - empty/absent, but a legacy `tappedLinksCount` > 0 -> synthesise one
+ *    allocation of that size using the legacy single-optic field
+ *  - absent entirely (pre-dating both fields) -> assume a single link
+ *  - explicitly zero -> genuinely unconfigured, returns []
+ *
+ * The palette drops every TAP as `{ tappedLinksCount: 0, tappedLinkAllocations: [] }`,
+ * and an empty array is truthy - so a plain `allocations || [fallback]` silently
+ * skipped the fallback and produced no optics, no BOM rows and no ports at all.
+ * Callers must treat [] as "user hasn't configured this yet" and say so, rather
+ * than inventing links that would land on a quote unasked.
+ */
+export function resolveTapAllocations(
+  data: HardwareNodeData | undefined,
+  defaultOptic: string,
+): { qty: number; optic: string; toolOptic?: string }[] {
+  const allocations = data?.tappedLinkAllocations;
+  if (Array.isArray(allocations) && allocations.length > 0) return allocations;
+
+  const legacyCount = data?.tappedLinksCount as number | undefined;
+  const qty = legacyCount === undefined ? 1 : legacyCount;
+  if (qty <= 0) return [];
+  return [{ qty, optic: (data?.tappedLinkOptic as string) || defaultOptic }];
+}
+
+/** True when a TAP has no tapped links set up, so nothing can be derived from it. */
+export function isTapUnconfigured(node: CustomNode | undefined): boolean {
+  if (!isTapNode(node)) return false;
+  return resolveTapAllocations(node!.data as HardwareNodeData, 'SFP-532').length === 0;
+}
+
+/**
+ * How many tapped links a TAP node expresses. Zero means unconfigured.
  */
 export function getTappedLinkCount(node: CustomNode): number {
-  const data = node.data as HardwareNodeData | undefined;
-  const allocations = data?.tappedLinkAllocations;
-  if (Array.isArray(allocations) && allocations.length > 0) {
-    return allocations.reduce((sum, a) => sum + (a.qty || 0), 0);
-  }
-  return (data?.tappedLinksCount as number) ?? 1;
+  return resolveTapAllocations(node.data as HardwareNodeData, 'SFP-532')
+    .reduce((sum, a) => sum + (a.qty || 0), 0);
 }
 
 /** True for both hardware TAP chassis and the inputNode "Network TAP" form. */

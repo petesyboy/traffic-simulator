@@ -13,6 +13,7 @@ import { type RFState, type CustomNode, type AnyNodeData, type HardwareNodeData,
 import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
+import { getRequiredPortCount, isTapUnconfigured } from '../utils/ports';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
@@ -184,9 +185,14 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
         else if (name.includes('LR') || name.includes('LX') || name.includes('ER') || name.includes('PLR') || name.includes('DR1') || name.includes('CWDM') || name.includes('FR')) smCount += opt.qty;
       });
 
-      const requiredOptics = ((srcData.tappedLinksCount as number) ?? 1) * 2;
+      const requiredOptics = getRequiredPortCount(sourceNode, targetNode);
       let msg = '';
-      if (tapFiber === 'Multimode' && mmCount < requiredOptics) msg = `Suggested and installed ${requiredOptics - mmCount} x ${selectedOpticVal} multi-mode optics in ${targetModel} to support the connection from ${srcData.label || 'TAP'}.`;
+      // A TAP dropped from the palette starts with no links configured, which
+      // otherwise silently yields no optics, ports or BOM lines at all. The
+      // link is still made - the user is just told why nothing appeared.
+      if (isTapUnconfigured(sourceNode)) {
+        msg = `${srcData.label || 'TAP'} has no tapped links configured yet, so no optics or ports have been allocated on ${targetModel}. Set the number of links and their speed in its "Tapped Links" panel.`;
+      } else if (tapFiber === 'Multimode' && mmCount < requiredOptics) msg = `Suggested and installed ${requiredOptics - mmCount} x ${selectedOpticVal} multi-mode optics in ${targetModel} to support the connection from ${srcData.label || 'TAP'}.`;
       else if (tapFiber === 'Singlemode' && smCount < requiredOptics) msg = `Suggested and installed ${requiredOptics - smCount} x ${selectedOpticVal} single-mode optics in ${targetModel} to support the connection from ${srcData.label || 'TAP'}.`;
       if (msg) set({ sidebarMessage: msg });
     }

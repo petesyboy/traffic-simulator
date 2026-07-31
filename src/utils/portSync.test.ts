@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import type { Edge } from '@xyflow/react';
 import type { CustomNode, PortLink } from '../store/types';
 import { syncPortAssignments } from './portSync';
-import { generateBom } from './bom/bomGenerator';
+import { generateBom, syncOpticsOnTapConnection } from './bom/bomGenerator';
+import { validateConfiguration } from './bom/configValidator';
 
 const tapNode = (id = 'tap', links = 4, optic = 'SFP-532T (10G SFP+ SR)'): CustomNode => ({
   id,
@@ -168,6 +169,79 @@ describe('syncPortAssignments', () => {
     const links = linksOf(syncPortAssignments(nodes, edges)[0]);
     expect(links).toHaveLength(48);
     expect(new Set(links.map(l => l.targetPortId)).size).toBe(48);
+  });
+});
+
+describe('module TAP optics (TAP-M251T)', () => {
+  const chassis = (model = 'GigaVUE-TA25E'): CustomNode => ({
+    id: 'ch', type: 'hardwareNode', position: { x: 0, y: 0 },
+    data: { label: 'Core', model, sku: 'TA25E-BASE' },
+  } as CustomNode);
+
+  const m251t = (data: Record<string, unknown>): CustomNode => ({
+    id: 'tap', type: 'hardwareNode', position: { x: 0, y: 0 },
+    data: { label: 'M251T', model: 'TAP-M251T', sku: 'TAP-M251T', ...data },
+  } as CustomNode);
+
+  const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ch' }];
+
+  it('installs chassis QSFP optics for a 100G-configured module TAP', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: '100G-QSFP28-SR4' }] }), chassis()];
+    const synced = syncOpticsOnTapConnection(nodes, edges);
+    const optics = (synced.find(n => n.id === 'ch')!.data.optics as { optic: string; qty: number }[]);
+
+    // 2 tapped links x 2 ports each = 4 x 100G transceivers on the chassis.
+    expect(optics).toHaveLength(1);
+    expect(optics[0].optic).toContain('Q28-502T');
+    expect(optics[0].qty).toBe(4);
+
+    const bom = generateBom(nodes, edges, 'HTL', '12');
+    expect(bom.find(r => r.sku === 'Q28-502T')?.qty).toBe(4);
+  });
+
+  it('never emits a bogus "PassiveT" SKU when the splitter label has no tool optic', () => {
+    // The passive splitter label is descriptive, not a part number - it used to
+    // resolve to "Passive" and reach the BOM as "PassiveT".
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)' }] }), chassis()];
+    const bom = generateBom(nodes, syncOpticsOnTapConnection(nodes, edges) && edges, 'HTL', '12');
+
+    expect(bom.find(r => r.sku === 'PassiveT')).toBeUndefined();
+    expect(bom.find(r => r.sku === 'Passive')).toBeUndefined();
+    // Falls back to a real multimode transceiver for the chassis end instead.
+    expect(bom.find(r => r.sku === 'SFP-532T')?.qty).toBe(4);
+  });
+
+  it('produces nothing but flags a clear warning when the TAP has no links configured', () => {
+    // Exactly what the sidebar palette drops.
+    const nodes = [m251t({ tappedLinksCount: 0, tappedLinkAllocations: [] }), chassis()];
+
+    const synced = syncOpticsOnTapConnection(nodes, edges);
+    expect(synced.find(n => n.id === 'ch')!.data.optics).toBeUndefined();
+    expect(generateBom(nodes, edges, 'HTL', '12').filter(r => r.type === 'Optic')).toHaveLength(0);
+
+    // ...but the silence is explained rather than left as a mystery.
+    const errors = validateConfiguration(nodes, edges);
+    const warning = errors.find(e => e.type === 'tap_not_configured');
+    expect(warning).toBeDefined();
+    expect(warning?.nodeId).toBe('tap');
+    expect(warning?.message).toContain('no tapped links configured');
+  });
+
+  it('raises no such warning once the TAP is configured', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: '100G-QSFP28-SR4' }] }), chassis()];
+    expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_not_configured')).toBeUndefined();
+  });
+
+  it('allocates real chassis ports for a configured module TAP', () => {
+    const nodes = [
+      m251t({ tappedLinkAllocations: [{ qty: 2, optic: 'Passive Optical Splitter (Multimode)', toolOptic: '100G-QSFP28-SR4' }] }),
+      { id: 'ch', type: 'hardwareNode', position: { x: 0, y: 0 },
+        data: { label: 'Core', model: 'GigaVUE-TA25E', optics: [{ board: 'Base Ports', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 4 }] } } as CustomNode,
+    ];
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+
+    expect(links).toHaveLength(4);
+    expect(links.map(l => l.targetPortId)).toEqual(['1/1/c1', '1/1/c2', '1/1/c3', '1/1/c4']);
   });
 });
 
