@@ -4,6 +4,7 @@ import {
   getCompatibleTapOptics,
   getTapTerminationClass,
   isTapOpticCompatible,
+  getMpoBreakoutOption,
 } from './tapOpticRules';
 
 const skuSet = skus as Record<string, string>;
@@ -28,15 +29,11 @@ describe('getTapTerminationClass', () => {
     expect(getTapTerminationClass('TAP-M273T', 'TAP-M273T')).toBe('singlemode-lc');
   });
 
-  it('leaves the MPO tap modules ungoverned rather than giving them an LC list', () => {
-    // M45xT/M47xT are 40/100/400G MPO taps. The LC matrices exclude MPO parts
-    // by design, so applying them here would be actively wrong.
-    ['TAP-M451T', 'TAP-M453T', 'TAP-M471T', 'TAP-M473T'].forEach(sku => {
-      expect(getTapTerminationClass(sku, sku)).toBeUndefined();
-      expect(getCompatibleTapOptics(sku, sku)).toEqual([]);
-      // Ungoverned means nothing is rejected either - no false validation errors.
-      expect(isTapOpticCompatible(sku, sku, 'Q28-506')).toBe(true);
-    });
+  it('classifies the MPO tap modules correctly', () => {
+    expect(getTapTerminationClass('TAP-M451T', 'TAP-M451T')).toBe('multimode-mpo');
+    expect(getTapTerminationClass('TAP-M471T', 'TAP-M471T')).toBe('multimode-mpo');
+    expect(getTapTerminationClass('TAP-M453T', 'TAP-M453T')).toBe('singlemode-mpo');
+    expect(getTapTerminationClass('TAP-M473T', 'TAP-M473T')).toBe('singlemode-mpo');
   });
 
   it('leaves TAPs it does not govern alone', () => {
@@ -199,5 +196,34 @@ describe('catalogue integrity', () => {
     // QSF-508 and Q28-508 are non-TAA-only options.
     expect(mm.find(o => o.sku === 'QSF-508')?.taa).toBe(false);
     expect(mm.find(o => o.sku === 'Q28-508')?.taa).toBe(false);
+  });
+});
+
+describe('TAP-M471T and TAP-M473T (70/30 MPO modules)', () => {
+  it('TAP-M471T (multimode MPO) offers correct 40G/100G optics and excludes singlemode QDD 400G optics', () => {
+    const optics = getCompatibleTapOptics('TAP-M471T', 'TAP-M471T');
+    const skusOf = optics.map(o => o.sku);
+    expect(skusOf).toEqual(expect.arrayContaining(['QSF-502', 'QSF-502T', 'QSF-507', 'QSF-507T', 'Q28-502T']));
+    expect(skusOf).not.toContain('QDD-511');
+    expect(skusOf).not.toContain('QDD-512');
+  });
+
+  it('TAP-M473T (singlemode MPO) offers 40G/100G/400G optics on TA400 but excludes 400G QDD on TA25E', () => {
+    const ta400Optics = getCompatibleTapOptics('TAP-M473T', 'TAP-M473T', 'GigaVUE-TA400').map(o => o.sku);
+    expect(ta400Optics).toEqual(expect.arrayContaining(['QSF-506', 'QSF-506T', 'Q28-506', 'QDD-511', 'QDD-512']));
+
+    const ta25eOptics = getCompatibleTapOptics('TAP-M473T', 'TAP-M473T', 'GigaVUE-TA25E').map(o => o.sku);
+    expect(ta25eOptics).not.toContain('QDD-511');
+    expect(ta25eOptics).not.toContain('QDD-512');
+  });
+
+  it('provides correct MPO-to-LC breakout options for M471T and M473T', () => {
+    const m471Breakout = getMpoBreakoutOption('TAP-M471T', 'TAP-M471T');
+    expect(m471Breakout?.sku).toBe('PNL-M341T');
+    expect(m471Breakout?.opticsWhenBrokenOut).toEqual(expect.arrayContaining(['SFP-532', 'SFP-532T', 'SFP-552', 'SFP-552T']));
+
+    const m473Breakout = getMpoBreakoutOption('TAP-M473T', 'TAP-M473T');
+    expect(m473Breakout?.sku).toBe('PNL-M343T');
+    expect(m473Breakout?.opticsWhenBrokenOut).toEqual(expect.arrayContaining(['SFP-533', 'SFP-533T', 'SFP-553T']));
   });
 });

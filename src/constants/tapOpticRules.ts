@@ -83,6 +83,37 @@ const SINGLEMODE_LC_OPTICS: TapOpticSpec[] = [
   spec('Q28-514', '100G', 'FR1', 'QSFP', '2km'),
 ];
 
+/**
+ * TAP-M451T/M471T: multimode MPO-12 taps, OM5, 40/100/400G SR4.
+ *
+ * The spec sheet lists 400G SR4, but no 400G multimode SR4 transceiver exists
+ * in Gigamon's current transceiver list - so 400G is deliberately absent here
+ * rather than offered with no real SKU behind it. In particular QDD-511/
+ * QDD-512 (400G singlemode DR4/DR4+) must NOT be offered against these taps.
+ */
+const MULTIMODE_MPO_OPTICS: TapOpticSpec[] = [
+  spec('QSF-502', '40G', 'SR4', 'QSFP', '100m'),
+  spec('QSF-502T', '40G', 'SR4', 'QSFP', '100m'),
+  spec('QSF-507', '40G', 'SR4-ER', 'QSFP', 'extended reach'),
+  spec('QSF-507T', '40G', 'SR4-ER', 'QSFP', 'extended reach'),
+  // Q28-502 (non-TAA) is not a catalogued SKU - only the TAA variant exists.
+  spec('Q28-502T', '100G', 'SR4', 'QSFP', '100m'),
+];
+
+/**
+ * TAP-M453T/M473T: singlemode MPO-12 taps, 40/100/400G PSM4/PLR4/DR4(+).
+ * 400G is only reachable on a TA400/TA400E (no QSFP-DD cages elsewhere) -
+ * chassis narrowing already enforces that.
+ */
+const SINGLEMODE_MPO_OPTICS: TapOpticSpec[] = [
+  spec('QSF-506', '40G', 'PSM4', 'QSFP', '4x10G breakout, 1310nm'),
+  spec('QSF-506T', '40G', 'PSM4', 'QSFP', '4x10G breakout, 1310nm'),
+  // Q28-506T is not a catalogued SKU - only the non-TAA variant exists.
+  spec('Q28-506', '100G', 'PLR4', 'QSFP', '2km'),
+  spec('QDD-511', '400G', 'DR4', 'QSFP', 'singlemode'),
+  spec('QDD-512', '400G', 'DR4+', 'QSFP', 'singlemode'),
+];
+
 /** TAP-M506T: BiDi tap, terminated with the Rx-only QSB-* multimode BiDi parts. */
 const BIDI_OPTICS: TapOpticSpec[] = [
   spec('QSB-501', '40G', 'BiDi', 'QSFP', 'multimode'),
@@ -91,7 +122,7 @@ const BIDI_OPTICS: TapOpticSpec[] = [
   spec('QSB-531', '100G', 'BiDi', 'QSFP', 'multimode'),
 ];
 
-export type TapTerminationClass = 'multimode-lc' | 'singlemode-lc' | 'bidi';
+export type TapTerminationClass = 'multimode-lc' | 'singlemode-lc' | 'multimode-mpo' | 'singlemode-mpo' | 'bidi';
 
 const OPTICS_BY_CLASS: Record<TapTerminationClass, TapOpticSpec[]> = {
   // TAP-M251ULT carries the same 1/10/25/40/100G range as the M251T, SWDM4
@@ -101,8 +132,28 @@ const OPTICS_BY_CLASS: Record<TapTerminationClass, TapOpticSpec[]> = {
   // The singlemode ULT module takes the same LC range as the M253T; its 400G
   // capability is unreachable on any chassis without QSFP-DD cages anyway.
   'singlemode-lc': SINGLEMODE_LC_OPTICS,
+  'multimode-mpo': MULTIMODE_MPO_OPTICS,
+  'singlemode-mpo': SINGLEMODE_MPO_OPTICS,
   'bidi': BIDI_OPTICS,
 };
+
+/**
+ * Optional LC breakout path for the MPO taps: a breakout panel sits in the
+ * TAP tray alongside the module and fans its MPO output out to individual LC
+ * connections, which then land on ordinary SFP/SFP28 chassis cages instead of
+ * a QSFP MPO cage. This is a deployment choice, not a requirement, so it's
+ * exposed separately rather than folded into the MPO optic list above.
+ */
+const MPO_BREAKOUT_PANEL: Record<'multimode-mpo' | 'singlemode-mpo', { sku: string; opticsWhenBrokenOut: string[] }> = {
+  'multimode-mpo': { sku: 'PNL-M341T', opticsWhenBrokenOut: ['SFP-532', 'SFP-532T', 'SFP-552', 'SFP-552T'] },
+  'singlemode-mpo': { sku: 'PNL-M343T', opticsWhenBrokenOut: ['SFP-533', 'SFP-533T', 'SFP-553T'] },
+};
+
+/** The breakout panel (and its resulting LC optics) available for an MPO TAP, if any. */
+export function getMpoBreakoutOption(model: string, sku = ''): { sku: string; opticsWhenBrokenOut: string[] } | undefined {
+  const cls = getTapTerminationClass(model, sku);
+  return cls === 'multimode-mpo' || cls === 'singlemode-mpo' ? MPO_BREAKOUT_PANEL[cls] : undefined;
+}
 
 /**
  * Where the *monitored network link* is itself BiDi, a multimode LC tap is
@@ -123,16 +174,16 @@ export function getTapTerminationClass(model: string, sku = ''): TapTerminationC
   if (id.includes('M506')) return 'bidi';
   // The M251T/M253T catalogue entries carry no fiber_type field, so the model
   // number is the only signal - 253/273/453 are the singlemode families.
-  // LC tap modules only: M2x1 = multimode, M2x3 = singlemode; the 50/50 (M25x)
-  // and 70/30 (M27x) splits share an optic range, as do ULT and non-ULT.
-  //
-  // The M45xT/M47xT modules are deliberately NOT matched here. They are 40/100/
-  // 400G **MPO** taps, so the LC lists above - which exclude MPO parts by
-  // design - would be actively wrong for them. They stay ungoverned (no
-  // suggestions, no validation) until their MPO optic range is confirmed,
-  // rather than being quietly given the wrong matrix.
+  // LC tap modules: M2x1 = multimode, M2x3 = singlemode; the 50/50 (M25x) and
+  // 70/30 (M27x) splits share an optic range, as do ULT and non-ULT.
   if (/M2[57][13]/.test(id)) {
     return /M2[57]3/.test(id) ? 'singlemode-lc' : 'multimode-lc';
+  }
+  // MPO tap modules: M4x1 = multimode, M4x3 = singlemode; 50/50 (M45x) and
+  // 70/30 (M47x) again share an optic range - connector and fibre type drive
+  // the optic, not split ratio.
+  if (/M4[57][13]/.test(id)) {
+    return /M4[57]3/.test(id) ? 'singlemode-mpo' : 'multimode-mpo';
   }
   return undefined;
 }
