@@ -218,6 +218,17 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
     }
   }, [expanded, isHoveringLog, events]);
 
+  // anchorRect is otherwise only captured once, on hover-start - if the window
+  // is resized while the panel is open, re-snapshot it so the placement math
+  // below is working from the anchor's actual current position rather than one
+  // computed for a viewport size that no longer applies.
+  useEffect(() => {
+    if (!isHoveringLog) return;
+    const onResize = () => captureAnchorRect();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [isHoveringLog]);
+
   // Prefer placing the enlarged panel just to the left of the anchor (the
   // config panel lives on the right edge of the screen); fall back to
   // stacking it above/below the anchor if there isn't enough horizontal room.
@@ -233,7 +244,13 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
       const width = Math.min(PANEL_WIDTH, spaceLeft);
       const maxHeight = Math.min(vh * 0.7, vh - 32);
       const top = Math.min(Math.max(16, anchorRect.top - 40), Math.max(16, vh - maxHeight - 16));
-      placement = { left: anchorRect.left - GAP - width, top, width, maxHeight, side: 'left' };
+      // anchorRect is only captured on hover-start and never refreshed, so if the
+      // window is narrowed (or the anchor otherwise moves) while the panel stays
+      // open, a value derived purely from anchorRect can drift off-screen. Clamp
+      // against the live viewport, same as the 'stack' branch below, rather than
+      // trusting the anchor position unconditionally.
+      const left = Math.min(Math.max(16, anchorRect.left - GAP - width), vw - width - 16);
+      placement = { left, top, width, maxHeight, side: 'left' };
     } else {
       const width = Math.min(560, vw - 32);
       const maxHeight = Math.min(vh * 0.55, vh - anchorRect.bottom - GAP - 16);
@@ -426,6 +443,7 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
           onMouseLeave={() => setIsHoveringLog(false)}
           style={{
             position: 'fixed',
+            boxSizing: 'border-box', // otherwise padding/border render beyond the clamped width, past the viewport edge
             top: `${placement.top}px`,
             left: `${placement.left}px`,
             width: `${placement.width}px`,
