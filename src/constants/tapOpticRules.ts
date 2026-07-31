@@ -123,9 +123,16 @@ export function getTapTerminationClass(model: string, sku = ''): TapTerminationC
   if (id.includes('M506')) return 'bidi';
   // The M251T/M253T catalogue entries carry no fiber_type field, so the model
   // number is the only signal - 253/273/453 are the singlemode families.
-  // ULT and non-ULT variants share their optic range on both fibre types.
-  if (/M25[13]|M27[13]|M45[13]/.test(id)) {
-    return /M253|M273|M453/.test(id) ? 'singlemode-lc' : 'multimode-lc';
+  // LC tap modules only: M2x1 = multimode, M2x3 = singlemode; the 50/50 (M25x)
+  // and 70/30 (M27x) splits share an optic range, as do ULT and non-ULT.
+  //
+  // The M45xT/M47xT modules are deliberately NOT matched here. They are 40/100/
+  // 400G **MPO** taps, so the LC lists above - which exclude MPO parts by
+  // design - would be actively wrong for them. They stay ungoverned (no
+  // suggestions, no validation) until their MPO optic range is confirmed,
+  // rather than being quietly given the wrong matrix.
+  if (/M2[57][13]/.test(id)) {
+    return /M2[57]3/.test(id) ? 'singlemode-lc' : 'multimode-lc';
   }
   return undefined;
 }

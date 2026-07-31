@@ -22,6 +22,23 @@ describe('getTapTerminationClass', () => {
     expect(getTapTerminationClass('TAP-M506T', 'TAP-M506T')).toBe('bidi');
   });
 
+  it('classifies the 70/30 split modules alongside their 50/50 siblings', () => {
+    // Split ratio changes the optical budget, not which optic fits.
+    expect(getTapTerminationClass('TAP-M271T', 'TAP-M271T')).toBe('multimode-lc');
+    expect(getTapTerminationClass('TAP-M273T', 'TAP-M273T')).toBe('singlemode-lc');
+  });
+
+  it('leaves the MPO tap modules ungoverned rather than giving them an LC list', () => {
+    // M45xT/M47xT are 40/100/400G MPO taps. The LC matrices exclude MPO parts
+    // by design, so applying them here would be actively wrong.
+    ['TAP-M451T', 'TAP-M453T', 'TAP-M471T', 'TAP-M473T'].forEach(sku => {
+      expect(getTapTerminationClass(sku, sku)).toBeUndefined();
+      expect(getCompatibleTapOptics(sku, sku)).toEqual([]);
+      // Ungoverned means nothing is rejected either - no false validation errors.
+      expect(isTapOpticCompatible(sku, sku, 'Q28-506')).toBe(true);
+    });
+  });
+
   it('leaves TAPs it does not govern alone', () => {
     expect(getTapTerminationClass('G-TAP A-SF2', 'GTP-ASF22')).toBeUndefined();
     expect(getTapTerminationClass('G-TAP A-TX2', 'GTP-ATX21')).toBeUndefined();
