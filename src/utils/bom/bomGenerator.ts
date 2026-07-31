@@ -13,6 +13,17 @@ function isPassiveSplitterLabel(optic: string): boolean {
   return optic.startsWith('Passive Optical Splitter');
 }
 
+// Multimode unidirectional TAP modules (TAP-Mxx1ULT) require the two-slot 1RU
+// TAP-M202ULT chassis and cannot be fitted into an M100T/M200T tray. The
+// singlemode TAP-Mxx3ULT modules are ordinary M-series modules and do share
+// those trays, so only the "1ULT" pattern diverts here.
+const ULT_TRAY_SKU = 'TAP-M202ULT';
+const ULT_TRAY_SLOTS = 2;
+
+export function requiresUltTray(sku: string, model = ''): boolean {
+  return /M\d*1ULT/i.test(`${sku} ${model}`);
+}
+
 export interface BomRow {
   sku: string;
   qty: number;
@@ -131,7 +142,11 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
  */
 function isQuotableDependency(depSku: string, skus: Record<string, string>): boolean {
   if (!skus[depSku]) return false;
-  return depSku !== 'TAP-M100T' && depSku !== 'TAP-M200T' && !depSku.includes('CLS-TAX20E');
+  // TAP trays are pooled across all the modules at a site rather than quoted
+  // once per module, so they must not also be picked up from the "requires
+  // TAP-M202ULT chassis" phrasing in a module's own description.
+  if (depSku === 'TAP-M100T' || depSku === 'TAP-M200T' || depSku === ULT_TRAY_SKU) return false;
+  return !depSku.includes('CLS-TAX20E');
 }
 
 export function generateBom(
@@ -147,6 +162,7 @@ export function generateBom(
   const rowMap: Record<string, BomRow> = {};
   const skus = getSkus();
   const tapModulesPerSite: Record<string, number> = {};
+  const ultTapModulesPerSite: Record<string, number> = {};
   const series1RackTapsPerSite: Record<string, number> = {};
   const series1PstAcTapsPerSite: Record<string, number> = {};
   const series1PstDcTapsPerSite: Record<string, number> = {};
@@ -249,7 +265,10 @@ export function generateBom(
         const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
         if (cordQty > 0) addRow(node.id, cordSku, cordQty, 'Dependency');
       }
-      if (hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku)?.type === 'module') tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + 1;
+      if (hardwareCatalogue.taps.find(t => t.sku === resolved.hwSku)?.type === 'module') {
+        const pool = requiresUltTray(resolved.hwSku, model) ? ultTapModulesPerSite : tapModulesPerSite;
+        pool[siteKey] = (pool[siteKey] || 0) + 1;
+      }
       return;
     }
 
@@ -293,6 +312,12 @@ export function generateBom(
       if (numM100T > 0) addRow(null, 'TAP-M100T', numM100T, 'Dependency', undefined, siteKey);
       if (numM200T > 0) addRow(null, 'TAP-M200T', numM200T, 'Dependency', undefined, siteKey);
     }
+  }
+
+  // Multimode unidirectional (ULT) modules take their own 1RU two-slot chassis
+  // and cannot share an M100T/M200T tray, so they are pooled separately.
+  for (const [siteKey, count] of Object.entries(ultTapModulesPerSite)) {
+    if (count > 0) addRow(null, ULT_TRAY_SKU, Math.ceil(count / ULT_TRAY_SLOTS), 'Dependency', undefined, siteKey);
   }
 
   const getChassisMaxOpticSpeed = (chassisModel: string): '100G' | '40G' | '10G' => {
