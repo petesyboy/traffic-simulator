@@ -278,6 +278,45 @@ describe('module TAP optics (TAP-M251T)', () => {
   });
 });
 
+describe('module TAP optics (TAP-M506T BiDi)', () => {
+  const chassis = (): CustomNode => ({
+    id: 'ch', type: 'hardwareNode', position: { x: 0, y: 0 },
+    data: { label: 'Core', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE' },
+  } as CustomNode);
+
+  const m506t = (toolOptic: string): CustomNode => ({
+    id: 'tap', type: 'hardwareNode', position: { x: 0, y: 0 },
+    data: {
+      label: 'M506T', model: 'TAP-M506T', sku: 'TAP-M506T',
+      tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)', toolOptic }],
+    },
+  } as CustomNode);
+
+  const edges: Edge[] = [{ id: 'e1', source: 'tap', target: 'ch' }];
+
+  // resolveOpticForChassis used to assume every SKU has a "T" TAA variant and
+  // blindly appended one - but QSB-501/QSB-521/QSB-531 (Rx-only BiDi) have no
+  // such variant, so picking any of them invented a nonexistent "QSB-521T"
+  // style SKU that reached the BOM as unknown.
+  it.each(['QSB-501', 'QSB-521', 'QSB-523T', 'QSB-531'])(
+    'installs the real %s SKU on the chassis, never a fabricated "T" variant',
+    (toolOptic) => {
+      const nodes = [m506t(toolOptic), chassis()];
+      const synced = syncOpticsOnTapConnection(nodes, edges);
+      const optics = synced.find(n => n.id === 'ch')!.data.optics as { optic: string; qty: number }[];
+
+      expect(optics).toHaveLength(1);
+      expect(optics[0].optic).toContain(toolOptic);
+      expect(optics[0].optic).not.toContain(toolOptic + 'T');
+
+      const bom = generateBom(nodes, edges, 'HTL', '12');
+      const opticRow = bom.find(r => r.type === 'Optic');
+      expect(opticRow?.sku).toBe(toolOptic);
+      expect(opticRow?.sku).not.toBe(toolOptic + 'T');
+    },
+  );
+});
+
 describe('BOM regression', () => {
   it('leaves BOM output untouched by port assignment', () => {
     const nodes = [tapNode(), ta25eNode()];

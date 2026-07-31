@@ -45,7 +45,12 @@ function getMainBoardKey(rules: Record<string, string[]> | undefined): string | 
 
 function resolveOpticForChassis(opticStr: string, chassisModel: string): string {
   const resolvedSku = resolveOpticSku(opticStr, chassisModel);
-  const taaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
+  // Only treat "<sku>T" as the TAA variant if it's a real, catalogued SKU - not
+  // every part has one. QSB-501/QSB-521/QSB-531 (Rx-only BiDi) have no "T"
+  // counterpart at all; blindly appending 'T' invented "QSB-521T" etc., which
+  // isn't a real transceiver and showed up as an unknown SKU in the BOM.
+  const candidateTaaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
+  const taaSku = candidateTaaSku === resolvedSku || getSkus()[candidateTaaSku] ? candidateTaaSku : resolvedSku;
   const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
   const mainBoardKey = getMainBoardKey(rules);
   const group = mainBoardKey ? rules[mainBoardKey] : undefined;
