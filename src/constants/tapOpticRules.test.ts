@@ -13,8 +13,9 @@ describe('getTapTerminationClass', () => {
     expect(getTapTerminationClass('TAP-M251T', 'TAP-M251T')).toBe('multimode-lc');
     expect(getTapTerminationClass('TAP-M253T', 'TAP-M253T')).toBe('singlemode-lc');
     // Singlemode ULT shares the M253T range; multimode ULT is capped at 25G.
+    // ULT and non-ULT variants share their optic range on both fibre types.
     expect(getTapTerminationClass('TAP-M253ULT', 'TAP-M253ULT')).toBe('singlemode-lc');
-    expect(getTapTerminationClass('TAP-M251ULT', 'TAP-M251ULT')).toBe('multimode-lc-ult');
+    expect(getTapTerminationClass('TAP-M251ULT', 'TAP-M251ULT')).toBe('multimode-lc');
   });
 
   it('classifies the BiDi tap separately', () => {
@@ -59,8 +60,10 @@ describe('TAP-M251T (multimode LC)', () => {
   it('rejects an incompatible optic and accepts a valid one', () => {
     expect(isTapOpticCompatible('TAP-M251T', 'TAP-M251T', 'Q28-508')).toBe(true);
     expect(isTapOpticCompatible('TAP-M251T', 'TAP-M251T', 'Q28-508 (100G SWDM4)')).toBe(true);
+    // Singlemode has no business on a multimode tap.
     expect(isTapOpticCompatible('TAP-M251T', 'TAP-M251T', 'Q28-503T')).toBe(false);
-    expect(isTapOpticCompatible('TAP-M251T', 'TAP-M251T', 'QSB-523T')).toBe(false);
+    // QSB-521 is not one of the documented BiDi-link alternatives.
+    expect(isTapOpticCompatible('TAP-M251T', 'TAP-M251T', 'QSB-521')).toBe(false);
   });
 });
 
@@ -92,28 +95,36 @@ describe('TAP-M253T (singlemode LC)', () => {
 });
 
 describe('TAP-M251ULT (multimode LC, unidirectional)', () => {
-  const optics = getCompatibleTapOptics('TAP-M251ULT', 'TAP-M251ULT');
-  const skusOf = optics.map(o => o.sku);
+  const skusOf = getCompatibleTapOptics('TAP-M251ULT', 'TAP-M251ULT').map(o => o.sku);
 
-  it('offers the multimode SX/SR range up to 25G', () => {
+  it('carries the same 1/10/25/40/100G range as the M251T', () => {
+    // An older Hardware Guide table shows M251ULT as 1/10/25G only; the current
+    // product description and newer training material include 40/100G SWDM4.
+    expect(skusOf).toEqual(getCompatibleTapOptics('TAP-M251T', 'TAP-M251T').map(o => o.sku));
     expect(skusOf).toEqual(expect.arrayContaining([
-      'SFP-502', 'SFP-502T', 'SFP-532', 'SFP-532T', 'SFP-552', 'SFP-552T',
+      'SFP-502', 'SFP-502T', 'SFP-532', 'SFP-532T', 'SFP-552', 'SFP-552T', 'QSF-508', 'Q28-508',
     ]));
   });
 
-  it('stops at 25G, unlike the M251T', () => {
-    // The ULT documentation describes M251ULT as 1/10/25G; older pricing text
-    // claiming 40/100G is deliberately not followed.
-    expect(optics.every(o => o.speed === '1G' || o.speed === '10G' || o.speed === '25G')).toBe(true);
-    expect(skusOf).not.toContain('QSF-508');
-    expect(skusOf).not.toContain('Q28-508');
-    // ...whereas the standard M251T does carry them.
-    expect(getCompatibleTapOptics('TAP-M251T', 'TAP-M251T').map(o => o.sku)).toContain('Q28-508');
+  it('uses SWDM4 rather than MPO SR4 at 40G and 100G', () => {
+    // QSF-502 / Q28-502 are MPO and are not direct terminations for an LC tap.
+    expect(skusOf).not.toContain('QSF-502');
+    expect(skusOf).not.toContain('Q28-502');
+    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'Q28-508')).toBe(true);
+    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'Q28-502T')).toBe(false);
   });
 
-  it('rejects the 40/100G SWDM4 parts its non-ULT sibling accepts', () => {
-    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'Q28-508')).toBe(false);
-    expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', 'SFP-552T')).toBe(true);
+  it('accepts the receive-only BiDi parts for a BiDi network link without offering them', () => {
+    // Whether the monitored link is BiDi is a property of the link, not the TAP,
+    // so these are valid if chosen but are not the default suggestion.
+    ['QSB-501', 'QSB-523T', 'QSB-531'].forEach(sku => {
+      expect(isTapOpticCompatible('TAP-M251ULT', 'TAP-M251ULT', sku)).toBe(true);
+      expect(skusOf).not.toContain(sku);
+    });
+  });
+
+  it('still refuses BiDi parts on a singlemode tap', () => {
+    expect(isTapOpticCompatible('TAP-M253ULT', 'TAP-M253ULT', 'QSB-523T')).toBe(false);
   });
 });
 

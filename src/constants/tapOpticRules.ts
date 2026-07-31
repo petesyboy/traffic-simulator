@@ -91,26 +91,27 @@ const BIDI_OPTICS: TapOpticSpec[] = [
   spec('QSB-531', '100G', 'BiDi', 'QSFP', 'multimode'),
 ];
 
-/**
- * TAP-M251ULT: the ULT documentation describes it as a 1/10/25G part, so the
- * 40/100G SWDM4 options are deliberately not offered against it even though
- * older pricing descriptions list it at 1/10/25/40/100G. Same multimode SX/SR
- * optics as the M251T, capped at 25G.
- */
-const MULTIMODE_LC_ULT_OPTICS: TapOpticSpec[] = MULTIMODE_LC_OPTICS.filter(
-  o => o.speed === '1G' || o.speed === '10G' || o.speed === '25G',
-);
-
-export type TapTerminationClass = 'multimode-lc' | 'multimode-lc-ult' | 'singlemode-lc' | 'bidi';
+export type TapTerminationClass = 'multimode-lc' | 'singlemode-lc' | 'bidi';
 
 const OPTICS_BY_CLASS: Record<TapTerminationClass, TapOpticSpec[]> = {
+  // TAP-M251ULT carries the same 1/10/25/40/100G range as the M251T, SWDM4
+  // included. An older Hardware Guide table shows it as 1/10/25G only; the
+  // current product description and newer training material supersede that.
   'multimode-lc': MULTIMODE_LC_OPTICS,
-  'multimode-lc-ult': MULTIMODE_LC_ULT_OPTICS,
   // The singlemode ULT module takes the same LC range as the M253T; its 400G
   // capability is unreachable on any chassis without QSFP-DD cages anyway.
   'singlemode-lc': SINGLEMODE_LC_OPTICS,
   'bidi': BIDI_OPTICS,
 };
+
+/**
+ * Where the *monitored network link* is itself BiDi, a multimode LC tap is
+ * terminated with the receive-only BiDi parts instead of SX/SR/SWDM4 — 40G
+ * QSB-501, dual-rate 40/100G QSB-523T, or 100G QSB-531. That's a property of
+ * the tapped link rather than of the TAP, which the topology model has no
+ * concept of, so these are accepted if chosen but not offered by default.
+ */
+const BIDI_LINK_ALTERNATIVES = ['QSB-501', 'QSB-523T', 'QSB-531'];
 
 /**
  * Classify a passive module TAP by how its monitor outputs terminate. Returns
@@ -122,11 +123,9 @@ export function getTapTerminationClass(model: string, sku = ''): TapTerminationC
   if (id.includes('M506')) return 'bidi';
   // The M251T/M253T catalogue entries carry no fiber_type field, so the model
   // number is the only signal - 253/273/453 are the singlemode families.
+  // ULT and non-ULT variants share their optic range on both fibre types.
   if (/M25[13]|M27[13]|M45[13]/.test(id)) {
-    // Singlemode ULT and non-ULT share one optic range; multimode ULT is capped
-    // at 25G and so needs its own class.
-    if (/M253|M273|M453/.test(id)) return 'singlemode-lc';
-    return id.includes('ULT') ? 'multimode-lc-ult' : 'multimode-lc';
+    return /M253|M273|M453/.test(id) ? 'singlemode-lc' : 'multimode-lc';
   }
   return undefined;
 }
@@ -156,12 +155,18 @@ export function getCompatibleTapOptics(
   return optics.filter(o => chassisSupportsSpeed(chassisModel, o.speed));
 }
 
-/** True when `optic` is a legitimate termination for this TAP. */
+/**
+ * True when `optic` is a legitimate termination for this TAP. Broader than
+ * `getCompatibleTapOptics`, which is the "what to offer by default" list: a
+ * multimode LC tap watching a BiDi network link is legitimately terminated with
+ * a receive-only BiDi part, so those are accepted rather than flagged.
+ */
 export function isTapOpticCompatible(tapModel: string, tapSku: string, optic: string): boolean {
-  const optics = getCompatibleTapOptics(tapModel, tapSku);
-  if (optics.length === 0) return true; // not a TAP this matrix governs
+  const cls = getTapTerminationClass(tapModel, tapSku);
+  if (!cls) return true; // not a TAP this matrix governs
   const firstWord = optic.split(' ')[0];
-  return optics.some(o => o.sku === firstWord);
+  if (OPTICS_BY_CLASS[cls].some(o => o.sku === firstWord)) return true;
+  return cls === 'multimode-lc' && BIDI_LINK_ALTERNATIVES.includes(firstWord);
 }
 
 export function describeTapOptic(o: TapOpticSpec): string {

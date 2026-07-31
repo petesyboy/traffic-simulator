@@ -237,8 +237,13 @@ describe('module TAP optics (TAP-M251T)', () => {
     expect(err?.message).toContain('Q28-508');
   });
 
-  it('rejects the Rx-only BiDi parts on a normal M251T', () => {
+  it('allows a documented Rx-only BiDi part, for tapping a BiDi network link', () => {
     const nodes = [m251t({ tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'QSB-523T' }] }), chassis()];
+    expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_optic_incompatible')).toBeUndefined();
+  });
+
+  it('still rejects a BiDi part that is not one of the documented alternatives', () => {
+    const nodes = [m251t({ tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'QSB-521' }] }), chassis()];
     expect(validateConfiguration(nodes, edges).find(e => e.type === 'tap_optic_incompatible')).toBeDefined();
   });
 
