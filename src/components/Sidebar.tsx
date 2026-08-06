@@ -580,13 +580,18 @@ const Sidebar: React.FC = () => {
                   isOpen={openSections.hwTaps}
                   onToggle={() => toggleSection('hwTaps')}
                   searchQuery={searchQuery}
-                  filterFn={(item) => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku)}
                   onDragStart={onDragStart}
                   nodeType={NODE_TYPES.HARDWARE}
                   fallbackIcon={TapIcon}
                   skus={skus}
-                  renderLabel={(item) => <>{item.model} {item.ru ? `(${item.ru < 1 ? '1/2' : item.ru} RU)` : ''}</>}
-                  buildInitialData={(item) => ({ configType: 'Hardware', model: item.model, sku: item.sku, image: item.image, tappedLinksCount: 0, tappedLinkAllocations: [] })}
+                  renderLabel={(item) => {
+                    const bays = item.max_modules as number | undefined;
+                    if (bays) return <>{item.model} ({item.ru && (item.ru as number) < 1 ? '1/2' : item.ru} RU, {bays} bays)</>;
+                    return <>{item.model} {item.ru ? `(${(item.ru as number) < 1 ? '1/2' : item.ru} RU)` : ''}</>;
+                  }}
+                  buildInitialData={(item) => (item.max_modules
+                    ? { configType: 'Hardware', model: item.model, sku: item.sku, image: item.image }
+                    : { configType: 'Hardware', model: item.model, sku: item.sku, image: item.image, tappedLinksCount: 0, tappedLinkAllocations: [] })}
                 />
 
                 {/* TA Series Sub-accordion */}

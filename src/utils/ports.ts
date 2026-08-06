@@ -14,7 +14,7 @@
 import type { Edge } from '@xyflow/react';
 import type { ChassisPort, CustomNode, HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
-import { getOpticSpeed, getTaLicenseLimits } from './hardwareUtils';
+import { findModuleBySku, getOpticSpeed, getTaLicenseLimits } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
 
 /** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper. */
@@ -130,7 +130,7 @@ export function getChassisPorts(model: string, hwData: HardwareNodeData): Chassi
 
   Object.entries(hwData.installedBoards || {}).forEach(([slotIdx, boardSku]) => {
     if (!boardSku) return;
-    const module = hardwareCatalogue.modules.find(m => m.sku === boardSku);
+    const module = findModuleBySku(boardSku);
     if (!module) return;
     // Module ports are never licence-limited - the tiers only cover base ports.
     ports.push(...expandPorts(module.ports, `${boardSku} (Slot ${slotIdx})`, slotIdx, {}, false));

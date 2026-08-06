@@ -72,19 +72,88 @@ export const getOpticSpeedMbps = (opticName: string): number => {
 };
 
 /**
+ * Looks up a module in the catalogue by SKU, case-insensitively.
+ *
+ * SKUs are typed by hand into several independently-maintained files
+ * (hardwareCatalogue.json, opticRules.json, skus.json) and casing has drifted
+ * between them before (e.g. PRT-HC1-x12 vs PRT-HC1-X12, SMT-HC3-c08 vs
+ * SMT-HC3-C08) - an exact-match `find` silently returns no ports/icon/BOM row
+ * for a module a user has actually installed. Every catalogue module lookup
+ * by SKU should go through this helper rather than a fresh `===`/`find`.
+ */
+export const findModuleBySku = (boardSku: string) => {
+  const name = boardSku.toLowerCase();
+  return hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
+};
+
+/**
  * Returns the SFP and QSFP cage count for a given board/module name.
  */
 export const getBoardPortCapacity = (
   boardSku: string,
 ): { [portType: string]: number } => {
-  const name = boardSku.toLowerCase();
-
-  const module = hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
+  const module = findModuleBySku(boardSku);
   if (module) {
     return sumPortCounts(module.ports);
   }
 
   return {};
+};
+
+export interface ModuleSlotPosition {
+  number: number;
+  label: string;
+  /** Fractional (0-1) rect of the slot's bay on the chassis image, if calibrated. */
+  box?: { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * Slot numbering for a chassis's module bays. Where the catalogue defines
+ * `module_slot_positions` these are the real silkscreen numbers and physical
+ * positions (HC1/HC1-Plus bays are slots 2 and 3, not 1 and 2); otherwise this
+ * falls back to a plain 1..N sequence.
+ */
+export const getModuleSlotPositions = (model: string, sku?: string): ModuleSlotPosition[] => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  const chassis = allSeries.find(c => (sku && c.sku === sku) || c.model === model) as
+    | { module_slots?: number; module_slot_positions?: ModuleSlotPosition[] }
+    | undefined;
+  if (!chassis) return [];
+  if (chassis.module_slot_positions) return chassis.module_slot_positions;
+  return Array.from({ length: chassis.module_slots || 0 }, (_, i) => ({ number: i + 1, label: '' }));
+};
+
+/**
+ * Bay count for a TAP tray chassis (TAP-M100T = 3, TAP-M200T = 6, TAP-M202ULT = 2),
+ * read from `hardwareCatalogue.taps`' `max_modules`. Separate from
+ * `getModuleSlotPositions` because trays live in a different catalogue array, key
+ * their capacity under a differently-named field, and (unlike HC1's base-chassis-
+ * is-slot-1 wrinkle) have no non-obvious physical bay numbering to model - a tray
+ * is just bays 1..N left to right.
+ */
+export const getTrayBayCount = (model: string, sku?: string): number => {
+  const tray = hardwareCatalogue.taps.find(t => (sku && t.sku === sku) || t.model === model) as
+    | { max_modules?: number }
+    | undefined;
+  return tray?.max_modules || 0;
+};
+
+/** True for a physical tap-module "stick" (TAP-M251T, TAP-M253T, ...) - the only
+ *  kind of node that belongs in a tray bay, as opposed to a tray itself, an active
+ *  G-TAP appliance, or unrelated hardware dragged onto a bay by mistake. */
+export const isTapModule = (model: string, sku?: string): boolean => {
+  const entry = hardwareCatalogue.taps.find(t => (sku && t.sku === sku) || t.model === model) as
+    | { type?: string }
+    | undefined;
+  return entry?.type === 'module';
+};
+
+/**
+ * Returns the catalogue icon path for a board/module SKU (e.g. "PRT-HC1-Q04X08"),
+ * for compositing onto a chassis's front-panel photo in the hardware summary view.
+ */
+export const getBoardIcon = (boardSku: string): string | undefined => {
+  return findModuleBySku(boardSku)?.image;
 };
 
 /**
@@ -212,9 +281,7 @@ export const getBoardSpeedSubCap = (model: string, boardName: string, speed: str
 };
 
 const getBoardPortSpecs = (boardSku: string): PortInfo[] => {
-  const name = boardSku.toLowerCase();
-  const module = hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
-  return (module?.ports as PortInfo[]) || [];
+  return (findModuleBySku(boardSku)?.ports as PortInfo[]) || [];
 };
 
 const getChassisBasePortSpecs = (model: string): PortInfo[] => {

@@ -18,7 +18,7 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
   const installedOptics: InstalledOptic[] = useMemo(() => hwData.optics || [], [hwData.optics]);
 
   // Find catalogue details to get module_slots count (only hc_series entries have it)
-  const details = useMemo((): { model?: string; module_slots?: number } | null => {
+  const details = useMemo((): { model?: string; module_slots?: number; module_slot_positions?: { number: number; label: string }[] } | null => {
     if (model?.includes('TA')) return hardwareCatalogue.ta_series?.find((t) => t.sku === sku) || null;
     if (model?.includes('HC')) return hardwareCatalogue.hc_series?.find((t) => t.sku === sku) || null;
     return null;
@@ -56,28 +56,35 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
   // without (TA-series) while this panel stayed mounted.
   if (!details?.module_slots) return null;
 
-  const slots = [];
-  for (let i = 1; i <= details.module_slots; i++) {
-    slots.push(
-      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-        <label style={{ fontSize: '11px', color: '#ccc' }}>Slot {i}</label>
-        <select
-          value={installedBoards[i] || ''}
-          onChange={e => handleBoardSelect(i, e.target.value)}
-          style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
-        >
-          <option value="">-- Empty Slot --</option>
-          {installableBoards.map(b => (
-            <option key={b.board} value={b.board}>{getBoardDescription(b.board, model || '')}</option>
-          ))}
-        </select>
-      </div>
-    );
-  }
+  // Slot numbers reflect the chassis's physical silkscreen numbering, which isn't always
+  // a plain 1..N sequence - e.g. HC1/HC1-Plus reserve slot 1 for the fixed base chassis,
+  // so their two expansion bays are physically numbered 2 (left) and 3 (right).
+  const slotPositions =
+    details.module_slot_positions ||
+    Array.from({ length: details.module_slots }, (_, i) => ({ number: i + 1, label: '' }));
+
+  const slots = slotPositions.map(({ number, label }) => (
+    <div key={number} style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+      <label style={{ fontSize: '11px', color: '#ccc' }}>
+        Slot {number}
+        {label && <span style={{ color: '#888' }}> ({label})</span>}
+      </label>
+      <select
+        value={installedBoards[number] || ''}
+        onChange={e => handleBoardSelect(number, e.target.value)}
+        style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+      >
+        <option value="">-- Empty Slot --</option>
+        {installableBoards.map(b => (
+          <option key={b.board} value={b.board}>{getBoardDescription(b.board, model || '')}</option>
+        ))}
+      </select>
+    </div>
+  ));
 
   return (
-    <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
-      <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Module Slots</h4>
+    <div className="panel-section">
+      <h3 className="text-base font-semibold mb-2">🧩 Module Slots</h3>
       {slots}
     </div>
   );

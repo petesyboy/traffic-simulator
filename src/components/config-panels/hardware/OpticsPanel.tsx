@@ -261,8 +261,8 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       </div>
 
       {/* Optics Deployment Status */}
-      <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
-        <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Optics Deployment Status</h4>
+      <div className="panel-section">
+        <h3 className="text-base font-semibold mb-2">📡 Optics Deployment Status</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#111', padding: '10px', borderRadius: '4px', border: '1px solid #333', fontSize: '11px', color: '#ccc' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Total Deployed Optics:</span>
@@ -303,8 +303,8 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
       {/* Install Optics */}
       {availableOpticBoards.length > 0 && (
-        <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Install Optics</h4>
+        <div className="panel-section">
+          <h3 className="text-base font-semibold mb-2">➕ Install Optics</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {availableOpticBoards.length > 1 ? (
               <select value={selectedOpticBoard} onChange={e => { setSelectedOpticBoard(e.target.value); setSelectedOptic(''); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>

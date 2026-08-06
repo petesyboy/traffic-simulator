@@ -236,7 +236,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   return (
     <div className="panel-section border-t border-orange-500/20 pt-4 mt-4">
-      <h4 className="section-header text-orange text-base font-semibold mb-2">TAP Settings</h4>
+      <h3>🔗 TAP Settings</h3>
       
       {/* Existing Allocations List */}
       <div className="flex-col gap-2 mb-3">

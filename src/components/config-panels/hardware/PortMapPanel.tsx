@@ -99,9 +99,9 @@ export const PortMapPanel: React.FC<PortMapPanelProps> = ({ selectedNode }) => {
   const pinnedCount = rows.filter((r) => r.pinned).length;
 
   return (
-    <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
+    <div className="panel-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <h4 style={{ margin: 0, fontSize: '12px', color: '#ffb74d' }}>Port Map</h4>
+        <h3 className="text-base font-semibold m-0">🗺️ Port Map</h3>
         {pinnedCount > 0 && (
           <button
             onClick={handleResetAll}

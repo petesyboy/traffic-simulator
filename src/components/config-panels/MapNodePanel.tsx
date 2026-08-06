@@ -28,7 +28,7 @@ export const MapNodePanel: React.FC<MapNodePanelProps> = ({
 
   return (
     <div>
-      <h3>Map Criteria (OR-rules list)</h3>
+      <h4 className="form-label" style={{ margin: '4px 0 8px 0' }}>Map Criteria (OR-rules list)</h4>
       {conditions.map((condition, index) => (
         <div key={index} className="condition-card">
           <div className="condition-card-row">

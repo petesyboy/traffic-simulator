@@ -37,8 +37,8 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
   const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
 
   return (
-    <div style={{ borderTop: '1px solid rgba(255, 152, 0, 0.2)', paddingTop: '10px', marginTop: '10px' }}>
-      <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#ffb74d' }}>Physical Cages &amp; Ports</h4>
+    <div className="panel-section">
+      <h3 className="text-base font-semibold mb-2">🔌 Physical Cages &amp; Ports</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#111', padding: '10px', borderRadius: '4px', border: '1px solid #333', fontSize: '11px', color: '#ccc' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#aaa' }}>QSFP Cages (40G/100G/400G):</span>

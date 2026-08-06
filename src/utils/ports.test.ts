@@ -88,6 +88,31 @@ describe('getChassisPorts', () => {
     expect(getChassisPorts('Not-A-Real-Model', hw({}))).toHaveLength(0);
     expect(getChassisPorts('', hw({}))).toHaveLength(0);
   });
+
+  it('resolves an installed module regardless of the casing stored in installedBoards (regression: PRT-HC1-x12/SMT-HC3-c08 casing drift silently produced zero ports)', () => {
+    const ports = getChassisPorts('GigaVUE-HC1-Plus', hw({ installedBoards: { '2': 'prt-hc1-x12' } }));
+    expect(ports.filter(p => p.board.startsWith('prt-hc1-x12'))).toHaveLength(12);
+  });
+
+  it('every board name opticRules.json offers for a module slot resolves to a real catalogue module (regression: casing/naming drift between the two files makes a selectable board silently add zero ports)', async () => {
+    const opticRules = (await import('../constants/opticRules.json')).default as Record<string, Record<string, string[]>>;
+    const hardwareCatalogue = (await import('../constants/hardwareCatalogue.json')).default;
+    const { findModuleBySku } = await import('./hardwareUtils');
+
+    const moduleSlotModels = new Set(
+      ([...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series] as { model: string; module_slots?: number }[])
+        .filter(c => (c.module_slots || 0) > 0)
+        .map(c => c.model),
+    );
+
+    for (const [model, boards] of Object.entries(opticRules)) {
+      if (!moduleSlotModels.has(model)) continue; // e.g. GigaVUE-HC2 was dropped from the catalogue on purpose
+      for (const board of Object.keys(boards)) {
+        if (board.toLowerCase().includes('main') || board.toLowerCase().includes('base')) continue;
+        expect(findModuleBySku(board), `${model} board "${board}" has no matching catalogue module`).toBeDefined();
+      }
+    }
+  });
 });
 
 describe('getOpticCage', () => {

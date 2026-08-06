@@ -69,6 +69,8 @@ Node processors live in `src/utils/simulation/processors/` — one file per node
 
 **Breakout panels**: a breakout panel (single- or multi-mode, e.g. `PNL-M341`, `PNL-M343`) occupies one slot in an M100T (3 slots) or M200T (6 slots) tray alongside optical TAPs — account for this when validating tray capacity.
 
+**SKU/board lookups must be case-insensitive**: the same module SKU is hand-typed independently in `hardwareCatalogue.json`, `opticRules.json`, and `skus.json`, and casing has drifted between them before (e.g. `PRT-HC1-x12` vs `PRT-HC1-X12`, `SMT-HC3-c08` vs `SMT-HC3-C08`) — an exact-match `find` on one of these silently resolves to nothing, so an installed module adds zero ports/BOM rows with no error. Always look up a catalogue module by SKU via `findModuleBySku()` in `src/utils/hardwareUtils.ts` (or another case-insensitive comparison) rather than a fresh `===`/`.find()`. `src/utils/ports.test.ts` has a regression test that cross-checks every `opticRules.json` board name against the catalogue — run it after editing either file.
+
 ### Key Constants
 
 - `src/constants/hardwareCatalogue.json` — hardware models with port capacity, power supply type
@@ -113,5 +115,6 @@ State is serialized to `localStorage` under keys `fm-simulator-slot-<name>` (up 
 ## Project Conventions
 
 - **Versioning**: bump the patch version in `package.json` with every change (`1.0.x` → `1.0.x+1`).
+- **Commit subjects are release notes**: `scripts/generate-changelog.mjs` runs on `prebuild` and turns each commit into a changelog entry shown in the app's About dialog (click the version number in the header). It pairs a commit with the version in *that commit's* `package.json`, so the versioning rule above is what makes it work. Write subjects that read well to a user. Exclude a commit by prefixing it `chore:`/`test:`/`ci:`/`docs:`/`build:`/`style:`/`refactor:` or adding `[skip changelog]`. To override the wording, or to describe work not yet committed, add an entry to `scripts/changelog.manual.json` — it wins over the generated text for that version. `src/constants/changelog.ts` is generated; don't hand-edit it.
 - **British English**: use British spelling in all node tooltips and user-facing copy (e.g. "analyse", "optimise", "colour").
 - **Number inputs**: don't validate integer bounds inside `onChange` for `<input type="number">` — deleting a digit briefly yields `""`/`NaN` and an eager check will reset the field. Track the raw string in state and defer `parseInt`/bounds validation to submit (button click) or use a `<select>` for small bounded ranges.

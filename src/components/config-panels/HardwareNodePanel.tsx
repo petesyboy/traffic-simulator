@@ -320,6 +320,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           )}
         </div>
 
+        {!model?.includes('TAP') && (
+          <BoardSlotsPanel selectedNode={node} updateNodeData={updateNodeData} />
+        )}
+
         <div className="panel-section">
           <h3 className="text-base font-semibold mb-2">🌍 Deployment Configuration</h3>
           <div className="flex-col gap-1">
@@ -365,7 +369,6 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       <div style={{ display: activeTab === 'optics' ? 'block' : 'none' }}>
         {!model?.includes('TAP') && (
           <>
-            <BoardSlotsPanel selectedNode={node} updateNodeData={updateNodeData} />
             <CageSummaryPanel selectedNode={node} />
             <PortMapPanel selectedNode={node} />
             <OpticsPanel selectedNode={node} updateNodeData={updateNodeData} nodes={nodes} edges={edges} />

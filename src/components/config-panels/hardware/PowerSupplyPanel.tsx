@@ -53,7 +53,7 @@ export const PowerSupplyPanel: React.FC<PowerSupplyPanelProps> = ({
 
     return (
       <div className="panel-section flex-col gap-4">
-        <h4 className="section-header text-cyan text-base font-semibold mb-2">⚡ Power & Accessories Configuration</h4>
+        <h3>⚡ Power &amp; Accessories Configuration</h3>
 
         {isSeries2 && (
           <div className="flex-col gap-2">
@@ -120,7 +120,7 @@ export const PowerSupplyPanel: React.FC<PowerSupplyPanelProps> = ({
 
   return (
     <div className="panel-section flex-col gap-4">
-      <h4 className="section-header text-cyan text-base font-semibold mb-2">Chassis Configuration</h4>
+      <h3>🔧 Chassis Configuration</h3>
 
       <div className="grid-2">
         <div className="flex-col gap-1">
@@ -193,6 +193,26 @@ export const PowerSupplyPanel: React.FC<PowerSupplyPanelProps> = ({
           })()}
         </div>
       )}
+
+      {(model.includes('TA25') || model.includes('TA200') || model.includes('TA400')) && (() => {
+        const isMandatory = model.includes('TA25E') && (hwData.portCapacity || 'Full') === 'Quarter';
+        return (
+          <div className="flex-col gap-1 mt-2">
+            <label className="flex items-center gap-2 text-xs text-white cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!hwData.advancedFeatures || isMandatory}
+                disabled={isMandatory}
+                onChange={(e) => updateNodeData(selectedNode.id, { advancedFeatures: e.target.checked })}
+              />
+              <span>Advanced Features License</span>
+            </label>
+            {isMandatory && (
+              <span className="text-xs text-muted">Required for the 12-port TA25E and included automatically.</span>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };

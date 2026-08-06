@@ -8,11 +8,13 @@
  * `position: fixed`).
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { HardwareNodeData } from '../../store/types';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
-import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount } from '../../utils/hardwareUtils';
+import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount, getModuleSlotPositions } from '../../utils/hardwareUtils';
+import { resolveHardwareIcon } from '../../assets/hardwareIcons';
+import { ChassisFrontPanel } from './ChassisFrontPanel';
 
 interface PortSpec {
   type: string;
@@ -33,19 +35,28 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
   const isHc = model.includes('HC');
   const catalogueSeries = isHc ? hardwareCatalogue.hc_series : hardwareCatalogue.ta_series;
   const details = catalogueSeries.find(c => c.sku === sku || c.model === model);
-  const detailsAny = details as unknown as { power?: string; fans?: number; airflow?: string; ports?: PortSpec[]; base_ports?: PortSpec[]; module_slots?: number };
+  const detailsAny = details as unknown as {
+    power?: string; fans?: number; airflow?: string; ports?: PortSpec[]; base_ports?: PortSpec[]; module_slots?: number;
+    module_slot_positions?: { number: number; label: string; box?: { x: number; y: number; width: number; height: number } }[];
+    image?: string;
+  };
+  const chassisImage = detailsAny?.image ? resolveHardwareIcon(detailsAny.image) : undefined;
   const builtInPorts: PortSpec[] = detailsAny?.ports || detailsAny?.base_ports || [];
   const slotCount = detailsAny?.module_slots || 0;
+  const slotPositions = getModuleSlotPositions(model, sku);
 
   const capacity = getCageCapacityBreakdown(model, hwData);
   const installedBoards = hwData.installedBoards || {};
   const capVal = (hwData.portCapacity as string) || 'Full';
   const maxCapacityBySpeed = isHc ? getMaxChassisCapacityBySpeed(model) : [];
   const gigaSmartEngines = isHc ? getGigaSmartEngineCount(model, hwData) : 0;
+  const hasFrontPanel = Boolean(chassisImage) && slotPositions.some(p => p.box);
+
+  const [zoomed, setZoomed] = useState(false);
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ width: '440px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+      <div className="modal-card" style={{ width: '560px', maxWidth: '92vw', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>
             📋 {label} Summary
@@ -75,6 +86,32 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
             </div>
           </section>
 
+          {hasFrontPanel && (
+            <section>
+              <div className="flex-between" style={{ margin: '0 0 8px 0' }}>
+                <h4 style={{ margin: 0, fontSize: '11px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Front Panel
+                </h4>
+                <span style={{ fontSize: '10px', color: '#666' }}>Click to enlarge</span>
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                title="Click to enlarge"
+                onClick={() => setZoomed(true)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setZoomed(true); } }}
+                style={{ border: '1px solid #333', borderRadius: '4px', overflow: 'hidden', cursor: 'zoom-in' }}
+              >
+                <ChassisFrontPanel
+                  chassisImage={chassisImage!}
+                  model={model}
+                  slotPositions={slotPositions}
+                  installedBoards={installedBoards}
+                />
+              </div>
+            </section>
+          )}
+
           <section>
             {isHc ? (
               <>
@@ -90,11 +127,11 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
                   <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No module slots on this chassis.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {Array.from({ length: slotCount }, (_, i) => i + 1).map(slotIdx => {
-                      const boardName = installedBoards[slotIdx];
+                    {slotPositions.map(({ number, label }) => {
+                      const boardName = installedBoards[number];
                       return (
-                        <div key={slotIdx} style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#888' }}>Slot {slotIdx}:</span>
+                        <div key={number} style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#888' }}>Slot {number}{label ? ` (${label})` : ''}:</span>
                           <span style={{ textAlign: 'right' }}>
                             {boardName ? getBoardDescription(boardName, model) : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty</span>}
                           </span>
@@ -175,6 +212,43 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
           )}
         </div>
       </div>
+
+      {/* Enlarged front panel - sits above the summary card so ports stay countable. */}
+      {zoomed && hasFrontPanel && (
+        <div
+          onClick={e => { e.stopPropagation(); setZoomed(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.92)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: '12px', padding: '24px', boxSizing: 'border-box', cursor: 'zoom-out',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', color: '#fff', fontSize: '13px' }}>
+            <strong style={{ color: '#ff9800' }}>{label}</strong>
+            {label !== model && <span style={{ color: '#888' }}>{model}</span>}
+          </div>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '96vw', maxWidth: '1200px', border: '1px solid #444', borderRadius: '4px', overflow: 'hidden', cursor: 'default' }}
+          >
+            <ChassisFrontPanel
+              chassisImage={chassisImage!}
+              model={model}
+              slotPositions={slotPositions}
+              installedBoards={installedBoards}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', fontSize: '11px', color: '#ccc' }}>
+            {slotPositions.map(({ number, label: slotLabel }) => (
+              <span key={number}>
+                <span style={{ color: '#888' }}>Slot {number}{slotLabel ? ` (${slotLabel})` : ''}:</span>{' '}
+                {installedBoards[number] || <span style={{ color: '#666', fontStyle: 'italic' }}>Empty</span>}
+              </span>
+            ))}
+          </div>
+          <span style={{ fontSize: '11px', color: '#666' }}>Click anywhere to close</span>
+        </div>
+      )}
     </div>,
     document.body
   );

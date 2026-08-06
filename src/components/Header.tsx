@@ -15,7 +15,7 @@ import { validateConfiguration } from '../utils/bomEngine';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
-  ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal,
+  ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal, AboutModal,
   PlayIcon, PauseIcon, CopyIcon, ClipboardIcon, GridIcon, ServerRackIcon,
   PresentationIcon, StopIcon, CameraIcon, SaveIcon, FolderOpenIcon,
   GearIcon, RefreshIcon, TrashIcon, UndoIcon, RedoIcon,
@@ -66,6 +66,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBom, setShowBom] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -142,6 +143,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showDuplicatePrompt && (
         <DuplicateModal
           defaultName="Site B"
@@ -206,15 +208,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               </span>
               <span className="brand-subtitle">
                 FLOW MAPPING DESIGNER
-                <a
+                <button
                   className="brand-build-link"
-                  href="https://github.com/petesyboy/traffic-simulator/releases"
-                  target="_blank"
-                  rel="noreferrer"
-                  title={`Build ${pkg.version}`}
+                  onClick={() => setShowAbout(true)}
+                  title={`Build ${pkg.version} — click for release notes`}
+                  style={{ background: 'none', border: 'none', padding: 0, font: 'inherit' }}
                 >
                   v{pkg.version}
-                </a>
+                </button>
               </span>
             </div>
 

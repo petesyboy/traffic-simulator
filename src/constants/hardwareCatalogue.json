@@ -50,7 +50,8 @@
       "ru": 0.5,
       "type": "chassis",
       "max_modules": 3,
-      "max_links": 18
+      "max_links": 18,
+      "image": "./hardware-icons/TAP-M100T.png"
     },
     {
       "model": "TAP-M200T",
@@ -58,7 +59,8 @@
       "ru": 1,
       "type": "chassis",
       "max_modules": 6,
-      "max_links": 36
+      "max_links": 36,
+      "image": "./hardware-icons/TAP-M200T.png"
     },
     {
       "model": "TAP-M202ULT",
@@ -273,6 +275,10 @@
         { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
       ],
       "module_slots": 2,
+      "module_slot_positions": [
+        { "number": 2, "label": "Left", "box": { "x": 0.0693, "y": 0.055, "width": 0.2416, "height": 0.8807 } },
+        { "number": 3, "label": "Right", "box": { "x": 0.6874, "y": 0.055, "width": 0.2416, "height": 0.8807 } }
+      ],
       "image": "./hardware-icons/GigaVUE-HC1.png"
     },
     {
@@ -286,6 +292,10 @@
         { "type": "QSFP+", "count": 4, "speeds": ["40G"] }
       ],
       "module_slots": 2,
+      "module_slot_positions": [
+        { "number": 2, "label": "Left", "box": { "x": 0.084, "y": 0.055, "width": 0.2407, "height": 0.8807 } },
+        { "number": 3, "label": "Right", "box": { "x": 0.6736, "y": 0.055, "width": 0.2416, "height": 0.8807 } }
+      ],
       "image": "./hardware-icons/GigaVUE-HC1-Plus.png"
     },
     {
@@ -296,6 +306,12 @@
       "airflow": "Front-to-Rear",
       "base_ports": [],
       "module_slots": 4,
+      "module_slot_positions": [
+        { "number": 1, "label": "Top-left", "box": { "x": 0.0545, "y": 0.0405, "width": 0.4442, "height": 0.3676 } },
+        { "number": 2, "label": "Bottom-left", "box": { "x": 0.0545, "y": 0.4112, "width": 0.4442, "height": 0.3645 } },
+        { "number": 3, "label": "Top-right", "box": { "x": 0.4996, "y": 0.0405, "width": 0.4442, "height": 0.3676 } },
+        { "number": 4, "label": "Bottom-right", "box": { "x": 0.4996, "y": 0.4112, "width": 0.4442, "height": 0.3645 } }
+      ],
       "image": "./hardware-icons/GigaVUE-HC3.png"
     },
     {
@@ -315,6 +331,9 @@
         }
       ],
       "module_slots": 1,
+      "module_slot_positions": [
+        { "number": 1, "label": "", "box": { "x": 0.0493, "y": 0.0124, "width": 0.5420, "height": 0.9380 } }
+      ],
       "image": "./hardware-icons/GigaVUE-HCT.png"
     }
   ],
@@ -324,7 +343,8 @@
         "sku": "SMT-HC3-C05",
         "ports": [
             { "type": "QSFP28", "count": 5, "speeds": ["40G", "100G"] }
-        ]
+        ],
+        "image": "./hardware-icons/SMT-HC3-C05.png"
     },
     {
         "model": "PRT-HC1-Q04X08",
@@ -332,35 +352,40 @@
         "ports": [
             { "type": "SFP28", "count": 8, "speeds": ["1G", "10G", "25G"] },
             { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC1-Q04X08.png"
     },
     {
         "model": "BPS-HC1-D25A24",
         "sku": "BPS-HC1-D25A24",
         "ports": [
             { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC1-D25A24.png"
     },
     {
         "model": "BPS-HC1-D25A60",
         "sku": "BPS-HC1-D25A60",
         "ports": [
             { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC1-D25A60.png"
     },
     {
         "model": "BPS-HC1-D35C60",
         "sku": "BPS-HC1-D35C60",
         "ports": [
             { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC1-D35C60.png"
     },
     {
-        "model": "PRT-HC1-x12",
-        "sku": "PRT-HC1-x12",
+        "model": "PRT-HC1-X12",
+        "sku": "PRT-HC1-X12",
         "ports": [
             { "type": "SFP+", "count": 12, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC1-X12.png"
     },
     {
         "model": "PRT-HC1-G12",
@@ -368,34 +393,39 @@
         "ports": [
             { "type": "RJ45", "count": 6, "speeds": ["10M", "100M", "1G"] },
             { "type": "SFP", "count": 6, "speeds": ["100M", "1G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC1-G12.png"
     },
     {
         "model": "SMT-HC1-S",
         "sku": "SMT-HC1-S",
-        "ports": []
+        "ports": [],
+        "image": "./hardware-icons/SMT-HC1-S.png"
     },
     {
         "model": "TAP-HC1-G10040",
         "sku": "TAP-HC1-G10040",
         "ports": [
             { "type": "RJ45", "count": 8, "speeds": ["10M", "100M", "1G"] }
-        ]
+        ],
+        "image": "./hardware-icons/TAP-HC1-G10040.png"
     },
     {
         "model": "PRT-HC3-X24",
         "sku": "PRT-HC3-X24",
         "ports": [
             { "type": "SFP+", "count": 24, "speeds": ["10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC3-X24.png"
     },
     {
-        "model": "SMT-HC3-c08q08",
-        "sku": "SMT-HC3-c08q08",
+        "model": "SMT-HC3-C08Q08",
+        "sku": "SMT-HC3-C08Q08",
         "ports": [
             { "type": "QSFP28", "count": 8, "speeds": ["100G"] },
             { "type": "QSFP+", "count": 8, "speeds": ["40G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC3-C08Q08.png"
     },
     {
         "model": "PRT-HC3-C08Q08",
@@ -403,28 +433,32 @@
         "ports": [
             { "type": "QSFP28", "count": 8, "speeds": ["100G"] },
             { "type": "QSFP+", "count": 8, "speeds": ["40G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC3-C08Q08.png"
     },
     {
-        "model": "SMT-HC3-c16",
-        "sku": "SMT-HC3-c16",
+        "model": "SMT-HC3-C16",
+        "sku": "SMT-HC3-C16",
         "ports": [
             { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC3-C16.png"
     },
     {
         "model": "PRT-HC3-C16",
         "sku": "PRT-HC3-C16",
         "ports": [
             { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
-        ]
+        ],
+        "image": "./hardware-icons/PRT-HC3-C16.png"
     },
     {
-        "model": "SMT-HC3-c08",
-        "sku": "SMT-HC3-c08",
+        "model": "SMT-HC3-C08",
+        "sku": "SMT-HC3-C08",
         "ports": [
             { "type": "QSFP28", "count": 8, "speeds": ["100G"] }
-        ]
+        ],
+        "image": "./hardware-icons/SMT-HC3-C08.png"
     },
     {
         "model": "BPS-HC3-C25F2G",
@@ -432,7 +466,8 @@
         "ports": [
             { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] },
             { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC3-C25F2G.png"
     },
     {
         "model": "BPS-HC3-Q35C2G",
@@ -440,7 +475,8 @@
         "ports": [
             { "type": "QSFP+", "count": 4, "speeds": ["40G"] },
             { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC3-Q35C2G.png"
     },
     {
         "model": "BPS-HC3-C35C2G",
@@ -448,7 +484,8 @@
         "ports": [
             { "type": "QSFP28", "count": 4, "speeds": ["100G"] },
             { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
-        ]
+        ],
+        "image": "./hardware-icons/BPS-HC3-C35C2G.png"
     }
   ]
 }

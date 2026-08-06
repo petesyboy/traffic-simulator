@@ -1,0 +1,118 @@
+/**
+ * changelog.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GENERATED FILE - do not edit by hand. Regenerated from git history by
+ * `scripts/generate-changelog.mjs`, which runs automatically before every build.
+ *
+ * To change an entry's wording, or to describe work that isn't committed yet,
+ * edit `scripts/changelog.manual.json` instead.
+ */
+
+export interface ChangelogEntry {
+  version: string;
+  date: string;
+  summary: string;
+}
+
+export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.0.481",
+    date: "2026-08-06",
+    summary: "TAP-M100T and TAP-M200T trays now show their real photos in the Rack View, with drop bays overlaid on top.",
+  },
+  {
+    version: "1.0.480",
+    date: "2026-08-06",
+    summary: "Rack View now shows real chassis photos with installed boards instead of generic bars. TAP-M100T/M200T trays can be racked and individual tap modules dropped into their bays.",
+  },
+  {
+    version: "1.0.479",
+    date: "2026-08-06",
+    summary: "Fixed the GigaVUE-HCT front-panel graphic - installed modules now composite onto the chassis photo like HC1/HC1-Plus/HC3, instead of leaving the blanking mesh visible.",
+  },
+  {
+    version: "1.0.478",
+    date: "2026-08-05",
+    summary: "Node configuration sections are now much easier to tell apart - every section heading (hardware, module slots, cages, optics, power) uses one larger amber style with an underline and icon.",
+  },
+  {
+    version: "1.0.477",
+    date: "2026-08-05",
+    summary: "Fixed HC1/HC1-Plus/HC3 canvas nodes showing the chassis photo twice - the small header icon now only appears for hardware without a front-panel graphic (e.g. TA-series).",
+  },
+  {
+    version: "1.0.476",
+    date: "2026-08-05",
+    summary: "The build info dialogue now shows a larger version number and just the last two changes.",
+  },
+  {
+    version: "1.0.475",
+    date: "2026-08-05",
+    summary: "Audited every module SKU lookup for case-sensitivity bugs like the PRT-HC1-X12 fix - found and fixed the same issue on SMT-HC3-C08, and made all catalogue lookups case-insensitive so it can't recur.",
+  },
+  {
+    version: "1.0.474",
+    date: "2026-08-05",
+    summary: "Fixed the PRT-HC1-X12 port module not adding its 12 ports when installed - a mismatched SKU casing kept it from being recognised.",
+  },
+  {
+    version: "1.0.473",
+    date: "2026-08-05",
+    summary: "Fixed HC1/HC1-Plus/HC3 canvas nodes rendering far larger than other appliances - the front-panel graphic is now capped to a consistent size.",
+  },
+  {
+    version: "1.0.472",
+    date: "2026-08-05",
+    summary: "HC1/HC1-Plus/HC3 canvas nodes now show the same front-panel graphic as the hardware summary, alongside the live port status. Fixed the title icon stretching wide chassis nodes far past others.",
+  },
+  {
+    version: "1.0.471",
+    date: "2026-08-05",
+    summary: "Fitted modules now align exactly to their chassis bay on the HC1, HC1-Plus and HC3 front panels, fully covering the blanking panel's honeycomb mesh.",
+  },
+  {
+    version: "1.0.470",
+    date: "2026-08-05",
+    summary: "The hardware summary's front panel is now larger, and clicking it opens a full-size view with a slot legend — big enough to count individual ports.",
+  },
+  {
+    version: "1.0.469",
+    date: "2026-08-05",
+    summary: "Clicking the version number now opens build information and recent release notes instead of a GitHub link.",
+  },
+  {
+    version: "1.0.468",
+    date: "2026-08-05",
+    summary: "Moved the module slot selectors from the Optics tab into the General tab, alongside the hardware specifications.",
+  },
+  {
+    version: "1.0.467",
+    date: "2026-08-05",
+    summary: "Hardware summary now draws a front-panel view with each installed module pictured in its real slot position.",
+  },
+  {
+    version: "1.0.466",
+    date: "2026-08-05",
+    summary: "Module slots now use the real chassis slot numbering — HC1/HC1-Plus bays are slots 2 (left) and 3 (right); HC3 slots 1-4 are labelled by quadrant.",
+  },
+  {
+    version: "1.0.465",
+    date: "2026-08-05",
+    summary: "Added faceplate images for the SMT-HC3-C08Q08 and SMT-HC3-C16 GigaSMART modules.",
+  },
+  {
+    version: "1.0.464",
+    date: "2026-08-05",
+    summary: "Added product photography for the HC1 and HC3 port, bypass, GigaSMART and TAP modules, plus refreshed chassis images.",
+  },
+  {
+    version: "1.0.462",
+    date: "2026-07-31",
+    summary: "Extract enlarged-panel placement math into a pure, tested function",
+  },
+  {
+    version: "1.0.461",
+    date: "2026-07-31",
+    summary: "Fix enlarged AMI event panel drifting off-screen",
+  },
+];

@@ -21,7 +21,9 @@ import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles'
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
+import { ChassisFrontPanel } from './ChassisFrontPanel';
 import { getChassisPorts, getPortOccupancy } from '../../utils/ports';
+import { getModuleSlotPositions } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -59,11 +61,27 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
     [chassisPorts, id, data, nodes, edges],
   );
 
-  let rawIcon = image ? (
-    <img src={image} alt={model} style={{ height: '32px', display: 'block', objectFit: 'contain' }} />
+  // Photographic front panel, drawn only for chassis whose bays have been calibrated
+  // (see `module_slot_positions` in the hardware catalogue). It shows which bays are
+  // populated; the ChassisFaceplate below it carries live per-port state.
+  const slotPositions = useMemo(
+    () => (advancedMode ? getModuleSlotPositions(model, data.sku as string) : []),
+    [advancedMode, model, data.sku],
+  );
+  const showFrontPanel = Boolean(image) && slotPositions.some(p => p.box);
+
+  // Chassis photos are extremely wide (an HC1 is 10.6:1), so cap width as well as
+  // height - a height-only constraint let the icon alone stretch an HC1 node to
+  // ~470px, near double an HC3's, purely from its aspect ratio.
+  // When the front-panel strip is already showing the same chassis photo (with
+  // its installed modules), showing it again as the small header icon is pure
+  // duplication - fall back to a generic icon there instead.
+  const useHeaderPhoto = Boolean(image) && !showFrontPanel;
+  let rawIcon = useHeaderPhoto ? (
+    <img src={image} alt={model} style={{ maxHeight: '32px', maxWidth: '120px', display: 'block' }} />
   ) : <GreenCircleIcon size={20} />;
-  
-  if (!image) {
+
+  if (!useHeaderPhoto) {
     if (model.includes('TAP')) rawIcon = <TapIcon size={20} />;
     else if (model.includes('HC')) rawIcon = <MapIcon size={20} />;
   }
@@ -173,6 +191,16 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
               <span>SKU: {displaySku}</span>
             </div>
+            {showFrontPanel && (
+              <div style={{ marginTop: '6px', maxWidth: '220px', border: '1px solid #2a2a2a', borderRadius: '3px', overflow: 'hidden' }}>
+                <ChassisFrontPanel
+                  chassisImage={image!}
+                  model={model}
+                  slotPositions={slotPositions}
+                  installedBoards={hwData.installedBoards || {}}
+                />
+              </div>
+            )}
             <ChassisFaceplate ports={chassisPorts} occupancy={portOccupancy} />
             {isTap && tapInfo && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>

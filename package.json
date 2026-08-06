@@ -1,11 +1,13 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.462",
+    "version": "1.0.481",
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "prebuild": "node scripts/generate-changelog.mjs",
         "build": "tsc -b && vite build",
+        "changelog": "node scripts/generate-changelog.mjs",
         "lint": "eslint .",
         "test": "vitest",
         "preview": "vite preview",
@@ -33,11 +35,11 @@
         "eslint-plugin-react-hooks": "^7.1.1",
         "eslint-plugin-react-refresh": "^0.5.2",
         "globals": "^17.6.0",
+        "prettier": "^3.5.3",
         "typescript": "~6.0.2",
         "typescript-eslint": "^8.59.2",
         "vite": "^8.0.12",
         "vite-plugin-singlefile": "^2.3.3",
-        "prettier": "^3.5.3",
         "vitest": "^4.1.9"
     }
 }

@@ -136,6 +136,7 @@ export interface HardwareModel {
   base_ports?: (PortInfo | number)[];
   licensing?: LicensingInfo;
   module_slots?: number;
+  module_slot_positions?: { number: number; label: string; box?: { x: number; y: number; width: number; height: number } }[];
   image?: string;
   isCustom?: boolean;
   tappedLinksCount?: number;
@@ -239,6 +240,14 @@ export interface HardwareNodeData extends BaseNodeData {
   tappedLinkAllocations?: TappedLinkAllocation[];
   breakoutPanels?: BreakoutPanel[];
   psType?: string;
+  advancedFeatures?: boolean;
+  /** Rack Elevation View placement - which rack (by site) and which U position. */
+  rackId?: string;
+  rackU?: number;
+  /** Set on a tap-module node nested inside a TAP-M100T/M200T tray's bay in the
+   *  Rack View, in place of rackId/rackU (its position is implied by its parent). */
+  trayId?: string;
+  traySlot?: number;
 }
 
 export interface ToolNodeData extends BaseNodeData {

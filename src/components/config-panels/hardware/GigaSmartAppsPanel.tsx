@@ -43,9 +43,9 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
   };
 
   return (
-    <div>
+    <div className="panel-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h4 style={{ margin: 0, fontSize: '13px', color: '#ffb74d' }}>GigaSMART Pipeline</h4>
+        <h3 className="text-base font-semibold m-0">🧠 GigaSMART Pipeline</h3>
       </div>
 
       {/* App Cards */}

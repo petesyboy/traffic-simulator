@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
+import type { HardwareNodeData } from '../store/types';
+import hardwareCatalogue from '../constants/hardwareCatalogue.json';
+import { resolveHardwareIcon } from '../assets/hardwareIcons';
+import { getModuleSlotPositions, getTrayBayCount, isTapModule } from '../utils/hardwareUtils';
+import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
 
 const RackElevationView: React.FC = () => {
   const nodes = useStore((state) => state.nodes);
@@ -39,9 +44,16 @@ const RackElevationView: React.FC = () => {
 
   const rackId = activeSite === 'Global / Unassigned' ? 'rack_global' : `rack_${activeSite}`;
 
-  // Simple hardcoded rack heights (RU) for known devices based on design spec
-  const getDeviceRU = (model: string): number => {
+  // Rack height (RU) for a device - prefers the catalogue's own `ru` field (this is
+  // what makes a TAP-M100T correctly take 0.5U and a TAP-M200T 1U instead of both
+  // falling into the old blanket "any TAP = 1U" guess) and falls back to the old
+  // model-name heuristics for entries that don't carry one.
+  const getDeviceRU = (model: string, sku?: string): number => {
     if (!model) return 1;
+    const catalogueEntry = [...hardwareCatalogue.taps, ...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series]
+      .find((c: { model: string; sku: string; ru?: number }) => (sku && c.sku === sku) || c.model === model) as
+      { ru?: number } | undefined;
+    if (catalogueEntry?.ru !== undefined) return catalogueEntry.ru;
     if (model.includes('HC3')) return 3;
     if (model.includes('HC1')) return 1;
     if (model.includes('HCT')) return 1;
@@ -51,7 +63,21 @@ const RackElevationView: React.FC = () => {
   };
 
   const rackedNodes = rackableNodes.filter(n => n.data?.rackId === rackId && typeof n.data?.rackU === 'number');
-  const unrackedNodes = rackableNodes.filter(n => n.data?.rackId !== rackId);
+
+  // A tap-module nested in a tray's bay is "resolved" (hidden from Unracked Hardware)
+  // only while its parent tray is itself actually racked here - computed live rather
+  // than stored, so un-racking a tray automatically surfaces its nested modules back
+  // into Unracked Hardware, and re-racking the same tray silently restores them.
+  const isNestedInRackedTray = (n: (typeof rackableNodes)[number]) => {
+    const trayId = n.data?.trayId as string | undefined;
+    if (!trayId) return false;
+    const tray = rackableNodes.find(t => t.id === trayId);
+    return Boolean(tray && tray.data?.rackId === rackId && typeof tray.data?.rackU === 'number');
+  };
+
+  const unrackedNodes = rackableNodes.filter(n =>
+    n.data?.rackId !== rackId && !isNestedInRackedTray(n)
+  );
 
   // Calculate stats
   const totalWeight = rackedNodes.reduce((acc, n) => {
@@ -79,8 +105,22 @@ const RackElevationView: React.FC = () => {
     e.preventDefault();
     const nodeId = e.dataTransfer.getData('nodeId');
     if (nodeId) {
-      updateNodeData(nodeId, { rackId, rackU: uPosition });
+      updateNodeData(nodeId, { rackId, rackU: uPosition, trayId: undefined, traySlot: undefined });
     }
+  };
+
+  const handleBayDrop = (e: React.DragEvent, trayNodeId: string, bay: number) => {
+    e.preventDefault();
+    const nodeId = e.dataTransfer.getData('nodeId');
+    if (!nodeId) return;
+    const dragged = nodes.find(n => n.id === nodeId);
+    const model = String(dragged?.data?.model || '');
+    const sku = dragged?.data?.sku as string | undefined;
+    if (!isTapModule(model, sku)) {
+      alert(`Only tap modules (TAP-M251T, TAP-M253T, etc.) can be fitted into a tray bay - "${model}" isn't one.`);
+      return;
+    }
+    updateNodeData(nodeId, { trayId: trayNodeId, traySlot: bay, rackId: undefined, rackU: undefined });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -136,7 +176,11 @@ const RackElevationView: React.FC = () => {
                   style={{ background: '#333', padding: '12px', borderRadius: '4px', cursor: 'grab', border: '1px solid #444' }}
                 >
                   <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{node.data?.label || node.data?.model}</div>
-                  <div style={{ fontSize: '12px', color: '#aaa' }}>{getDeviceRU(String(node.data?.model || ''))} RU</div>
+                  <div style={{ fontSize: '12px', color: '#aaa' }}>
+                    {isTapModule(String(node.data?.model || ''), node.data?.sku as string | undefined)
+                      ? 'Tap module - drop into a tray bay'
+                      : `${getDeviceRU(String(node.data?.model || ''), node.data?.sku as string | undefined)} RU`}
+                  </div>
                 </div>
               ))
             )}
@@ -163,10 +207,10 @@ const RackElevationView: React.FC = () => {
           <div style={{ width: '400px', background: '#111', border: '10px solid #2d2d2d', borderTop: '20px solid #2d2d2d', borderBottom: '20px solid #2d2d2d', borderRadius: '4px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             {rackUnits.map(u => {
               const occupyingNode = rackedNodes.find(n => n.data?.rackU === u);
-              
+
               const isCovered = rackedNodes.some(n => {
                 const startU = Number(n.data?.rackU);
-                const ru = getDeviceRU(String(n.data?.model || ''));
+                const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
                 return u >= startU && u < startU + ru;
               });
 
@@ -175,33 +219,150 @@ const RackElevationView: React.FC = () => {
               }
 
               if (occupyingNode) {
-                const ru = getDeviceRU(String(occupyingNode.data?.model || ''));
+                const model = String(occupyingNode.data?.model || '');
+                const sku = occupyingNode.data?.sku as string | undefined;
+                const ru = getDeviceRU(model, sku);
+                const rowHeight = ru * 24;
+                const bays = getTrayBayCount(model, sku);
+
+                if (bays > 0) {
+                  const nested = rackableNodes.filter(n => n.data?.trayId === occupyingNode.id);
+                  const resolvedTrayImage = resolveHardwareIcon(occupyingNode.data?.image as string | undefined);
+                  return (
+                    <div
+                      key={u}
+                      style={{
+                        height: `${rowHeight}px`,
+                        display: 'flex',
+                        borderBottom: '1px solid #0056b3',
+                        borderTop: '1px solid #4da6ff',
+                        position: 'relative',
+                        boxSizing: 'border-box',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {resolvedTrayImage && (
+                        <img
+                          src={resolvedTrayImage}
+                          alt={model}
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+                        />
+                      )}
+                      <div style={{ position: 'absolute', left: '-25px', color: '#666', fontSize: '10px' }}>{u}</div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, occupyingNode.id)}
+                        title={`${model} - drag to reposition`}
+                        style={{
+                          width: '14px', flexShrink: 0, cursor: 'grab', position: 'relative', zIndex: 1,
+                          background: resolvedTrayImage ? 'transparent' : '#444',
+                        }}
+                      />
+                      {Array.from({ length: bays }, (_, i) => i + 1).map(bay => {
+                        const bayNode = nested.find(n => n.data?.traySlot === bay);
+                        if (bayNode) {
+                          return (
+                            <div
+                              key={bay}
+                              onClick={() => updateNodeData(bayNode.id, { trayId: undefined, traySlot: undefined })}
+                              title={`Bay ${bay}: ${bayNode.data?.model} - ${bayNode.data?.label} (click to remove)`}
+                              style={{
+                                flex: 1, color: '#fff', cursor: 'pointer', position: 'relative', zIndex: 1,
+                                background: resolvedTrayImage ? 'rgba(0,124,255,0.55)' : '#007cff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '8px', fontWeight: 'bold', overflow: 'hidden', whiteSpace: 'nowrap',
+                                borderRight: '1px solid #0d1117', boxSizing: 'border-box',
+                              }}
+                            >
+                              {rowHeight >= 18 ? bayNode.data?.model : ''}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div
+                            key={bay}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleBayDrop(e, occupyingNode.id, bay)}
+                            title={`Bay ${bay} - drop a tap module here`}
+                            style={{
+                              flex: 1, border: '1px dashed #555', boxSizing: 'border-box', position: 'relative', zIndex: 1,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '7px', color: resolvedTrayImage ? '#fff' : '#666',
+                              textShadow: resolvedTrayImage ? '0 0 3px #000' : undefined,
+                            }}
+                          >
+                            {rowHeight >= 18 ? bay : ''}
+                          </div>
+                        );
+                      })}
+                      <button
+                        onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
+                        style={{
+                          width: '14px', flexShrink: 0, background: 'transparent', border: 'none', color: '#fff',
+                          cursor: 'pointer', fontSize: '9px', padding: 0, position: 'relative', zIndex: 1, textShadow: '0 0 3px #000',
+                        }}
+                        title="Remove tray from rack"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                }
+
+                const resolvedImage = resolveHardwareIcon(occupyingNode.data?.image as string | undefined);
+                const slotPositions = getModuleSlotPositions(model, sku);
+                const hasFrontPanel = Boolean(resolvedImage) && slotPositions.some(p => p.box);
+
                 return (
-                  <div 
+                  <div
                     key={u}
                     draggable
                     onDragStart={(e) => handleDragStart(e, occupyingNode.id)}
-                    style={{ 
-                      height: `${ru * 24}px`, 
-                      background: '#007cff', 
+                    style={{
+                      height: `${rowHeight}px`,
+                      background: resolvedImage ? '#111' : '#007cff',
                       color: '#fff',
                       borderBottom: '1px solid #0056b3',
                       borderTop: '1px solid #4da6ff',
                       display: 'flex',
                       alignItems: 'center',
-                      padding: '0 10px',
                       position: 'relative',
                       cursor: 'grab',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
                     }}
                   >
                     <div style={{ position: 'absolute', left: '-25px', color: '#666', fontSize: '10px' }}>{u}</div>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {occupyingNode.data?.model} - {occupyingNode.data?.label}
-                    </div>
-                    <button 
+                    {resolvedImage ? (
+                      hasFrontPanel ? (
+                        <div style={{ width: '100%', height: '100%' }}>
+                          <ChassisFrontPanel
+                            chassisImage={resolvedImage}
+                            model={model}
+                            slotPositions={slotPositions}
+                            installedBoards={(occupyingNode.data as HardwareNodeData).installedBoards || {}}
+                          />
+                        </div>
+                      ) : (
+                        <img src={resolvedImage} alt={model} style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
+                      )
+                    ) : (
+                      <div style={{ padding: '0 10px', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {model} - {occupyingNode.data?.label}
+                      </div>
+                    )}
+                    {resolvedImage && (
+                      <div style={{
+                        position: 'absolute', left: 0, right: 0, bottom: 0, padding: '1px 6px',
+                        background: 'rgba(0,0,0,0.6)', fontSize: '9px', fontWeight: 'bold',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {model} - {occupyingNode.data?.label}
+                      </div>
+                    )}
+                    <button
                       onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
-                      style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px' }}
+                      style={{ position: 'absolute', top: '1px', right: '4px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px', textShadow: '0 0 3px #000' }}
                       title="Remove from Rack"
                     >
                       ✕
