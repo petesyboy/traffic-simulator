@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.482",
+    date: "2026-08-06",
+    summary: "Chassis nodes with multiple installed boards can now be collapsed to hide the board/port details and shrink the box - click the − / + icon in the node header.",
+  },
+  {
     version: "1.0.481",
     date: "2026-08-06",
     summary: "TAP-M100T and TAP-M200T trays now show their real photos in the Rack View, with drop bays overlaid on top.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.462",
     date: "2026-07-31",
     summary: "Extract enlarged-panel placement math into a pure, tested function",
-  },
-  {
-    version: "1.0.461",
-    date: "2026-07-31",
-    summary: "Fix enlarged AMI event panel drifting off-screen",
   },
 ];
