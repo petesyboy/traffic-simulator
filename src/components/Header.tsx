@@ -10,8 +10,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import pkg from '../../package.json';
-import { toPng } from 'html-to-image';
 import { validateConfiguration } from '../utils/bomEngine';
+import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagram';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
@@ -21,6 +21,7 @@ import {
   BomModal,
   AboutModal,
   SkuUpdateModal,
+  ReportModal,
   PlayIcon,
   PauseIcon,
   CopyIcon,
@@ -30,6 +31,7 @@ import {
   PresentationIcon,
   StopIcon,
   CameraIcon,
+  ReportIcon,
   SaveIcon,
   FolderOpenIcon,
   GearIcon,
@@ -89,6 +91,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showAbout, setShowAbout] = useState(false);
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [showSkuUpdate, setShowSkuUpdate] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -124,23 +127,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const cancelNameEdit = () => setIsEditingName(false);
 
   const handleExportScreenshot = () => {
-    const element = document.querySelector('.react-flow') as HTMLElement;
-    if (!element) return;
-
-    toPng(element, {
-      backgroundColor: '#121212',
-      cacheBust: true,
-      filter: (node) => {
-        if (
-          node.classList?.contains('react-flow__controls') ||
-          node.classList?.contains('react-flow__panel') ||
-          node.classList?.contains('config-panel-toggle')
-        ) {
-          return false;
-        }
-        return true;
-      },
-    })
+    captureTopologyDiagramPng()
       .then((dataUrl) => {
         const a = document.createElement('a');
         const filename = currentScenarioName
@@ -169,6 +156,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showSkuUpdate && <SkuUpdateModal onClose={() => setShowSkuUpdate(false)} onChanged={bumpSkuCatalogueVersion} />}
+      {showReport && <ReportModal onClose={() => setShowReport(false)} />}
       {showDuplicatePrompt && (
         <DuplicateModal
           defaultName="Site B"
@@ -355,6 +343,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
               <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
                 <CameraIcon /> Screenshot
+              </button>
+
+              <button
+                className="header-btn"
+                onClick={() => setShowReport(true)}
+                title="Generate a customer-facing PDF solution report"
+              >
+                <ReportIcon /> Generate Report
               </button>
 
               <div className="control-divider">

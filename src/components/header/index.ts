@@ -10,6 +10,7 @@ export { default as ProjectSettingsModal } from './ProjectSettingsModal';
 export { default as BomModal } from './BomModal';
 export { default as AboutModal } from './AboutModal';
 export { default as SkuUpdateModal } from './SkuUpdateModal';
+export { default as ReportModal } from './ReportModal';
 
 export {
   PlayIcon,
@@ -29,6 +30,7 @@ export {
   UndoIcon,
   RedoIcon,
   PriceListIcon,
+  ReportIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';
@@ -37,3 +39,4 @@ export type { ProjectSettingsModalProps } from './ProjectSettingsModal';
 export type { BomModalProps } from './BomModal';
 export type { AboutModalProps } from './AboutModal';
 export type { SkuUpdateModalProps } from './SkuUpdateModal';
+export type { ReportModalProps } from './ReportModal';

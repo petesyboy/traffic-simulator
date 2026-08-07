@@ -219,6 +219,19 @@ export const TrashIcon: React.FC<IconProps> = ({ size = 14 }) => (
   </svg>
 );
 
+export const ReportIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M6.5 3.5h7l4 4V19.5A1.5 1.5 0 0116 21H6.5A1.5 1.5 0 015 19.5v-14A1.5 1.5 0 016.5 3.5z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M13.5 3.5V7h4" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M8 11.5h8M8 14.5h8M8 17.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
 export const PriceListIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
     <path
