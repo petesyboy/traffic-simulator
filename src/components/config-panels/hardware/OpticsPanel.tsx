@@ -25,6 +25,7 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const installedBoards = hwData.installedBoards || {};
 
   const [selectedOpticBoard, setSelectedOpticBoard] = useState('');
+  const [selectedPortId, setSelectedPortId] = useState('');
   const [selectedOptic, setSelectedOptic] = useState('');
   const [qtyStr, setQtyStr] = useState('1');
   const [errorMsg, setErrorMsg] = useState('');
@@ -61,9 +62,19 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const lcRestriction = targetBoard
     ? allowedBreakoutLcOptics(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges)
     : null;
+
+  // Ports on the target board with nothing in them yet, offered for the
+  // optional "pick an exact port" flow instead of the default auto-assign.
+  const currentOccupancy = getPortOpticMap(chassisPortsForFeedCheck, installedOptics);
+  const freePortsForBoard = targetBoard
+    ? chassisPortsForFeedCheck.filter(p => p.board === targetBoard && p.cage !== 'RJ45' && !currentOccupancy.has(p.id))
+    : [];
+  const selectedPort = selectedPortId ? chassisPortsForFeedCheck.find(p => p.id === selectedPortId) : undefined;
+
   const dropdownOptics = activeOpticBoardObj
     ? activeOpticBoardObj.supportedOptics.filter(opt => {
         const cage = getOpticCage(opt);
+        if (selectedPort && cage !== selectedPort.cage) return false;
         if (feedsBreakoutPanel && cage === 'QSFP') return isParallelBreakoutOptic(opt);
         if (lcRestriction && cage === lcRestriction.cage) return lcRestriction.optics.includes(opt);
         return true;
@@ -155,6 +166,19 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
     let qty = parseInt(qtyStr);
     if (isNaN(qty) || qty < 1) qty = 1;
+    // Pinning targets exactly one port, regardless of whatever qty was left
+    // over in the field from a previous auto-assign add.
+    if (selectedPortId) qty = 1;
+
+    if (selectedPortId) {
+      // Defensive re-check - installedOptics could have changed since the
+      // port list was last derived for render (e.g. a rapid double-click).
+      const stillFree = !getPortOpticMap(chassisPortsForFeedCheck, installedOptics).has(selectedPortId);
+      if (!stillFree) {
+        setErrorMsg(`Port ${selectedPortId} is no longer free - pick another port.`);
+        return;
+      }
+    }
 
     const capacity = getCageCapacityBreakdown(model, hwData);
     const newSpeed = getOpticSpeed(selectedOptic);
@@ -183,12 +207,22 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       }
     }
 
-    const existingOpticIdx = installedOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic);
-    const newOptics = [...installedOptics];
-    if (existingOpticIdx >= 0) {
-      newOptics[existingOpticIdx] = { ...newOptics[existingOpticIdx], qty: newOptics[existingOpticIdx].qty + qty };
+    let newOptics: InstalledOptic[];
+    if (selectedPortId) {
+      // A pinned entry is always its own row - never folded into an
+      // aggregate (board, optic) bucket, since that would lose its
+      // single-port meaning (and corrupt qty for the merged entry).
+      newOptics = [...installedOptics, { board: targetBoard, optic: selectedOptic, qty: 1, pinnedPortId: selectedPortId }];
     } else {
-      newOptics.push({ board: targetBoard, optic: selectedOptic, qty });
+      const existingOpticIdx = installedOptics.findIndex(
+        opt => !opt.pinnedPortId && (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic,
+      );
+      newOptics = [...installedOptics];
+      if (existingOpticIdx >= 0) {
+        newOptics[existingOpticIdx] = { ...newOptics[existingOpticIdx], qty: newOptics[existingOpticIdx].qty + qty };
+      } else {
+        newOptics.push({ board: targetBoard, optic: selectedOptic, qty });
+      }
     }
 
     // Diff the port-optic assignment before/after so the newly-fitted cages can
@@ -202,6 +236,7 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     updateNodeData(selectedNode.id, { optics: newOptics });
     setSelectedOptic('');
     setQtyStr('1');
+    setSelectedPortId('');
 
     if (newlyFilledPortIds.length > 0) {
       const nodeId = selectedNode.id;
@@ -337,12 +372,25 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
           <h3 className="text-base font-semibold mb-2">➕ Install Optics</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {availableOpticBoards.length > 1 ? (
-              <select value={selectedOpticBoard} onChange={e => { setSelectedOpticBoard(e.target.value); setSelectedOptic(''); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
+              <select value={selectedOpticBoard} onChange={e => { setSelectedOpticBoard(e.target.value); setSelectedOptic(''); setSelectedPortId(''); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}>
                 <option value="">-- Select Target Cage --</option>
                 {availableOpticBoards.map(b => <option key={b.board} value={b.board}>{b.board}</option>)}
               </select>
             ) : (
               <div style={{ fontSize: '11px', color: '#aaa', padding: '4px 0' }}>Target Cage: <strong style={{ color: '#fff' }}>{availableOpticBoards[0]?.board || 'Base Ports'}</strong></div>
+            )}
+            {!!targetBoard && (
+              <select
+                value={selectedPortId}
+                onChange={e => { setSelectedPortId(e.target.value); setSelectedOptic(''); setErrorMsg(''); }}
+                style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                title="Optional - pick an exact port instead of letting it auto-assign to the next free one"
+              >
+                <option value="">-- Auto-assign port --</option>
+                {freePortsForBoard.map(p => (
+                  <option key={p.id} value={p.id}>{p.id} ({p.cage}{p.licensed ? '' : ', unlicensed'})</option>
+                ))}
+              </select>
             )}
             <select value={selectedOptic} onChange={e => { setSelectedOptic(e.target.value); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }} disabled={availableOpticBoards.length === 0 || (availableOpticBoards.length > 1 && !selectedOpticBoard)}>
               <option value="">-- Select Optic --</option>
@@ -366,7 +414,15 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             )}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <label style={{ fontSize: '11px', color: '#ccc' }}>Qty:</label>
-              <input type="number" min={1} value={qtyStr} onChange={e => setQtyStr(e.target.value)} style={{ width: '40px', fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }} />
+              <input
+                type="number"
+                min={1}
+                value={selectedPortId ? '1' : qtyStr}
+                onChange={e => setQtyStr(e.target.value)}
+                disabled={!!selectedPortId}
+                title={selectedPortId ? 'A pinned port always takes exactly one optic' : undefined}
+                style={{ width: '40px', fontSize: '11px', padding: '4px', background: selectedPortId ? '#1a1a1a' : '#222', color: selectedPortId ? '#777' : '#fff', border: '1px solid #444', borderRadius: '3px' }}
+              />
               <button onClick={handleAddOptic} style={{ flex: 1, padding: '4px 8px', background: 'rgba(255, 152, 0, 0.2)', border: '1px solid rgba(255, 152, 0, 0.4)', borderRadius: '3px', color: '#ffb74d', fontSize: '11px', cursor: 'pointer' }}>Add Optic</button>
             </div>
             {errorMsg && <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '11px', whiteSpace: 'pre-wrap' }}>⚠️ {errorMsg}</div>}
@@ -380,7 +436,10 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', border: '1px solid #333' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ color: '#fff' }}>{opt.qty}x {formatOpticLabel(opt.optic)}</span>
-                      <span style={{ color: '#888' }}>{opt.board}</span>
+                      <span style={{ color: '#888' }}>
+                        {opt.board}
+                        {opt.pinnedPortId && <span style={{ color: '#00e5ff' }}> · 📌 {opt.pinnedPortId}</span>}
+                      </span>
                     </div>
                     <button onClick={() => handleRemoveOptic(i)} style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }} title="Remove Optic">×</button>
                   </div>

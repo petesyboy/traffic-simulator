@@ -261,15 +261,29 @@ export function getTapPortIds(node: CustomNode): string[] {
 /**
  * Which optic sits in which port. Optics are stored per board as quantities, so
  * they're laid into that board's matching cages in order - deterministic, and
- * stable as long as the optics list is.
+ * stable as long as the optics list is - except entries with a `pinnedPortId`
+ * (see OpticsPanel.tsx's port picker), which claim their exact port first and
+ * are excluded from the sequential fill entirely.
  */
 export function getPortOpticMap(ports: ChassisPort[], optics: InstalledOptic[] | undefined): Map<string, string> {
   const map = new Map<string, string>();
   if (!optics?.length) return map;
 
   const filled = new Set<string>();
+
   for (const entry of optics) {
-    if (!entry.optic) continue;
+    if (!entry.optic || !entry.pinnedPortId) continue;
+    const port = ports.find(p => p.id === entry.pinnedPortId);
+    // A pin only applies while the port it names still exists, matches the
+    // optic's cage family, and isn't already claimed by an earlier pin -
+    // defensive against stale pins left over from a board/module swap.
+    if (!port || filled.has(port.id) || port.cage !== getOpticCage(entry.optic)) continue;
+    map.set(port.id, entry.optic);
+    filled.add(port.id);
+  }
+
+  for (const entry of optics) {
+    if (!entry.optic || entry.pinnedPortId) continue;
     const cage = getOpticCage(entry.optic);
     let remaining = entry.qty;
     for (const port of ports) {

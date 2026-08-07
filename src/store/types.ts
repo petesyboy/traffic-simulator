@@ -54,6 +54,11 @@ export interface InstalledOptic {
   optic: string;
   qty: number;
   isAutoAdded?: boolean;
+  /** When set, this optic occupies exactly this port id rather than being
+   *  placed by getPortOpticMap's deterministic sequential fill. Always
+   *  qty: 1 - pinning is a single-instance concept, unlike the aggregate
+   *  (board, optic, qty) entries used for auto-assigned optics. */
+  pinnedPortId?: string;
 }
 
 export interface TappedLinkAllocation {

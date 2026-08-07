@@ -185,6 +185,56 @@ describe('getPortOpticMap', () => {
     expect(getPortOpticMap(ports, []).size).toBe(0);
     expect(getPortOpticMap(ports, undefined).size).toBe(0);
   });
+
+  describe('pinned entries', () => {
+    const ports = getChassisPorts('GigaVUE-TA25E', hw({}));
+
+    it('claims exactly the pinned port, not the first free one of that cage', () => {
+      const map = getPortOpticMap(ports, [
+        { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x5' },
+      ]);
+      expect(map.get('1/1/x5')).toContain('SFP-532T');
+      expect(map.get('1/1/x1')).toBeUndefined();
+      expect(map.size).toBe(1);
+    });
+
+    it('unpinned entries fill around a pinned one, skipping the port it already claimed', () => {
+      const map = getPortOpticMap(ports, [
+        { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x2' },
+        { board: 'Base Ports', optic: 'SFP-533T (10G SFP+ LR)', qty: 3 },
+      ]);
+      expect(map.get('1/1/x2')).toContain('SFP-532T'); // the pin
+      // The auto-fill walks in port order and steps over the already-claimed x2.
+      expect(map.get('1/1/x1')).toContain('SFP-533T');
+      expect(map.get('1/1/x3')).toContain('SFP-533T');
+      expect(map.get('1/1/x4')).toContain('SFP-533T');
+      expect(map.size).toBe(4);
+    });
+
+    it('ignores a pin naming a port that no longer exists', () => {
+      const map = getPortOpticMap(ports, [
+        { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x999' },
+      ]);
+      expect(map.size).toBe(0);
+    });
+
+    it("ignores a pin whose port doesn't match the optic's cage family", () => {
+      // 1/1/x1 is an SFP cage - a QSFP optic can't physically go there.
+      const map = getPortOpticMap(ports, [
+        { board: 'Base Ports', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 1, pinnedPortId: '1/1/x1' },
+      ]);
+      expect(map.size).toBe(0);
+    });
+
+    it('the first of two pins targeting the same port wins; the second is dropped', () => {
+      const map = getPortOpticMap(ports, [
+        { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x1' },
+        { board: 'Base Ports', optic: 'SFP-533T (10G SFP+ LR)', qty: 1, pinnedPortId: '1/1/x1' },
+      ]);
+      expect(map.get('1/1/x1')).toContain('SFP-532T');
+      expect(map.size).toBe(1);
+    });
+  });
 });
 
 describe('getTappedLinkCount / getRequiredPortCount', () => {

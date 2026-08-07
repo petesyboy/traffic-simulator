@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.495",
+    date: "2026-08-07",
+    summary: "The Optics tab now lets you pick an exact port to install into, instead of only auto-assigning to the next free one - an optional \"Target Port\" dropdown appears once a board is chosen, and picking one there pins that specific optic to that specific port.",
+  },
+  {
     version: "1.0.494",
     date: "2026-08-07",
     summary: "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.476",
     date: "2026-08-05",
     summary: "The build info dialogue now shows a larger version number and just the last two changes.",
-  },
-  {
-    version: "1.0.475",
-    date: "2026-08-05",
-    summary: "Audited every module SKU lookup for case-sensitivity bugs like the PRT-HC1-X12 fix - found and fixed the same issue on SMT-HC3-C08, and made all catalogue lookups case-insensitive so it can't recur.",
   },
 ];

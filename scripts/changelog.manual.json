@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.495",
+    "date": "2026-08-07",
+    "summary": "The Optics tab now lets you pick an exact port to install into, instead of only auto-assigning to the next free one - an optional \"Target Port\" dropdown appears once a board is chosen, and picking one there pins that specific optic to that specific port."
+  },
+  {
     "version": "1.0.494",
     "date": "2026-08-07",
     "summary": "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited."
