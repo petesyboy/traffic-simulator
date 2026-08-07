@@ -28,7 +28,7 @@ const STATE_STYLE: Record<PortState, React.CSSProperties> = {
 
 const STATE_LABEL: Record<PortState, string> = {
   linked: 'linked',
-  fitted: 'optic fitted, not connected',
+  fitted: 'fitted but unused',
   free: 'empty cage',
   unlicensed: 'not licensed',
 };
@@ -100,7 +100,12 @@ export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occup
                           const isFlashing = flashPortIds?.has(port.id);
                           const detail = [
                             occupant?.optic,
-                            occupant?.peerLabel ? `→ ${occupant.peerLabel}` : undefined,
+                            occupant?.peerLabel
+                              ? `→ ${occupant.peerLabel}`
+                              // An optic is present but the port has no peer - name that
+                              // explicitly rather than just showing the optic on its own,
+                              // which read as "connected" at a glance.
+                              : (state === 'fitted' ? `(${STATE_LABEL.fitted})` : undefined),
                           ].filter(Boolean).join(' ');
                           return (
                             <div

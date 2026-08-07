@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.488",
+    date: "2026-08-07",
+    summary: "Port tooltips now say 'fitted but unused' for an optic that's installed but not linked, instead of just naming the optic as if it were connected.",
+  },
+  {
     version: "1.0.487",
     date: "2026-08-07",
     summary: "Fixed the grab-hand cursor bleeding onto individual ports on a chassis front panel, making it fiddly to hover precisely over one - it's a plain arrow there now.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.469",
     date: "2026-08-05",
     summary: "Clicking the version number now opens build information and recent release notes instead of a GitHub link.",
-  },
-  {
-    version: "1.0.468",
-    date: "2026-08-05",
-    summary: "Moved the module slot selectors from the Optics tab into the General tab, alongside the hardware specifications.",
   },
 ];

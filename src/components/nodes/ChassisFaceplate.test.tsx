@@ -73,8 +73,9 @@ describe('ChassisFaceplate', () => {
     expect(countByColour(html, AMBER)).toBe(3);
     expect(countByColour(html, CYAN)).toBe(0);
     expect(html).toContain('3 fitted');
-    // A fitted port names its optic; with no peer there's no "→" destination.
-    expect(html).toContain('1/1/x1 — SFP-532T (10G SFP+ SR)"');
+    // A fitted port names its optic and, with no peer to show, says so explicitly
+    // rather than reading like it's connected just because an optic is present.
+    expect(html).toContain('1/1/x1 — SFP-532T (10G SFP+ SR) (fitted but unused)"');
     expect(html).toContain('1/1/x4 — empty cage');
   });
 
