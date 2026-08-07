@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.486",
+    date: "2026-08-07",
+    summary: "Fixed the enlarged AMI event panel still drifting off-screen on shorter windows - its height and position could disagree with each other when stacked above the compact log.",
+  },
+  {
     version: "1.0.485",
     date: "2026-08-07",
     summary: "TAP-M100T/M200T/M202ULT trays are no longer manually placed on the canvas - they're generated automatically to match your tap modules and only appear in Rack View.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.467",
     date: "2026-08-05",
     summary: "Hardware summary now draws a front-panel view with each installed module pictured in its real slot position.",
-  },
-  {
-    version: "1.0.466",
-    date: "2026-08-05",
-    summary: "Module slots now use the real chassis slot numbering — HC1/HC1-Plus bays are slots 2 (left) and 3 (right); HC3 slots 1-4 are labelled by quadrant.",
   },
 ];
