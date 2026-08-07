@@ -70,7 +70,8 @@ const MapNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
 
         {isRunning && (
-          <div className="node-metrics" style={{ marginTop: '4px', justifyContent: 'flex-end' }}>
+          <div className="node-metrics" style={{ marginTop: '4px' }}>
+            <span>In: {formatBandwidth(metrics?.rxMbps)}</span>
             <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}

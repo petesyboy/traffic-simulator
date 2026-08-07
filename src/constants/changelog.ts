@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.483",
+    date: "2026-08-07",
+    summary: "Traffic Map nodes now show incoming bandwidth (In:) alongside the passed-through output (Out:) while the simulation is running.",
+  },
+  {
     version: "1.0.482",
     date: "2026-08-06",
     summary: "Chassis nodes with multiple installed boards can now be collapsed to hide the board/port details and shrink the box - click the − / + icon in the node header.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.464",
     date: "2026-08-05",
     summary: "Added product photography for the HC1 and HC3 port, bypass, GigaSMART and TAP modules, plus refreshed chassis images.",
-  },
-  {
-    version: "1.0.462",
-    date: "2026-07-31",
-    summary: "Extract enlarged-panel placement math into a pure, tested function",
   },
 ];
