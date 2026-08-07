@@ -16,7 +16,7 @@ import type { ChassisPort, CustomNode, HardwareNodeData, InstalledOptic, PortInf
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { findModuleBySku, getOpticSpeed, getTaLicenseLimits, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
-import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP } from './breakoutRules';
+import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP, isMpoPortId, getBreakoutLcOptics } from './breakoutRules';
 
 /** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper, m = MPO family. */
 const CAGE_PREFIX: Record<ChassisPort['cage'], string> = { SFP: 'x', QSFP: 'c', RJ45: 'g', MPO: 'm' };
@@ -351,4 +351,73 @@ export function allocatePorts(
     ...candidates.filter(p => !p.licensed),
   ];
   return licensedFirst.slice(0, count);
+}
+
+/** The optic installed in whichever of `node`'s ports is wired to `targetPortId`, if any. */
+function opticAtPort(node: CustomNode, targetPortId: string): string | undefined {
+  const hwData = node.data as HardwareNodeData;
+  const nodePorts = getChassisPorts(String(node.data?.model || ''), hwData);
+  return getPortOpticMap(nodePorts, hwData.optics).get(targetPortId);
+}
+
+/**
+ * A breakout panel group's tier is set by whatever parallel optic sits on the
+ * chassis at the OTHER end of its MPO connector - find that optic by walking
+ * every edge connected to the panel for the one landing on `groupMpoId`.
+ */
+function findGroupParentOptic(panel: CustomNode, groupMpoId: string, nodes: CustomNode[], edges: Edge[]): string | undefined {
+  for (const edge of edges) {
+    if (edge.source !== panel.id && edge.target !== panel.id) continue;
+    const isSource = edge.source === panel.id;
+    const peer = nodes.find(n => n.id === (isSource ? edge.target : edge.source));
+    if (!peer || peer.type !== 'hardwareNode') continue;
+    const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
+    for (const link of links) {
+      const panelPortId = isSource ? link.sourcePortId : link.targetPortId;
+      const peerPortId = isSource ? link.targetPortId : link.sourcePortId;
+      if (panelPortId === groupMpoId && peerPortId) {
+        const optic = opticAtPort(peer, peerPortId);
+        if (optic) return optic;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * When `targetBoard` has a cage wired to one of a breakout panel's LC legs,
+ * returns the LC-side optics valid for that leg's group - derived from
+ * whatever parallel optic sits on the chassis at the OTHER end of the same
+ * panel's MPO connector, via getBreakoutLcOptics(). Returns null when this
+ * board isn't feeding a panel's LC leg at all (no restriction to apply), or
+ * an array (possibly empty, if the MPO side has no usable optic yet) once it is.
+ */
+export function allowedBreakoutLcOptics(
+  targetBoard: string,
+  chassisPorts: ChassisPort[],
+  nodeId: string,
+  nodes: CustomNode[],
+  edges: Edge[],
+): string[] | null {
+  const boardPortIds = new Set(chassisPorts.filter(p => p.board === targetBoard).map(p => p.id));
+  if (boardPortIds.size === 0) return null;
+
+  for (const edge of edges) {
+    if (edge.source !== nodeId && edge.target !== nodeId) continue;
+    const isSource = edge.source === nodeId;
+    const panel = nodes.find(n => n.id === (isSource ? edge.target : edge.source));
+    if (!panel || panel.type !== 'hardwareNode' || !isBreakoutPanelModel(String(panel.data?.model || ''))) continue;
+
+    const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
+    for (const link of links) {
+      const myPortId = isSource ? link.sourcePortId : link.targetPortId;
+      const panelPortId = isSource ? link.targetPortId : link.sourcePortId;
+      if (!myPortId || !boardPortIds.has(myPortId) || !panelPortId || isMpoPortId(panelPortId)) continue;
+
+      const groupMpoId = panelPortId.replace(/\/\d+$/, '');
+      const parentOptic = findGroupParentOptic(panel, groupMpoId, nodes, edges);
+      return parentOptic ? getBreakoutLcOptics(parentOptic) : [];
+    }
+  }
+  return null;
 }

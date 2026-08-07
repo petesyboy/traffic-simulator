@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import type { Edge } from '@xyflow/react';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import {
   allocatePorts,
+  allowedBreakoutLcOptics,
   getChassisPorts,
   getOpticCage,
   getPortOpticMap,
@@ -295,5 +297,78 @@ describe('allocatePorts', () => {
     // by the config validator rather than silently invented here.
     expect(allocatePorts(ta25e, new Set(), 10, 'QSFP')).toHaveLength(8);
     expect(allocatePorts(ta25e, new Set(), 0, 'SFP')).toHaveLength(0);
+  });
+});
+
+describe('allowedBreakoutLcOptics', () => {
+  const chassisNode = (id: string) => node(id, { label: id, model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: [] });
+  const panelNode = (id: string) => node(id, { label: id, model: 'PNL-M341T', sku: 'PNL-M341T' });
+  const ports = getChassisPorts('GigaVUE-TA25E', hw({}));
+
+  it('is null when this board is not wired to a panel LC leg at all', () => {
+    const nodes = [chassisNode('c1')];
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, [])).toBeNull();
+  });
+
+  it('is null when this board is wired to the panel MPO trunk, not an LC leg', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] },
+    }] as unknown as Edge[];
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, edges)).toBeNull();
+  });
+
+  it('returns an empty array when wired to an LC leg whose MPO side has no optic yet', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1/1' }] },
+    }] as unknown as Edge[];
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, edges)).toEqual([]);
+  });
+
+  it('derives the correct LC optics from the parent optic on the far chassis (100G MM -> 25G SR)', () => {
+    const parent = chassisNode('parent');
+    parent.data = { ...parent.data, optics: [{ board: 'Base Ports', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 1 }] };
+    const leg = chassisNode('leg');
+    const nodes = [parent, panelNode('p1'), leg];
+    const edges = [
+      {
+        id: 'e-mpo', source: 'parent', target: 'p1',
+        data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] },
+      },
+      {
+        id: 'e-lc', source: 'leg', target: 'p1',
+        data: { portLinks: [{ sourcePortId: '1/1/x1', targetPortId: '1/1/m1/1' }] },
+      },
+    ] as unknown as Edge[];
+
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual([
+      'SFP-552 (25G SFP28 SR)',
+      'SFP-552T (25G SFP28 SR)',
+    ]);
+  });
+
+  it('works when this node is the edge source or target, on either the MPO or LC edge', () => {
+    const parent = chassisNode('parent');
+    parent.data = { ...parent.data, optics: [{ board: 'Base Ports', optic: 'QSF-506T (40G QSFP+ PSM4)', qty: 1 }] };
+    const leg = chassisNode('leg');
+    const nodes = [parent, panelNode('p1'), leg];
+    const edges = [
+      {
+        id: 'e-mpo', source: 'p1', target: 'parent', // panel is source this time
+        data: { portLinks: [{ sourcePortId: '1/1/m1', targetPortId: '1/1/c1' }] },
+      },
+      {
+        id: 'e-lc', source: 'p1', target: 'leg', // panel is source this time
+        data: { portLinks: [{ sourcePortId: '1/1/m1/1', targetPortId: '1/1/x1' }] },
+      },
+    ] as unknown as Edge[];
+
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual([
+      'SFP-533 (10G SFP+ LR)',
+      'SFP-533T (10G SFP+ LR)',
+    ]);
   });
 });

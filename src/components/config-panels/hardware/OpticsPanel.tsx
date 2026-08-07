@@ -4,7 +4,7 @@ import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
 import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap, isBreakoutPanelModel } from '../../../utils/hardwareUtils';
-import { getChassisPorts, getPortOpticMap } from '../../../utils/ports';
+import { getChassisPorts, getPortOpticMap, allowedBreakoutLcOptics } from '../../../utils/ports';
 import { isParallelBreakoutOptic, boardFeedsBreakoutPanel } from '../../../utils/breakoutRules';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
@@ -55,8 +55,17 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const chassisPortsForFeedCheck = getChassisPorts(model, hwData);
   const feedsBreakoutPanel = !!targetBoard &&
     boardFeedsBreakoutPanel(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges);
+  // null = this board isn't feeding a panel's LC leg at all; an array (maybe
+  // empty, if the panel's MPO side has no usable optic yet) once it is.
+  const allowedLcOptics = (!feedsBreakoutPanel && targetBoard)
+    ? allowedBreakoutLcOptics(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges)
+    : null;
   const dropdownOptics = activeOpticBoardObj
-    ? (feedsBreakoutPanel ? activeOpticBoardObj.supportedOptics.filter(isParallelBreakoutOptic) : activeOpticBoardObj.supportedOptics)
+    ? feedsBreakoutPanel
+      ? activeOpticBoardObj.supportedOptics.filter(isParallelBreakoutOptic)
+      : allowedLcOptics
+        ? activeOpticBoardObj.supportedOptics.filter(o => allowedLcOptics.includes(o))
+        : activeOpticBoardObj.supportedOptics
     : [];
 
   // ─── Optics status calculations ───────────────────────────────────
@@ -132,6 +141,12 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
     if (feedsBreakoutPanel && !isParallelBreakoutOptic(selectedOptic)) {
       setErrorMsg(`"${selectedOptic.split(' ')[0]}" can't be used here - this cage feeds a breakout panel, which needs a parallel-fibre optic (SR4 for multimode, PLR4/PSM4/DR4/DR4+ for singlemode). LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.`);
+      return;
+    }
+    if (allowedLcOptics && !allowedLcOptics.includes(selectedOptic)) {
+      setErrorMsg(allowedLcOptics.length > 0
+        ? `"${selectedOptic.split(' ')[0]}" can't be used here - this cage is one of a breakout panel's LC legs, which needs: ${allowedLcOptics.map(o => o.split(' ')[0]).join(', ')}.`
+        : `This cage is one of a breakout panel's LC legs, but its MPO side has no valid optic installed yet - fit the parent optic on that chassis first.`);
       return;
     }
 
@@ -337,6 +352,13 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             {feedsBreakoutPanel && (
               <div style={{ fontSize: '10px', color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)', borderRadius: '4px', padding: '6px 8px', lineHeight: 1.4 }}>
                 ⚡ This cage feeds a breakout panel - only parallel-fibre optics (SR4 multimode, PLR4/PSM4/DR4/DR4+ singlemode) are shown. LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.
+              </div>
+            )}
+            {allowedLcOptics && (
+              <div style={{ fontSize: '10px', color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)', borderRadius: '4px', padding: '6px 8px', lineHeight: 1.4 }}>
+                {allowedLcOptics.length > 0
+                  ? `⚡ This cage is one of a breakout panel's LC legs - only optics matching that group's speed/fibre type are shown.`
+                  : `⚠️ This cage is one of a breakout panel's LC legs, but its MPO side has no valid optic installed yet - fit the parent optic on that chassis first.`}
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

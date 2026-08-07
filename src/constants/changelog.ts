@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.493",
+    date: "2026-08-07",
+    summary: "The optic picker's LC-side guard now works too - once a cage is wired to one of a breakout panel's 4 lower-speed legs, only the optics matching that group's actual speed/fibre tier (derived from whatever's fitted on the panel's high-speed side) are offered.",
+  },
+  {
     version: "1.0.492",
     date: "2026-08-07",
     summary: "The optic picker now marks every parallel-fibre optic as \"breakout-capable\", and once a cage is wired to an MPO breakout panel it only offers the optics that panel can actually use (SR4/PLR4/PSM4/DR4/DR4+) - LR4/CWDM4/SWDM4/FR4 optics are no longer selectable there.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.474",
     date: "2026-08-05",
     summary: "Fixed the PRT-HC1-X12 port module not adding its 12 ports when installed - a mismatched SKU casing kept it from being recognised.",
-  },
-  {
-    version: "1.0.473",
-    date: "2026-08-05",
-    summary: "Fixed HC1/HC1-Plus/HC3 canvas nodes rendering far larger than other appliances - the front-panel graphic is now capped to a consistent size.",
   },
 ];
