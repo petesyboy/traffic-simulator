@@ -11,7 +11,9 @@
  * src/utils/bom/configValidator.ts (validateBreakoutPanels) for how these
  * rules get enforced against an actual topology.
  */
-import { getOpticSpeed, getOpticFiberType } from './hardwareUtils';
+import type { Edge } from '@xyflow/react';
+import type { ChassisPort, CustomNode } from '../store/types';
+import { getOpticSpeed, getOpticFiberType, isBreakoutPanelModel } from './hardwareUtils';
 
 /** A panel has exactly 3 independent MPO sections, matching the physical unit. */
 export const PANEL_MPO_GROUPS = 3;
@@ -75,6 +77,41 @@ export function getBreakoutLcOptics(parentOpticStr: string): string[] {
       : ['Q28-511T (100G QSFP28 DR1)', 'Q28-514 (100G QSFP28 FR1)'];
   }
   return [];
+}
+
+/** A port id ending in '/m<n>' (e.g. '1/1/m1') is a breakout panel's MPO
+ *  connector, as opposed to one of its '/m<n>/<lane>' LC legs. */
+export const isMpoPortId = (portId: string) => /\/m\d+$/.test(portId);
+
+/**
+ * True when the given board already has a cage wired (via an edge) to a
+ * breakout panel's MPO connector - meaning whatever optic goes in that cage
+ * must be a parallel-fibre part (SR4/PLR4/PSM4/DR4/DR4+), since that's what
+ * physically feeds the panel's MPO trunk. Used by OpticsPanel.tsx to filter
+ * the "Add Optic" dropdown down to valid choices once a cage is committed
+ * to feeding a panel.
+ */
+export function boardFeedsBreakoutPanel(
+  targetBoard: string,
+  chassisPorts: ChassisPort[],
+  nodeId: string,
+  nodes: CustomNode[],
+  edges: Edge[],
+): boolean {
+  const boardPortIds = new Set(chassisPorts.filter(p => p.board === targetBoard).map(p => p.id));
+  if (boardPortIds.size === 0) return false;
+  return edges.some(edge => {
+    if (edge.source !== nodeId && edge.target !== nodeId) return false;
+    const isSource = edge.source === nodeId;
+    const peer = nodes.find(n => n.id === (isSource ? edge.target : edge.source));
+    if (!peer || peer.type !== 'hardwareNode' || !isBreakoutPanelModel(String(peer.data?.model || ''))) return false;
+    const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
+    return links.some(link => {
+      const myPortId = isSource ? link.sourcePortId : link.targetPortId;
+      const peerPortId = isSource ? link.targetPortId : link.sourcePortId;
+      return !!myPortId && boardPortIds.has(myPortId) && !!peerPortId && isMpoPortId(peerPortId);
+    });
+  });
 }
 
 /**

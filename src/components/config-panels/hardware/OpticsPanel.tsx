@@ -5,6 +5,7 @@ import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../st
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
 import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap, isBreakoutPanelModel } from '../../../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap } from '../../../utils/ports';
+import { isParallelBreakoutOptic, boardFeedsBreakoutPanel } from '../../../utils/breakoutRules';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
 /** How long a newly-fitted port stays highlighted on the canvas node's port map. */
@@ -49,6 +50,14 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const activeOpticBoardObj = availableOpticBoards.length === 1
     ? availableOpticBoards[0]
     : availableOpticBoards.find(b => b.board === selectedOpticBoard);
+
+  const targetBoard = availableOpticBoards.length === 1 ? availableOpticBoards[0].board : selectedOpticBoard;
+  const chassisPortsForFeedCheck = getChassisPorts(model, hwData);
+  const feedsBreakoutPanel = !!targetBoard &&
+    boardFeedsBreakoutPanel(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges);
+  const dropdownOptics = activeOpticBoardObj
+    ? (feedsBreakoutPanel ? activeOpticBoardObj.supportedOptics.filter(isParallelBreakoutOptic) : activeOpticBoardObj.supportedOptics)
+    : [];
 
   // ─── Optics status calculations ───────────────────────────────────
   const incomingTapEdges = edges.filter(e => e.target === selectedNode.id);
@@ -118,6 +127,11 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     const validation = validateOptic(model, targetBoard, selectedOptic, hwData.portCapacity as string);
     if (!validation.valid) {
       setErrorMsg(validation.message || 'Invalid optic combination.');
+      return;
+    }
+
+    if (feedsBreakoutPanel && !isParallelBreakoutOptic(selectedOptic)) {
+      setErrorMsg(`"${selectedOptic.split(' ')[0]}" can't be used here - this cage feeds a breakout panel, which needs a parallel-fibre optic (SR4 for multimode, PLR4/PSM4/DR4/DR4+ for singlemode). LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.`);
       return;
     }
 
@@ -314,8 +328,17 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             )}
             <select value={selectedOptic} onChange={e => { setSelectedOptic(e.target.value); setErrorMsg(''); }} style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }} disabled={availableOpticBoards.length === 0 || (availableOpticBoards.length > 1 && !selectedOpticBoard)}>
               <option value="">-- Select Optic --</option>
-              {activeOpticBoardObj?.supportedOptics.map(opt => <option key={opt} value={opt}>{formatOpticLabel(opt)}</option>)}
+              {dropdownOptics.map(opt => (
+                <option key={opt} value={opt}>
+                  {formatOpticLabel(opt)}{isParallelBreakoutOptic(opt) ? ' ⚡ breakout-capable' : ''}
+                </option>
+              ))}
             </select>
+            {feedsBreakoutPanel && (
+              <div style={{ fontSize: '10px', color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)', borderRadius: '4px', padding: '6px 8px', lineHeight: 1.4 }}>
+                ⚡ This cage feeds a breakout panel - only parallel-fibre optics (SR4 multimode, PLR4/PSM4/DR4/DR4+ singlemode) are shown. LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <label style={{ fontSize: '11px', color: '#ccc' }}>Qty:</label>
               <input type="number" min={1} value={qtyStr} onChange={e => setQtyStr(e.target.value)} style={{ width: '40px', fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }} />

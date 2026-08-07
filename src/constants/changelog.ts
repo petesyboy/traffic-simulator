@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.492",
+    date: "2026-08-07",
+    summary: "The optic picker now marks every parallel-fibre optic as \"breakout-capable\", and once a cage is wired to an MPO breakout panel it only offers the optics that panel can actually use (SR4/PLR4/PSM4/DR4/DR4+) - LR4/CWDM4/SWDM4/FR4 optics are no longer selectable there.",
+  },
+  {
     version: "1.0.491",
     date: "2026-08-07",
     summary: "Added MPO breakout panels (PNL-M341T multimode / PNL-M343T singlemode) as real, sidebar-placeable modules - drag one into a TAP tray alongside tap modules, wire a GigaVUE port's parallel optic to its MPO connector, and fan out to 4 independently wireable LC ports (or wire 4 lower-speed sources in to aggregate them back into one uplink). Validates parallel-optic and lane-speed rules and quotes correctly in the BOM.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.473",
     date: "2026-08-05",
     summary: "Fixed HC1/HC1-Plus/HC3 canvas nodes rendering far larger than other appliances - the front-panel graphic is now capped to a consistent size.",
-  },
-  {
-    version: "1.0.472",
-    date: "2026-08-05",
-    summary: "HC1/HC1-Plus/HC3 canvas nodes now show the same front-panel graphic as the hardware summary, alongside the live port status. Fixed the title icon stretching wide chassis nodes far past others.",
   },
 ];

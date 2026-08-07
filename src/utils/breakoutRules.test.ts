@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import type { Edge } from '@xyflow/react';
+import type { CustomNode, HardwareNodeData } from '../store/types';
+import { getChassisPorts } from './ports';
 import {
   isParallelBreakoutOptic,
   getBreakoutLaneSpeed,
   getBreakoutLcOptics,
   panelFiberType,
+  boardFeedsBreakoutPanel,
 } from './breakoutRules';
 
 describe('isParallelBreakoutOptic', () => {
@@ -83,5 +87,69 @@ describe('panelFiberType', () => {
     expect(panelFiberType('PNL-M341T')).toBe('MM');
     expect(panelFiberType('PNL-M343T')).toBe('SM');
     expect(panelFiberType('GigaVUE-HC3')).toBeUndefined();
+  });
+});
+
+describe('boardFeedsBreakoutPanel', () => {
+  const hw = (data: Partial<HardwareNodeData>): HardwareNodeData => data as HardwareNodeData;
+  const node = (id: string, data: Record<string, unknown>): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data,
+  } as CustomNode);
+
+  const chassisNode = (id: string) => node(id, { label: id, model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: [] });
+  const panelNode = (id: string) => node(id, { label: id, model: 'PNL-M341T', sku: 'PNL-M341T' });
+
+  const ports = getChassisPorts('GigaVUE-TA25E', hw({}));
+
+  it('is false with no edges at all', () => {
+    expect(boardFeedsBreakoutPanel('Base Ports', ports, 'c1', [chassisNode('c1')], [])).toBe(false);
+  });
+
+  it('is false when wired to a non-panel peer', () => {
+    const nodes = [chassisNode('c1'), chassisNode('c2')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'c2',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/c1' }] },
+    }] as unknown as Edge[];
+    expect(boardFeedsBreakoutPanel('Base Ports', ports, 'c1', nodes, edges)).toBe(false);
+  });
+
+  it('is false when wired to a panel but on the LC leg, not the MPO trunk', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1/1' }] },
+    }] as unknown as Edge[];
+    expect(boardFeedsBreakoutPanel('Base Ports', ports, 'c1', nodes, edges)).toBe(false);
+  });
+
+  it('is true when this board has a cage wired to a panel MPO connector', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] },
+    }] as unknown as Edge[];
+    expect(boardFeedsBreakoutPanel('Base Ports', ports, 'c1', nodes, edges)).toBe(true);
+  });
+
+  it('works regardless of which side of the edge this node is on', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'p1', target: 'c1',
+      data: { portLinks: [{ sourcePortId: '1/1/m1', targetPortId: '1/1/c1' }] },
+    }] as unknown as Edge[];
+    expect(boardFeedsBreakoutPanel('Base Ports', ports, 'c1', nodes, edges)).toBe(true);
+  });
+
+  it('is false for a different board on the same chassis', () => {
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const edges = [{
+      id: 'e1', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] },
+    }] as unknown as Edge[];
+    expect(boardFeedsBreakoutPanel('Some Other Board', ports, 'c1', nodes, edges)).toBe(false);
   });
 });
