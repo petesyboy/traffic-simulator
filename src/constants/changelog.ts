@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.484",
+    date: "2026-08-07",
+    summary: "The configuration panel can now be dragged wider. Newly installed optics briefly flash on the hardware node's port map so you can spot which cage they landed in.",
+  },
+  {
     version: "1.0.483",
     date: "2026-08-07",
     summary: "Traffic Map nodes now show incoming bandwidth (In:) alongside the passed-through output (Out:) while the simulation is running.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.465",
     date: "2026-08-05",
     summary: "Added faceplate images for the SMT-HC3-C08Q08 and SMT-HC3-C16 GigaSMART modules.",
-  },
-  {
-    version: "1.0.464",
-    date: "2026-08-05",
-    summary: "Added product photography for the HC1 and HC3 port, bypass, GigaSMART and TAP modules, plus refreshed chassis images.",
   },
 ];

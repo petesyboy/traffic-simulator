@@ -23,6 +23,7 @@ export interface GraphSlice {
   edges: Edge[];
   selectedNodeId: string | null;
   glowingNodeId: string | null;
+  flashPorts: { nodeId: string; portIds: string[] } | null;
   draggedNodeType: string | null;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -39,6 +40,7 @@ export interface GraphSlice {
   addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
   setGlowingNodeId: (nodeId: string | null) => void;
+  setFlashPorts: (flash: { nodeId: string; portIds: string[] } | null) => void;
   updateNodeData: (nodeId: string, data: Partial<AnyNodeData>) => void;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
@@ -56,6 +58,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   edges: initialEdges,
   selectedNodeId: null,
   glowingNodeId: null,
+  flashPorts: null,
   draggedNodeType: null,
   showGrid: true,
   snapToGrid: false,
@@ -222,6 +225,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   addNode: (node) => { get().pushHistory(); set({ nodes: [...get().nodes, node] }); },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
+  setFlashPorts: (flash) => set({ flashPorts: flash }),
   updateNodeData: (nodeId, data) => {
     const updatedNodes = get().nodes.map((node) => node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node);
     let syncedNodes = syncSplunkLabels(updatedNodes, get().edges);

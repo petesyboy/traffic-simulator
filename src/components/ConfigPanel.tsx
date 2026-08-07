@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore, type MapCondition } from '../store/store';
 import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from '../constants/nodeTypes';
 
@@ -22,6 +22,32 @@ const ConfigPanel: React.FC = () => {
   const advancedMode   = useStore((state) => state.advancedMode);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [width, setWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // The panel sits on the right edge, so its handle drags from the left -
+      // width grows as the cursor moves further from the right edge of the window.
+      const newWidth = Math.max(320, Math.min(700, window.innerWidth - e.clientX));
+      setWidth(newWidth);
+    };
+    const handleMouseUp = () => setIsResizing(false);
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   // In Standard (simple) mode, respect a manual collapse — only Advanced Mode
   // auto-expands the panel when a new node is selected. Adjusted during render
@@ -137,22 +163,31 @@ const ConfigPanel: React.FC = () => {
     </button>
   );
 
+  const resizeHandle = !isCollapsed && (
+    <div
+      onMouseDown={handleResizeMouseDown}
+      className={`config-panel-resize-handle ${isResizing ? 'resizing' : ''}`}
+      title="Drag to resize configuration panel"
+    />
+  );
+
   if (!selectedNodeId || !selectedNode) {
     return (
       <aside
         className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
         style={{
-          width: isCollapsed ? '0px' : '320px',
+          width: isCollapsed ? '0px' : `${width}px`,
           padding: '0px',
           borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
           position: 'relative',
           overflow: 'visible',
-          transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+          transition: isResizing ? 'none' : 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
           flexShrink: 0,
           zoom: panelTextScale,
         }}
       >
         {collapseToggle}
+        {resizeHandle}
         {!isCollapsed && <DashboardPanel isRunning={isRunning} />}
       </aside>
     );
@@ -165,20 +200,21 @@ const ConfigPanel: React.FC = () => {
     <aside
       className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
       style={{
-        width: isCollapsed ? '0px' : '320px',
+        width: isCollapsed ? '0px' : `${width}px`,
         padding: '0px',
         borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
         position: 'relative',
         overflow: 'visible',
-        transition: 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+        transition: isResizing ? 'none' : 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
         flexShrink: 0,
         zoom: panelTextScale,
       }}
     >
       {collapseToggle}
+      {resizeHandle}
 
       {!isCollapsed && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '320px', height: '100%', padding: '16px', overflowY: 'auto', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', height: '100%', padding: '16px', overflowY: 'auto', boxSizing: 'border-box' }}>
           <h2>Edit Node Configuration</h2>
 
           <FormGroup label="Node Label">

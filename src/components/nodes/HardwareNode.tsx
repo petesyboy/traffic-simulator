@@ -40,6 +40,17 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const resolved = resolveNodeSkus(data, projectLicenseMode);
   const [showSummary, setShowSummary] = useState(false);
   const [boardDetailsExpanded, setBoardDetailsExpanded] = useState(true);
+  const flashPorts = useStore((state) => state.flashPorts);
+  const isFlashingThisNode = flashPorts?.nodeId === id;
+  const flashPortIds = useMemo(
+    () => (isFlashingThisNode ? new Set(flashPorts.portIds) : undefined),
+    [isFlashingThisNode, flashPorts],
+  );
+  // A freshly-installed optic should be visible even if the board details were
+  // collapsed - temporarily override the collapse rather than flashing a hidden
+  // port map. Derived at render time (not an effect) so it self-reverts to
+  // whatever the user had chosen once the flash clears.
+  const showBoardDetails = boardDetailsExpanded || isFlashingThisNode;
 
   let displaySku = resolved.hwSku;
   if (resolved.swSku) displaySku += ` + ${resolved.swSku}`;
@@ -157,11 +168,11 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               <button
                 className="node-info-icon"
                 style={{ cursor: 'pointer', border: 'none', fontWeight: 'bold' }}
-                title={boardDetailsExpanded ? 'Hide board/port details' : 'Show board/port details'}
-                onClick={(e) => { e.stopPropagation(); setBoardDetailsExpanded(v => !v); }}
+                title={showBoardDetails ? 'Hide board/port details' : 'Show board/port details'}
+                onClick={(e) => { e.stopPropagation(); setBoardDetailsExpanded(!showBoardDetails); }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                {boardDetailsExpanded ? '−' : '+'}
+                {showBoardDetails ? '−' : '+'}
               </button>
             )}
             {isChassis && (
@@ -203,7 +214,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
               <span>SKU: {displaySku}</span>
             </div>
-            {boardDetailsExpanded && showFrontPanel && (
+            {showBoardDetails && showFrontPanel && (
               <div style={{ marginTop: '6px', maxWidth: '220px', border: '1px solid #2a2a2a', borderRadius: '3px', overflow: 'hidden' }}>
                 <ChassisFrontPanel
                   chassisImage={image!}
@@ -213,8 +224,8 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                 />
               </div>
             )}
-            {boardDetailsExpanded && <ChassisFaceplate ports={chassisPorts} occupancy={portOccupancy} />}
-            {!boardDetailsExpanded && chassisPorts.length > 0 && (
+            {showBoardDetails && <ChassisFaceplate ports={chassisPorts} occupancy={portOccupancy} flashPortIds={flashPortIds} />}
+            {!showBoardDetails && chassisPorts.length > 0 && (
               <div style={{ marginTop: '4px', fontSize: '8px', color: '#777', fontStyle: 'italic' }}>
                 Board details hidden — click + to expand
               </div>

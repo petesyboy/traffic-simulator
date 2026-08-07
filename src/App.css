@@ -515,6 +515,23 @@
   background-color: rgba(255, 152, 0, 0.4);
 }
 
+.config-panel-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.config-panel-resize-handle:hover,
+.config-panel-resize-handle.resizing {
+  background-color: rgba(255, 152, 0, 0.4);
+}
+
 .elements-header {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
@@ -851,6 +868,17 @@
 
 .node-metrics span.drop {
   color: #ef5350;
+}
+
+@keyframes port-flash-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 2px 1px rgba(255, 213, 79, 0.9); }
+  50% { transform: scale(1.9); box-shadow: 0 0 7px 2px rgba(255, 213, 79, 1); }
+}
+
+.chassis-port-flash {
+  animation: port-flash-pulse 0.6s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
 }
 
 .gigastream-active {

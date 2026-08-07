@@ -12,6 +12,8 @@ import type { PortOccupant } from '../../utils/ports';
 interface ChassisFaceplateProps {
   ports: ChassisPort[];
   occupancy: Map<string, PortOccupant>;
+  /** Ports to briefly pulse-highlight, e.g. right after an optic is installed. */
+  flashPortIds?: Set<string>;
 }
 
 type PortState = 'linked' | 'fitted' | 'free' | 'unlicensed';
@@ -46,7 +48,7 @@ function rowsFor(ports: ChassisPort[], cage: ChassisPort['cage']): ChassisPort[]
 
 const CAGE_LABEL: Record<ChassisPort['cage'], string> = { QSFP: 'QSFP', SFP: 'SFP', RJ45: 'RJ45' };
 
-export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occupancy }) => {
+export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occupancy, flashPortIds }) => {
   if (ports.length === 0) return null;
 
   // Group by board so a multi-slot HC3 reads as separate modules, then by cage
@@ -95,6 +97,7 @@ export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occup
                         {row.map(port => {
                           const occupant = occupancy.get(port.id);
                           const state = getPortState(port, occupant);
+                          const isFlashing = flashPortIds?.has(port.id);
                           const detail = [
                             occupant?.optic,
                             occupant?.peerLabel ? `→ ${occupant.peerLabel}` : undefined,
@@ -103,6 +106,7 @@ export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occup
                             <div
                               key={port.id}
                               title={`${port.id} — ${detail || STATE_LABEL[state]}`}
+                              className={isFlashing ? 'chassis-port-flash' : undefined}
                               style={{
                                 width: '6px', height: '6px', borderRadius: '1px',
                                 border: '1px solid', flexShrink: 0, ...STATE_STYLE[state],

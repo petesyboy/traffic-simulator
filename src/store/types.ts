@@ -294,6 +294,8 @@ export interface RFState {
   edges: Edge[];
   selectedNodeId: string | null;
   glowingNodeId: string | null;
+  /** Ports just fitted with a new optic, briefly highlighted on the hardware node's port map. */
+  flashPorts: { nodeId: string; portIds: string[] } | null;
   draggedNodeType: string | null;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -348,6 +350,7 @@ export interface RFState {
   addNode: (node: CustomNode) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
   setGlowingNodeId: (nodeId: string | null) => void;
+  setFlashPorts: (flash: { nodeId: string; portIds: string[] } | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
   restoreState: (
     nodes: CustomNode[],

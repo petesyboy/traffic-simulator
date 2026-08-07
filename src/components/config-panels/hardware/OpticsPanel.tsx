@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import type { CustomNode } from '../../../store/store';
+import { useStore, type CustomNode } from '../../../store/store';
 import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
 import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap } from '../../../utils/hardwareUtils';
+import { getChassisPorts, getPortOpticMap } from '../../../utils/ports';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
+
+/** How long a newly-fitted port stays highlighted on the canvas node's port map. */
+const FLASH_DURATION_MS = 2500;
 
 interface OpticsPanelProps {
   selectedNode: CustomNode;
@@ -177,9 +181,25 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       }
     }
 
+    // Diff the port-optic assignment before/after so the newly-fitted cages can
+    // be flashed on the canvas node's port map - assignment is deterministic
+    // (see getPortOpticMap), so this is exactly which ports the add just filled.
+    const chassisPorts = getChassisPorts(model, hwData);
+    const oldPortMap = getPortOpticMap(chassisPorts, installedOptics);
+    const newPortMap = getPortOpticMap(chassisPorts, newOptics);
+    const newlyFilledPortIds = Array.from(newPortMap.keys()).filter(portId => oldPortMap.get(portId) !== newPortMap.get(portId));
+
     updateNodeData(selectedNode.id, { optics: newOptics });
     setSelectedOptic('');
     setQtyStr('1');
+
+    if (newlyFilledPortIds.length > 0) {
+      const nodeId = selectedNode.id;
+      useStore.getState().setFlashPorts({ nodeId, portIds: newlyFilledPortIds });
+      setTimeout(() => {
+        if (useStore.getState().flashPorts?.nodeId === nodeId) useStore.getState().setFlashPorts(null);
+      }, FLASH_DURATION_MS);
+    }
   };
 
   const handleRemoveOptic = (index: number) => {
