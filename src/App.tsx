@@ -596,9 +596,12 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Global toast for keyboard-triggered saves */}
+      {/* Global toast for keyboard-triggered saves. z-index sits above the Save/Load
+          modal's blurred overlay (z-index 10000) - handleSave() there leaves the modal
+          open after saving to a slot, so this toast must render on top of it, not
+          behind, or it inherits the modal's backdrop blur and becomes illegible. */}
       {saveToast && (
-        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, background: 'rgba(37,179,75,0.92)', color: '#fff', padding: '10px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 10001, background: 'rgba(37,179,75,0.92)', color: '#fff', padding: '10px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
           ✓ {saveToast}
         </div>
       )}

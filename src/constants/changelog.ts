@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.490",
+    date: "2026-08-07",
+    summary: "Fixed the \"Saved to ...\" confirmation toast rendering behind the Save/Load modal's blurred background and becoming illegible when a slot is overwritten without closing the modal.",
+  },
+  {
     version: "1.0.489",
     date: "2026-08-07",
     summary: "Advanced Mode has a new Update Price List button — upload the worldwide price list workbook (.xlsx/.xls/.csv) directly to refresh SKU descriptions and End of Sale/Life dates, no CSV conversion or rebuild needed.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.471",
     date: "2026-08-05",
     summary: "Fitted modules now align exactly to their chassis bay on the HC1, HC1-Plus and HC3 front panels, fully covering the blanking panel's honeycomb mesh.",
-  },
-  {
-    version: "1.0.470",
-    date: "2026-08-05",
-    summary: "The hardware summary's front panel is now larger, and clicking it opens a full-size view with a slot legend — big enough to count individual ports.",
   },
 ];
