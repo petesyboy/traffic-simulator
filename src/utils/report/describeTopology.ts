@@ -14,15 +14,18 @@ import type {
   CustomNode,
   TrafficStream,
   MapCondition,
+  MapNodeData,
   FilterNodeData,
   GigaSmartNodeData,
   InputNodeData,
   GigaStreamNodeData,
   ToolNodeData,
   HardwareNodeData,
+  NodeMetrics,
 } from '../../store/types';
 import { CONFIG_TYPES, ACTION_TYPES, NODE_TYPES, isMetadataAction, isDedupAction } from '../../constants/nodeTypes';
 import { formatBandwidth } from '../format';
+import { getUpstreamNodes, getDownstreamNodes, traceToTerminalInputs, traceToTerminalOutputs } from './graphTrace';
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
@@ -176,4 +179,116 @@ export function describeToolNode(data: ToolNodeData): string {
   const name = data.toolName || data.label || 'Tool';
   const format = data.expectedFormat || data.expectedType || 'packets';
   return `${name}: receives ${format} traffic${data.ingestLimitMbps ? ` (ingest limit ${formatBandwidth(data.ingestLimitMbps)})` : ''}.`;
+}
+
+// ─── Detail builders (headline + bullet list) ────────────────────────────────
+// Combine the sentence helpers above with the graphTrace helpers and, when a
+// simulation has actually been run, live per-node metrics — for the report's
+// more verbose per-node breakdown of what feeds in, what happens to it, and
+// what ultimately receives it.
+
+export interface NodeDetail {
+  headline: string;
+  bullets: string[];
+}
+
+/** Splits a multi-line describe*() sentence into individual bullet lines, stripping any leading '• '. */
+const toBulletLines = (multiline: string): string[] =>
+  multiline
+    .split('\n')
+    .map((line) => line.replace(/^•\s*/, '').trim())
+    .filter(Boolean);
+
+const labelsOf = (nodes: CustomNode[]): string => nodes.map((n) => n.data.label || n.id).join(', ');
+
+export function describeInputNodeDetail(
+  node: CustomNode,
+  nodes: CustomNode[],
+  edges: Edge[],
+  trafficStreams: TrafficStream[],
+  nodeMetrics?: Record<string, NodeMetrics>,
+): NodeDetail {
+  const data = node.data as InputNodeData;
+  const bullets: string[] = [];
+
+  if (data.linkSpeed) bullets.push(`Link speed: ${formatBandwidth(data.linkSpeed)}`);
+  if (data.portSpeed) bullets.push(`Port speed: ${data.portSpeed}`);
+  if (data.encryptedTrafficPercentage) bullets.push(`Encrypted traffic: ${data.encryptedTrafficPercentage}%`);
+  if (data.site) bullets.push(`Site: ${data.site}`);
+
+  const streams = trafficStreams.filter((s) => s.sourceNodeId === node.id);
+  streams.forEach((s) => {
+    const parts = [s.vlan ? `VLAN ${s.vlan}` : null, s.protocol, s.portDst ? `port ${s.portDst}` : null].filter(
+      Boolean,
+    );
+    bullets.push(`Traffic stream "${s.name}": ${parts.join(', ')} at ${formatBandwidth(s.bandwidth)}`);
+  });
+
+  const downstream = getDownstreamNodes(node.id, nodes, edges);
+  if (downstream.length > 0) bullets.push(`Feeds into: ${labelsOf(downstream)}`);
+
+  const terminals = traceToTerminalOutputs(node.id, nodes, edges);
+  if (terminals.length > 0) bullets.push(`Ultimately reaches: ${labelsOf(terminals)}`);
+
+  const metrics = nodeMetrics?.[node.id];
+  if (metrics) bullets.push(`Observed: ${formatBandwidth(metrics.rxMbps)} in / ${formatBandwidth(metrics.txMbps)} out`);
+
+  return { headline: `${data.label} — ${describeInputNode(data)}`, bullets };
+}
+
+export function describeProcessingNodeDetail(
+  node: CustomNode,
+  nodes: CustomNode[],
+  edges: Edge[],
+  nodeMetrics?: Record<string, NodeMetrics>,
+): NodeDetail {
+  const bullets: string[] = [];
+
+  if (node.type === NODE_TYPES.MAP) {
+    bullets.push(...toBulletLines(describeMapConditions((node.data as MapNodeData).conditions || [])));
+  } else if (node.type === NODE_TYPES.FILTER) {
+    bullets.push(...toBulletLines(describeFilterNode(node.data as FilterNodeData)));
+  } else if (node.type === NODE_TYPES.GIGASMART) {
+    bullets.push(describeGigaSmartAction(node.data as GigaSmartNodeData));
+  } else if (node.type === NODE_TYPES.GIGASTREAM) {
+    bullets.push(describeGigaStreamNode(node.data as GigaStreamNodeData));
+  }
+
+  const upstream = getUpstreamNodes(node.id, nodes, edges);
+  if (upstream.length > 0) bullets.push(`Receives from: ${labelsOf(upstream)}`);
+
+  const downstream = getDownstreamNodes(node.id, nodes, edges);
+  if (downstream.length > 0) bullets.push(`Forwards to: ${labelsOf(downstream)}`);
+
+  const metrics = nodeMetrics?.[node.id];
+  if (metrics) {
+    let line = `Observed: ${formatBandwidth(metrics.rxMbps)} in, ${formatBandwidth(metrics.txMbps)} out`;
+    if (metrics.rxMbps > 0 && metrics.txMbps < metrics.rxMbps) {
+      const reductionPct = Math.round((1 - metrics.txMbps / metrics.rxMbps) * 100);
+      line += ` (${reductionPct}% reduction)`;
+    }
+    bullets.push(line);
+    if (metrics.dedupDroppedMbps) bullets.push(`Deduplicated away: ${formatBandwidth(metrics.dedupDroppedMbps)}`);
+    if (metrics.filterDroppedMbps) bullets.push(`Filtered out: ${formatBandwidth(metrics.filterDroppedMbps)}`);
+  }
+
+  return { headline: node.data.label || node.id, bullets };
+}
+
+export function describeToolNodeDetail(
+  node: CustomNode,
+  nodes: CustomNode[],
+  edges: Edge[],
+  nodeMetrics?: Record<string, NodeMetrics>,
+): NodeDetail {
+  const data = node.data as ToolNodeData;
+  const bullets: string[] = [];
+
+  const origins = traceToTerminalInputs(node.id, nodes, edges);
+  if (origins.length > 0) bullets.push(`Traffic originates from: ${labelsOf(origins)}`);
+
+  const metrics = nodeMetrics?.[node.id];
+  if (metrics) bullets.push(`Currently receiving: ${formatBandwidth(metrics.rxMbps)}`);
+
+  return { headline: describeToolNode(data), bullets };
 }

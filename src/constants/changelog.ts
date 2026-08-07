@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.497",
+    date: "2026-08-07",
+    summary: "The PDF solution report is now far more detailed: each traffic source lists its link speed, encrypted %, matched traffic streams and what it ultimately reaches; each map/filter/GigaSMART stage lists what feeds it, what it forwards to, and (while a simulation is running) real observed throughput and reduction percentages; each destination lists which taps/SPAN sessions its traffic originates from.",
+  },
+  {
     version: "1.0.496",
     date: "2026-08-07",
     summary: "Added a Generate Report button - produces a customer-facing PDF describing the current topology in plain English (traffic sources, maps, filters, GigaSMART processing, destinations), with the topology diagram and a Bill of Materials appendix, plus a physical/rack deployment appendix in Advanced Mode.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.478",
     date: "2026-08-05",
     summary: "Node configuration sections are now much easier to tell apart - every section heading (hardware, module slots, cages, optics, power) uses one larger amber style with an underline and icon.",
-  },
-  {
-    version: "1.0.477",
-    date: "2026-08-05",
-    summary: "Fixed HC1/HC1-Plus/HC3 canvas nodes showing the chassis photo twice - the small header icon now only appears for hardware without a front-panel graphic (e.g. TA-series).",
   },
 ];

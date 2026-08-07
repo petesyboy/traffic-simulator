@@ -15,13 +15,11 @@ import type { Edge } from '@xyflow/react';
 import type {
   CustomNode,
   TrafficStream,
-  MapNodeData,
-  FilterNodeData,
   GigaSmartNodeData,
   InputNodeData,
-  GigaStreamNodeData,
   ToolNodeData,
   HardwareNodeData,
+  NodeMetrics,
 } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
@@ -29,12 +27,10 @@ import { generateBom, validateConfiguration } from '../../utils/bomEngine';
 import { buildPhysicalItems } from '../bom/physicalItems';
 import {
   buildTopologyStats,
-  describeMapConditions,
-  describeFilterNode,
-  describeGigaSmartAction,
-  describeInputNode,
-  describeGigaStreamNode,
-  describeToolNode,
+  describeInputNodeDetail,
+  describeProcessingNodeDetail,
+  describeToolNodeDetail,
+  type NodeDetail,
 } from './describeTopology';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
 
@@ -50,7 +46,29 @@ export interface ReportInput {
   advancedMode: boolean;
   diagramDataUrl: string;
   logoDataUrl?: string;
+  /** Live per-node traffic metrics, only rendered when `isRunning` is true — never shown as if live when the simulation hasn't actually been run. */
+  nodeMetrics: Record<string, NodeMetrics>;
+  isRunning: boolean;
 }
+
+/** Renders a node's headline + detail bullets + (optional) value-proposition line, as one report entry. */
+const detailStack = (headline: string, detail: NodeDetail, valueProposition?: string): Content => ({
+  stack: [
+    { text: headline, style: 'body', bold: true },
+    ...(detail.bullets.length > 0 ? [{ ul: detail.bullets, style: 'muted' }] : []),
+    ...(valueProposition
+      ? [
+          {
+            text: valueProposition,
+            style: 'muted',
+            italics: true,
+            margin: [0, 2, 0, 0] as [number, number, number, number],
+          },
+        ]
+      : []),
+  ],
+  margin: [0, 0, 0, 10],
+});
 
 const statBlock = (label: string, value: string | number) => ({
   stack: [
@@ -72,7 +90,11 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     advancedMode,
     diagramDataUrl,
     logoDataUrl,
+    nodeMetrics,
+    isRunning,
   } = input;
+
+  const liveMetrics = isRunning ? nodeMetrics : undefined;
 
   const stats = buildTopologyStats(nodes, edges, trafficStreams);
   const bomRows = generateBom(
@@ -190,13 +212,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({ text: 'Traffic Sources', style: 'subHeading' });
     inputNodes.forEach((n) => {
       const data = n.data as InputNodeData;
-      content.push({
-        stack: [
-          { text: `${data.label} — ${describeInputNode(data)}`, style: 'body', bold: true },
-          { text: getNodeValueProposition(NODE_TYPES.INPUT, data.configType), style: 'muted' },
-        ],
-        margin: [0, 0, 0, 8],
-      });
+      const detail = describeInputNodeDetail(n, nodes, edges, trafficStreams, liveMetrics);
+      content.push(detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.INPUT, data.configType)));
     });
   }
 
@@ -204,14 +221,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   if (mapNodes.length > 0) {
     content.push({ text: 'Traffic Maps', style: 'subHeading' });
     mapNodes.forEach((n) => {
-      const data = n.data as MapNodeData;
-      content.push({
-        stack: [
-          { text: data.label, style: 'body', bold: true },
-          { text: describeMapConditions(data.conditions || []), style: 'muted' },
-        ],
-        margin: [0, 0, 0, 8],
-      });
+      const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
+      content.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
@@ -219,14 +230,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   if (filterNodes.length > 0) {
     content.push({ text: 'Filters', style: 'subHeading' });
     filterNodes.forEach((n) => {
-      const data = n.data as FilterNodeData;
-      content.push({
-        stack: [
-          { text: data.label, style: 'body', bold: true },
-          { text: describeFilterNode(data), style: 'muted' },
-        ],
-        margin: [0, 0, 0, 8],
-      });
+      const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
+      content.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
@@ -236,20 +241,20 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({ text: 'GigaSMART Processing', style: 'subHeading' });
     gigaSmartNodes.forEach((n) => {
       const data = n.data as GigaSmartNodeData;
-      content.push({
-        stack: [
-          { text: `${data.label} — ${data.actionType}`, style: 'body', bold: true },
-          { text: describeGigaSmartAction(data), style: 'muted' },
-          { text: getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, data.actionType), style: 'muted' },
-        ],
-        margin: [0, 0, 0, 8],
-      });
+      const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
+      content.push(
+        detailStack(
+          `${data.label} — ${data.actionType}`,
+          detail,
+          getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, data.actionType),
+        ),
+      );
     });
   }
   if (gigaStreamNodes.length > 0) {
     gigaStreamNodes.forEach((n) => {
-      const data = n.data as GigaStreamNodeData;
-      content.push({ text: `${data.label} — ${describeGigaStreamNode(data)}`, style: 'body', margin: [0, 0, 0, 8] });
+      const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
+      content.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
@@ -258,16 +263,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({ text: 'Destinations & Tools', style: 'subHeading' });
     toolNodes.forEach((n) => {
       const data = n.data as ToolNodeData;
-      content.push({
-        stack: [
-          { text: describeToolNode(data), style: 'body', bold: true },
-          {
-            text: getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
-            style: 'muted',
-          },
-        ],
-        margin: [0, 0, 0, 8],
-      });
+      const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
+      content.push(
+        detailStack(
+          detail.headline,
+          detail,
+          getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
+        ),
+      );
     });
   }
 

@@ -7,6 +7,9 @@ import {
   describeInputNode,
   describeGigaStreamNode,
   describeToolNode,
+  describeInputNodeDetail,
+  describeProcessingNodeDetail,
+  describeToolNodeDetail,
 } from './describeTopology';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import type {
@@ -18,7 +21,9 @@ import type {
   InputNodeData,
   GigaStreamNodeData,
   ToolNodeData,
+  NodeMetrics,
 } from '../../store/types';
+import type { Edge } from '@xyflow/react';
 
 const node = (id: string, type: string, data: Record<string, unknown>): CustomNode =>
   ({
@@ -220,5 +225,110 @@ describe('describeToolNode', () => {
   it('describes a tool with no ingest limit set', () => {
     const data = { toolName: 'Vectra', expectedType: 'metadata' } as ToolNodeData;
     expect(describeToolNode(data)).toBe('Vectra: receives metadata traffic.');
+  });
+});
+
+// ─── Detail builders ──────────────────────────────────────────────────────────
+
+const edge = (id: string, source: string, target: string): Edge => ({ id, source, target });
+
+describe('describeInputNodeDetail', () => {
+  const nodes: CustomNode[] = [
+    node('in1', NODE_TYPES.INPUT, { label: 'Core Tap 1', configType: CONFIG_TYPES.TAP, linkSpeed: 10000 }),
+    node('map1', NODE_TYPES.MAP, { label: 'Core Map', conditions: [] }),
+    node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra' }),
+  ];
+  const edges = [edge('e1', 'in1', 'map1'), edge('e2', 'map1', 'tool1')];
+  const streams = [
+    stream({ sourceNodeId: 'in1', name: 'Stream A', vlan: '100', protocol: 'TCP', portDst: '443', bandwidth: 500 }),
+  ];
+
+  it('lists link speed, matched traffic streams, downstream feed, and terminal destinations', () => {
+    const detail = describeInputNodeDetail(nodes[0], nodes, edges, streams);
+    expect(detail.headline).toBe('Core Tap 1 — TAP Hardware Device');
+    expect(detail.bullets).toContain('Link speed: 10.00 Gbps');
+    expect(detail.bullets).toContain('Traffic stream "Stream A": VLAN 100, TCP, port 443 at 500.0 Mbps');
+    expect(detail.bullets).toContain('Feeds into: Core Map');
+    expect(detail.bullets).toContain('Ultimately reaches: Vectra');
+  });
+
+  it('omits live-metrics bullets when nodeMetrics is not supplied', () => {
+    const detail = describeInputNodeDetail(nodes[0], nodes, edges, streams);
+    expect(detail.bullets.some((b) => b.startsWith('Observed:'))).toBe(false);
+  });
+
+  it('includes an Observed bullet when nodeMetrics is supplied', () => {
+    const nodeMetrics: Record<string, NodeMetrics> = {
+      in1: { rxMbps: 500, txMbps: 500, rxPackets: 0, txPackets: 0, droppedPackets: 0 },
+    };
+    const detail = describeInputNodeDetail(nodes[0], nodes, edges, streams, nodeMetrics);
+    expect(detail.bullets).toContain('Observed: 500.0 Mbps in / 500.0 Mbps out');
+  });
+});
+
+describe('describeProcessingNodeDetail', () => {
+  const nodes: CustomNode[] = [
+    node('in1', NODE_TYPES.INPUT, { label: 'Core Tap 1', configType: CONFIG_TYPES.TAP }),
+    node('map1', NODE_TYPES.MAP, {
+      label: 'Core Map',
+      conditions: [{ field: 'vlan', value: '100', action: 'pass' }],
+    }),
+    node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra' }),
+  ];
+  const edges = [edge('e1', 'in1', 'map1'), edge('e2', 'map1', 'tool1')];
+
+  it('includes rule detail plus upstream/downstream context', () => {
+    const detail = describeProcessingNodeDetail(nodes[1], nodes, edges);
+    expect(detail.headline).toBe('Core Map');
+    expect(detail.bullets).toContain('VLAN = 100 -> PASS');
+    expect(detail.bullets).toContain('Receives from: Core Tap 1');
+    expect(detail.bullets).toContain('Forwards to: Vectra');
+  });
+
+  it('computes a reduction percentage when live rx/tx metrics show a drop', () => {
+    const nodeMetrics: Record<string, NodeMetrics> = {
+      map1: { rxMbps: 1000, txMbps: 400, rxPackets: 0, txPackets: 0, droppedPackets: 0, filterDroppedMbps: 600 },
+    };
+    const detail = describeProcessingNodeDetail(nodes[1], nodes, edges, nodeMetrics);
+    expect(detail.bullets).toContain('Observed: 1.00 Gbps in, 400.0 Mbps out (60% reduction)');
+    expect(detail.bullets).toContain('Filtered out: 600.0 Mbps');
+  });
+
+  it('omits the reduction percentage when tx is not less than rx', () => {
+    const nodeMetrics: Record<string, NodeMetrics> = {
+      map1: { rxMbps: 500, txMbps: 500, rxPackets: 0, txPackets: 0, droppedPackets: 0 },
+    };
+    const detail = describeProcessingNodeDetail(nodes[1], nodes, edges, nodeMetrics);
+    expect(detail.bullets).toContain('Observed: 500.0 Mbps in, 500.0 Mbps out');
+  });
+});
+
+describe('describeToolNodeDetail', () => {
+  it('traces terminal input origins and includes live rx when supplied', () => {
+    const nodes: CustomNode[] = [
+      node('in1', NODE_TYPES.INPUT, { label: 'Core Tap 1', configType: CONFIG_TYPES.TAP }),
+      node('in2', NODE_TYPES.INPUT, { label: 'Switch SPAN 1', configType: CONFIG_TYPES.SPAN }),
+      node('map1', NODE_TYPES.MAP, { label: 'Core Map', conditions: [] }),
+      node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra', expectedFormat: 'packets' }),
+    ];
+    const edges = [edge('e1', 'in1', 'map1'), edge('e2', 'in2', 'map1'), edge('e3', 'map1', 'tool1')];
+
+    const detail = describeToolNodeDetail(nodes[3], nodes, edges);
+    expect(detail.headline).toBe('Vectra: receives packets traffic.');
+    expect(detail.bullets[0]).toMatch(/^Traffic originates from: /);
+    expect(detail.bullets[0]).toContain('Core Tap 1');
+    expect(detail.bullets[0]).toContain('Switch SPAN 1');
+
+    const nodeMetrics: Record<string, NodeMetrics> = {
+      tool1: { rxMbps: 250, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 },
+    };
+    const detailWithMetrics = describeToolNodeDetail(nodes[3], nodes, edges, nodeMetrics);
+    expect(detailWithMetrics.bullets).toContain('Currently receiving: 250.0 Mbps');
+  });
+
+  it('has no origins bullet when the tool has no upstream inputs', () => {
+    const nodes: CustomNode[] = [node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra' })];
+    const detail = describeToolNodeDetail(nodes[0], nodes, []);
+    expect(detail.bullets).toEqual([]);
   });
 });

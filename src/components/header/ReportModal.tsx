@@ -62,6 +62,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const projectRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
+  const nodeMetrics = useStore((s) => s.nodeMetrics);
+  const isRunning = useStore((s) => s.isRunning);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         advancedMode,
         diagramDataUrl,
         logoDataUrl,
+        nodeMetrics,
+        isRunning,
       });
 
       const pdfMake = await loadPdfMake();
