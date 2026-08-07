@@ -13,6 +13,7 @@ import { type RFState, type CustomNode, type AnyNodeData, type HardwareNodeData,
 import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
+import { syncTapTrays } from '../utils/traySync';
 import { getRequiredPortCount, isTapUnconfigured } from '../utils/ports';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
@@ -102,7 +103,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       const nextTraffic = get().trafficStreams.filter(
         (s) => !deletedNodeIds.includes(s.sourceNodeId)
       );
-      set({ nodes: nextNodes, trafficStreams: nextTraffic });
+      // A deleted node may have been a tap module (freeing up a tray) or a tray
+      // itself (never happens today - trays have no delete UI - but harmless).
+      set({ nodes: syncTapTrays(nextNodes), trafficStreams: nextTraffic });
     } else {
       set({ nodes: nextNodes });
     }
@@ -222,7 +225,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     set({ edges: syncPortAssignments(syncedNodes, edges), nodes: syncedNodes });
   },
   setDraggedNodeType: (type) => set({ draggedNodeType: type }),
-  addNode: (node) => { get().pushHistory(); set({ nodes: [...get().nodes, node] }); },
+  addNode: (node) => { get().pushHistory(); set({ nodes: syncTapTrays([...get().nodes, node]) }); },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
   setFlashPorts: (flash) => set({ flashPorts: flash }),
@@ -230,6 +233,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const updatedNodes = get().nodes.map((node) => node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node);
     let syncedNodes = syncSplunkLabels(updatedNodes, get().edges);
     if (data.optics === undefined) syncedNodes = syncOpticsOnTapConnection(syncedNodes, get().edges);
+    // A tap module's site (or its own existence) can change here too, so the
+    // set of auto-generated trays it needs is re-derived alongside everything else.
+    syncedNodes = syncTapTrays(syncedNodes);
     // Editing optics, modules or the licence tier changes what ports exist and
     // what's fitted in them, so assignments are re-derived here too.
     set({ nodes: syncedNodes, edges: syncPortAssignments(syncedNodes, get().edges) });
@@ -266,7 +272,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const result = performDuplicateSolution(newSiteName, get().nodes, get().edges, get().trafficStreams);
     if (result) {
       get().pushHistory();
-      set({ nodes: result.nodes, edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
+      set({ nodes: syncTapTrays(result.nodes), edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
     }
   },
 

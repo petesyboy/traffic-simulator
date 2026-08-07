@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react';
 import {
   ReactFlow,
   useReactFlow,
@@ -16,6 +16,7 @@ import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
+import { isAutoTrayModel } from '../utils/trayModels';
 import { FederatedEnclosures } from './canvas/FederatedEnclosures';
 import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { GroupingBanner } from './canvas/GroupingBanner';
@@ -296,10 +297,18 @@ const CanvasArea: React.FC = () => {
   const selectedGroupCount = nodes.filter(n => n.selected && n.type === 'groupNode').length;
   const selectedEdges = edges.filter(e => e.selected);
 
+  // TAP-M100T/M200T/M202ULT trays are auto-generated placement aids for Rack
+  // View only (see traySync.ts) - they're real nodes so save/load and rack
+  // placement keep working, but never appear on the canvas diagram itself.
+  const canvasNodes = useMemo(
+    () => nodes.filter(n => !(n.type === 'hardwareNode' && isAutoTrayModel(String(n.data?.model || '')))),
+    [nodes],
+  );
+
   return (
     <div className="canvas-wrapper" ref={reactFlowWrapper}>
       <ReactFlow
-        nodes={nodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+        nodes={canvasNodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
         onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart}

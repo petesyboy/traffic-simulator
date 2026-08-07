@@ -7,21 +7,14 @@ import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { resolveOpticSku, getSkus } from './skuUtils';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { resolveTapAllocations } from '../ports';
+import { requiresUltTray, ULT_TRAY_SKU, ULT_TRAY_SLOTS, isAutoTrayModel } from '../trayModels';
+
+// Re-exported so existing imports of `requiresUltTray` from this module keep working.
+export { requiresUltTray };
 
 /** Passive module TAPs record a descriptive label where an optic SKU would go. */
 function isPassiveSplitterLabel(optic: string): boolean {
   return optic.startsWith('Passive Optical Splitter');
-}
-
-// Multimode unidirectional TAP modules (TAP-Mxx1ULT) require the two-slot 1RU
-// TAP-M202ULT chassis and cannot be fitted into an M100T/M200T tray. The
-// singlemode TAP-Mxx3ULT modules are ordinary M-series modules and do share
-// those trays, so only the "1ULT" pattern diverts here.
-const ULT_TRAY_SKU = 'TAP-M202ULT';
-const ULT_TRAY_SLOTS = 2;
-
-export function requiresUltTray(sku: string, model = ''): boolean {
-  return /M\d*1ULT/i.test(`${sku} ${model}`);
 }
 
 export interface BomRow {
@@ -221,8 +214,13 @@ export function generateBom(
       return;
     }
     if (node.type !== 'hardwareNode') return;
-    
+
     const model = (node.data?.model as string) || '';
+    // TAP-M100T/M200T/M202ULT trays are auto-generated placement aids (see
+    // traySync.ts) - the tapModulesPerSite/ultTapModulesPerSite math below
+    // already accounts for exactly how many are needed, so a tray that exists
+    // as a real node here would otherwise double up its own BOM row on top.
+    if (isAutoTrayModel(model)) return;
     const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
     const licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual' : globalLicenseMode;
     const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);

@@ -573,10 +573,14 @@ const Sidebar: React.FC = () => {
             </div>
             {openSections.advanced && (
               <div className="tree-content" style={{ maxHeight: '550px', overflowY: 'auto' }}>
-                {/* TAPS Sub-accordion */}
+                {/* TAPS Sub-accordion - trays (TAP-M100T/M200T/M202ULT) are
+                    excluded here: they're auto-generated (see syncTapTrays)
+                    to match however many tap modules actually need one, and
+                    only ever placed via Rack View, never dragged manually. */}
                 <CatalogueSection
                   title="TAPs"
                   items={hardwareCatalogue.taps as HardwareCatalogueItem[]}
+                  filterFn={(item) => !['TAP-M100T', 'TAP-M200T', 'TAP-M202ULT'].includes(item.sku as string)}
                   isOpen={openSections.hwTaps}
                   onToggle={() => toggleSection('hwTaps')}
                   searchQuery={searchQuery}
@@ -584,14 +588,7 @@ const Sidebar: React.FC = () => {
                   nodeType={NODE_TYPES.HARDWARE}
                   fallbackIcon={TapIcon}
                   skus={skus}
-                  renderLabel={(item) => {
-                    const bays = item.max_modules as number | undefined;
-                    if (bays) return <>{item.model} ({item.ru && (item.ru as number) < 1 ? '1/2' : item.ru} RU, {bays} bays)</>;
-                    return <>{item.model} {item.ru ? `(${(item.ru as number) < 1 ? '1/2' : item.ru} RU)` : ''}</>;
-                  }}
-                  buildInitialData={(item) => (item.max_modules
-                    ? { configType: 'Hardware', model: item.model, sku: item.sku, image: item.image }
-                    : { configType: 'Hardware', model: item.model, sku: item.sku, image: item.image, tappedLinksCount: 0, tappedLinkAllocations: [] })}
+                  buildInitialData={(item) => ({ configType: 'Hardware', model: item.model, sku: item.sku, image: item.image, tappedLinksCount: 0, tappedLinkAllocations: [] })}
                 />
 
                 {/* TA Series Sub-accordion */}

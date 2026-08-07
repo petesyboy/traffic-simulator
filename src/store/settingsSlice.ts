@@ -4,6 +4,7 @@ import { type RFState, type CustomNode, type TrafficStream } from './types';
 import { syncSplunkLabels } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
+import { syncTapTrays } from '../utils/traySync';
 
 export interface SettingsSlice {
   advancedMode: boolean;
@@ -69,7 +70,10 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
 
     let syncedNodes = syncSplunkLabels(nodes, uniqueEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, uniqueEdges);
-    
+    // Saves predating auto-generated trays have none stored either - backfill
+    // them on load the same way port assignments are, below.
+    syncedNodes = syncTapTrays(syncedNodes);
+
     const updateObj: Partial<RFState> = {
       nodes: syncedNodes,
       // Saves predating port assignments have none stored; re-deriving on load

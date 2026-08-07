@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.485",
+    date: "2026-08-07",
+    summary: "TAP-M100T/M200T/M202ULT trays are no longer manually placed on the canvas - they're generated automatically to match your tap modules and only appear in Rack View.",
+  },
+  {
     version: "1.0.484",
     date: "2026-08-07",
     summary: "The configuration panel can now be dragged wider. Newly installed optics briefly flash on the hardware node's port map so you can spot which cage they landed in.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.466",
     date: "2026-08-05",
     summary: "Module slots now use the real chassis slot numbering — HC1/HC1-Plus bays are slots 2 (left) and 3 (right); HC3 slots 1-4 are labelled by quadrant.",
-  },
-  {
-    version: "1.0.465",
-    date: "2026-08-05",
-    summary: "Added faceplate images for the SMT-HC3-C08Q08 and SMT-HC3-C16 GigaSMART modules.",
   },
 ];

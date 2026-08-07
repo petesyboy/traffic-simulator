@@ -18,6 +18,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useStore, type TrafficStream } from '../store/store';
 import type { TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from '../utils/hardwareUtils';
+import { isAutoTrayModel } from '../utils/trayModels';
 
 // Sub-1Gbps presets are only offered in Advanced Mode - they exist to model
 // ingest-limited sensors (e.g. ForeScout, capped at 1Gbps) that need a feed
@@ -74,9 +75,9 @@ const TrafficGenerator: React.FC = () => {
     document.addEventListener('mouseup', onMouseUp);
   }, [drawerHeight]);
 
-  const inputPorts = nodes.filter((node) => 
-    node.type === 'inputNode' || 
-    (node.type === 'hardwareNode' && typeof node.data.model === 'string' && node.data.model.includes('TAP'))
+  const inputPorts = nodes.filter((node) =>
+    node.type === 'inputNode' ||
+    (node.type === 'hardwareNode' && typeof node.data.model === 'string' && node.data.model.includes('TAP') && !isAutoTrayModel(node.data.model))
   );
   const [noPortError, setNoPortError] = useState(false);
   const [streamLimitError, setStreamLimitError] = useState(false);
