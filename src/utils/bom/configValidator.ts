@@ -5,12 +5,30 @@ import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
-import { getChassisPorts, getOpticCage, getPortOpticMap, getRequiredPortCount, isTapNode, isTapUnconfigured } from '../ports';
+import {
+  getChassisPorts,
+  getOpticCage,
+  getPortOpticMap,
+  getRequiredPortCount,
+  isTapNode,
+  isTapUnconfigured,
+} from '../ports';
 import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
-import skusMetadata from '../../constants/skus_metadata.json';
+import { getMergedSkusMetadata } from '../skuOverrides';
 
 export interface ConfigurationValidationError {
-  type: 'no_hc_for_gigasmart' | 'gigasmart_not_connected_to_hc' | 'insufficient_optics' | 'license_port_limit_exceeded' | 'port_capacity_exceeded' | 'gigasmart_combination_unsupported' | 'eos_eol_sku_used' | 'port_missing_optic' | 'port_optic_mismatch' | 'tap_not_configured' | 'tap_optic_incompatible';
+  type:
+    | 'no_hc_for_gigasmart'
+    | 'gigasmart_not_connected_to_hc'
+    | 'insufficient_optics'
+    | 'license_port_limit_exceeded'
+    | 'port_capacity_exceeded'
+    | 'gigasmart_combination_unsupported'
+    | 'eos_eol_sku_used'
+    | 'port_missing_optic'
+    | 'port_optic_mismatch'
+    | 'tap_not_configured'
+    | 'tap_optic_incompatible';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -22,14 +40,12 @@ interface SkuMetadata {
   replacement?: string;
 }
 
-let activeMetadata: Record<string, SkuMetadata> = skusMetadata as Record<string, SkuMetadata>;
+// Tests pin this to a fixed fixture via setMockSkusMetadata; production code leaves
+// it null so checkSkuStatus always reads the live base+uploaded-price-list merge.
+let mockMetadata: Record<string, SkuMetadata> | null = null;
 
 export function setMockSkusMetadata(mockData: Record<string, SkuMetadata> | null) {
-  if (mockData === null) {
-    activeMetadata = skusMetadata as Record<string, SkuMetadata>;
-  } else {
-    activeMetadata = mockData;
-  }
+  mockMetadata = mockData;
 }
 
 function checkSkuStatus(
@@ -37,15 +53,16 @@ function checkSkuStatus(
   typeName: string,
   chassisLabel: string,
   nodeId: string,
-  errors: ConfigurationValidationError[]
+  errors: ConfigurationValidationError[],
 ) {
   if (!sku) return;
+  const activeMetadata = mockMetadata ?? getMergedSkusMetadata();
   const entry = activeMetadata[sku];
   if (!entry) return;
 
   const hasEos = Boolean(entry.eos);
   const hasEol = Boolean(entry.eol);
-  
+
   if (hasEos || hasEol) {
     const statusStr = hasEol ? 'End of Life' : 'End of Sale';
     const dateStr = hasEol ? entry.eol : entry.eos;
@@ -55,58 +72,56 @@ function checkSkuStatus(
     } else {
       msg += ` It is no longer supported.`;
     }
-    
+
     errors.push({
       type: 'eos_eol_sku_used',
       nodeId,
       nodeLabel: chassisLabel,
-      message: msg
+      message: msg,
     });
   }
 }
 
-export function validateConfiguration(
-  nodes: CustomNode[],
-  edges: Edge[]
-): ConfigurationValidationError[] {
+export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   // ─── SKU Status Validation (EOS/EOL) ──────────────────────────────────────
-  nodes.filter((n) => n.type === NODE_TYPES.HARDWARE).forEach((hwNode) => {
-    const model = (hwNode.data?.model as string) || '';
-    const label = (hwNode.data?.label as string) || model;
-    
-    // 1. Check Chassis/TAP SKU
-    const resolved = resolveNodeSkus((hwNode.data as HardwareNodeSkuData) || {}, 'Perpetual');
-    if (resolved && resolved.hwSku) {
-      checkSkuStatus(resolved.hwSku, 'Chassis/TAP', label, hwNode.id, errors);
-    }
+  nodes
+    .filter((n) => n.type === NODE_TYPES.HARDWARE)
+    .forEach((hwNode) => {
+      const model = (hwNode.data?.model as string) || '';
+      const label = (hwNode.data?.label as string) || model;
 
-    // 2. Check Installed Slot Boards
-    const installedBoards = (hwNode.data?.installedBoards as Record<string, string>) || {};
-    Object.values(installedBoards).forEach((boardSku) => {
-      if (boardSku) {
-        checkSkuStatus(boardSku, 'Module', label, hwNode.id, errors);
+      // 1. Check Chassis/TAP SKU
+      const resolved = resolveNodeSkus((hwNode.data as HardwareNodeSkuData) || {}, 'Perpetual');
+      if (resolved && resolved.hwSku) {
+        checkSkuStatus(resolved.hwSku, 'Chassis/TAP', label, hwNode.id, errors);
       }
-    });
 
-    // 3. Check Installed Optics
-    const installedOptics = (hwNode.data?.optics as { optic: string }[]) || [];
-    installedOptics.forEach((opt) => {
-      const opticSku = resolveOpticSku(opt.optic, model);
-      checkSkuStatus(opticSku, 'Optic', label, hwNode.id, errors);
+      // 2. Check Installed Slot Boards
+      const installedBoards = (hwNode.data?.installedBoards as Record<string, string>) || {};
+      Object.values(installedBoards).forEach((boardSku) => {
+        if (boardSku) {
+          checkSkuStatus(boardSku, 'Module', label, hwNode.id, errors);
+        }
+      });
+
+      // 3. Check Installed Optics
+      const installedOptics = (hwNode.data?.optics as { optic: string }[]) || [];
+      installedOptics.forEach((opt) => {
+        const opticSku = resolveOpticSku(opt.optic, model);
+        checkSkuStatus(opticSku, 'Optic', label, hwNode.id, errors);
+      });
     });
-  });
 
   const gigasmartNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASMART);
-  const hcNodes = nodes.filter(
-    (n) => n.type === NODE_TYPES.HARDWARE && String(n.data?.model || '').includes('HC')
-  );
+  const hcNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE && String(n.data?.model || '').includes('HC'));
 
   if (gigasmartNodes.length > 0 && hcNodes.length === 0) {
     errors.push({
       type: 'no_hc_for_gigasmart',
-      message: 'GigaSMART functions are placed on the canvas, but no GigaVUE-HC chassis is present. GigaSMART requires a GigaVUE-HC series chassis.',
+      message:
+        'GigaSMART functions are placed on the canvas, but no GigaVUE-HC chassis is present. GigaSMART requires a GigaVUE-HC series chassis.',
     });
   }
 
@@ -146,7 +161,7 @@ export function validateConfiguration(
   });
 
   const chassisNodes = nodes.filter(
-    (n) => n.type === NODE_TYPES.HARDWARE && !String(n.data?.model || '').includes('TAP')
+    (n) => n.type === NODE_TYPES.HARDWARE && !String(n.data?.model || '').includes('TAP'),
   );
 
   chassisNodes.forEach((chassis) => {
@@ -186,7 +201,14 @@ export function validateConfiguration(
     installedOptics.forEach((opt) => {
       const upper = opt.optic.toUpperCase();
       if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) numBreakouts += opt.qty;
-      const isQsfp = upper.includes('QSFP') || upper.includes('Q28') || upper.includes('QSF-') || upper.startsWith('Q28-') || upper.includes('40G') || upper.includes('100G') || upper.includes('400G');
+      const isQsfp =
+        upper.includes('QSFP') ||
+        upper.includes('Q28') ||
+        upper.includes('QSF-') ||
+        upper.startsWith('Q28-') ||
+        upper.includes('40G') ||
+        upper.includes('100G') ||
+        upper.includes('400G');
       if (isQsfp) installedQsfp += opt.qty;
       else installedSfp += opt.qty;
       if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) totalQsfpCages -= opt.qty;
@@ -272,23 +294,39 @@ export function validateConfiguration(
   });
 
   const ta25Nodes = nodes.filter(
-    (n) => n.type === NODE_TYPES.HARDWARE && (String(n.data?.model || '').includes('TA25') || String(n.data?.model || '').includes('TA25E'))
+    (n) =>
+      n.type === NODE_TYPES.HARDWARE &&
+      (String(n.data?.model || '').includes('TA25') || String(n.data?.model || '').includes('TA25E')),
   );
 
   ta25Nodes.forEach((node) => {
     const portCapacity = node.data?.portCapacity || 'Full';
     if (portCapacity === 'Full') return;
-    
-    let maxSfp = 48, maxQsfp = 8;
-    if (portCapacity === 'Quarter') { maxSfp = 12; maxQsfp = 2; }
-    else if (portCapacity === 'Half') { maxSfp = 24; maxQsfp = 4; }
+
+    let maxSfp = 48,
+      maxQsfp = 8;
+    if (portCapacity === 'Quarter') {
+      maxSfp = 12;
+      maxQsfp = 2;
+    } else if (portCapacity === 'Half') {
+      maxSfp = 24;
+      maxQsfp = 4;
+    }
 
     const installedOptics = (node.data?.optics as { optic: string; qty: number }[]) || [];
-    let installedSfp = 0, installedQsfp = 0;
+    let installedSfp = 0,
+      installedQsfp = 0;
     installedOptics.forEach((opt) => {
       if (!opt.optic) return;
       const upper = opt.optic.toUpperCase();
-      const isQsfp = upper.includes('QSFP') || upper.includes('Q28') || upper.includes('QSF-') || upper.startsWith('Q28-') || upper.includes('40G') || upper.includes('100G') || upper.includes('400G');
+      const isQsfp =
+        upper.includes('QSFP') ||
+        upper.includes('Q28') ||
+        upper.includes('QSF-') ||
+        upper.startsWith('Q28-') ||
+        upper.includes('40G') ||
+        upper.includes('100G') ||
+        upper.includes('400G');
       if (isQsfp) installedQsfp += opt.qty;
       else installedSfp += opt.qty;
     });
@@ -310,22 +348,28 @@ export function validateConfiguration(
         message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") has exceeded its QSFP port license limit. Capacity "${portCapacity}" allows up to ${maxQsfp} QSFP ports (currently using ${installedQsfp}).`,
       });
     }
-    
+
     const incomingEdges = edges.filter((e) => e.target === node.id);
-    let requiredSfpPorts = 0, requiredQsfpPorts = 0;
+    let requiredSfpPorts = 0,
+      requiredQsfpPorts = 0;
     incomingEdges.forEach((e) => {
       const sourceNode = nodes.find((n) => n.id === e.source);
       if (!sourceNode) return;
       let linkCount = 1;
       if (sourceNode.data?.model?.includes('TAP')) linkCount = ((sourceNode.data.tappedLinksCount as number) ?? 1) * 2;
       const sourceSpeed = sourceNode.data?.linkSpeed || 0;
-      const isQsfp = sourceSpeed >= 40000 || String(sourceNode.data?.label || '').includes('40G') || String(sourceNode.data?.label || '').includes('100G');
+      const isQsfp =
+        sourceSpeed >= 40000 ||
+        String(sourceNode.data?.label || '').includes('40G') ||
+        String(sourceNode.data?.label || '').includes('100G');
       if (isQsfp) requiredQsfpPorts += linkCount;
       else requiredSfpPorts += linkCount;
     });
 
     const outboundEdges = edges.filter((e) => e.source === node.id);
-    outboundEdges.forEach(() => { requiredSfpPorts += 1; });
+    outboundEdges.forEach(() => {
+      requiredSfpPorts += 1;
+    });
 
     if (requiredSfpPorts > maxSfp) {
       errors.push({
@@ -357,22 +401,21 @@ export function validateConfiguration(
  * all - no optics, no BOM lines, no port allocations. That silence is easy to
  * mistake for a bug in the BOM, so say plainly that the TAP needs configuring.
  */
-function validateTapConfiguration(
-  nodes: CustomNode[],
-  edges: Edge[],
-  errors: ConfigurationValidationError[],
-) {
+function validateTapConfiguration(nodes: CustomNode[], edges: Edge[], errors: ConfigurationValidationError[]) {
   const flagged = new Set<string>();
 
-  edges.forEach(edge => {
-    const a = nodes.find(n => n.id === edge.source);
-    const b = nodes.find(n => n.id === edge.target);
-    const tap = isTapNode(a) ? a : (isTapNode(b) ? b : undefined);
+  edges.forEach((edge) => {
+    const a = nodes.find((n) => n.id === edge.source);
+    const b = nodes.find((n) => n.id === edge.target);
+    const tap = isTapNode(a) ? a : isTapNode(b) ? b : undefined;
     const peer = tap === a ? b : a;
     if (!tap || flagged.has(tap.id)) return;
 
     const peerModel = String(peer?.data?.model || '');
-    const peerIsChassis = peer?.type === NODE_TYPES.HARDWARE && (peerModel.includes('HC') || peerModel.includes('TA')) && !peerModel.includes('TAP');
+    const peerIsChassis =
+      peer?.type === NODE_TYPES.HARDWARE &&
+      (peerModel.includes('HC') || peerModel.includes('TA')) &&
+      !peerModel.includes('TAP');
     if (!peerIsChassis || !isTapUnconfigured(tap)) return;
 
     flagged.add(tap.id);
@@ -393,22 +436,18 @@ function validateTapConfiguration(
  * fibre type and connector - a multimode M251T can't be landed on a singlemode
  * LR, and neither LC tap accepts the MPO or Rx-only BiDi parts.
  */
-function validateTapOpticCompatibility(
-  nodes: CustomNode[],
-  edges: Edge[],
-  errors: ConfigurationValidationError[],
-) {
+function validateTapOpticCompatibility(nodes: CustomNode[], edges: Edge[], errors: ConfigurationValidationError[]) {
   const chassisFor = new Map<string, CustomNode>();
-  edges.forEach(edge => {
-    const a = nodes.find(n => n.id === edge.source);
-    const b = nodes.find(n => n.id === edge.target);
-    const tap = isTapNode(a) ? a : (isTapNode(b) ? b : undefined);
+  edges.forEach((edge) => {
+    const a = nodes.find((n) => n.id === edge.source);
+    const b = nodes.find((n) => n.id === edge.target);
+    const tap = isTapNode(a) ? a : isTapNode(b) ? b : undefined;
     const peer = tap === a ? b : a;
     if (tap && peer?.type === NODE_TYPES.HARDWARE && !chassisFor.has(tap.id)) chassisFor.set(tap.id, peer);
   });
 
   chassisFor.forEach((chassis, tapId) => {
-    const tap = nodes.find(n => n.id === tapId);
+    const tap = nodes.find((n) => n.id === tapId);
     if (!tap) return;
     const data = tap.data as HardwareNodeData;
     const model = String(data.model || '');
@@ -419,7 +458,7 @@ function validateTapOpticCompatibility(
     const label = String(data.label || model || tapId);
     const seen = new Set<string>();
 
-    (data.tappedLinkAllocations || []).forEach(alloc => {
+    (data.tappedLinkAllocations || []).forEach((alloc) => {
       // The chassis-side optic is the tool optic; the network side of a passive
       // TAP is a descriptive label, not a part number.
       const optic = alloc.toolOptic || alloc.optic;
@@ -431,7 +470,7 @@ function validateTapOpticCompatibility(
         type: 'tap_optic_incompatible',
         nodeId: tapId,
         nodeLabel: label,
-        message: `TAP "${label}" (${model}) cannot be terminated into ${optic.split(' ')[0]}. Valid options on "${String(chassis.data?.label || chassis.data?.model)}": ${compatible.map(o => o.sku).join(', ')}.`,
+        message: `TAP "${label}" (${model}) cannot be terminated into ${optic.split(' ')[0]}. Valid options on "${String(chassis.data?.label || chassis.data?.model)}": ${compatible.map((o) => o.sku).join(', ')}.`,
       });
     });
   });
@@ -442,38 +481,36 @@ function validateTapOpticCompatibility(
  * capacity checks above can't see: a chassis physically running out of cages,
  * and links landing on a cage that's empty or holds the wrong optic type.
  */
-function validatePortAssignments(
-  nodes: CustomNode[],
-  edges: Edge[],
-  errors: ConfigurationValidationError[],
-) {
+function validatePortAssignments(nodes: CustomNode[], edges: Edge[], errors: ConfigurationValidationError[]) {
   const portsByNode = new Map<string, ReturnType<typeof getChassisPorts>>();
   const opticsByNode = new Map<string, Map<string, string>>();
 
-  nodes.filter(n => n.type === NODE_TYPES.HARDWARE).forEach(node => {
-    const model = String(node.data?.model || '');
-    const hwData = node.data as HardwareNodeData;
-    const ports = getChassisPorts(model, hwData);
-    portsByNode.set(node.id, ports);
-    opticsByNode.set(node.id, getPortOpticMap(ports, hwData.optics));
-  });
+  nodes
+    .filter((n) => n.type === NODE_TYPES.HARDWARE)
+    .forEach((node) => {
+      const model = String(node.data?.model || '');
+      const hwData = node.data as HardwareNodeData;
+      const ports = getChassisPorts(model, hwData);
+      portsByNode.set(node.id, ports);
+      opticsByNode.set(node.id, getPortOpticMap(ports, hwData.optics));
+    });
 
-  edges.forEach(edge => {
-    const sourceNode = nodes.find(n => n.id === edge.source);
-    const targetNode = nodes.find(n => n.id === edge.target);
+  edges.forEach((edge) => {
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    const targetNode = nodes.find((n) => n.id === edge.target);
     const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
 
-    ([
+    [
       { node: targetNode, key: 'targetPortId' as const, peer: sourceNode },
       { node: sourceNode, key: 'sourcePortId' as const, peer: targetNode },
-    ]).forEach(({ node, key, peer }) => {
+    ].forEach(({ node, key, peer }) => {
       if (!node || node.type !== NODE_TYPES.HARDWARE) return;
       const ports = portsByNode.get(node.id) || [];
       if (ports.length === 0) return; // TAPs carry no catalogue ports
 
       const label = String(node.data?.label || node.data?.model || node.id);
       const required = getRequiredPortCount(sourceNode, targetNode);
-      const allocated = links.filter(l => l[key]).length;
+      const allocated = links.filter((l) => l[key]).length;
 
       if (allocated < required) {
         errors.push({
@@ -485,10 +522,10 @@ function validatePortAssignments(
       }
 
       const opticMap = opticsByNode.get(node.id) || new Map<string, string>();
-      links.forEach(link => {
+      links.forEach((link) => {
         const portId = link[key];
         if (!portId) return;
-        const port = ports.find(p => p.id === portId);
+        const port = ports.find((p) => p.id === portId);
         if (!port) return;
         const optic = opticMap.get(portId);
 

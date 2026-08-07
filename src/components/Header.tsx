@@ -15,10 +15,29 @@ import { validateConfiguration } from '../utils/bomEngine';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
-  ConfirmModal, DuplicateModal, ProjectSettingsModal, BomModal, AboutModal,
-  PlayIcon, PauseIcon, CopyIcon, ClipboardIcon, GridIcon, ServerRackIcon,
-  PresentationIcon, StopIcon, CameraIcon, SaveIcon, FolderOpenIcon,
-  GearIcon, RefreshIcon, TrashIcon, UndoIcon, RedoIcon,
+  ConfirmModal,
+  DuplicateModal,
+  ProjectSettingsModal,
+  BomModal,
+  AboutModal,
+  SkuUpdateModal,
+  PlayIcon,
+  PauseIcon,
+  CopyIcon,
+  ClipboardIcon,
+  GridIcon,
+  ServerRackIcon,
+  PresentationIcon,
+  StopIcon,
+  CameraIcon,
+  SaveIcon,
+  FolderOpenIcon,
+  GearIcon,
+  RefreshIcon,
+  TrashIcon,
+  UndoIcon,
+  RedoIcon,
+  PriceListIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -36,19 +55,19 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileClick, onLoadFileChange }) => {
   // Subscribe to exactly the state slices we need
-  const isRunning      = useStore((state) => state.isRunning);
+  const isRunning = useStore((state) => state.isRunning);
   const simulationSpeed = useStore((state) => state.simulationSpeed);
-  const toggleSimulation  = useStore((state) => state.toggleSimulation);
+  const toggleSimulation = useStore((state) => state.toggleSimulation);
   const setSimulationSpeed = useStore((state) => state.setSimulationSpeed);
-  const clearCanvas    = useStore((state) => state.clearCanvas);
-  const loadDemo       = useStore((state) => state.loadDemo);
-  const advancedMode   = useStore((state) => state.advancedMode);
+  const clearCanvas = useStore((state) => state.clearCanvas);
+  const loadDemo = useStore((state) => state.loadDemo);
+  const advancedMode = useStore((state) => state.advancedMode);
   const setAdvancedMode = useStore((state) => state.setAdvancedMode);
   const setAdvancedModeUnlocked = useStore((state) => state.setAdvancedModeUnlocked);
-  const nodes          = useStore((state) => state.nodes);
-  const edges          = useStore((state) => state.edges);
-  const activeView     = useStore((state) => state.activeView);
-  const setActiveView  = useStore((state) => state.setActiveView);
+  const nodes = useStore((state) => state.nodes);
+  const edges = useStore((state) => state.edges);
+  const activeView = useStore((state) => state.activeView);
+  const setActiveView = useStore((state) => state.setActiveView);
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const setPanelTextScale = useStore((state) => state.setPanelTextScale);
   const currentScenarioName = useStore((state) => state.currentScenarioName);
@@ -61,6 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const canRedo = useStore((state) => state.historyFuture.length > 0);
   const undo = useStore((state) => state.undo);
   const redo = useStore((state) => state.redo);
+  const bumpSkuCatalogueVersion = useStore((state) => state.bumpSkuCatalogueVersion);
 
   // Local UI state for modals
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -68,13 +88,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
+  const [showSkuUpdate, setShowSkuUpdate] = useState(false);
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
 
   const handleLogoClick = () => {
     const now = Date.now();
-    const recentClicks = [...logoClicks, now].filter(t => now - t < 2000);
+    const recentClicks = [...logoClicks, now].filter((t) => now - t < 2000);
     setLogoClicks(recentClicks);
     if (recentClicks.length >= 4) {
       const nextMode = !advancedMode;
@@ -85,8 +106,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   };
 
   const handleClearRequest = () => setShowClearConfirm(true);
-  const handleClearConfirm  = () => { clearCanvas(); setShowClearConfirm(false); };
-  const handleClearCancel   = () => setShowClearConfirm(false);
+  const handleClearConfirm = () => {
+    clearCanvas();
+    setShowClearConfirm(false);
+  };
+  const handleClearCancel = () => setShowClearConfirm(false);
 
   const handleNameDoubleClick = () => {
     setNameDraft(currentScenarioName || '');
@@ -102,24 +126,24 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const handleExportScreenshot = () => {
     const element = document.querySelector('.react-flow') as HTMLElement;
     if (!element) return;
-    
+
     toPng(element, {
       backgroundColor: '#121212',
       cacheBust: true,
       filter: (node) => {
         if (
-          node.classList?.contains('react-flow__controls') || 
+          node.classList?.contains('react-flow__controls') ||
           node.classList?.contains('react-flow__panel') ||
           node.classList?.contains('config-panel-toggle')
         ) {
           return false;
         }
         return true;
-      }
+      },
     })
       .then((dataUrl) => {
         const a = document.createElement('a');
-        const filename = currentScenarioName 
+        const filename = currentScenarioName
           ? `${currentScenarioName} - export.png`
           : 'Flow Mapping Example - export.png';
         a.setAttribute('download', filename);
@@ -144,10 +168,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showSkuUpdate && <SkuUpdateModal onClose={() => setShowSkuUpdate(false)} onChanged={bumpSkuCatalogueVersion} />}
       {showDuplicatePrompt && (
         <DuplicateModal
           defaultName="Site B"
-          selectedCount={nodes.filter(n => n.selected).length}
+          selectedCount={nodes.filter((n) => n.selected).length}
           totalCount={nodes.length}
           onConfirm={(siteName: string) => {
             duplicateSolution(siteName);
@@ -194,13 +219,23 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                     }}
                   />
                 ) : (
-                  <span onDoubleClick={handleNameDoubleClick} title="Double-click to rename project" style={{ cursor: 'text' }}>
+                  <span
+                    onDoubleClick={handleNameDoubleClick}
+                    title="Double-click to rename project"
+                    style={{ cursor: 'text' }}
+                  >
                     {currentScenarioName || 'Untitled Project'}
                   </span>
                 )}
                 <img
                   className="brand-region-flag"
-                  src={projectRegion === 'EU' ? 'https://flagcdn.com/eu.svg' : projectRegion === 'UK' ? 'https://flagcdn.com/gb.svg' : 'https://flagcdn.com/us.svg'}
+                  src={
+                    projectRegion === 'EU'
+                      ? 'https://flagcdn.com/eu.svg'
+                      : projectRegion === 'UK'
+                        ? 'https://flagcdn.com/gb.svg'
+                        : 'https://flagcdn.com/us.svg'
+                  }
                   alt={projectRegion}
                   title={`Deployment Region: ${projectRegion}`}
                   onClick={() => setShowSettings(true)}
@@ -252,20 +287,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             {/* ── Group 2: Project / View ── */}
             <div className="control-group">
-              <button
-                className="header-btn icon-only"
-                onClick={undo}
-                disabled={!canUndo}
-                title="Undo (Ctrl+Z)"
-              >
+              <button className="header-btn icon-only" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
                 <UndoIcon />
               </button>
-              <button
-                className="header-btn icon-only"
-                onClick={redo}
-                disabled={!canRedo}
-                title="Redo (Ctrl+Shift+Z)"
-              >
+              <button className="header-btn icon-only" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
                 <RedoIcon />
               </button>
 
@@ -279,19 +304,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </button>
               )}
 
-              {(advancedMode || nodes.some(n => n.type === 'hardwareNode')) && (() => {
-                const validationErrors = validateConfiguration(nodes, edges);
-                const hasErrors = validationErrors.length > 0;
-                return (
-                  <button
-                    className={`header-btn ${hasErrors ? 'header-btn--red' : 'header-btn--orange'}`}
-                    onClick={() => setShowBom(true)}
-                    title={hasErrors ? 'Configuration errors detected' : 'View Bill of Materials'}
-                  >
-                    <ClipboardIcon /> BOM{hasErrors ? ' (!)' : ''}
-                  </button>
-                );
-              })()}
+              {(advancedMode || nodes.some((n) => n.type === 'hardwareNode')) &&
+                (() => {
+                  const validationErrors = validateConfiguration(nodes, edges);
+                  const hasErrors = validationErrors.length > 0;
+                  return (
+                    <button
+                      className={`header-btn ${hasErrors ? 'header-btn--red' : 'header-btn--orange'}`}
+                      onClick={() => setShowBom(true)}
+                      title={hasErrors ? 'Configuration errors detected' : 'View Bill of Materials'}
+                    >
+                      <ClipboardIcon /> BOM{hasErrors ? ' (!)' : ''}
+                    </button>
+                  );
+                })()}
 
               {advancedMode && (
                 <button
@@ -299,7 +325,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   onClick={() => setActiveView(activeView === 'canvas' ? 'rack' : 'canvas')}
                   title="Toggle Rack Elevation View"
                 >
-                  {activeView === 'rack' ? <><GridIcon /> Canvas View</> : <><ServerRackIcon /> Rack View</>}
+                  {activeView === 'rack' ? (
+                    <>
+                      <GridIcon /> Canvas View
+                    </>
+                  ) : (
+                    <>
+                      <ServerRackIcon /> Rack View
+                    </>
+                  )}
                 </button>
               )}
 
@@ -308,7 +342,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
                 title="Toggle Automated Trade Show Demonstration Mode"
               >
-                {isTradeShowDemoActive ? <><StopIcon /> Stop Demo</> : <><PresentationIcon /> Auto Demo</>}
+                {isTradeShowDemoActive ? (
+                  <>
+                    <StopIcon /> Stop Demo
+                  </>
+                ) : (
+                  <>
+                    <PresentationIcon /> Auto Demo
+                  </>
+                )}
               </button>
 
               <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
@@ -338,19 +380,36 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               <button className="header-btn" onClick={onSaveFileClick} title="Save project to a .json file">
                 <SaveIcon /> Save
               </button>
-              <label className="header-btn" style={{ cursor: 'pointer', margin: 0 }} title="Load project from a .json file">
+              <label
+                className="header-btn"
+                style={{ cursor: 'pointer', margin: 0 }}
+                title="Load project from a .json file"
+              >
                 <FolderOpenIcon /> Load
                 <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
               </label>
 
               <div className="control-divider">
-                <button className="header-btn" onClick={onSaveClick} title="Save to browser local storage"><SaveIcon /> Browser Save</button>
-                <button className="header-btn" onClick={onLoadClick} title="Load from browser local storage"><FolderOpenIcon /> Browser Load</button>
+                <button className="header-btn" onClick={onSaveClick} title="Save to browser local storage">
+                  <SaveIcon /> Browser Save
+                </button>
+                <button className="header-btn" onClick={onLoadClick} title="Load from browser local storage">
+                  <FolderOpenIcon /> Browser Load
+                </button>
               </div>
             </div>
 
             {/* ── Group 4: System / Danger ── */}
             <div className="control-group">
+              {advancedMode && (
+                <button
+                  className="header-btn icon-only"
+                  onClick={() => setShowSkuUpdate(true)}
+                  title="Update SKU price list from a spreadsheet"
+                >
+                  <PriceListIcon />
+                </button>
+              )}
               <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
                 <GearIcon />
               </button>
@@ -367,6 +426,5 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
     </>
   );
 };
-
 
 export default Header;

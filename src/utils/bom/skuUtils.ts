@@ -1,6 +1,4 @@
-import skusData from '../../constants/skus.json';
-
-const skus: Record<string, string> = skusData as Record<string, string>;
+import { getMergedSkus } from '../skuOverrides';
 
 // Maps SUPPORTED_TAP_OPTICS picker values (src/constants/nodeTypes.ts) to the
 // real Gigamon transceiver SKU. Every value in that list must have an entry
@@ -44,7 +42,8 @@ export function resolveOpticSku(opticStr: string, chassisModel: string): string 
   if (name.includes('40G MULTIMODE SR4') || name.includes('40G MM SR4')) return 'QSF-502T';
   if (name.includes('40G SINGLEMODE LR4') || name.includes('40G SM LR4')) return 'QSF-503T';
   if (name.includes('100G MULTIMODE SR4') || name.includes('100G MM SR4')) return 'Q28-502T';
-  if (name.includes('100G SINGLEMODE LR4') || name.includes('100G SM LR4') || name.includes('Q28-503T')) return 'Q28-503T';
+  if (name.includes('100G SINGLEMODE LR4') || name.includes('100G SM LR4') || name.includes('Q28-503T'))
+    return 'Q28-503T';
   if (name.includes('Q28-503') || name.includes('QSFP28-503')) return 'Q28-503T';
   if (name.includes('SFP-553')) return 'SFP-553T';
 
@@ -58,12 +57,12 @@ export function resolveOpticSku(opticStr: string, chassisModel: string): string 
     return 'CBL-205';
   }
   const taaSku = firstWord + 'T';
-  if (skus[taaSku]) {
+  if (getMergedSkus()[taaSku]) {
     return taaSku;
   }
   return firstWord;
 }
 
 export function getSkus() {
-  return skus;
+  return getMergedSkus();
 }

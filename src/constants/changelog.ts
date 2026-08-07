@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.489",
+    date: "2026-08-07",
+    summary: "Advanced Mode has a new Update Price List button — upload the worldwide price list workbook (.xlsx/.xls/.csv) directly to refresh SKU descriptions and End of Sale/Life dates, no CSV conversion or rebuild needed.",
+  },
+  {
     version: "1.0.488",
     date: "2026-08-07",
     summary: "Port tooltips now say 'fitted but unused' for an optic that's installed but not linked, instead of just naming the optic as if it were connected.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.470",
     date: "2026-08-05",
     summary: "The hardware summary's front panel is now larger, and clicking it opens a full-size view with a slot legend — big enough to count individual ports.",
-  },
-  {
-    version: "1.0.469",
-    date: "2026-08-05",
-    summary: "Clicking the version number now opens build information and recent release notes instead of a GitHub link.",
   },
 ];

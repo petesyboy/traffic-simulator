@@ -1,10 +1,4 @@
-import {
-  type Edge,
-  type Node,
-  type NodeChange,
-  type OnEdgesChange,
-  type OnConnect,
-} from '@xyflow/react';
+import { type Edge, type Node, type NodeChange, type OnEdgesChange, type OnConnect } from '@xyflow/react';
 
 export interface TrafficStream {
   id: string;
@@ -136,7 +130,11 @@ export interface HardwareModel {
   base_ports?: (PortInfo | number)[];
   licensing?: LicensingInfo;
   module_slots?: number;
-  module_slot_positions?: { number: number; label: string; box?: { x: number; y: number; width: number; height: number } }[];
+  module_slot_positions?: {
+    number: number;
+    label: string;
+    box?: { x: number; y: number; width: number; height: number };
+  }[];
   image?: string;
   isCustom?: boolean;
   tappedLinksCount?: number;
@@ -165,13 +163,13 @@ export interface HardwareCatalogueItem {
   tappedLinkAllocations?: TappedLinkAllocation[];
 }
 
-export type NodeType = 
-  | 'inputNode' 
-  | 'mapNode' 
-  | 'filterNode' 
-  | 'toolNode' 
-  | 'gigaSmartNode' 
-  | 'gigaStreamNode' 
+export type NodeType =
+  | 'inputNode'
+  | 'mapNode'
+  | 'filterNode'
+  | 'toolNode'
+  | 'gigaSmartNode'
+  | 'gigaStreamNode'
   | 'groupNode'
   | 'hardwareNode';
 
@@ -187,7 +185,14 @@ export interface BaseNodeData {
 }
 
 export interface InputNodeData extends BaseNodeData {
-  configType: 'SPAN Port' | 'Network Tap' | 'Virtual TAP' | 'GigaVUE-VM' | 'ERSPAN Tunnel' | 'East/West Traffic' | 'VMWare Estate';
+  configType:
+    | 'SPAN Port'
+    | 'Network Tap'
+    | 'Virtual TAP'
+    | 'GigaVUE-VM'
+    | 'ERSPAN Tunnel'
+    | 'East/West Traffic'
+    | 'VMWare Estate';
   linkSpeed?: number;
   portSpeed?: string;
   encryptedTrafficPercentage?: number;
@@ -270,13 +275,13 @@ export interface ToolNodeData extends BaseNodeData {
   powerSupply?: 'AC' | 'DC';
 }
 
-export type AnyNodeData = 
-  | InputNodeData 
-  | MapNodeData 
-  | FilterNodeData 
-  | GigaSmartNodeData 
-  | GigaStreamNodeData 
-  | HardwareNodeData 
+export type AnyNodeData =
+  | InputNodeData
+  | MapNodeData
+  | FilterNodeData
+  | GigaSmartNodeData
+  | GigaStreamNodeData
+  | HardwareNodeData
   | ToolNodeData
   | BaseNodeData;
 
@@ -334,6 +339,7 @@ export interface RFState {
   isTradeShowDemoActive: boolean;
   tradeShowDemoStep: number;
   tradeShowDemoStatus: string;
+  skuCatalogueVersion: number;
 
   // Actions
   setActiveView: (view: 'canvas' | 'rack') => void;
@@ -342,6 +348,7 @@ export interface RFState {
   setTradeShowDemoActive: (active: boolean) => void;
   setTradeShowDemoStep: (step: number) => void;
   setTradeShowDemoStatus: (status: string) => void;
+  bumpSkuCatalogueVersion: () => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -365,7 +372,7 @@ export interface RFState {
       panelTextScale?: number;
       showGrid?: boolean;
       snapToGrid?: boolean;
-    }
+    },
   ) => void;
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
@@ -397,7 +404,7 @@ export interface RFState {
     uniqueEgressMbps?: number,
     encryptedEdges?: string[],
     decryptedEdges?: string[],
-    edgeEncryptedMbps?: Record<string, number>
+    edgeEncryptedMbps?: Record<string, number>,
   ) => void;
   clearCanvas: () => void;
   loadDemo: () => void;

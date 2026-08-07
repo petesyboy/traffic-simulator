@@ -35,7 +35,12 @@ export const PauseIcon: React.FC<IconProps> = ({ size = 14 }) => (
 export const CopyIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
     <rect x="8.5" y="8.5" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M15.5 8.5V6a1.5 1.5 0 00-1.5-1.5H6A1.5 1.5 0 004.5 6v8A1.5 1.5 0 006 15.5h2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M15.5 8.5V6a1.5 1.5 0 00-1.5-1.5H6A1.5 1.5 0 004.5 6v8A1.5 1.5 0 006 15.5h2.5"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -82,22 +87,48 @@ export const StopIcon: React.FC<IconProps> = ({ size = 14 }) => (
 
 export const CameraIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M4 8.5A1.5 1.5 0 015.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0120 8.5v9A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5v-9z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    <path
+      d="M4 8.5A1.5 1.5 0 015.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0120 8.5v9A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5v-9z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinejoin="round"
+    />
     <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.7" />
   </svg>
 );
 
 export const SaveIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M12 3.5v10.5M12 14l-4-4M12 14l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M4.5 15v3.5A1.5 1.5 0 006 20h12a1.5 1.5 0 001.5-1.5V15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path
+      d="M12 3.5v10.5M12 14l-4-4M12 14l4-4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4.5 15v3.5A1.5 1.5 0 006 20h12a1.5 1.5 0 001.5-1.5V15"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 export const FolderOpenIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M4 7.5A1.5 1.5 0 015.5 6h4l2 2h7A1.5 1.5 0 0120 9.5v.5H6.2a1.5 1.5 0 00-1.45 1.11L3 18V7.5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M4.75 18l1.72-6.4A1.5 1.5 0 018.9 10.5h10.6a1 1 0 01.96 1.28l-1.7 5.42a1.5 1.5 0 01-1.43 1.05H5.7a1 1 0 01-.95-1.25z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path
+      d="M4 7.5A1.5 1.5 0 015.5 6h4l2 2h7A1.5 1.5 0 0120 9.5v.5H6.2a1.5 1.5 0 00-1.45 1.11L3 18V7.5z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4.75 18l1.72-6.4A1.5 1.5 0 018.9 10.5h10.6a1 1 0 01.96 1.28l-1.7 5.42a1.5 1.5 0 01-1.43 1.05H5.7a1 1 0 01-.95-1.25z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -115,29 +146,95 @@ export const GearIcon: React.FC<IconProps> = ({ size = 14 }) => (
 
 export const RefreshIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M4.5 12a7.5 7.5 0 0113-5.1M19.5 12a7.5 7.5 0 01-13 5.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M17.5 3.5v3.5H14M6.5 20.5V17H10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M4.5 12a7.5 7.5 0 0113-5.1M19.5 12a7.5 7.5 0 01-13 5.1"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M17.5 3.5v3.5H14M6.5 20.5V17H10"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 export const UndoIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M7 8H16.5A4.5 4.5 0 0121 12.5v0A4.5 4.5 0 0116.5 17H10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10.5 4.5L7 8l3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M7 8H16.5A4.5 4.5 0 0121 12.5v0A4.5 4.5 0 0116.5 17H10"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.5 4.5L7 8l3.5 3.5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 export const RedoIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M17 8H7.5A4.5 4.5 0 003 12.5v0A4.5 4.5 0 007.5 17H14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M13.5 4.5L17 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M17 8H7.5A4.5 4.5 0 003 12.5v0A4.5 4.5 0 007.5 17H14"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M13.5 4.5L17 8l-3.5 3.5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 export const TrashIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <path d="M5 7h14M9.5 7V5a1 1 0 011-1h3a1 1 0 011 1v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M7 7l.8 12a1.5 1.5 0 001.5 1.4h5.4a1.5 1.5 0 001.5-1.4L17 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M5 7h14M9.5 7V5a1 1 0 011-1h3a1 1 0 011 1v2"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M7 7l.8 12a1.5 1.5 0 001.5 1.4h5.4a1.5 1.5 0 001.5-1.4L17 7"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
     <path d="M10.2 10.5v6M13.8 10.5v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+export const PriceListIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M6 3.5h9l3.5 3.5V19.5A1.5 1.5 0 0117 21H6a1.5 1.5 0 01-1.5-1.5v-14A1.5 1.5 0 016 3.5z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M15 3.5V7h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path
+      d="M9 15.5v-4l2 2 2-2v4"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M8 18.5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
