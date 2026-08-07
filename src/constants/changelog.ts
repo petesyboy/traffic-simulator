@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.487",
+    date: "2026-08-07",
+    summary: "Fixed the grab-hand cursor bleeding onto individual ports on a chassis front panel, making it fiddly to hover precisely over one - it's a plain arrow there now.",
+  },
+  {
     version: "1.0.486",
     date: "2026-08-07",
     summary: "Fixed the enlarged AMI event panel still drifting off-screen on shorter windows - its height and position could disagree with each other when stacked above the compact log.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.468",
     date: "2026-08-05",
     summary: "Moved the module slot selectors from the Optics tab into the General tab, alongside the hardware specifications.",
-  },
-  {
-    version: "1.0.467",
-    date: "2026-08-05",
-    summary: "Hardware summary now draws a front-panel view with each installed module pictured in its real slot position.",
   },
 ];

@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.487",
+    "date": "2026-08-07",
+    "summary": "Fixed the grab-hand cursor bleeding onto individual ports on a chassis front panel, making it fiddly to hover precisely over one - it's a plain arrow there now."
+  },
+  {
     "version": "1.0.486",
     "date": "2026-08-07",
     "summary": "Fixed the enlarged AMI event panel still drifting off-screen on shorter windows - its height and position could disagree with each other when stacked above the compact log."

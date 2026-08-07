@@ -109,6 +109,11 @@ export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occup
                               className={isFlashing ? 'chassis-port-flash' : undefined}
                               style={{
                                 width: '6px', height: '6px', borderRadius: '1px',
+                                // Canvas nodes are draggable, so the "grab" hand cursor
+                                // otherwise bleeds through onto these tiny port squares,
+                                // making it hard to tell you're precisely over one while
+                                // hovering for its tooltip - force a plain arrow instead.
+                                cursor: 'default',
                                 border: '1px solid', flexShrink: 0, ...STATE_STYLE[state],
                               }}
                             />
