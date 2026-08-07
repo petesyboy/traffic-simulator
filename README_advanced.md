@@ -20,13 +20,16 @@ Transitions the canvas to a physical hardware configuration layout. Users place 
 - **Real-time Metrics**: Displays live throughput parameters directly on physical hardware nodes (`In: X.X Gbps` / `Out: X.X Gbps`).
 - **Input Node Aggregation**: TAPs and input nodes on the far-left summarise total ingress bandwidth.
 - **BOM Engine**: Generates a physical inventory, matching optics, licenses, and cables automatically.
+- **Photographic Hardware Diagrams**: HC1, HC1-Plus, HC3, and HCT chassis nodes render an actual front-panel photo with whichever port/GigaSMART/bypass modules you've installed composited on at their real physical slot position — not a generic box — so the diagram on screen matches what a customer would see racked in front of them. The same composite renders in the **Hardware Summary Panel** (below) and in **Rack Elevation View**.
+- **Hardware Summary Panel**: Click the 📋 icon in a chassis node's header to open a full-size hardware summary — a larger version of the front-panel photo with a slot legend, live port state, and installed board/optic detail, useful for walking a customer through exactly what's fitted where.
+- **Collapsible Board Details**: When a chassis has multiple modules installed, its canvas node can grow tall from stacking each board's port map. Click the **−/+** icon next to 📋 to collapse the photo/port-map section down to just the header, and expand it again when you need the detail back.
 
 ### C. Toggling Modes (4-Click Gigamon Logo Toggle)
 - **4-Click Logo Toggle**: Click the **Gigamon logo** in the top-left corner of the header **four times in quick succession** to switch between **Standard View** and **Expert Designer** (Advanced Mode).
 - **Unlocked Features in Advanced Mode**:
   - **Bill of Materials (BOM)**: The **BOM** tab appears in the top header bar, enabling real-time physical hardware inventory, exact SKU resolution, and optional pricing breakdown.
-  - **Hardware Categories**: The left sidebar expands to reveal physical **Traffic Aggregation (TAs)** appliances, **Optical TAPs**, and **GigaVUE-HC Series Chassis**.
-  - **Detailed Hardware Configuration**: Selecting any hardware node opens advanced configuration side panels to manage board module slots, transceiver cages, license capacity, and power/battery accessories.
+  - **Hardware Categories**: The left sidebar expands to reveal physical **Traffic Aggregation (TAs)** appliances, **Optical TAPs**, and **GigaVUE-HC Series Chassis**. Note: TAP-M100T/M200T/M202ULT tray chassis are *not* in this list — see [Rack Elevation View](#8-rack-elevation-view) below for why.
+  - **Detailed Hardware Configuration**: Selecting any hardware node opens advanced configuration side panels to manage board module slots, transceiver cages, license capacity, and power/battery accessories. This configuration panel can be dragged wider from the handle on its left edge if long optic/board labels are getting cut off. When you install a new optic, the exact cage(s) it just landed in flash briefly on the chassis's port map, so it's obvious which cage a click just filled.
 
 ---
 
@@ -104,3 +107,15 @@ When a physical chassis or active TAP is selected, configure power supply and re
 ## 7. Presentation Focus Mode
 
 Double-clicking any node on the canvas highlights it with a bright, pulsing orange halo (`.node-presentation-glow`). This allows presenters to draw focus to specific layout entities during meetings. Double-clicking again or clicking the background canvas clears the glow.
+
+---
+
+## 8. Rack Elevation View
+
+Advanced Mode includes a physical **Rack Elevation View**, toggled from the header bar (**Canvas View ↔ Rack View**), for laying hardware out the way it would actually sit in a 42U rack rather than as a logical flow diagram.
+
+1. **Real Chassis Photos**: Racked units render the same real product photography used on the canvas node and Hardware Summary Panel — for HC1/HC1-Plus/HC3/HCT, that includes whichever boards are installed, composited at their correct slot position — instead of a generic coloured bar. Each row takes its correct physical RU height.
+2. **Placing Hardware**: Drag any hardware node from the **"Unracked Hardware"** list (scoped to the currently selected site) onto an empty U position to rack it. Click the **✕** on a racked unit to return it to Unracked Hardware.
+3. **TAP Trays Are Automatic**: TAP-M100T (3 bays), TAP-M200T (6 bays), and TAP-M202ULT (2 bays, for ULT-variant modules) tray chassis are **not** dragged from the sidebar — they're generated automatically to match however many physical tap modules (TAP-M251T, TAP-M253T, etc.) exist on the canvas, using the same bin-packing math the BOM has always used for tray quantities. They appear only in Rack View's Unracked Hardware list once needed.
+4. **Nesting Tap Modules**: Drag an individual tap module from Unracked Hardware into one of a racked tray's bay slots to nest it there. Un-racking the tray automatically returns its nested modules to Unracked Hardware; re-racking it restores them.
+5. **BOM Independence**: Rack placement is visual/organisational only — the BOM's tray quantities are computed independently from total tap module count, regardless of whether trays have actually been racked.
