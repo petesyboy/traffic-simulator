@@ -115,6 +115,33 @@ describe('getChassisPorts', () => {
   });
 });
 
+describe('getChassisPorts for a breakout panel', () => {
+  it('returns 3 MPO ports and 12 LC ports (4 per group), matching the physical unit', () => {
+    const ports = getChassisPorts('PNL-M341T', hw({}));
+    expect(ports).toHaveLength(15);
+
+    const mpo = ports.filter(p => p.cage === 'MPO');
+    const lc = ports.filter(p => p.cage === 'SFP');
+    expect(mpo).toHaveLength(3);
+    expect(lc).toHaveLength(12);
+
+    expect(mpo.map(p => p.id)).toEqual(['1/1/m1', '1/1/m2', '1/1/m3']);
+    expect(lc.filter(p => p.id.startsWith('1/1/m1/')).map(p => p.id)).toEqual([
+      '1/1/m1/1', '1/1/m1/2', '1/1/m1/3', '1/1/m1/4',
+    ]);
+  });
+
+  it('returns the same port shape for both PNL-M341T and PNL-M343T (panel identity has no effect on its own ports)', () => {
+    expect(getChassisPorts('PNL-M343T', hw({}))).toEqual(getChassisPorts('PNL-M341T', hw({})));
+  });
+
+  it('every panel port is licensed and carries no optic of its own', () => {
+    const ports = getChassisPorts('PNL-M341T', hw({}));
+    expect(ports.every(p => p.licensed)).toBe(true);
+    expect(getPortOpticMap(ports, undefined).size).toBe(0);
+  });
+});
+
 describe('getOpticCage', () => {
   it('maps optic speed onto the cage family it physically needs', () => {
     expect(getOpticCage('SFP-532T (10G SFP+ SR)')).toBe('SFP');
@@ -122,11 +149,6 @@ describe('getOpticCage', () => {
     expect(getOpticCage('QSF-502 (40G QSFP+ SR4)')).toBe('QSFP');
     expect(getOpticCage('Q28-502 (100G QSFP28 SR4)')).toBe('QSFP');
     expect(getOpticCage('QDD-501 (400G QSFP-DD SR8)')).toBe('QSFP');
-  });
-
-  it('treats a breakout panel as occupying a QSFP cage', () => {
-    expect(getOpticCage('PNL-M341')).toBe('QSFP');
-    expect(getOpticCage('PNL-M343')).toBe('QSFP');
   });
 
   it('places every QSB-* BiDi optic in a QSFP cage, never SFP', () => {

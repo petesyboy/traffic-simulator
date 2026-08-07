@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
-import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType } from '../../utils/hardwareUtils';
+import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import skusData from '../../constants/skus.json';
@@ -12,7 +12,8 @@ import {
   OpticsPanel,
   GigaSmartAppsPanel,
   TapLinksPanel,
-  PowerSupplyPanel
+  PowerSupplyPanel,
+  BreakoutPanelPanel
 } from './hardware';
 import { MapNodePanel } from './MapNodePanel';
 import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData, TappedLinkAllocation, MapCondition } from '../../store/types';
@@ -52,7 +53,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   if (node.id !== prevNodeId || model !== prevModel) {
     setPrevNodeId(node.id);
     setPrevModel(model);
-    if (model?.includes('TAP')) {
+    if (model?.includes('TAP') || isBreakoutPanelModel(model)) {
       setActiveTab('general');
     }
   }
@@ -63,7 +64,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   // that would need to match every JSON variant.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let details: any = null;
-  if (model?.includes('TAP')) details = hardwareCatalogue.taps.find(t => t.sku === sku);
+  if (model?.includes('TAP') || isBreakoutPanelModel(model)) details = hardwareCatalogue.taps.find(t => t.sku === sku);
   else if (model?.includes('TA')) details = hardwareCatalogue.ta_series.find(t => t.sku === sku);
   else if (model?.includes('HC')) details = hardwareCatalogue.hc_series.find(t => t.sku === sku);
 
@@ -209,7 +210,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           animation: pulse-orange 1.5s infinite ease-in-out;
         }
       `}</style>
-      {!model?.includes('TAP') && (
+      {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
         <div className="flex-row gap-2 mb-3 border-b border-subtle pb-2 flex-wrap">
           <button
             onClick={() => setActiveTab('general')}
@@ -320,7 +321,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           )}
         </div>
 
-        {!model?.includes('TAP') && (
+        {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
           <BoardSlotsPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 
@@ -344,7 +345,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           </div>
         </div>
 
-        {(!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && (
+        {(!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && !isBreakoutPanelModel(model) && (
           <PowerSupplyPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 
@@ -352,7 +353,11 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           <TapLinksPanel selectedNode={node} updateNodeData={updateNodeData} nodes={nodes} edges={edges} />
         )}
 
-        {!model?.includes('TAP') && (
+        {isBreakoutPanelModel(model) && (
+          <BreakoutPanelPanel selectedNode={node} nodes={nodes} edges={edges} />
+        )}
+
+        {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
           <div className="panel-section">
             <h3 className="text-base font-semibold mb-2">🎯 Traffic Map Filter Rules</h3>
             <MapNodePanel
@@ -367,7 +372,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
       {/* ── OPTICS TAB ── */}
       <div style={{ display: activeTab === 'optics' ? 'block' : 'none' }}>
-        {!model?.includes('TAP') && (
+        {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
           <>
             <CageSummaryPanel selectedNode={node} />
             <PortMapPanel selectedNode={node} />
@@ -378,7 +383,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
       {/* ── GIGASMART APPS TAB ── */}
       <div style={{ display: activeTab === 'apps' ? 'block' : 'none' }}>
-        {!model?.includes('TAP') && (
+        {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
           <GigaSmartAppsPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
       </div>

@@ -400,49 +400,14 @@ describe('hardwareUtils', () => {
     });
   });
 
-  describe('getCageCapacityBreakdown — fully populated + fully broken out vs. datasheet 10Gb/25Gb max', () => {
-    // Same p.7 table's 10Gb/25Gb rows (marked with '*', "Maximum density requires
-    // using port breakout, such as G-TAP PNL-M341"). Fanout capability confirmed
-    // real per GigaVUE-OS-Compatibility-and-Interoperability-Matrix.xlsx's "Fanout
-    // Matrix" sheet (PRT-HC1-Q04X08 4x10G v5.11+; HC1-Plus boards 4x10G/4x25G
-    // v6.0+; PRT-HC3-C16 4x10G/4x25G v5.4+ on CCv2).
-    const breakoutOptic = (qty: number) => ({ board: 'main', optic: 'PNL-M341 (40/100G Multimode Breakout Panel)', qty });
-
-    it('HC1 fully populated + every QSFP cage broken out matches the datasheet 10Gb max of 60', () => {
-      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1', {
-        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC1',
-        optics: [breakoutOptic(8)], // all 8 QSFP28 cages (2x PRT-HC1-Q04X08) broken out
-        installedBoards: { '1': 'PRT-HC1-Q04X08', '2': 'PRT-HC1-Q04X08' },
-      } as unknown as HardwareNodeData);
-      // 12 built-in SFP+ + 16 SFP28 (boards) + 32 from breaking out 8 QSFP28 cages = 60
-      expect(breakdown.totalExpandedSfpPorts).toBe(60);
-      expect(breakdown.remainingSfpCages).toBe(60);
-    });
-
-    it('HC1-Plus fully populated + every QSFP cage broken out matches the datasheet 10Gb/25Gb max of 72', () => {
-      const breakdown = getCageCapacityBreakdown('GigaVUE-HC1-Plus', {
-        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC1-Plus',
-        optics: [breakoutOptic(12)], // all 12 QSFP28 cages (4 built-in + 2x PRT-HC1-Q04X08) broken out
-        installedBoards: { '1': 'PRT-HC1-Q04X08', '2': 'PRT-HC1-Q04X08' },
-      } as unknown as HardwareNodeData);
-      // 8 built-in SFP28 + 16 SFP28 (boards) + 48 from breaking out 12 QSFP28 cages = 72
-      expect(breakdown.totalExpandedSfpPorts).toBe(72);
-      expect(breakdown.remainingSfpCages).toBe(72);
-    });
-
-    it('HC3 fully populated + every QSFP cage broken out is capped at the datasheet-documented 128, not the raw 256', () => {
-      const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
-        label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC3',
-        optics: [breakoutOptic(64)], // all 64 QSFP28 cages (4x PRT-HC3-C16) broken out
-        installedBoards: { '1': 'PRT-HC3-C16', '2': 'PRT-HC3-C16', '3': 'PRT-HC3-C16', '4': 'PRT-HC3-C16' },
-      } as unknown as HardwareNodeData);
-      // Raw arithmetic would give 0 base + 64 cages x 4 = 256; the datasheet caps
-      // the real chassis at 128, so getMaxFanoutSfpPorts enforces that ceiling.
-      expect(breakdown.breakoutSfpExpansion).toBe(256);
-      expect(breakdown.totalExpandedSfpPorts).toBe(128);
-      expect(breakdown.remainingSfpCages).toBe(128);
-    });
-  });
+  // The datasheet's asterisked 10Gb/25Gb density rows ("*Maximum density requires
+  // using port breakout, such as G-TAP PNL-M341") used to be modelled by treating
+  // a breakout panel as a chassis-side optic that inflated getCageCapacityBreakdown's
+  // own SFP count. Breakout panels are now real hardwareNodes with their own MPO/LC
+  // ports (see ports.test.ts's "getChassisPorts for a breakout panel") wired via
+  // ordinary edges, so they no longer touch the chassis's own cage counting at all -
+  // see bomEngine.test.ts and configValidator's validateBreakoutPanels tests for the
+  // current coverage of that density scenario.
 
   describe('getMaxFanoutSfpPorts', () => {
     it('caps GigaVUE-HC3 at 128 and leaves other chassis uncapped', () => {

@@ -46,7 +46,7 @@ function rowsFor(ports: ChassisPort[], cage: ChassisPort['cage']): ChassisPort[]
   return [ports.slice(0, half), ports.slice(half)];
 }
 
-const CAGE_LABEL: Record<ChassisPort['cage'], string> = { QSFP: 'QSFP', SFP: 'SFP', RJ45: 'RJ45' };
+const CAGE_LABEL: Record<ChassisPort['cage'], string> = { QSFP: 'QSFP', SFP: 'SFP', RJ45: 'RJ45', MPO: 'MPO' };
 
 export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occupancy, flashPortIds }) => {
   if (ports.length === 0) return null;
@@ -75,7 +75,7 @@ export const ChassisFaceplate: React.FC<ChassisFaceplateProps> = ({ ports, occup
   return (
     <div style={{ marginTop: '6px', borderTop: '1px solid #2a2a2a', paddingTop: '5px' }}>
       {boards.map(({ board, ports: boardPorts }) => {
-        const cages: ChassisPort['cage'][] = ['QSFP', 'SFP', 'RJ45'];
+        const cages: ChassisPort['cage'][] = ['MPO', 'QSFP', 'SFP', 'RJ45'];
         return (
           <div key={board} style={{ marginBottom: '4px' }}>
             {boards.length > 1 && (

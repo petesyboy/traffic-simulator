@@ -170,7 +170,7 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#888' }}>QSFP Cages (40G/100G/400G):</span>
                 <strong style={{ color: capacity.remainingQsfpCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
-                  {capacity.usedQsfpOptics + capacity.usedBreakouts} / {capacity.isLicensed ? `${capacity.licensedQsfpCages} (${capacity.totalQsfpCages} phys)` : capacity.totalQsfpCages} used ({capacity.isLicensed ? `${capacity.remainingLicensedQsfpCages} lic, ` : ''}{capacity.remainingQsfpCages} free)
+                  {capacity.usedQsfpOptics} / {capacity.isLicensed ? `${capacity.licensedQsfpCages} (${capacity.totalQsfpCages} phys)` : capacity.totalQsfpCages} used ({capacity.isLicensed ? `${capacity.remainingLicensedQsfpCages} lic, ` : ''}{capacity.remainingQsfpCages} free)
                 </strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

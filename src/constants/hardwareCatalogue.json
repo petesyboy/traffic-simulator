@@ -145,6 +145,18 @@
       "sku": "TAP-M506T",
       "type": "module",
       "max_links": 4
+    },
+    {
+      "model": "PNL-M341T",
+      "sku": "PNL-M341T",
+      "type": "module",
+      "fiber_type": "Multimode"
+    },
+    {
+      "model": "PNL-M343T",
+      "sku": "PNL-M343T",
+      "type": "module",
+      "fiber_type": "Singlemode"
     }
   ],
   "ta_series": [
@@ -246,7 +258,7 @@
       "fans": 7,
       "airflow": "Front-to-Rear",
       "ports": [
-        { "type": "QSFP28", "count": 32, "speeds": ["100G"] }
+        { "type": "QSFP28", "count": 32, "speeds": ["100G", "400G"] }
       ],
       "image": "./hardware-icons/GigaVUE-TA400.png"
     },

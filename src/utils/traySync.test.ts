@@ -114,6 +114,20 @@ describe('syncTapTrays', () => {
     expect(traysOf(nodes, 'TAP-M100T')[0].id).toBe(trayId);
   });
 
+  it('pools a breakout panel with real tap modules in the same tray budget', () => {
+    // PNL-M341T is catalogued as a "module" (isTapModule() keys purely on
+    // catalogue type, not name), so it should compete for tray bays exactly
+    // like a tap module: 3 tap modules + 1 panel = 4, which spills into an
+    // M200T rather than fitting an M100T's 3 bays.
+    const nodes = [
+      tapModule('a', 'TAP-M251T'), tapModule('b', 'TAP-M251T'), tapModule('c', 'TAP-M251T'),
+      tapModule('p', 'PNL-M341T'),
+    ];
+    const synced = syncTapTrays(nodes);
+    expect(traysOf(synced, 'TAP-M200T')).toHaveLength(1);
+    expect(traysOf(synced, 'TAP-M100T')).toHaveLength(0);
+  });
+
   it('never removes a tray with a module nested in one of its bays, even if it is no longer needed', () => {
     let nodes = [tapModule('a', 'TAP-M251T'), tapModule('b', 'TAP-M251T'), tapModule('c', 'TAP-M251T')];
     nodes = syncTapTrays(nodes);

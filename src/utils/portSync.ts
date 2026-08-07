@@ -18,6 +18,7 @@ import {
   getTapPortIds,
   isTapNode,
 } from './ports';
+import { isBreakoutPanelModel } from './hardwareUtils';
 
 /** A node only has allocatable catalogue ports if it's a non-TAP chassis. */
 function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, ChassisPort[]>): ChassisPort[] {
@@ -36,6 +37,9 @@ function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, Chassi
  */
 function preferredCage(peer: CustomNode | undefined): ChassisPort['cage'] | undefined {
   if (!peer) return undefined;
+  // A breakout panel's MPO side always takes a parallel optic, which is
+  // always QSFP-family regardless of speed tier (40G/100G/400G) or MM/SM.
+  if (peer.type === 'hardwareNode' && isBreakoutPanelModel(String(peer.data?.model || ''))) return 'QSFP';
   const data = peer.data as HardwareNodeData | undefined;
   const alloc = data?.tappedLinkAllocations?.[0];
   // The *tool*-side optic is the one that lands in the chassis cage, so it wins
@@ -46,6 +50,18 @@ function preferredCage(peer: CustomNode | undefined): ChassisPort['cage'] | unde
   const optic = alloc?.toolOptic || alloc?.optic || data?.tappedLinkOptic;
   if (!optic || String(optic).startsWith('Passive Optical Splitter')) return undefined;
   return getOpticCage(String(optic));
+}
+
+/**
+ * Which cage family a breakout panel's own port should come from, based on
+ * what's on the other end of the link: a real chassis needs the panel's MPO
+ * side (one physical trunk per link), while a tool or TAP needs its LC side.
+ */
+function panelCagePreference(peer: CustomNode | undefined): ChassisPort['cage'] {
+  const isRealChassis = peer?.type === 'hardwareNode' &&
+    !isBreakoutPanelModel(String(peer.data?.model || '')) &&
+    !isTapNode(peer);
+  return isRealChassis ? 'MPO' : 'SFP';
 }
 
 function sameLinks(a: PortLink[] | undefined, b: PortLink[]): boolean {
@@ -131,12 +147,15 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     const sourceTapIds = sourceIsTap && sourceNode ? getTapPortIds(sourceNode) : [];
     const targetTapIds = targetIsTap && targetNode ? getTapPortIds(targetNode) : [];
 
+    const sourceIsPanel = sourceNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(sourceNode.data?.model || ''));
+    const targetIsPanel = targetNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(targetNode.data?.model || ''));
+
     const sourceAuto = sourceIsTap
       ? sourceTapIds.filter(id => !sourceOccupied.has(id)).slice(0, autoCount)
-      : allocatePorts(sourcePorts, sourceOccupied, autoCount, preferredCage(targetNode)).map(p => p.id);
+      : allocatePorts(sourcePorts, sourceOccupied, autoCount, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode)).map(p => p.id);
     const targetAuto = targetIsTap
       ? targetTapIds.filter(id => !targetOccupied.has(id)).slice(0, autoCount)
-      : allocatePorts(targetPorts, targetOccupied, autoCount, preferredCage(sourceNode)).map(p => p.id);
+      : allocatePorts(targetPorts, targetOccupied, autoCount, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode)).map(p => p.id);
 
     const sourceOptics = opticsFor(sourceNode);
     const targetOptics = opticsFor(targetNode);

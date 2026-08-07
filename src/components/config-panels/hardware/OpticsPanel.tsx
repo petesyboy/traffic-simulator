@@ -3,7 +3,7 @@ import { useStore, type CustomNode } from '../../../store/store';
 import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
-import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap } from '../../../utils/hardwareUtils';
+import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap, isBreakoutPanelModel } from '../../../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap } from '../../../utils/ports';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
@@ -28,10 +28,10 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const [qtyStr, setQtyStr] = useState('1');
   const [errorMsg, setErrorMsg] = useState('');
 
-  if (model.includes('TAP')) return null;
+  if (model.includes('TAP') || isBreakoutPanelModel(model)) return null;
 
   // Build available optic boards list
-  const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string, installedOptics);
+  const supportedBoards = getSupportedBoards(model, hwData.portCapacity as string);
   const availableOpticBoards: { board: string; supportedOptics: string[] }[] = [];
 
   const mainBoardObj = supportedBoards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
@@ -115,7 +115,7 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       setErrorMsg('Please select a board and an optic.');
       return;
     }
-    const validation = validateOptic(model, targetBoard, selectedOptic, hwData.portCapacity as string, installedOptics);
+    const validation = validateOptic(model, targetBoard, selectedOptic, hwData.portCapacity as string);
     if (!validation.valid) {
       setErrorMsg(validation.message || 'Invalid optic combination.');
       return;
@@ -157,28 +157,6 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       newOptics[existingOpticIdx] = { ...newOptics[existingOpticIdx], qty: newOptics[existingOpticIdx].qty + qty };
     } else {
       newOptics.push({ board: targetBoard, optic: selectedOptic, qty });
-    }
-
-    // Auto-add corresponding parent optic if a breakout panel is added
-    if (selectedOptic.includes('PNL-M341') || selectedOptic.includes('PNL-M343')) {
-      let parentOptic = '';
-      const activeBoardObj = availableOpticBoards.find(b => b.board === targetBoard);
-      const supports100G = activeBoardObj?.supportedOptics.some(opt => opt.includes('Q28-'));
-      
-      if (selectedOptic.includes('PNL-M341')) { // Multimode breakout
-        parentOptic = supports100G ? 'Q28-502T (100G QSFP28 SR4)' : 'QSF-502 (40G QSFP+ SR4)';
-      } else { // Singlemode breakout
-        parentOptic = supports100G ? 'Q28-506 (100G QSFP28 PLR4)' : 'QSF-506 (40G QSFP+ PSM4)';
-      }
-
-      if (parentOptic) {
-        const parentIdx = newOptics.findIndex(opt => (opt.board || 'Base Ports') === targetBoard && opt.optic === parentOptic);
-        if (parentIdx >= 0) {
-          newOptics[parentIdx] = { ...newOptics[parentIdx], qty: newOptics[parentIdx].qty + qty };
-        } else {
-          newOptics.push({ board: targetBoard, optic: parentOptic, qty });
-        }
-      }
     }
 
     // Diff the port-optic assignment before/after so the newly-fitted cages can

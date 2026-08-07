@@ -76,3 +76,53 @@ describe('TAP tray allocation', () => {
     expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
   });
 });
+
+describe('MPO breakout panel BOM/tray allocation', () => {
+  const panel = (id: string, model: 'PNL-M341T' | 'PNL-M343T'): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data: { label: model, model, sku: model },
+  } as CustomNode);
+
+  it('produces a Module BOM row for the panel itself, plus a shared M100T tray dependency', () => {
+    const bom = generateBom([panel('p1', 'PNL-M341T')], [], 'HTL', '12');
+
+    const panelRow = bom.find(r => r.sku === 'PNL-M341T');
+    expect(panelRow?.type).toBe('Module');
+    expect(panelRow?.qty).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M200T')).toBeUndefined();
+  });
+
+  it('pools with real tap modules in the same tray, not a separate bin', () => {
+    // 3 tap modules + 1 panel = 4 bays needed - still fits one M100T (3 slots)
+    // only if pooled wrong; pooled correctly it spills into an M200T (6 slots).
+    const nodes = [
+      tapModule('a', 'TAP-M251T'), tapModule('b', 'TAP-M251T'), tapModule('c', 'TAP-M251T'),
+      panel('p1', 'PNL-M341T'),
+    ];
+    const bom = generateBom(nodes, [], 'HTL', '12');
+
+    expect(trayQty(bom, 'TAP-M200T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
+  });
+
+  it('scopes panel tray pooling per site, same as tap modules', () => {
+    const siteAPanel = panel('p2', 'PNL-M341T');
+    siteAPanel.data = { ...siteAPanel.data, site: 'Site A' };
+    const nodes = [panel('p1', 'PNL-M341T'), siteAPanel];
+    const bom = generateBom(nodes, [], 'HTL', '12');
+
+    const siteARow = bom.find(r => r.sku === 'TAP-M100T' && r.site === 'Site A');
+    const unassignedRow = bom.find(r => r.sku === 'TAP-M100T' && r.site === 'Unassigned');
+    expect(siteARow?.qty).toBe(1);
+    expect(unassignedRow?.qty).toBe(1);
+  });
+
+  it('a singlemode panel (PNL-M343T) is quoted the same way as the multimode one', () => {
+    const bom = generateBom([panel('p1', 'PNL-M343T')], [], 'HTL', '12');
+    expect(bom.find(r => r.sku === 'PNL-M343T')?.type).toBe('Module');
+    expect(trayQty(bom, 'TAP-M100T')).toBe(1);
+  });
+});

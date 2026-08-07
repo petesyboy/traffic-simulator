@@ -4,7 +4,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
-import { getBoardPortCapacity, getChassisBasePortCapacity, getMaxFanoutSfpPorts } from '../hardwareUtils';
+import { getBoardPortCapacity, getChassisBasePortCapacity, isBreakoutPanelModel } from '../hardwareUtils';
 import {
   getChassisPorts,
   getOpticCage,
@@ -15,6 +15,7 @@ import {
 } from '../ports';
 import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
 import { getMergedSkusMetadata } from '../skuOverrides';
+import { isParallelBreakoutOptic, getBreakoutLcOptics, PANEL_MPO_GROUPS } from '../breakoutRules';
 
 export interface ConfigurationValidationError {
   type:
@@ -28,7 +29,10 @@ export interface ConfigurationValidationError {
     | 'port_missing_optic'
     | 'port_optic_mismatch'
     | 'tap_not_configured'
-    | 'tap_optic_incompatible';
+    | 'tap_optic_incompatible'
+    | 'breakout_optic_incompatible'
+    | 'breakout_panel_capacity_exceeded'
+    | 'breakout_lane_speed_mismatch';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -161,7 +165,10 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
   });
 
   const chassisNodes = nodes.filter(
-    (n) => n.type === NODE_TYPES.HARDWARE && !String(n.data?.model || '').includes('TAP'),
+    (n) =>
+      n.type === NODE_TYPES.HARDWARE &&
+      !String(n.data?.model || '').includes('TAP') &&
+      !isBreakoutPanelModel(String(n.data?.model || '')),
   );
 
   chassisNodes.forEach((chassis) => {
@@ -197,10 +204,8 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
 
     let installedSfp = 0;
     let installedQsfp = 0;
-    let numBreakouts = 0;
     installedOptics.forEach((opt) => {
       const upper = opt.optic.toUpperCase();
-      if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) numBreakouts += opt.qty;
       const isQsfp =
         upper.includes('QSFP') ||
         upper.includes('Q28') ||
@@ -211,10 +216,7 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
         upper.includes('400G');
       if (isQsfp) installedQsfp += opt.qty;
       else installedSfp += opt.qty;
-      if (upper.includes('PNL-M341') || upper.includes('PNL-M343')) totalQsfpCages -= opt.qty;
     });
-
-    totalSfpCages = Math.min(totalSfpCages + numBreakouts * 4, getMaxFanoutSfpPorts(model));
 
     if (installedSfp > totalSfpCages) {
       errors.push({
@@ -391,6 +393,7 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
   });
 
   validateTapConfiguration(nodes, edges, errors);
+  validateBreakoutPanels(nodes, edges, errors);
   validatePortAssignments(nodes, edges, errors);
 
   return errors;
@@ -477,6 +480,106 @@ function validateTapOpticCompatibility(nodes: CustomNode[], edges: Edge[], error
 }
 
 /**
+ * A breakout panel (PNL-M341T/M343T) is passive - it has no optics of its
+ * own, so correctness depends entirely on what's plugged into the *other*
+ * end of each of its links: the MPO side needs a parallel-fibre optic on the
+ * connected chassis, and each LC lane needs an optic matching that group's
+ * derived speed/fibre-type on whichever device it terminates into.
+ */
+function validateBreakoutPanels(nodes: CustomNode[], edges: Edge[], errors: ConfigurationValidationError[]) {
+  const opticsByNode = new Map<string, Map<string, string>>();
+  nodes
+    .filter((n) => n.type === NODE_TYPES.HARDWARE)
+    .forEach((node) => {
+      const model = String(node.data?.model || '');
+      const hwData = node.data as HardwareNodeData;
+      opticsByNode.set(node.id, getPortOpticMap(getChassisPorts(model, hwData), hwData.optics));
+    });
+
+  const isMpoPortId = (portId: string) => /\/m\d+$/.test(portId);
+  const mpoGroupId = (lcPortId: string) => lcPortId.replace(/\/\d+$/, '');
+
+  interface PanelLink {
+    panelPortId: string;
+    peerNode: CustomNode | undefined;
+    peerPortId: string | undefined;
+  }
+  const linksByPanel = new Map<string, PanelLink[]>();
+
+  edges.forEach((edge) => {
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    const targetNode = nodes.find((n) => n.id === edge.target);
+    const sourceIsPanel = sourceNode?.type === NODE_TYPES.HARDWARE && isBreakoutPanelModel(String(sourceNode.data?.model || ''));
+    const targetIsPanel = targetNode?.type === NODE_TYPES.HARDWARE && isBreakoutPanelModel(String(targetNode.data?.model || ''));
+    if (!sourceIsPanel && !targetIsPanel) return;
+
+    const links = (edge.data?.portLinks as { sourcePortId: string; targetPortId: string }[]) || [];
+    const panelNode = (sourceIsPanel ? sourceNode : targetNode)!;
+    const panelKey = sourceIsPanel ? ('sourcePortId' as const) : ('targetPortId' as const);
+    const peerNode = sourceIsPanel ? targetNode : sourceNode;
+    const peerKey = sourceIsPanel ? ('targetPortId' as const) : ('sourcePortId' as const);
+
+    links.forEach((link) => {
+      const panelPortId = link[panelKey];
+      if (!panelPortId) return;
+      if (!linksByPanel.has(panelNode.id)) linksByPanel.set(panelNode.id, []);
+      linksByPanel.get(panelNode.id)!.push({ panelPortId, peerNode, peerPortId: link[peerKey] });
+    });
+  });
+
+  linksByPanel.forEach((panelLinks, panelId) => {
+    const panelNode = nodes.find((n) => n.id === panelId);
+    const panelLabel = String(panelNode?.data?.label || panelNode?.data?.model || panelId);
+
+    // The MPO side determines each group's tier - resolve those first so the
+    // LC-side pass below can check lane optics against the right speed.
+    const groupChassisOptic = new Map<string, string | undefined>();
+    const wiredGroups = new Set<string>();
+    panelLinks
+      .filter((l) => isMpoPortId(l.panelPortId))
+      .forEach(({ panelPortId, peerNode, peerPortId }) => {
+        wiredGroups.add(panelPortId);
+        const chassisOptic = peerPortId ? opticsByNode.get(peerNode?.id || '')?.get(peerPortId) : undefined;
+        groupChassisOptic.set(panelPortId, chassisOptic);
+        if (chassisOptic && !isParallelBreakoutOptic(chassisOptic)) {
+          errors.push({
+            type: 'breakout_optic_incompatible',
+            nodeId: peerNode?.id,
+            nodeLabel: String(peerNode?.data?.label || peerNode?.data?.model || ''),
+            message: `Port ${peerPortId} on "${String(peerNode?.data?.label || peerNode?.data?.model)}" feeds breakout panel "${panelLabel}" but is fitted with ${chassisOptic.split(' ')[0]}, which is not a parallel-fibre optic. MPO breakout/aggregation requires SR4 (multimode) or PLR4/PSM4/DR4/DR4+ (singlemode) - not LR4, CWDM4, SWDM4, FR4 or single-lane DR1/FR1.`,
+          });
+        }
+      });
+
+    if (wiredGroups.size > PANEL_MPO_GROUPS) {
+      errors.push({
+        type: 'breakout_panel_capacity_exceeded',
+        nodeId: panelId,
+        nodeLabel: panelLabel,
+        message: `Breakout panel "${panelLabel}" has ${wiredGroups.size} MPO groups wired but only supports ${PANEL_MPO_GROUPS}.`,
+      });
+    }
+
+    panelLinks
+      .filter((l) => !isMpoPortId(l.panelPortId))
+      .forEach(({ panelPortId, peerNode, peerPortId }) => {
+        const chassisOptic = groupChassisOptic.get(mpoGroupId(panelPortId));
+        if (!chassisOptic || !isParallelBreakoutOptic(chassisOptic)) return; // group not (validly) wired yet - nothing to check the lane against
+        const laneOptic = peerPortId ? opticsByNode.get(peerNode?.id || '')?.get(peerPortId) : undefined;
+        if (!laneOptic) return; // peer end has no catalogue port/optic (e.g. a tool) - nothing to check
+        if (!getBreakoutLcOptics(chassisOptic).includes(laneOptic)) {
+          errors.push({
+            type: 'breakout_lane_speed_mismatch',
+            nodeId: peerNode?.id,
+            nodeLabel: String(peerNode?.data?.label || peerNode?.data?.model || ''),
+            message: `Port ${peerPortId} on "${String(peerNode?.data?.label || peerNode?.data?.model)}" is fitted with ${laneOptic.split(' ')[0]}, which doesn't match breakout panel "${panelLabel}"'s ${chassisOptic.split(' ')[0]} group. Expected: ${getBreakoutLcOptics(chassisOptic).map((o) => o.split(' ')[0]).join(', ')}.`,
+          });
+        }
+      });
+  });
+}
+
+/**
  * Checks that come from the per-port assignment layer, which the aggregate
  * capacity checks above can't see: a chassis physically running out of cages,
  * and links landing on a cage that's empty or holds the wrong optic type.
@@ -520,6 +623,12 @@ function validatePortAssignments(nodes: CustomNode[], edges: Edge[], errors: Con
           message: `Chassis "${label}" has run out of physical ports: the link from "${String(peer?.data?.label || peer?.data?.model || 'peer')}" needs ${required} port${required === 1 ? '' : 's'} but only ${allocated} could be allocated.`,
         });
       }
+
+      // A breakout panel carries no optics of its own - the transceiver that
+      // matters for its ports lives on whichever chassis/tool sits on the
+      // other end of the link. See validateBreakoutPanels() for the checks
+      // that actually apply to a panel's ports.
+      if (isBreakoutPanelModel(String(node.data?.model || ''))) return;
 
       const opticMap = opticsByNode.get(node.id) || new Map<string, string>();
       links.forEach((link) => {

@@ -149,6 +149,14 @@ export const isTapModule = (model: string, sku?: string): boolean => {
 };
 
 /**
+ * True for the PNL-M341T/PNL-M343T MPO breakout panel catalogue entries - a
+ * passive module, not a chassis, not a tap (though it shares the same tap-tray
+ * bays and is picked up by isTapModule() above for that purpose).
+ */
+export const isBreakoutPanelModel = (model: string): boolean =>
+  model.startsWith('PNL-M341') || model.startsWith('PNL-M343');
+
+/**
  * Returns the catalogue icon path for a board/module SKU (e.g. "PRT-HC1-Q04X08"),
  * for compositing onto a chassis's front-panel photo in the hardware summary view.
  */
@@ -309,7 +317,6 @@ const getBoardSpeedsFromOptics = (model: string, board: string): Set<string> => 
   const optics = getSupportedBoards(model).find(b => b.board === board)?.supportedOptics ?? [];
   const speeds = new Set<string>();
   optics.forEach(o => {
-    if (o.includes('PNL-')) return; // breakout panel, not a real cage speed
     const speed = getOpticSpeed(o);
     if (speed !== 'Unknown') speeds.add(speed);
   });
@@ -435,11 +442,9 @@ export interface CageCapacityBreakdown {
   totalQsfpCages: number;
   usedSfpOptics: number;
   usedQsfpOptics: number;
-  usedBreakouts: number;
   hasBuiltInCopper: boolean;
   usedBuiltInCopper: number;
   totalExpandedSfpPorts: number;
-  breakoutSfpExpansion: number;
   remainingSfpCages: number;
   remainingQsfpCages: number;
   licensedSfpCages: number;
@@ -453,8 +458,12 @@ export interface CageCapacityBreakdown {
 }
 
 /**
- * Computes the physical SFP/QSFP cage usage and remaining capacity for a chassis,
- * accounting for installed boards, breakout panel expansion, and built-in copper ports.
+ * Computes the physical SFP/QSFP cage usage and remaining capacity for a
+ * chassis, accounting for installed boards and built-in copper ports. MPO
+ * breakout panels are separate hardwareNodes with their own ports (see
+ * getPanelPorts in ports.ts) and no longer expand this chassis's own cage
+ * count - the chassis side of a breakout link is just one ordinary used
+ * QSFP cage, like any other optic.
  */
 export const getCageCapacityBreakdown = (
   model: string,
@@ -496,39 +505,33 @@ export const getCageCapacityBreakdown = (
 
   let usedSfpOptics = 0;
   let usedQsfpOptics = 0;
-  let usedBreakouts = 0;
   let usedBuiltInCopper = 0;
   let used400G = 0;
 
   installedOptics.forEach(opt => {
-    if (opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343')) {
-      usedBreakouts += opt.qty;
-    } else {
-      const speed = getOpticSpeed(opt.optic);
-      if (speed === '400G') {
-        used400G += opt.qty;
-      }
-      const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
-      const isCopper = getOpticFiberType(opt.optic) === 'Copper';
+    const speed = getOpticSpeed(opt.optic);
+    if (speed === '400G') {
+      used400G += opt.qty;
+    }
+    const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
+    const isCopper = getOpticFiberType(opt.optic) === 'Copper';
 
-      if (isQsfp) {
-        usedQsfpOptics += opt.qty;
+    if (isQsfp) {
+      usedQsfpOptics += opt.qty;
+    } else {
+      if (hasBuiltInCopper && isCopper && opt.optic.includes('SFP-501')) {
+        const countForBuiltIn = Math.min(opt.qty, 4 - usedBuiltInCopper);
+        usedBuiltInCopper += countForBuiltIn;
+        usedSfpOptics += (opt.qty - countForBuiltIn);
       } else {
-        if (hasBuiltInCopper && isCopper && opt.optic.includes('SFP-501')) {
-          const countForBuiltIn = Math.min(opt.qty, 4 - usedBuiltInCopper);
-          usedBuiltInCopper += countForBuiltIn;
-          usedSfpOptics += (opt.qty - countForBuiltIn);
-        } else {
-          usedSfpOptics += opt.qty;
-        }
+        usedSfpOptics += opt.qty;
       }
     }
   });
 
-  const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
-  const remainingQsfpCages = Math.max(0, totalQsfpCages - usedQsfpOptics - usedBreakouts);
-  const breakoutSfpExpansion = usedBreakouts * 4;
-  const totalExpandedSfpPorts = Math.min(totalSfpCages + breakoutSfpExpansion, getMaxFanoutSfpPorts(model));
+  const totalUsedQsfpCages = usedQsfpOptics;
+  const remainingQsfpCages = Math.max(0, totalQsfpCages - usedQsfpOptics);
+  const totalExpandedSfpPorts = Math.min(totalSfpCages, getMaxFanoutSfpPorts(model));
   const remainingSfpCages = Math.max(0, totalExpandedSfpPorts - usedSfpOptics);
 
   const isLicensed = model.includes('TA25') || model.includes('TA200') || model.includes('TA400E');
@@ -562,12 +565,10 @@ export const getCageCapacityBreakdown = (
     totalSfpCages,
     totalQsfpCages,
     usedSfpOptics,
-    usedBreakouts,
     usedQsfpOptics,
     hasBuiltInCopper,
     usedBuiltInCopper,
     totalExpandedSfpPorts,
-    breakoutSfpExpansion,
     remainingSfpCages,
     remainingQsfpCages,
     licensedSfpCages,

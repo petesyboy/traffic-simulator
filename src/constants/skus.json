@@ -88,6 +88,8 @@
   "Q28-511T": "100G QSFP28, Singlemode DR1, TAA Compliant.",
   "Q28-513": "100G QSFP28, Singlemode CWDM4. Not TAA Compliant.",
   "Q28-514": "100G QSFP28, Singlemode FR1. Not TAA Compliant.",
+  "Q28-515": "100G QSFP28, Multimode SR. Not TAA Compliant. (Placeholder SKU - confirm real part number for the MPO breakout panel's 400G multimode LC-side optic.)",
+  "QDD-501": "400G QSFP-DD, Multimode SR4. Not TAA Compliant. (Placeholder SKU - confirm real part number for the MPO breakout panel's 400G multimode parent optic.)",
   "QDD-503": "400G QSFP-DD, Singlemode LR4. Not TAA Compliant.",
   "QDD-511": "400G QSFP-DD, Singlemode DR4. Not TAA Compliant.",
   "QDD-512": "400G QSFP-DD, Singlemode DR4+. Not TAA Compliant.",

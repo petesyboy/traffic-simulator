@@ -25,8 +25,8 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
   }, [model, sku]);
 
   const supportedBoards = useMemo(() => {
-    return getSupportedBoards(model || '', hwData.portCapacity as string, installedOptics);
-  }, [model, hwData.portCapacity, installedOptics]);
+    return getSupportedBoards(model || '', hwData.portCapacity as string);
+  }, [model, hwData.portCapacity]);
 
   const installableBoards = useMemo(() => {
     return supportedBoards.filter(b => !b.board.toLowerCase().includes('main') && !b.board.toLowerCase().includes('base'));

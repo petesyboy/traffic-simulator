@@ -16,37 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { isTapModule } from './hardwareUtils';
-import { requiresUltTray, ULT_TRAY_SLOTS, isAutoTrayModel } from './trayModels';
+import { requiresUltTray, isAutoTrayModel, packTapTrayTargets } from './trayModels';
 
 export { isAutoTrayModel };
-
-/** Bin-packs a per-site tap-module count into the tray models/quantities needed. */
-function packTargets(tapModulesPerSite: Record<string, number>, ultTapModulesPerSite: Record<string, number>) {
-  const targets: Record<string, Record<string, number>> = {};
-  const add = (site: string, model: string, qty: number) => {
-    if (qty <= 0) return;
-    if (!targets[site]) targets[site] = {};
-    targets[site][model] = (targets[site][model] || 0) + qty;
-  };
-
-  Object.entries(tapModulesPerSite).forEach(([site, total]) => {
-    let numM200T = Math.floor(total / 6);
-    let numM100T = 0;
-    const remainder = total % 6;
-    if (remainder > 0) {
-      if (remainder <= 3) numM100T = 1;
-      else numM200T += 1;
-    }
-    add(site, 'TAP-M100T', numM100T);
-    add(site, 'TAP-M200T', numM200T);
-  });
-
-  Object.entries(ultTapModulesPerSite).forEach(([site, count]) => {
-    add(site, 'TAP-M202ULT', Math.ceil(count / ULT_TRAY_SLOTS));
-  });
-
-  return targets;
-}
 
 export function syncTapTrays(nodes: CustomNode[]): CustomNode[] {
   const tapModulesPerSite: Record<string, number> = {};
@@ -62,7 +34,7 @@ export function syncTapTrays(nodes: CustomNode[]): CustomNode[] {
     pool[siteKey] = (pool[siteKey] || 0) + 1;
   });
 
-  const targetPerSite = packTargets(tapModulesPerSite, ultTapModulesPerSite);
+  const targetPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite);
 
   const existingBySiteModel: Record<string, Record<string, CustomNode[]>> = {};
   nodes.forEach(node => {

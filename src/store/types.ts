@@ -67,12 +67,6 @@ export interface TappedLinkAllocation {
   southOptic?: string;
 }
 
-export interface BreakoutPanel {
-  type: string;
-  tray: string;
-  slot?: number;
-}
-
 export interface PortInfo {
   type: string;
   count: number;
@@ -94,8 +88,9 @@ export interface ChassisPort {
   slot: string;
   /** Catalogue port type, e.g. 'SFP28' | 'QSFP28' | 'QSFP-DD' | 'SFP+' | 'RJ45'. */
   type: string;
-  /** Coarse cage family an optic must match to fit. */
-  cage: 'SFP' | 'QSFP' | 'RJ45';
+  /** Coarse cage family an optic must match to fit. 'MPO' is used only by a
+   *  breakout panel's own 3 MPO connectors (see getPanelPorts in ports.ts). */
+  cage: 'SFP' | 'QSFP' | 'RJ45' | 'MPO';
   /** 1-based position within this board's group of that cage family. */
   index: number;
   speeds: string[];
@@ -243,7 +238,6 @@ export interface HardwareNodeData extends BaseNodeData {
   tappedLinksCount?: number;
   tappedLinkOptic?: string;
   tappedLinkAllocations?: TappedLinkAllocation[];
-  breakoutPanels?: BreakoutPanel[];
   psType?: string;
   advancedFeatures?: boolean;
   /** Rack Elevation View placement - which rack (by site) and which U position. */

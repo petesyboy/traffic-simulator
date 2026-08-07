@@ -7,7 +7,8 @@ import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { resolveOpticSku, getSkus } from './skuUtils';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { resolveTapAllocations } from '../ports';
-import { requiresUltTray, ULT_TRAY_SKU, ULT_TRAY_SLOTS, isAutoTrayModel } from '../trayModels';
+import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, packTapTrayTargets } from '../trayModels';
+import { isBreakoutPanelModel } from '../hardwareUtils';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
@@ -270,6 +271,17 @@ export function generateBom(
       return;
     }
 
+    if (isBreakoutPanelModel(model)) {
+      // A passive MPO breakout panel: one BOM row for itself, and it pools into
+      // the same tap-tray bin-packing as real tap modules below (it shares tray
+      // bays with them - see traySync.ts).
+      addRow(node.id, resolved.hwSku, 1, 'Module');
+      const siteKey = (node.data?.site as string) || 'Unassigned';
+      const pool = requiresUltTray(resolved.hwSku, model) ? ultTapModulesPerSite : tapModulesPerSite;
+      pool[siteKey] = (pool[siteKey] || 0) + 1;
+      return;
+    }
+
     addRow(node.id, resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) addRow(node.id, resolved.swSku, 1, 'License', termOverride);
     if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
@@ -285,12 +297,7 @@ export function generateBom(
     });
     ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => {
       if (!opt.optic) return;
-      const opticSku = resolveOpticSku(opt.optic, model);
-      addRow(node.id, opticSku, opt.qty, 'Optic');
-      if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) {
-        const siteKey = (node.data?.site as string) || 'Unassigned';
-        tapModulesPerSite[siteKey] = (tapModulesPerSite[siteKey] || 0) + opt.qty;
-      }
+      addRow(node.id, resolveOpticSku(opt.optic, model), opt.qty, 'Optic');
     });
 
     if (model.includes('HC')) {
@@ -302,21 +309,15 @@ export function generateBom(
     }
   });
 
-  for (const [siteKey, totalTapModules] of Object.entries(tapModulesPerSite)) {
-    if (totalTapModules > 0) {
-      let numM200T = Math.floor(totalTapModules / 6), numM100T = 0;
-      const remainder = totalTapModules % 6;
-      if (remainder > 0) { if (remainder <= 3) numM100T = 1; else numM200T += 1; }
-      if (numM100T > 0) addRow(null, 'TAP-M100T', numM100T, 'Dependency', undefined, siteKey);
-      if (numM200T > 0) addRow(null, 'TAP-M200T', numM200T, 'Dependency', undefined, siteKey);
-    }
-  }
-
-  // Multimode unidirectional (ULT) modules take their own 1RU two-slot chassis
-  // and cannot share an M100T/M200T tray, so they are pooled separately.
-  for (const [siteKey, count] of Object.entries(ultTapModulesPerSite)) {
-    if (count > 0) addRow(null, ULT_TRAY_SKU, Math.ceil(count / ULT_TRAY_SLOTS), 'Dependency', undefined, siteKey);
-  }
+  // Tray quantities are bin-packed once, shared with traySync.ts's Rack View
+  // tray-node generator, so tap modules and breakout panels (which pool into
+  // the same tapModulesPerSite above) always agree on how many trays they need.
+  const trayTargetsPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite);
+  Object.entries(trayTargetsPerSite).forEach(([siteKey, targets]) => {
+    Object.entries(targets).forEach(([traySku, qty]) => {
+      if (qty > 0) addRow(null, traySku, qty, 'Dependency', undefined, siteKey);
+    });
+  });
 
   const getChassisMaxOpticSpeed = (chassisModel: string): '100G' | '40G' | '10G' => {
     const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
@@ -505,9 +506,7 @@ export function generateSingleNodeBom(
   const skus = getSkus();
   const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
     let description = skus[sku] || 'Unknown SKU';
-    let purpose = type === 'Chassis' ? 'Base hardware chassis required to host modules and aggregate traffic.' : (type === 'Module' ? 'Hardware line card or module installed in the chassis to provide additional ports or compute resources.' : (type === 'Optic' ? 'Transceiver required to connect physical fiber or copper links to the system.' : (type === 'TAP' ? 'Network TAP used to passively mirror traffic from live network links without disruption.' : (type === 'License' ? 'Software license required to enable features, advanced processing (GigaSMART), or hardware functionality.' : (type === 'Dependency' ? 'Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.' : '')))));
-    if (sku.includes('PNL-M341')) purpose = 'Provides 4x10G LC ports from a single 40G QSFP+ port. (Requires a 40G QSFP+ transceiver).';
-    else if (sku.includes('PNL-M343')) purpose = 'Provides 4x25G LC ports from a single 100G QSFP28 port. (Requires a 100G QSFP28 transceiver).';
+    const purpose = type === 'Chassis' ? 'Base hardware chassis required to host modules and aggregate traffic.' : (type === 'Module' ? 'Hardware line card or module installed in the chassis to provide additional ports or compute resources.' : (type === 'Optic' ? 'Transceiver required to connect physical fiber or copper links to the system.' : (type === 'TAP' ? 'Network TAP used to passively mirror traffic from live network links without disruption.' : (type === 'License' ? 'Software license required to enable features, advanced processing (GigaSMART), or hardware functionality.' : (type === 'Dependency' ? 'Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.' : '')))));
     if (purpose) description += ` | Purpose: ${purpose}`;
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     if (rowMap[sku]) rowMap[sku].qty += qty;
@@ -575,6 +574,15 @@ export function generateSingleNodeBom(
     return Object.values(rowMap);
   }
 
+  if (isBreakoutPanelModel(model)) {
+    // A single node's BOM preview shows no tray dependency for a standalone tap
+    // module either - tray quantities are only meaningful across the whole
+    // project (see generateBom's tapModulesPerSite bin-packing), so a panel
+    // just gets a row for itself here.
+    addRow(resolved.hwSku, 1, 'Module');
+    return Object.values(rowMap);
+  }
+
   addRow(resolved.hwSku, 1, 'Chassis');
   if (resolved.swSku) addRow(resolved.swSku, 1, 'License', termOverride);
   if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
@@ -584,15 +592,7 @@ export function generateSingleNodeBom(
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', termOverride);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
-  let totalTapModules = 0;
-  ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; const opticSku = resolveOpticSku(opt.optic, model); addRow(opticSku, opt.qty, 'Optic'); if (opticSku.includes('PNL-M341') || opticSku.includes('PNL-M343')) totalTapModules += opt.qty; });
-  if (totalTapModules > 0) {
-    let numM200T = Math.floor(totalTapModules / 6), numM100T = 0;
-    const remainder = totalTapModules % 6;
-    if (remainder > 0) { if (remainder <= 3) numM100T = 1; else numM200T += 1; }
-    if (numM100T > 0) addRow('TAP-M100T', numM100T, 'Dependency');
-    if (numM200T > 0) addRow('TAP-M200T', numM200T, 'Dependency');
-  }
+  ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic'); });
   if (model.includes('HC')) {
     const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string }[], edges, nodes);
     gsActions.forEach(action => {

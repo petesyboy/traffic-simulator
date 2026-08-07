@@ -117,7 +117,7 @@ const RackElevationView: React.FC = () => {
     const model = String(dragged?.data?.model || '');
     const sku = dragged?.data?.sku as string | undefined;
     if (!isTapModule(model, sku)) {
-      alert(`Only tap modules (TAP-M251T, TAP-M253T, etc.) can be fitted into a tray bay - "${model}" isn't one.`);
+      alert(`Only tap modules (TAP-M251T, TAP-M253T, etc.) or breakout panels (PNL-M341T, PNL-M343T) can be fitted into a tray bay - "${model}" isn't one.`);
       return;
     }
     updateNodeData(nodeId, { trayId: trayNodeId, traySlot: bay, rackId: undefined, rackU: undefined });
@@ -178,7 +178,7 @@ const RackElevationView: React.FC = () => {
                   <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{node.data?.label || node.data?.model}</div>
                   <div style={{ fontSize: '12px', color: '#aaa' }}>
                     {isTapModule(String(node.data?.model || ''), node.data?.sku as string | undefined)
-                      ? 'Tap module - drop into a tray bay'
+                      ? 'Tap/breakout module - drop into a tray bay'
                       : `${getDeviceRU(String(node.data?.model || ''), node.data?.sku as string | undefined)} RU`}
                   </div>
                 </div>
@@ -283,7 +283,7 @@ const RackElevationView: React.FC = () => {
                             key={bay}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleBayDrop(e, occupyingNode.id, bay)}
-                            title={`Bay ${bay} - drop a tap module here`}
+                            title={`Bay ${bay} - drop a tap module or breakout panel here`}
                             style={{
                               flex: 1, border: '1px dashed #555', boxSizing: 'border-box', position: 'relative', zIndex: 1,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',

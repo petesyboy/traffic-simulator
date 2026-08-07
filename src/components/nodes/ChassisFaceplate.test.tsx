@@ -102,4 +102,12 @@ describe('ChassisFaceplate', () => {
   it('renders nothing for a chassis with no ports, so TAPs stay unaffected', () => {
     expect(renderToStaticMarkup(<ChassisFaceplate ports={[]} occupancy={new Map()} />)).toBe('');
   });
+
+  it('renders a breakout panel with its own MPO row alongside the LC (SFP-family) row', () => {
+    const ports = getChassisPorts('PNL-M341T', hw({}));
+    const html = renderToStaticMarkup(<ChassisFaceplate ports={ports} occupancy={new Map()} />);
+
+    expect(html).toContain('MPO');
+    expect(countByColour(html, GREY)).toBe(15); // 3 MPO + 12 LC, all unwired
+  });
 });

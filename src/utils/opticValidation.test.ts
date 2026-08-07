@@ -14,14 +14,14 @@ describe('opticValidation', () => {
 
   it('should validate supported and unsupported optics', () => {
     // Valid optic on GigaVUE-TA25 Base Ports
-    const validResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'Q28-502T (100G QSFP28 SR4)', 'Full', []);
+    const validResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'Q28-502T (100G QSFP28 SR4)', 'Full');
     expect(validResult.valid).toBe(true);
 
     // Invalid optic on GigaVUE-TA25 Base Ports
-    const supportedResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'SFP-501 (1G SFP Copper)', 'Full', []);
+    const supportedResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'SFP-501 (1G SFP Copper)', 'Full');
     expect(supportedResult.valid).toBe(true);
     // SFP-501 is supported on TA25! Let's check a completely unsupported optic speed/type, e.g. QDD-503 (400G QSFP-DD LR4)
-    const completelyInvalidResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'QDD-503 (400G QSFP-DD LR4)', 'Full', []);
+    const completelyInvalidResult = validateOptic('GigaVUE-TA25', 'Base Ports', 'QDD-503 (400G QSFP-DD LR4)', 'Full');
     expect(completelyInvalidResult.valid).toBe(false);
     expect(completelyInvalidResult.message).toContain('is NOT supported on Base Ports');
   });
@@ -38,17 +38,11 @@ describe('opticValidation', () => {
     expect(basePorts100G?.supportedOptics).not.toContain('QDD-503 (400G QSFP-DD LR4)');
   });
 
-  it('should append breakout optics if breakout panel is installed', () => {
-    // Without breakout panel (TA200 doesn't natively support SFP-532 10G)
-    const supportsNormal = getSupportedBoards('GigaVUE-TA200', 'Full', []);
-    const basePortsNormal = supportsNormal.find(b => b.board === 'Base Ports');
-    expect(basePortsNormal?.supportedOptics).not.toContain('SFP-532 (10G SFP+ SR)');
-
-    // With breakout panel
-    const supportsBreakout = getSupportedBoards('GigaVUE-TA200', 'Full', [{ optic: 'PNL-M341 (40/100G Multimode Breakout Panel)' }]);
-    const basePortsBreakout = supportsBreakout.find(b => b.board === 'Base Ports');
-    expect(basePortsBreakout?.supportedOptics).toContain('SFP-532 (10G SFP+ SR)');
-  });
+  // Breakout panels are now real, sidebar-placeable hardware nodes (PNL-M341T/
+  // PNL-M343T) with their own MPO/LC ports, not a fake optic-string entry that
+  // widened a chassis board's supportedOptics list - see breakoutRules.test.ts
+  // for isParallelBreakoutOptic/getBreakoutLcOptics coverage and
+  // ports.test.ts's "getChassisPorts for a breakout panel" for the port model.
 
   // Regression tests locking in corrections made against the official
   // GigaVUE-OS Compatibility and Interoperability Matrix
@@ -122,7 +116,7 @@ describe('opticValidation', () => {
       // to "GigaVUE-HC3 CCv1" (first match, equal string length), so CCv2-exclusive
       // boards never appeared in the Slot dropdown at all - installing them was
       // impossible even though they're real, valid HC3 modules.
-      const boards = getSupportedBoards('GigaVUE-HC3', 'Full', []);
+      const boards = getSupportedBoards('GigaVUE-HC3', 'Full');
       const names = boards.map(b => b.board);
       for (const board of ['PRT-HC3-X24', 'PRT-HC3-C08Q08', 'PRT-HC3-C16', 'SMT-HC3-C05', 'SMT-HC3-C08', 'BPS-HC3-C25F2G', 'BPS-HC3-C35C2G', 'BPS-HC3-Q35C2G']) {
         expect(names, `${board} unreachable on GigaVUE-HC3`).toContain(board);
@@ -133,7 +127,7 @@ describe('opticValidation', () => {
       // CCv1 HC3 units are EOL - all new deployments are CCv2. PRT-HC3-C08Q16 also
       // has no port-capacity entry in hardwareCatalogue.json's modules list, so it
       // was never functional even when reachable (would show 0 cages installed).
-      const names = getSupportedBoards('GigaVUE-HC3', 'Full', []).map(b => b.board);
+      const names = getSupportedBoards('GigaVUE-HC3', 'Full').map(b => b.board);
       expect(names).not.toContain('PRT-HC3-C08Q16');
       expect(names).toContain('PRT-HC3-C08Q08');
     });
@@ -146,9 +140,6 @@ describe('opticValidation', () => {
       // plain HC1 node HC1-Plus's rules instead - including a "Main Board" with
       // built-in 40G/100G QSFP+ cages a base HC1 doesn't physically have (its
       // Main Board is 100M/1G/10G SFP-only per hardwareCatalogue.json).
-      // (excluding the PNL-M341/M343 breakout panel entries, which every TA/HC
-      // board gets appended regardless of speed and whose "40/100G" label text
-      // otherwise trips up a naive "100G" substring check)
       const isRealQsfpOptic = (o: string) => o.startsWith('QSF-') || o.startsWith('Q28-');
 
       const hc1MainBoard = getSupportedBoards('GigaVUE-HC1').find(b => b.board.toLowerCase().includes('main'));

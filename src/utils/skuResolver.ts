@@ -1,3 +1,4 @@
+import { isBreakoutPanelModel } from './hardwareUtils';
 
 export interface ResolvedSkus {
   hwSku: string;
@@ -51,6 +52,12 @@ export function resolveNodeSkus(nodeData: HardwareNodeSkuData, globalLicenseMode
     resolvedSku = power === 'DC' ? 'GVS-TAX02' : 'GVS-TAX01';
   } else if (model.includes('TA100')) {
     resolvedSku = power === 'DC' ? 'GVS-TAC02' : 'GVS-TAC01';
+  }
+
+  // A breakout panel is a plain hardware SKU - no HTL/Perpetual split, no power
+  // variant, no port-capacity suffix.
+  if (isBreakoutPanelModel(model)) {
+    return { hwSku: resolvedSku };
   }
 
   // TAPs do not have separate HW/SW SKUs, return early

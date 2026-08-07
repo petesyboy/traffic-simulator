@@ -16,12 +16,10 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
   const {
     totalQsfpCages,
     usedQsfpOptics,
-    usedBreakouts,
     hasBuiltInCopper,
     usedBuiltInCopper,
     totalExpandedSfpPorts,
     usedSfpOptics,
-    breakoutSfpExpansion,
     remainingSfpCages,
     remainingQsfpCages,
     licensedSfpCages,
@@ -34,8 +32,6 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
     used400G,
   } = getCageCapacityBreakdown(model, hwData);
 
-  const totalUsedQsfpCages = usedQsfpOptics + usedBreakouts;
-
   return (
     <div className="panel-section">
       <h3 className="text-base font-semibold mb-2">🔌 Physical Cages &amp; Ports</h3>
@@ -43,7 +39,7 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#aaa' }}>QSFP Cages (40G/100G/400G):</span>
           <strong style={{ color: remainingQsfpCages === 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>
-            {totalUsedQsfpCages} / {isLicensed ? `${licensedQsfpCages} (${totalQsfpCages} phys)` : totalQsfpCages} Used ({isLicensed ? `${remainingLicensedQsfpCages} lic, ` : ''}{remainingQsfpCages} Free)
+            {usedQsfpOptics} / {isLicensed ? `${licensedQsfpCages} (${totalQsfpCages} phys)` : totalQsfpCages} Used ({isLicensed ? `${remainingLicensedQsfpCages} lic, ` : ''}{remainingQsfpCages} Free)
           </strong>
         </div>
         {isLicensed && model.includes('TA400E') && (
@@ -60,11 +56,6 @@ export const CageSummaryPanel: React.FC<CageSummaryPanelProps> = ({ selectedNode
             {usedSfpOptics} / {isLicensed ? `${licensedSfpCages} (${totalExpandedSfpPorts} phys)` : totalExpandedSfpPorts} Used ({isLicensed ? `${remainingLicensedSfpCages} lic, ` : ''}{remainingSfpCages} Free)
           </strong>
         </div>
-        {usedBreakouts > 0 && (
-          <div style={{ color: '#00e5ff', fontSize: '10px', borderTop: '1px solid #222', paddingTop: '4px', marginTop: '2px' }}>
-            ℹ️ SFP capacity expanded by +{breakoutSfpExpansion} ports from {usedBreakouts} breakout panel{usedBreakouts > 1 ? 's' : ''}.
-          </div>
-        )}
         {hasBuiltInCopper && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #222', paddingTop: '4px', marginTop: '2px' }}>
             <span style={{ color: '#aaa' }}>Built-in 1G RJ45 Ports:</span>

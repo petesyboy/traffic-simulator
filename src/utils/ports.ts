@@ -14,11 +14,12 @@
 import type { Edge } from '@xyflow/react';
 import type { ChassisPort, CustomNode, HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
-import { findModuleBySku, getOpticSpeed, getTaLicenseLimits } from './hardwareUtils';
+import { findModuleBySku, getOpticSpeed, getTaLicenseLimits, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
+import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP } from './breakoutRules';
 
-/** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper. */
-const CAGE_PREFIX: Record<ChassisPort['cage'], string> = { SFP: 'x', QSFP: 'c', RJ45: 'g' };
+/** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper, m = MPO family. */
+const CAGE_PREFIX: Record<ChassisPort['cage'], string> = { SFP: 'x', QSFP: 'c', RJ45: 'g', MPO: 'm' };
 
 /** Coarse cage family a catalogue port type belongs to. */
 export function getCageFamily(portType: string): ChassisPort['cage'] {
@@ -28,14 +29,57 @@ export function getCageFamily(portType: string): ChassisPort['cage'] {
   return 'RJ45';
 }
 
-/** Which cage an optic needs, by speed. Breakout panels occupy a QSFP cage. */
+/** Which cage an optic needs, by speed. */
 export function getOpticCage(optic: string): ChassisPort['cage'] {
-  if (optic.includes('PNL-M341') || optic.includes('PNL-M343')) return 'QSFP';
   // Every QSB-* BiDi part is QSFP+ (40G) or QSFP28 (100G) form factor - never
   // SFP - regardless of whether getOpticSpeed's map recognises the exact SKU.
   if (optic.toUpperCase().includes('QSB-')) return 'QSFP';
   const speed = getOpticSpeed(optic);
   return speed === '40G' || speed === '100G' || speed === '400G' ? 'QSFP' : 'SFP';
+}
+
+/**
+ * A breakout panel's own ports: 3 MPO connectors (one per independent
+ * breakout/aggregation group) plus 4 LC connectors per group, matching the
+ * physical PNL-M341T/M343T unit exactly. Unlike a chassis, a panel has no
+ * optics of its own to validate against `speeds`/`cage` here - it's purely a
+ * passive connector map. Whether a group is actually valid (its MPO side
+ * wired to a chassis port carrying a parallel-fibre optic, its LC sides
+ * carrying the matching speed/fibre-type optic on whatever they connect to)
+ * is a topology question, checked by validateBreakoutPanels() in
+ * configValidator.ts, not by this static port list. LC ports are uniformly
+ * `cage: 'SFP'` even though a 400G group's real LC-side optic is QSFP28 form
+ * factor (per the panel's own physical LC duplex connectors) - the breakout
+ * validator is the source of truth for that case, not the generic cage match.
+ */
+function getPanelPorts(): ChassisPort[] {
+  const ports: ChassisPort[] = [];
+  for (let group = 1; group <= PANEL_MPO_GROUPS; group++) {
+    const mpoId = `1/1/${CAGE_PREFIX.MPO}${group}`;
+    ports.push({
+      id: mpoId,
+      board: 'MPO',
+      slot: '1',
+      type: 'MPO-12',
+      cage: 'MPO',
+      index: group,
+      speeds: ['40G', '100G', '400G'],
+      licensed: true,
+    });
+    for (let lane = 1; lane <= PANEL_LC_PER_GROUP; lane++) {
+      ports.push({
+        id: `${mpoId}/${lane}`,
+        board: 'MPO',
+        slot: '1',
+        type: 'LC-Duplex',
+        cage: 'SFP',
+        index: (group - 1) * PANEL_LC_PER_GROUP + lane,
+        speeds: ['10G', '25G', '100G'],
+        licensed: true,
+      });
+    }
+  }
+  return ports;
 }
 
 /** Catalogue entry for a chassis, across both TA and HC series. */
@@ -49,7 +93,7 @@ function findChassis(model: string) {
  * port's `board` lines up with `InstalledOptic.board`.
  */
 function getMainBoardName(model: string, hwData: HardwareNodeData): string {
-  const boards = getSupportedBoards(model, hwData.portCapacity as string, hwData.optics);
+  const boards = getSupportedBoards(model, hwData.portCapacity as string);
   const main = boards.find(b => b.board.toLowerCase().includes('main') || b.board.toLowerCase().includes('base'));
   return main?.board || 'Base Ports';
 }
@@ -112,7 +156,9 @@ function expandPorts(
  * port list in the catalogue.
  */
 export function getChassisPorts(model: string, hwData: HardwareNodeData): ChassisPort[] {
-  if (!model || model.includes('TAP')) return [];
+  if (!model) return [];
+  if (isBreakoutPanelModel(model)) return getPanelPorts();
+  if (model.includes('TAP')) return [];
   const chassis = findChassis(model);
   if (!chassis) return [];
 

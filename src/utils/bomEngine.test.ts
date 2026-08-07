@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import type { Edge } from '@xyflow/react';
 import { syncOpticsOnTapConnection, validateConfiguration, setMockSkusMetadata } from './bomEngine';
-import { type CustomNode, type InstalledOptic } from '../store/types';
+import { type CustomNode, type InstalledOptic, type PortLink } from '../store/types';
+import { syncPortAssignments } from './portSync';
 
 describe('BOM Engine', () => {
   describe('syncOpticsOnTapConnection', () => {
@@ -211,5 +213,114 @@ describe('BOM Engine', () => {
       // Clean up mock
       setMockSkusMetadata(null);
     });
+  });
+});
+
+describe('MPO breakout panel validation', () => {
+  const chassis = (id: string, optic: string, board = 'Base Ports', qty = 1): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data: { label: id, model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: [{ board, optic, qty }] },
+  } as CustomNode);
+
+  const panel = (id: string): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data: { label: id, model: 'PNL-M341T', sku: 'PNL-M341T' },
+  } as CustomNode);
+
+  const tool = (id: string): CustomNode => ({
+    id,
+    type: 'toolNode',
+    position: { x: 0, y: 0 },
+    data: { label: id, configType: 'Packet Tool' },
+  } as CustomNode);
+
+  it('a chassis with a valid parallel optic wired to a panel, fanned out to a tool, raises no breakout errors', () => {
+    const nodes = [chassis('c1', 'Q28-502T (100G QSFP28 SR4)'), panel('p1'), tool('t1')];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'c1', target: 'p1' },
+      { id: 'e2', source: 'p1', target: 't1' },
+    ];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    expect(errors.filter(e => e.type.startsWith('breakout_'))).toEqual([]);
+    // Sanity: the chassis really did land on a QSFP cage and the panel on an MPO port.
+    const e1Links = (synced[0].data?.portLinks as PortLink[]) || [];
+    expect(e1Links[0]?.sourcePortId).toMatch(/^1\/1\/c/);
+    expect(e1Links[0]?.targetPortId).toBe('1/1/m1');
+  });
+
+  it('flags a non-parallel optic (LR4) on the chassis side of a breakout link', () => {
+    const nodes = [chassis('c1', 'Q28-503T (100G QSFP28 LR4)'), panel('p1')];
+    const edges: Edge[] = [{ id: 'e1', source: 'c1', target: 'p1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    const err = errors.find(e => e.type === 'breakout_optic_incompatible');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c1');
+    expect(err?.message).toContain('Q28-503T');
+  });
+
+  it('flags an LC lane optic that does not match the group\'s derived speed/fibre tier', () => {
+    // 100G MM parent -> lanes should be 25G SR (SFP-552/552T); wire the lane to a
+    // second chassis fitted with a 10G optic instead, a genuine speed mismatch.
+    const nodes = [
+      chassis('c1', 'Q28-502T (100G QSFP28 SR4)'),
+      panel('p1'),
+      chassis('c2', 'SFP-532T (10G SFP+ SR)'),
+    ];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'c1', target: 'p1', data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] } },
+      { id: 'e2', source: 'p1', target: 'c2', data: { portLinks: [{ sourcePortId: '1/1/m1/1', targetPortId: '1/1/x1' }] } },
+    ] as Edge[];
+
+    const errors = validateConfiguration(nodes, edges);
+    const err = errors.find(e => e.type === 'breakout_lane_speed_mismatch');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c2');
+    expect(err?.message).toContain('SFP-532T');
+  });
+
+  it('accepts a correctly speed-matched LC lane optic with no mismatch error', () => {
+    const nodes = [
+      chassis('c1', 'Q28-502T (100G QSFP28 SR4)'),
+      panel('p1'),
+      chassis('c2', 'SFP-552T (25G SFP28 SR)'),
+    ];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'c1', target: 'p1', data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] } },
+      { id: 'e2', source: 'p1', target: 'c2', data: { portLinks: [{ sourcePortId: '1/1/m1/1', targetPortId: '1/1/x1' }] } },
+    ] as Edge[];
+
+    const errors = validateConfiguration(nodes, edges);
+    expect(errors.some(e => e.type === 'breakout_lane_speed_mismatch')).toBe(false);
+  });
+
+  it('flags a panel with more MPO groups wired than it physically has (defensive check for corrupted/hand-edited data)', () => {
+    const nodes = [
+      chassis('c1', 'Q28-502T (100G QSFP28 SR4)'),
+      chassis('c2', 'Q28-502T (100G QSFP28 SR4)'),
+      chassis('c3', 'Q28-502T (100G QSFP28 SR4)'),
+      chassis('c4', 'Q28-502T (100G QSFP28 SR4)'),
+      panel('p1'),
+    ];
+    // A real panel only exposes 3 MPO ports (getPanelPorts) - m4 does not exist,
+    // simulating hand-edited/imported project data claiming a 4th group.
+    const edges: Edge[] = ['m1', 'm2', 'm3', 'm4'].map((mpo, i) => ({
+      id: `e${i}`,
+      source: `c${i + 1}`,
+      target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: `1/1/${mpo}` }] },
+    })) as Edge[];
+
+    const errors = validateConfiguration(nodes, edges);
+    const err = errors.find(e => e.type === 'breakout_panel_capacity_exceeded');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('p1');
   });
 });

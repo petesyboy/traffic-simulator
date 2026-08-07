@@ -12,7 +12,7 @@ export interface OpticSupport {
 /**
  * Returns a list of boards/modules and their supported optics for a given hardware model.
  */
-export function getSupportedBoards(model: string, portCapacity?: string, installedOptics?: { optic: string }[]): OpticSupport[] {
+export function getSupportedBoards(model: string, portCapacity?: string): OpticSupport[] {
   const keys = Object.keys(opticRules);
   // An exact match must win outright before falling back to prefix matching below -
   // otherwise a longer key that happens to start with this model's name (e.g. the
@@ -29,41 +29,13 @@ export function getSupportedBoards(model: string, portCapacity?: string, install
   if (!rules) return [];
 
   const isTA400No400G = model.includes('TA400') && portCapacity === '100G';
-  const isTaOrHc = model.includes('TA') || model.includes('HC');
-  const hasBreakoutPanel = installedOptics?.some(opt => opt.optic.includes('PNL-M341') || opt.optic.includes('PNL-M343'));
 
   return Object.keys(rules).map(board => {
     let supportedOptics = rules[board].filter(opt => opt !== 'Cable');
-    
+
     // If TA400 has no 400G ports enabled, it cannot accept 400G optics
     if (isTA400No400G) {
       supportedOptics = supportedOptics.filter(opt => !opt.includes('400G'));
-    }
-
-    if (isTaOrHc) {
-      supportedOptics = [
-        ...supportedOptics,
-        "PNL-M341 (40/100G Multimode Breakout Panel)",
-        "PNL-M343 (40/100/400G Singlemode Breakout Panel)"
-      ];
-      if (hasBreakoutPanel) {
-        // Add 10G and 25G optics for breakout support
-        const breakoutOptics = [
-          "SFP-532 (10G SFP+ SR)",
-          "SFP-532T (10G SFP+ SR)",
-          "SFP-533 (10G SFP+ LR)",
-          "SFP-533T (10G SFP+ LR)",
-          "SFP-552 (25G SFP28 SR)",
-          "SFP-552T (25G SFP28 SR)",
-          "SFP-553T (25G SFP28 LR)"
-        ];
-        // Only append ones that aren't already supported
-        breakoutOptics.forEach(bo => {
-          if (!supportedOptics.includes(bo)) {
-            supportedOptics.push(bo);
-          }
-        });
-      }
     }
 
     return {
@@ -81,9 +53,8 @@ export function validateOptic(
   board: string,
   optic: string,
   portCapacity?: string,
-  installedOptics?: { optic: string }[]
 ): { valid: boolean; message?: string } {
-  const boards = getSupportedBoards(model, portCapacity, installedOptics);
+  const boards = getSupportedBoards(model, portCapacity);
   if (boards.length === 0) {
     return { valid: false, message: `No compatibility data found for model: ${model}` };
   }

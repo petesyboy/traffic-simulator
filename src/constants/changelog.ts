@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.491",
+    date: "2026-08-07",
+    summary: "Added MPO breakout panels (PNL-M341T multimode / PNL-M343T singlemode) as real, sidebar-placeable modules - drag one into a TAP tray alongside tap modules, wire a GigaVUE port's parallel optic to its MPO connector, and fan out to 4 independently wireable LC ports (or wire 4 lower-speed sources in to aggregate them back into one uplink). Validates parallel-optic and lane-speed rules and quotes correctly in the BOM.",
+  },
+  {
     version: "1.0.490",
     date: "2026-08-07",
     summary: "Fixed the \"Saved to ...\" confirmation toast rendering behind the Save/Load modal's blurred background and becoming illegible when a slot is overwritten without closing the modal.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.472",
     date: "2026-08-05",
     summary: "HC1/HC1-Plus/HC3 canvas nodes now show the same front-panel graphic as the hardware summary, alongside the live port status. Fixed the title icon stretching wide chassis nodes far past others.",
-  },
-  {
-    version: "1.0.471",
-    date: "2026-08-05",
-    summary: "Fitted modules now align exactly to their chassis bay on the HC1, HC1-Plus and HC3 front panels, fully covering the blanking panel's honeycomb mesh.",
   },
 ];
