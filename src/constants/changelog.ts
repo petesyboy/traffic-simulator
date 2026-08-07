@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.494",
+    date: "2026-08-07",
+    summary: "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited.",
+  },
+  {
     version: "1.0.493",
     date: "2026-08-07",
     summary: "The optic picker's LC-side guard now works too - once a cage is wired to one of a breakout panel's 4 lower-speed legs, only the optics matching that group's actual speed/fibre tier (derived from whatever's fitted on the panel's high-speed side) are offered.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.475",
     date: "2026-08-05",
     summary: "Audited every module SKU lookup for case-sensitivity bugs like the PRT-HC1-X12 fix - found and fixed the same issue on SMT-HC3-C08, and made all catalogue lookups case-insensitive so it can't recur.",
-  },
-  {
-    version: "1.0.474",
-    date: "2026-08-05",
-    summary: "Fixed the PRT-HC1-X12 port module not adding its 12 ports when installed - a mismatched SKU casing kept it from being recognised.",
   },
 ];

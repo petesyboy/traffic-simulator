@@ -84,12 +84,15 @@ export function getBreakoutLcOptics(parentOpticStr: string): string[] {
 export const isMpoPortId = (portId: string) => /\/m\d+$/.test(portId);
 
 /**
- * True when the given board already has a cage wired (via an edge) to a
- * breakout panel's MPO connector - meaning whatever optic goes in that cage
- * must be a parallel-fibre part (SR4/PLR4/PSM4/DR4/DR4+), since that's what
- * physically feeds the panel's MPO trunk. Used by OpticsPanel.tsx to filter
- * the "Add Optic" dropdown down to valid choices once a cage is committed
- * to feeding a panel.
+ * True when the given board already has one of its *QSFP-family* cages wired
+ * (via an edge) to a breakout panel's MPO connector - meaning whatever optic
+ * goes in that specific cage must be a parallel-fibre part (SR4/PLR4/PSM4/
+ * DR4/DR4+), since that's what physically feeds the panel's MPO trunk.
+ * Scoped to QSFP cages only - a board like a TA25E's "Base Ports" mixes SFP
+ * and QSFP cages on one board, and an MPO trunk can only ever land on a QSFP
+ * cage, so its SFP cages must stay unrestricted even once one QSFP cage on
+ * the same board feeds a panel. Used by OpticsPanel.tsx to filter the
+ * "Add Optic" dropdown down to valid choices for the affected cage family.
  */
 export function boardFeedsBreakoutPanel(
   targetBoard: string,
@@ -98,7 +101,7 @@ export function boardFeedsBreakoutPanel(
   nodes: CustomNode[],
   edges: Edge[],
 ): boolean {
-  const boardPortIds = new Set(chassisPorts.filter(p => p.board === targetBoard).map(p => p.id));
+  const boardPortIds = new Set(chassisPorts.filter(p => p.board === targetBoard && p.cage === 'QSFP').map(p => p.id));
   if (boardPortIds.size === 0) return false;
   return edges.some(edge => {
     if (edge.source !== nodeId && edge.target !== nodeId) return false;

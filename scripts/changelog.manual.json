@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.494",
+    "date": "2026-08-07",
+    "summary": "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited."
+  },
+  {
     "version": "1.0.493",
     "date": "2026-08-07",
     "summary": "The optic picker's LC-side guard now works too - once a cage is wired to one of a breakout panel's 4 lower-speed legs, only the optics matching that group's actual speed/fibre tier (derived from whatever's fitted on the panel's high-speed side) are offered."

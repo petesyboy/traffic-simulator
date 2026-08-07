@@ -384,13 +384,22 @@ function findGroupParentOptic(panel: CustomNode, groupMpoId: string, nodes: Cust
   return undefined;
 }
 
+export interface BreakoutLcRestriction {
+  /** Only optics landing in this cage family are restricted - a board that
+   *  mixes SFP and QSFP cages (e.g. a TA25E's "Base Ports") must not have its
+   *  unrelated cages restricted just because one cage feeds a panel's LC leg. */
+  cage: ChassisPort['cage'];
+  /** Valid optics for this leg's group - empty if the panel's MPO side has
+   *  no usable optic installed yet, so nothing can be derived. */
+  optics: string[];
+}
+
 /**
  * When `targetBoard` has a cage wired to one of a breakout panel's LC legs,
  * returns the LC-side optics valid for that leg's group - derived from
  * whatever parallel optic sits on the chassis at the OTHER end of the same
  * panel's MPO connector, via getBreakoutLcOptics(). Returns null when this
- * board isn't feeding a panel's LC leg at all (no restriction to apply), or
- * an array (possibly empty, if the MPO side has no usable optic yet) once it is.
+ * board isn't feeding a panel's LC leg at all (no restriction to apply).
  */
 export function allowedBreakoutLcOptics(
   targetBoard: string,
@@ -398,9 +407,10 @@ export function allowedBreakoutLcOptics(
   nodeId: string,
   nodes: CustomNode[],
   edges: Edge[],
-): string[] | null {
-  const boardPortIds = new Set(chassisPorts.filter(p => p.board === targetBoard).map(p => p.id));
-  if (boardPortIds.size === 0) return null;
+): BreakoutLcRestriction | null {
+  const boardPorts = chassisPorts.filter(p => p.board === targetBoard);
+  if (boardPorts.length === 0) return null;
+  const boardPortCages = new Map(boardPorts.map(p => [p.id, p.cage]));
 
   for (const edge of edges) {
     if (edge.source !== nodeId && edge.target !== nodeId) continue;
@@ -412,11 +422,11 @@ export function allowedBreakoutLcOptics(
     for (const link of links) {
       const myPortId = isSource ? link.sourcePortId : link.targetPortId;
       const panelPortId = isSource ? link.targetPortId : link.sourcePortId;
-      if (!myPortId || !boardPortIds.has(myPortId) || !panelPortId || isMpoPortId(panelPortId)) continue;
+      if (!myPortId || !boardPortCages.has(myPortId) || !panelPortId || isMpoPortId(panelPortId)) continue;
 
       const groupMpoId = panelPortId.replace(/\/\d+$/, '');
       const parentOptic = findGroupParentOptic(panel, groupMpoId, nodes, edges);
-      return parentOptic ? getBreakoutLcOptics(parentOptic) : [];
+      return { cage: boardPortCages.get(myPortId)!, optics: parentOptic ? getBreakoutLcOptics(parentOptic) : [] };
     }
   }
   return null;

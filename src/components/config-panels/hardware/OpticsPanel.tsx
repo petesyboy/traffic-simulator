@@ -4,7 +4,7 @@ import type { Edge } from '@xyflow/react';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards, validateOptic } from '../../../utils/opticValidation';
 import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap, isBreakoutPanelModel } from '../../../utils/hardwareUtils';
-import { getChassisPorts, getPortOpticMap, allowedBreakoutLcOptics } from '../../../utils/ports';
+import { getChassisPorts, getPortOpticMap, getOpticCage, allowedBreakoutLcOptics } from '../../../utils/ports';
 import { isParallelBreakoutOptic, boardFeedsBreakoutPanel } from '../../../utils/breakoutRules';
 import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
 
@@ -53,19 +53,21 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
   const targetBoard = availableOpticBoards.length === 1 ? availableOpticBoards[0].board : selectedOpticBoard;
   const chassisPortsForFeedCheck = getChassisPorts(model, hwData);
+  // Both checks are scoped to a specific cage FAMILY, not the whole board - a
+  // board like a TA25E's "Base Ports" mixes SFP and QSFP cages, so wiring one
+  // QSFP cage to a panel must not restrict that board's unrelated SFP cages.
   const feedsBreakoutPanel = !!targetBoard &&
     boardFeedsBreakoutPanel(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges);
-  // null = this board isn't feeding a panel's LC leg at all; an array (maybe
-  // empty, if the panel's MPO side has no usable optic yet) once it is.
-  const allowedLcOptics = (!feedsBreakoutPanel && targetBoard)
+  const lcRestriction = targetBoard
     ? allowedBreakoutLcOptics(targetBoard, chassisPortsForFeedCheck, selectedNode.id, nodes, edges)
     : null;
   const dropdownOptics = activeOpticBoardObj
-    ? feedsBreakoutPanel
-      ? activeOpticBoardObj.supportedOptics.filter(isParallelBreakoutOptic)
-      : allowedLcOptics
-        ? activeOpticBoardObj.supportedOptics.filter(o => allowedLcOptics.includes(o))
-        : activeOpticBoardObj.supportedOptics
+    ? activeOpticBoardObj.supportedOptics.filter(opt => {
+        const cage = getOpticCage(opt);
+        if (feedsBreakoutPanel && cage === 'QSFP') return isParallelBreakoutOptic(opt);
+        if (lcRestriction && cage === lcRestriction.cage) return lcRestriction.optics.includes(opt);
+        return true;
+      })
     : [];
 
   // ─── Optics status calculations ───────────────────────────────────
@@ -139,13 +141,14 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       return;
     }
 
-    if (feedsBreakoutPanel && !isParallelBreakoutOptic(selectedOptic)) {
-      setErrorMsg(`"${selectedOptic.split(' ')[0]}" can't be used here - this cage feeds a breakout panel, which needs a parallel-fibre optic (SR4 for multimode, PLR4/PSM4/DR4/DR4+ for singlemode). LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.`);
+    const selectedCage = getOpticCage(selectedOptic);
+    if (feedsBreakoutPanel && selectedCage === 'QSFP' && !isParallelBreakoutOptic(selectedOptic)) {
+      setErrorMsg(`"${selectedOptic.split(' ')[0]}" can't be used here - this QSFP cage feeds a breakout panel, which needs a parallel-fibre optic (SR4 for multimode, PLR4/PSM4/DR4/DR4+ for singlemode). LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.`);
       return;
     }
-    if (allowedLcOptics && !allowedLcOptics.includes(selectedOptic)) {
-      setErrorMsg(allowedLcOptics.length > 0
-        ? `"${selectedOptic.split(' ')[0]}" can't be used here - this cage is one of a breakout panel's LC legs, which needs: ${allowedLcOptics.map(o => o.split(' ')[0]).join(', ')}.`
+    if (lcRestriction && selectedCage === lcRestriction.cage && !lcRestriction.optics.includes(selectedOptic)) {
+      setErrorMsg(lcRestriction.optics.length > 0
+        ? `"${selectedOptic.split(' ')[0]}" can't be used here - this cage is one of a breakout panel's LC legs, which needs: ${lcRestriction.optics.map(o => o.split(' ')[0]).join(', ')}.`
         : `This cage is one of a breakout panel's LC legs, but its MPO side has no valid optic installed yet - fit the parent optic on that chassis first.`);
       return;
     }
@@ -351,14 +354,14 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             </select>
             {feedsBreakoutPanel && (
               <div style={{ fontSize: '10px', color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)', borderRadius: '4px', padding: '6px 8px', lineHeight: 1.4 }}>
-                ⚡ This cage feeds a breakout panel - only parallel-fibre optics (SR4 multimode, PLR4/PSM4/DR4/DR4+ singlemode) are shown. LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way.
+                ⚡ This board's QSFP cages feed a breakout panel - only parallel-fibre optics (SR4 multimode, PLR4/PSM4/DR4/DR4+ singlemode) are offered for them. LR4/CWDM4/SWDM4/FR4 optics can't be broken out this way. Any SFP cages on this board are unaffected.
               </div>
             )}
-            {allowedLcOptics && (
+            {lcRestriction && (
               <div style={{ fontSize: '10px', color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)', borderRadius: '4px', padding: '6px 8px', lineHeight: 1.4 }}>
-                {allowedLcOptics.length > 0
-                  ? `⚡ This cage is one of a breakout panel's LC legs - only optics matching that group's speed/fibre type are shown.`
-                  : `⚠️ This cage is one of a breakout panel's LC legs, but its MPO side has no valid optic installed yet - fit the parent optic on that chassis first.`}
+                {lcRestriction.optics.length > 0
+                  ? `⚡ This board's ${lcRestriction.cage} cages are one of a breakout panel's LC legs - only optics matching that group's speed/fibre type are offered for them.`
+                  : `⚠️ This board's ${lcRestriction.cage} cages are one of a breakout panel's LC legs, but its MPO side has no valid optic installed yet - fit the parent optic on that chassis first.`}
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

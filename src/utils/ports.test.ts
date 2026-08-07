@@ -319,16 +319,16 @@ describe('allowedBreakoutLcOptics', () => {
     expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, edges)).toBeNull();
   });
 
-  it('returns an empty array when wired to an LC leg whose MPO side has no optic yet', () => {
+  it('returns the cage plus an empty optics array when wired to an LC leg whose MPO side has no optic yet', () => {
     const nodes = [chassisNode('c1'), panelNode('p1')];
     const edges = [{
       id: 'e1', source: 'c1', target: 'p1',
-      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1/1' }] },
+      data: { portLinks: [{ sourcePortId: '1/1/x1', targetPortId: '1/1/m1/1' }] },
     }] as unknown as Edge[];
-    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, edges)).toEqual([]);
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, edges)).toEqual({ cage: 'SFP', optics: [] });
   });
 
-  it('derives the correct LC optics from the parent optic on the far chassis (100G MM -> 25G SR)', () => {
+  it('derives the correct LC optics and cage from the parent optic on the far chassis (100G MM -> 25G SR)', () => {
     const parent = chassisNode('parent');
     parent.data = { ...parent.data, optics: [{ board: 'Base Ports', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 1 }] };
     const leg = chassisNode('leg');
@@ -344,10 +344,10 @@ describe('allowedBreakoutLcOptics', () => {
       },
     ] as unknown as Edge[];
 
-    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual([
-      'SFP-552 (25G SFP28 SR)',
-      'SFP-552T (25G SFP28 SR)',
-    ]);
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual({
+      cage: 'SFP',
+      optics: ['SFP-552 (25G SFP28 SR)', 'SFP-552T (25G SFP28 SR)'],
+    });
   });
 
   it('works when this node is the edge source or target, on either the MPO or LC edge', () => {
@@ -366,9 +366,23 @@ describe('allowedBreakoutLcOptics', () => {
       },
     ] as unknown as Edge[];
 
-    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual([
-      'SFP-533 (10G SFP+ LR)',
-      'SFP-533T (10G SFP+ LR)',
-    ]);
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'leg', nodes, edges)).toEqual({
+      cage: 'SFP',
+      optics: ['SFP-533 (10G SFP+ LR)', 'SFP-533T (10G SFP+ LR)'],
+    });
+  });
+
+  it('regression: a board mixing SFP and QSFP cages only restricts the cage family actually wired to the panel', () => {
+    // Real-world bug report: a TA25E's single "Base Ports" board carries both
+    // SFP28 and QSFP28 cages. Wiring ONE QSFP cage to a panel's MPO trunk must
+    // not make allowedBreakoutLcOptics() (or boardFeedsBreakoutPanel) claim the
+    // whole board - including its unrelated SFP cages - is restricted.
+    const nodes = [chassisNode('c1'), panelNode('p1')];
+    const mpoEdge = {
+      id: 'e-mpo', source: 'c1', target: 'p1',
+      data: { portLinks: [{ sourcePortId: '1/1/c1', targetPortId: '1/1/m1' }] },
+    } as unknown as Edge;
+    // No edge ties any SFP cage on this board to a panel LC leg.
+    expect(allowedBreakoutLcOptics('Base Ports', ports, 'c1', nodes, [mpoEdge])).toBeNull();
   });
 });
