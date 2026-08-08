@@ -4,7 +4,7 @@ import { ACTION_TYPES } from '../../constants/nodeTypes';
 
 describe('describeGigaSmartFunction', () => {
   it('returns the catalogued sentence for a known action', () => {
-    expect(describeGigaSmartFunction(ACTION_TYPES.SSL_DECRYPT)).toContain('Decrypts SSL/TLS traffic');
+    expect(describeGigaSmartFunction(ACTION_TYPES.SSL_DECRYPT)).toContain('decrypts, and delivers TLS/SSL traffic');
   });
 
   it('has an entry for every ACTION_TYPES value', () => {

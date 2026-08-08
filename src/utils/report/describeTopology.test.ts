@@ -346,7 +346,7 @@ describe('describeProcessingNodeDetail', () => {
     ];
     const detail = describeProcessingNodeDetail(gsNodes[0], gsNodes, []);
     expect(detail.bullets).toContain('Action: Drop');
-    expect(detail.bullets.some((b) => b.includes('Identifies and removes duplicate copies'))).toBe(true);
+    expect(detail.bullets.some((b) => b.includes('Removes duplicate copies of the same packet'))).toBe(true);
   });
 });
 

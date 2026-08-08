@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.501",
+    "date": "2026-08-07",
+    "summary": "The GigaSMART Processing section of the PDF report is now much more detailed - every function gets a fuller explanation of its mechanism and the concrete benefit of using it, drawn from Gigamon's own GigaSMART data sheet."
+  },
+  {
     "version": "1.0.500",
     "date": "2026-08-07",
     "summary": "Fixed the PDF report's Executive Summary showing zero Traffic Sources/TAPs whenever TAPs were modelled as their own hardware unit wired to a chassis rather than a logical TAP input node - both representations now count correctly."
