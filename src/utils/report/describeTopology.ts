@@ -340,6 +340,24 @@ export function describeProcessingNodeDetail(
   return { headline: node.data.label || node.id, bullets };
 }
 
+/**
+ * Detail for a GigaSMART app hosted inline on a chassis's or tool's
+ * `gigaSmartApps` array (an HC-series onboard engine, or a GSA appliance) —
+ * not a standalone canvas `gigaSmartNode`, so there's no node id of its own
+ * to graph-trace upstream/downstream from. Without this, a report only ever
+ * describes GigaSMART functions that were dragged out as their own canvas
+ * node, silently omitting e.g. deduplication configured directly on an HC1's
+ * onboard engine even though the Executive Summary's function count already
+ * includes it (`buildTopologyStats` counts both shapes; only the narrative
+ * text didn't).
+ */
+export function describeHostedGigaSmartAppDetail(app: GigaSmartNodeData, hostLabel: string): NodeDetail {
+  return {
+    headline: `${app.label || app.actionType} — ${app.actionType}`,
+    bullets: [describeGigaSmartAction(app), describeGigaSmartFunction(app.actionType), `Running on: ${hostLabel}`],
+  };
+}
+
 export function describeToolNodeDetail(
   node: CustomNode,
   nodes: CustomNode[],

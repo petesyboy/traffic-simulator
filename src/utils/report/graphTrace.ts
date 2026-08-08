@@ -12,8 +12,28 @@
  * pure, reusable pair instead of a sixth inline copy.
  */
 import type { Edge } from '@xyflow/react';
-import type { CustomNode } from '../../store/types';
+import type { CustomNode, HardwareNodeData } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
+import { isAutoTrayModel } from '../trayModels';
+
+/**
+ * True for a node that counts as a traffic *origin* for the report's "Traffic
+ * originates from" tracing — a logical `inputNode`, or a TAP modelled as its
+ * own physical `hardwareNode` wired to a chassis (see describeTapLink.ts for
+ * the full writeup of this two-shapes-of-TAP gotcha). Without the second
+ * branch, `traceToTerminalInputs` walks straight past a hardware-modelled TAP
+ * looking for further upstream nodes, finds none, and silently drops that
+ * whole branch — so a report with both a SPAN input and a TAP-as-hardware
+ * input would claim all traffic "originates from" the SPAN alone.
+ */
+const isTerminalInputNode = (node: CustomNode): boolean => {
+  if (node.type === NODE_TYPES.INPUT) return true;
+  if (node.type === NODE_TYPES.HARDWARE) {
+    const model = String((node.data as HardwareNodeData).model || '').toUpperCase();
+    return model.includes('TAP') && !isAutoTrayModel(model);
+  }
+  return false;
+};
 
 /** Direct (one-hop) source nodes feeding into `nodeId`. */
 export function getUpstreamNodes(nodeId: string, nodes: CustomNode[], edges: Edge[]): CustomNode[] {
@@ -32,7 +52,7 @@ const traceToTerminal = (
   nodes: CustomNode[],
   edges: Edge[],
   direction: 'up' | 'down',
-  terminalType: string,
+  isTerminal: (node: CustomNode) => boolean,
 ): CustomNode[] => {
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
   const visited = new Set<string>([nodeId]);
@@ -51,7 +71,7 @@ const traceToTerminal = (
       visited.add(neighbourId);
       const neighbour = nodeById.get(neighbourId);
       if (!neighbour) continue;
-      if (neighbour.type === terminalType) {
+      if (isTerminal(neighbour)) {
         terminals.set(neighbour.id, neighbour);
       } else {
         queue.push(neighbourId);
@@ -62,12 +82,12 @@ const traceToTerminal = (
   return Array.from(terminals.values());
 };
 
-/** BFS backward from `nodeId` to every reachable `inputNode` (deduped). */
+/** BFS backward from `nodeId` to every reachable traffic origin (logical `inputNode` or a TAP modelled as a `hardwareNode`), deduped. */
 export function traceToTerminalInputs(nodeId: string, nodes: CustomNode[], edges: Edge[]): CustomNode[] {
-  return traceToTerminal(nodeId, nodes, edges, 'up', NODE_TYPES.INPUT);
+  return traceToTerminal(nodeId, nodes, edges, 'up', isTerminalInputNode);
 }
 
 /** BFS forward from `nodeId` to every reachable `toolNode` (deduped). */
 export function traceToTerminalOutputs(nodeId: string, nodes: CustomNode[], edges: Edge[]): CustomNode[] {
-  return traceToTerminal(nodeId, nodes, edges, 'down', NODE_TYPES.TOOL);
+  return traceToTerminal(nodeId, nodes, edges, 'down', (node) => node.type === NODE_TYPES.TOOL);
 }

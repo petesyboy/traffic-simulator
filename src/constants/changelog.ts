@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.504",
+    date: "2026-08-08",
+    summary: "Fixed two PDF report gaps: a tool's \"Traffic originates from\" line now credits a TAP modelled as its own hardware unit alongside any SPAN/other inputs feeding the same tool (it was being silently dropped), and GigaSMART functions running as an onboard app on a chassis or GSA tool (e.g. deduplication configured directly on an HC1) now get their own description in the GigaSMART Processing section instead of being omitted entirely.",
+  },
+  {
     version: "1.0.503",
     date: "2026-08-08",
     summary: "The PDF report's Hardware section now shows each TA/HC chassis's front-panel photo, with installed modules composited into their real slot positions, underneath its description - the same graphic shown in the on-canvas hardware summary popup.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.485",
     date: "2026-08-07",
     summary: "TAP-M100T/M200T/M202ULT trays are no longer manually placed on the canvas - they're generated automatically to match your tap modules and only appear in Rack View.",
-  },
-  {
-    version: "1.0.484",
-    date: "2026-08-07",
-    summary: "The configuration panel can now be dragged wider. Newly installed optics briefly flash on the hardware node's port map so you can spot which cage they landed in.",
   },
 ];

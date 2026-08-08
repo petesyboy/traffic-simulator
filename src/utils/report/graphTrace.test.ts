@@ -88,4 +88,33 @@ describe('traceToTerminalInputs / traceToTerminalOutputs', () => {
 
     expect(traceToTerminalOutputs('a', nodes, edges)).toEqual([]);
   });
+
+  it('counts a TAP modelled as its own hardwareNode as a traffic origin alongside a SPAN inputNode', () => {
+    // Regression: a TAP wired directly to a chassis hardwareNode (rather than
+    // a logical inputNode) used to be silently dropped from "Traffic
+    // originates from" tracing, making a report claim all traffic came from
+    // the SPAN input alone.
+    const nodes: CustomNode[] = [
+      node('span1', NODE_TYPES.INPUT),
+      { ...node('tap1', NODE_TYPES.HARDWARE), data: { label: 'TAP1', model: 'TAP-M253T' } } as CustomNode,
+      node('hc1', NODE_TYPES.HARDWARE, 'HC1'),
+      node('tool1', NODE_TYPES.TOOL),
+    ];
+    const edges = [edge('e1', 'span1', 'hc1'), edge('e2', 'tap1', 'hc1'), edge('e3', 'hc1', 'tool1')];
+
+    const origins = traceToTerminalInputs('tool1', nodes, edges)
+      .map((n) => n.id)
+      .sort();
+    expect(origins).toEqual(['span1', 'tap1']);
+  });
+
+  it('does not treat a TAP-tray hardwareNode as a traffic origin', () => {
+    const nodes: CustomNode[] = [
+      { ...node('tray1', NODE_TYPES.HARDWARE), data: { label: 'Tray', model: 'TAP-M100T' } } as CustomNode,
+      node('tool1', NODE_TYPES.TOOL),
+    ];
+    const edges = [edge('e1', 'tray1', 'tool1')];
+
+    expect(traceToTerminalInputs('tool1', nodes, edges)).toEqual([]);
+  });
 });

@@ -30,6 +30,7 @@ import {
   describeInputNodeDetail,
   describeProcessingNodeDetail,
   describeToolNodeDetail,
+  describeHostedGigaSmartAppDetail,
   type NodeDetail,
 } from './describeTopology';
 import { describeTapPhysicalLink } from './describeTapLink';
@@ -242,7 +243,21 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   const gigaSmartNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASMART);
   const gigaStreamNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASTREAM);
-  if (gigaSmartNodes.length > 0 || Object.keys(stats.gigaSmartActionCounts).length > 0) {
+  // GigaSMART functions can also run as an app hosted directly on a chassis's
+  // onboard engine (HC1/HC3 etc.) or a GSA tool appliance, rather than as
+  // their own canvas node — gather those alongside the standalone nodes so
+  // e.g. deduplication configured on an HC1 gets described too.
+  const hostedGigaSmartApps: { app: GigaSmartNodeData; hostLabel: string }[] = [];
+  nodes.forEach((n) => {
+    if (n.type === NODE_TYPES.HARDWARE) {
+      const hwData = n.data as HardwareNodeData;
+      (hwData.gigaSmartApps || []).forEach((app) => hostedGigaSmartApps.push({ app, hostLabel: hwData.label }));
+    } else if (n.type === NODE_TYPES.TOOL) {
+      const toolData = n.data as ToolNodeData;
+      (toolData.gigaSmartApps || []).forEach((app) => hostedGigaSmartApps.push({ app, hostLabel: toolData.label }));
+    }
+  });
+  if (gigaSmartNodes.length > 0 || hostedGigaSmartApps.length > 0) {
     content.push({ text: 'GigaSMART Processing', style: 'subHeading' });
     gigaSmartNodes.forEach((n) => {
       const data = n.data as GigaSmartNodeData;
@@ -253,6 +268,12 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           detail,
           getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, data.actionType),
         ),
+      );
+    });
+    hostedGigaSmartApps.forEach(({ app, hostLabel }) => {
+      const detail = describeHostedGigaSmartAppDetail(app, hostLabel);
+      content.push(
+        detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, app.actionType)),
       );
     });
   }

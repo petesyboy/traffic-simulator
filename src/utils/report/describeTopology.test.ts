@@ -10,6 +10,7 @@ import {
   describeInputNodeDetail,
   describeProcessingNodeDetail,
   describeToolNodeDetail,
+  describeHostedGigaSmartAppDetail,
   summarizeMapInclusionExclusion,
 } from './describeTopology';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
@@ -209,6 +210,31 @@ describe('describeGigaSmartAction', () => {
     expect(describeGigaSmartAction({ actionType: ACTION_TYPES.SSL_DECRYPT } as GigaSmartNodeData)).toBe(
       'Action: SSL Decrypt',
     );
+  });
+});
+
+describe('describeHostedGigaSmartAppDetail', () => {
+  it('describes a GigaSMART app hosted on a chassis onboard engine, naming the host', () => {
+    // Regression: an HC1's onboard dedup engine (HardwareNodeData.gigaSmartApps)
+    // used to have no narrative entry at all in the report, even though it's
+    // not a standalone gigaSmartNode - only the Executive Summary count knew
+    // about it.
+    const detail = describeHostedGigaSmartAppDetail(
+      { label: 'Dedup Engine', actionType: ACTION_TYPES.DEDUPLICATION } as GigaSmartNodeData,
+      'HC1-Core',
+    );
+    expect(detail.headline).toBe('Dedup Engine — Deduplication');
+    expect(detail.bullets).toContain('Action: Drop');
+    expect(detail.bullets).toContain('Running on: HC1-Core');
+    expect(detail.bullets.length).toBe(3);
+  });
+
+  it('falls back to the action type as the headline when the app has no label', () => {
+    const detail = describeHostedGigaSmartAppDetail(
+      { actionType: ACTION_TYPES.DEDUPLICATION } as GigaSmartNodeData,
+      'HC1-Core',
+    );
+    expect(detail.headline).toBe('Deduplication — Deduplication');
   });
 });
 
