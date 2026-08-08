@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.502",
+    date: "2026-08-07",
+    summary: "Fixed the PDF report's Traffic Maps count: every TA/HC chassis runs its own onboard flow map even without a separate Map node dragged out for it, so each one now counts alongside any explicit Traffic Map nodes. Also removed the Total Simulated Traffic line from the Executive Summary.",
+  },
+  {
     version: "1.0.501",
     date: "2026-08-07",
     summary: "The GigaSMART Processing section of the PDF report is now much more detailed - every function gets a fuller explanation of its mechanism and the concrete benefit of using it, drawn from Gigamon's own GigaSMART data sheet.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.483",
     date: "2026-08-07",
     summary: "Traffic Map nodes now show incoming bandwidth (In:) alongside the passed-through output (Out:) while the simulation is running.",
-  },
-  {
-    version: "1.0.482",
-    date: "2026-08-06",
-    summary: "Chassis nodes with multiple installed boards can now be collapsed to hide the board/port details and shrink the box - click the − / + icon in the node header.",
   },
 ];

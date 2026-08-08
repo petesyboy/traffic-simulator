@@ -30,6 +30,7 @@ import { describeTapPhysicalLink } from './describeTapLink';
 import { describeGigaSmartFunction } from './gigaSmartDescriptions';
 import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
 import { isAutoTrayModel } from '../trayModels';
+import { isTaHcChassis } from './chassisDescriptions';
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,12 @@ export function buildTopologyStats(
         inputCounts.tap += 1;
         inputCounts.total += 1;
       }
+
+      // Every TA/HC chassis runs its own onboard flow map, whether or not the
+      // user also dragged out a separate Traffic Map canvas node for it — so
+      // it counts as a map in its own right (confirmed with the user: a TA25
+      // and an HC1 each count as a map alongside any explicit Map node).
+      if (isTaHcChassis(model)) mapNodeCount += 1;
     }
   }
 

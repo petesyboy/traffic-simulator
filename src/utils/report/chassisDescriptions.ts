@@ -45,3 +45,15 @@ export function describeChassisPurpose(model: string | undefined): string | unde
   const normalized = model.toUpperCase();
   return CHASSIS_PURPOSE_DESCRIPTIONS.find((entry) => entry.match(normalized))?.text;
 }
+
+/**
+ * True for a recognised TA/HC-family Visibility Fabric node (not a tap tray,
+ * tap unit, GigaSMART Appliance, or other custom hardware). Every such node
+ * runs its own onboard flow map — that's the mechanism by which a physical
+ * appliance gets traffic from ingress ports to tools/GigaSMART — even when
+ * the user hasn't dragged out a separate Traffic Map canvas node for it, so
+ * this is used to count each chassis as a map in its own right.
+ */
+export function isTaHcChassis(model: string | undefined): boolean {
+  return describeChassisPurpose(model) !== undefined;
+}

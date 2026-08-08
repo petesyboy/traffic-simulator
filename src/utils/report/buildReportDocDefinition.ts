@@ -159,7 +159,6 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0),
       ),
       statBlock('Traffic Streams', stats.trafficStreamCount),
-      statBlock('Total Simulated Traffic', stats.totalBandwidthLabel),
     ],
     columnGap: 12,
     margin: [0, 0, 0, 4],

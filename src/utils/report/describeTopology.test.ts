@@ -74,6 +74,18 @@ describe('buildTopologyStats', () => {
     expect(stats.inputCounts.total).toBe(1);
   });
 
+  it('counts each TA/HC chassis as a map alongside any explicit Map node (each appliance runs its own onboard flow map)', () => {
+    const nodes: CustomNode[] = [
+      node('m1', NODE_TYPES.MAP, { label: 'Explicit Map', conditions: [] }),
+      node('h1', NODE_TYPES.HARDWARE, { label: 'Edge TA25', model: 'GigaVUE-TA25E' }),
+      node('h2', NODE_TYPES.HARDWARE, { label: 'Core HC1', model: 'GigaVUE-HC1' }),
+      node('h3', NODE_TYPES.HARDWARE, { label: 'Tap Tray', model: 'TAP-M100T' }),
+      node('h4', NODE_TYPES.HARDWARE, { label: 'TAP Unit', model: 'TAP-M251T' }),
+    ];
+    const stats = buildTopologyStats(nodes, [], []);
+    expect(stats.mapNodeCount).toBe(3);
+  });
+
   it('counts GigaSMART actions across standalone gigaSmartNode and embedded gigaSmartApps on hardware/tool nodes', () => {
     const nodes: CustomNode[] = [
       node('g1', NODE_TYPES.GIGASMART, { label: 'Dedup', actionType: ACTION_TYPES.DEDUPLICATION }),
@@ -106,7 +118,8 @@ describe('buildTopologyStats', () => {
     const stats = buildTopologyStats(nodes, [], streams);
     expect(stats.chassisCounts['GigaVUE-HC1']).toBe(2);
     expect(stats.chassisCounts['GigaVUE-TA25E']).toBe(1);
-    expect(stats.mapNodeCount).toBe(1);
+    // 1 explicit Map node + 3 TA/HC chassis, each of which runs its own onboard flow map.
+    expect(stats.mapNodeCount).toBe(4);
     expect(stats.filterNodeCount).toBe(1);
     expect(stats.toolCount).toBe(1);
     expect(stats.trafficStreamCount).toBe(2);
