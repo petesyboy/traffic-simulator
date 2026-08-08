@@ -12,7 +12,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { captureTopologyDiagramForReport } from '../../utils/report/captureTopologyDiagram';
+import { captureChassisFrontPanelPng } from '../../utils/report/captureChassisFrontPanel';
 import { buildReportDocDefinition } from '../../utils/report/buildReportDocDefinition';
+import { NODE_TYPES } from '../../constants/nodeTypes';
+import { getModuleSlotPositions, getChassisImagePath } from '../../utils/hardwareUtils';
+import { resolveHardwareIcon } from '../../assets/hardwareIcons';
+import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../../assets/gigamon-logo.png';
 
@@ -79,6 +84,21 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         fetchAsDataUrl(gigamonLogo).catch(() => undefined),
       ]);
 
+      const chassisFrontPanelImages: Record<string, string> = {};
+      const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
+      await Promise.all(
+        hardwareNodes.map(async (n) => {
+          const data = n.data as HardwareNodeData;
+          const model = String(data.model || '');
+          const chassisImage = resolveHardwareIcon(getChassisImagePath(model, data.sku));
+          const slotPositions = getModuleSlotPositions(model, data.sku);
+          const png = await captureChassisFrontPanelPng(chassisImage, slotPositions, data.installedBoards || {}).catch(
+            () => undefined,
+          );
+          if (png) chassisFrontPanelImages[n.id] = png;
+        }),
+      );
+
       setStep('building');
       const docDefinition = buildReportDocDefinition({
         nodes,
@@ -94,6 +114,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         logoDataUrl,
         nodeMetrics,
         isRunning,
+        chassisFrontPanelImages,
       });
 
       const pdfMake = await loadPdfMake();

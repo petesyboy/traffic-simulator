@@ -123,6 +123,13 @@ export const getModuleSlotPositions = (model: string, sku?: string): ModuleSlotP
   return Array.from({ length: chassis.module_slots || 0 }, (_, i) => ({ number: i + 1, label: '' }));
 };
 
+/** Catalogue front-panel photo path (relative, e.g. `./hardware-icons/GigaVUE-HC1.png`) for a chassis model/SKU — resolve with `resolveHardwareIcon` before use. */
+export const getChassisImagePath = (model: string, sku?: string): string | undefined => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  const chassis = allSeries.find(c => (sku && c.sku === sku) || c.model === model) as { image?: string } | undefined;
+  return chassis?.image;
+};
+
 /**
  * Bay count for a TAP tray chassis (TAP-M100T = 3, TAP-M200T = 6, TAP-M202ULT = 2),
  * read from `hardwareCatalogue.taps`' `max_modules`. Separate from

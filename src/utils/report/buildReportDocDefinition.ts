@@ -52,6 +52,8 @@ export interface ReportInput {
   /** Live per-node traffic metrics, only rendered when `isRunning` is true — never shown as if live when the simulation hasn't actually been run. */
   nodeMetrics: Record<string, NodeMetrics>;
   isRunning: boolean;
+  /** Composited front-panel PNGs (base photo + installed-module faceplates), keyed by hardware node id. Only chassis with a calibrated catalogue photo have an entry. */
+  chassisFrontPanelImages?: Record<string, string>;
 }
 
 /** Renders a node's headline + detail bullets + (optional) value-proposition line, as one report entry. */
@@ -95,6 +97,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     logoDataUrl,
     nodeMetrics,
     isRunning,
+    chassisFrontPanelImages,
   } = input;
 
   const liveMetrics = isRunning ? nodeMetrics : undefined;
@@ -302,6 +305,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       const purpose = describeChassisPurpose(model);
       if (purpose) {
         content.push(detailStack(headline, { headline, bullets: [purpose] }));
+        const frontPanelImage = chassisFrontPanelImages?.[n.id];
+        if (frontPanelImage) {
+          content.push({
+            image: frontPanelImage,
+            width: 380,
+            margin: [0, -6, 0, 10],
+          });
+        }
       } else {
         plainLines.push(headline);
       }
