@@ -32,6 +32,7 @@ import {
   describeToolNodeDetail,
   type NodeDetail,
 } from './describeTopology';
+import { describeTapPhysicalLink } from './describeTapLink';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
 
 export interface ReportInput {
@@ -277,13 +278,22 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
   if (hardwareNodes.length > 0) {
     content.push({ text: 'Hardware', style: 'subHeading' });
-    content.push({
-      ul: hardwareNodes.map((n) => {
-        const data = n.data as HardwareNodeData;
-        return `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
-      }),
-      style: 'body',
+    const chassisLines: string[] = [];
+    hardwareNodes.forEach((n) => {
+      const data = n.data as HardwareNodeData;
+      const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
+      if (
+        String(data.model || '')
+          .toUpperCase()
+          .includes('TAP')
+      ) {
+        const bullets = describeTapPhysicalLink(n, nodes, edges);
+        content.push(detailStack(headline, { headline, bullets }));
+      } else {
+        chassisLines.push(headline);
+      }
     });
+    if (chassisLines.length > 0) content.push({ ul: chassisLines, style: 'body' });
   }
 
   // ── BOM appendix ──

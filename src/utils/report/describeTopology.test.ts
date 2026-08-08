@@ -10,6 +10,7 @@ import {
   describeInputNodeDetail,
   describeProcessingNodeDetail,
   describeToolNodeDetail,
+  summarizeMapInclusionExclusion,
 } from './describeTopology';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import type {
@@ -264,6 +265,27 @@ describe('describeInputNodeDetail', () => {
     const detail = describeInputNodeDetail(nodes[0], nodes, edges, streams, nodeMetrics);
     expect(detail.bullets).toContain('Observed: 500.0 Mbps in / 500.0 Mbps out');
   });
+
+  it('includes the physical tap-link detail for a TAP input wired to a chassis', () => {
+    const tapNodes: CustomNode[] = [
+      node('in1', NODE_TYPES.INPUT, {
+        label: 'Core Tap 1',
+        configType: CONFIG_TYPES.TAP,
+        tapFiberMode: 'Singlemode',
+        tappedLinkOptic: 'SFP-533',
+      }),
+      node('hw1', NODE_TYPES.HARDWARE, {
+        label: 'HC1 Chassis',
+        model: 'GigaVUE-HC1',
+        optics: [{ board: 'Base', optic: 'SFP-533', qty: 2 }],
+      }),
+    ];
+    const tapEdges = [edge('e1', 'in1', 'hw1')];
+    const detail = describeInputNodeDetail(tapNodes[0], tapNodes, tapEdges, []);
+    expect(detail.bullets.some((b) => b.includes('Singlemode'))).toBe(true);
+    expect(detail.bullets).toContain('Connects into: HC1 Chassis (GigaVUE-HC1)');
+    expect(detail.bullets.some((b) => b.startsWith('Installed optics on HC1 Chassis:'))).toBe(true);
+  });
 });
 
 describe('describeProcessingNodeDetail', () => {
@@ -301,6 +323,44 @@ describe('describeProcessingNodeDetail', () => {
     const detail = describeProcessingNodeDetail(nodes[1], nodes, edges, nodeMetrics);
     expect(detail.bullets).toContain('Observed: 500.0 Mbps in, 500.0 Mbps out');
   });
+
+  it('includes a plain-English include/exclude summary ahead of the precise map condition bullets', () => {
+    const detail = describeProcessingNodeDetail(nodes[1], nodes, edges);
+    expect(detail.bullets[0]).toBe('Includes: VLAN 100.');
+  });
+
+  it('includes the GigaSMART function glossary sentence for a GigaSMART node', () => {
+    const gsNodes: CustomNode[] = [
+      node('gsm1', NODE_TYPES.GIGASMART, { label: 'Dedup Engine', actionType: ACTION_TYPES.DEDUPLICATION }),
+    ];
+    const detail = describeProcessingNodeDetail(gsNodes[0], gsNodes, []);
+    expect(detail.bullets).toContain('Action: Drop');
+    expect(detail.bullets.some((b) => b.includes('Identifies and removes duplicate copies'))).toBe(true);
+  });
+});
+
+describe('summarizeMapInclusionExclusion', () => {
+  it('returns the pass-all sentence when there are no conditions', () => {
+    expect(summarizeMapInclusionExclusion([])).toBe('Includes: all traffic (no filters configured).');
+  });
+
+  it('summarizes a pass-only rule set', () => {
+    const conditions: MapCondition[] = [{ field: 'vlan', value: '100', action: 'pass' }];
+    expect(summarizeMapInclusionExclusion(conditions)).toBe('Includes: VLAN 100.');
+  });
+
+  it('summarizes a drop-only rule set', () => {
+    const conditions: MapCondition[] = [{ field: 'portdst', value: '443', action: 'drop' }];
+    expect(summarizeMapInclusionExclusion(conditions)).toBe('Excludes: traffic to port 443.');
+  });
+
+  it('summarizes a mixed include/exclude rule set', () => {
+    const conditions: MapCondition[] = [
+      { field: 'vlan', value: '100', action: 'pass' },
+      { field: 'protocol', value: 'UDP', action: 'drop' },
+    ];
+    expect(summarizeMapInclusionExclusion(conditions)).toBe('Includes: VLAN 100. Excludes: UDP protocol traffic.');
+  });
 });
 
 describe('describeToolNodeDetail', () => {
@@ -315,9 +375,9 @@ describe('describeToolNodeDetail', () => {
 
     const detail = describeToolNodeDetail(nodes[3], nodes, edges);
     expect(detail.headline).toBe('Vectra: receives packets traffic.');
-    expect(detail.bullets[0]).toMatch(/^Traffic originates from: /);
-    expect(detail.bullets[0]).toContain('Core Tap 1');
-    expect(detail.bullets[0]).toContain('Switch SPAN 1');
+    const originsBullet = detail.bullets.find((b) => b.startsWith('Traffic originates from: '));
+    expect(originsBullet).toContain('Core Tap 1');
+    expect(originsBullet).toContain('Switch SPAN 1');
 
     const nodeMetrics: Record<string, NodeMetrics> = {
       tool1: { rxMbps: 250, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0 },
@@ -326,9 +386,28 @@ describe('describeToolNodeDetail', () => {
     expect(detailWithMetrics.bullets).toContain('Currently receiving: 250.0 Mbps');
   });
 
-  it('has no origins bullet when the tool has no upstream inputs', () => {
+  it('includes a purpose sentence and an overload-risk sentence for every tool', () => {
     const nodes: CustomNode[] = [node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra' })];
     const detail = describeToolNodeDetail(nodes[0], nodes, []);
-    expect(detail.bullets).toEqual([]);
+    expect(detail.bullets.some((b) => b.includes('NDR platform'))).toBe(true);
+    expect(detail.bullets.some((b) => b.startsWith('Rated for up to'))).toBe(true);
+    expect(detail.bullets.some((b) => b.startsWith('Traffic originates from:'))).toBe(false);
+  });
+
+  it('falls back to a generic purpose and overload sentence for an unlisted tool', () => {
+    const nodes: CustomNode[] = [node('tool1', NODE_TYPES.TOOL, { label: 'Custom Tool', toolName: 'My Custom Tool' })];
+    const detail = describeToolNodeDetail(nodes[0], nodes, []);
+    expect(detail.bullets).toContain(
+      'Monitors and analyses the traffic it receives to detect threats, measure performance, or support investigations.',
+    );
+    expect(detail.bullets.some((b) => b.includes('falls behind'))).toBe(true);
+  });
+
+  it('prefers the node-level ingest limit over the catalogue default when both are set', () => {
+    const nodes: CustomNode[] = [
+      node('tool1', NODE_TYPES.TOOL, { label: 'Vectra', toolName: 'Vectra', ingestLimitMbps: 2000 }),
+    ];
+    const detail = describeToolNodeDetail(nodes[0], nodes, []);
+    expect(detail.bullets.some((b) => b.startsWith('Rated for up to 2.00 Gbps'))).toBe(true);
   });
 });

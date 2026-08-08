@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.498",
+    date: "2026-08-07",
+    summary: "The PDF report now explains the domain, not just the topology: each TAP lists its fibre type, SFP, and the chassis/optics it plugs into; Traffic Maps get a plain-English \"Includes / Excludes\" summary; every GigaSMART function (deduplication, SSL decrypt, header stripping, etc.) gets a full description of what it does and how it protects tools from being overwhelmed; and every destination tool gets a purpose description plus what happens if it receives more traffic than it's rated for.",
+  },
+  {
     version: "1.0.497",
     date: "2026-08-07",
     summary: "The PDF solution report is now far more detailed: each traffic source lists its link speed, encrypted %, matched traffic streams and what it ultimately reaches; each map/filter/GigaSMART stage lists what feeds it, what it forwards to, and (while a simulation is running) real observed throughput and reduction percentages; each destination lists which taps/SPAN sessions its traffic originates from.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.479",
     date: "2026-08-06",
     summary: "Fixed the GigaVUE-HCT front-panel graphic - installed modules now composite onto the chassis photo like HC1/HC1-Plus/HC3, instead of leaving the blanking mesh visible.",
-  },
-  {
-    version: "1.0.478",
-    date: "2026-08-05",
-    summary: "Node configuration sections are now much easier to tell apart - every section heading (hardware, module slots, cages, optics, power) uses one larger amber style with an underline and icon.",
   },
 ];

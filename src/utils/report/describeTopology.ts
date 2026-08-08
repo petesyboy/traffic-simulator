@@ -26,6 +26,9 @@ import type {
 import { CONFIG_TYPES, ACTION_TYPES, NODE_TYPES, isMetadataAction, isDedupAction } from '../../constants/nodeTypes';
 import { formatBandwidth } from '../format';
 import { getUpstreamNodes, getDownstreamNodes, traceToTerminalInputs, traceToTerminalOutputs } from './graphTrace';
+import { describeTapPhysicalLink } from './describeTapLink';
+import { describeGigaSmartFunction } from './gigaSmartDescriptions';
+import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
@@ -135,6 +138,44 @@ export function describeMapConditions(conditions: MapCondition[]): string {
   );
 }
 
+const conditionFieldPhrase = (field: string, value: string): string => {
+  switch (field) {
+    case 'vlan':
+      return `VLAN ${value}`;
+    case 'protocol':
+      return `${value} protocol traffic`;
+    case 'ipver':
+      return `IPv${value} traffic`;
+    case 'portdst':
+      return `traffic to port ${value}`;
+    case 'portsrc':
+      return `traffic from port ${value}`;
+    case 'ipdst':
+      return `traffic to ${value}`;
+    case 'ipsrc':
+      return `traffic from ${value}`;
+    default:
+      return `${field} = ${value}`;
+  }
+};
+
+/** Plain-English "what's included vs excluded" summary, ahead of the precise per-condition bullets. */
+export function summarizeMapInclusionExclusion(conditions: MapCondition[]): string {
+  if (conditions.length === 0) return 'Includes: all traffic (no filters configured).';
+
+  const included: string[] = [];
+  const excluded: string[] = [];
+  conditions.forEach((c) => {
+    const phrase = conditionFieldPhrase(c.field, c.value);
+    (c.action === 'drop' ? excluded : included).push(phrase);
+  });
+
+  const parts: string[] = [];
+  if (included.length > 0) parts.push(`Includes: ${included.join(', ')}`);
+  if (excluded.length > 0) parts.push(`Excludes: ${excluded.join(', ')}`);
+  return `${parts.join('. ')}.`;
+}
+
 /** Ported verbatim from FilterNode.tsx's `exportDiagramMode` overlay. */
 export function describeFilterNode(data: FilterNodeData): string {
   const configType = data.configType;
@@ -224,6 +265,10 @@ export function describeInputNodeDetail(
     bullets.push(`Traffic stream "${s.name}": ${parts.join(', ')} at ${formatBandwidth(s.bandwidth)}`);
   });
 
+  if (String(data.configType || '').startsWith(CONFIG_TYPES.TAP)) {
+    bullets.push(...describeTapPhysicalLink(node, nodes, edges));
+  }
+
   const downstream = getDownstreamNodes(node.id, nodes, edges);
   if (downstream.length > 0) bullets.push(`Feeds into: ${labelsOf(downstream)}`);
 
@@ -245,11 +290,15 @@ export function describeProcessingNodeDetail(
   const bullets: string[] = [];
 
   if (node.type === NODE_TYPES.MAP) {
-    bullets.push(...toBulletLines(describeMapConditions((node.data as MapNodeData).conditions || [])));
+    const conditions = (node.data as MapNodeData).conditions || [];
+    bullets.push(summarizeMapInclusionExclusion(conditions));
+    bullets.push(...toBulletLines(describeMapConditions(conditions)));
   } else if (node.type === NODE_TYPES.FILTER) {
     bullets.push(...toBulletLines(describeFilterNode(node.data as FilterNodeData)));
   } else if (node.type === NODE_TYPES.GIGASMART) {
-    bullets.push(describeGigaSmartAction(node.data as GigaSmartNodeData));
+    const gsData = node.data as GigaSmartNodeData;
+    bullets.push(describeGigaSmartAction(gsData));
+    bullets.push(describeGigaSmartFunction(gsData.actionType));
   } else if (node.type === NODE_TYPES.GIGASTREAM) {
     bullets.push(describeGigaStreamNode(node.data as GigaStreamNodeData));
   }
@@ -283,6 +332,9 @@ export function describeToolNodeDetail(
 ): NodeDetail {
   const data = node.data as ToolNodeData;
   const bullets: string[] = [];
+
+  bullets.push(describeToolPurpose(data.toolName));
+  bullets.push(describeToolOverloadRisk(data.toolName, data.ingestLimitMbps));
 
   const origins = traceToTerminalInputs(node.id, nodes, edges);
   if (origins.length > 0) bullets.push(`Traffic originates from: ${labelsOf(origins)}`);
