@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.500",
+    date: "2026-08-07",
+    summary: "Fixed the PDF report's Executive Summary showing zero Traffic Sources/TAPs whenever TAPs were modelled as their own hardware unit wired to a chassis rather than a logical TAP input node - both representations now count correctly.",
+  },
+  {
     version: "1.0.499",
     date: "2026-08-07",
     summary: "The PDF report now describes what each TA/HC appliance actually does (aggregation-only vs. onboard GigaSMART processing), and fixed a bug where a TAP-M100T/M200T tray - a passive mounting tray, not a fibre-terminating unit - was incorrectly shown with a multimode/singlemode fibre claim.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.481",
     date: "2026-08-06",
     summary: "TAP-M100T and TAP-M200T trays now show their real photos in the Rack View, with drop bays overlaid on top.",
-  },
-  {
-    version: "1.0.480",
-    date: "2026-08-06",
-    summary: "Rack View now shows real chassis photos with installed boards instead of generic bars. TAP-M100T/M200T trays can be racked and individual tap modules dropped into their bays.",
   },
 ];

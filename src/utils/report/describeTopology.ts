@@ -29,6 +29,7 @@ import { getUpstreamNodes, getDownstreamNodes, traceToTerminalInputs, traceToTer
 import { describeTapPhysicalLink } from './describeTapLink';
 import { describeGigaSmartFunction } from './gigaSmartDescriptions';
 import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
+import { isAutoTrayModel } from '../trayModels';
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,14 @@ export function buildTopologyStats(
       const model = String(hwData.model || '').trim();
       if (model) chassisCounts[model] = (chassisCounts[model] || 0) + 1;
       (hwData.gigaSmartApps || []).forEach((app) => bumpAction(gigaSmartActionCounts, app.actionType));
+
+      // A TAP can also be modelled as its own hardwareNode wired to a chassis
+      // (rather than a logical inputNode) — without this, physical TAP units
+      // are invisible to the Traffic Sources / TAP counts entirely.
+      if (model.toUpperCase().includes('TAP') && !isAutoTrayModel(model)) {
+        inputCounts.tap += 1;
+        inputCounts.total += 1;
+      }
     }
   }
 

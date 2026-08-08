@@ -63,6 +63,17 @@ describe('buildTopologyStats', () => {
     expect(stats.inputCounts.total).toBe(4);
   });
 
+  it('also counts a TAP modelled as its own hardwareNode wired to a chassis, but not a tap tray', () => {
+    const nodes: CustomNode[] = [
+      node('h1', NODE_TYPES.HARDWARE, { label: 'TAP Unit', model: 'TAP-M251T' }),
+      node('h2', NODE_TYPES.HARDWARE, { label: 'Tap Tray', model: 'TAP-M100T' }),
+      node('h3', NODE_TYPES.HARDWARE, { label: 'Chassis', model: 'GigaVUE-HC1' }),
+    ];
+    const stats = buildTopologyStats(nodes, [], []);
+    expect(stats.inputCounts.tap).toBe(1);
+    expect(stats.inputCounts.total).toBe(1);
+  });
+
   it('counts GigaSMART actions across standalone gigaSmartNode and embedded gigaSmartApps on hardware/tool nodes', () => {
     const nodes: CustomNode[] = [
       node('g1', NODE_TYPES.GIGASMART, { label: 'Dedup', actionType: ACTION_TYPES.DEDUPLICATION }),
