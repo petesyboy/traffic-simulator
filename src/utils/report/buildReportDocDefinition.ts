@@ -33,6 +33,8 @@ import {
   type NodeDetail,
 } from './describeTopology';
 import { describeTapPhysicalLink } from './describeTapLink';
+import { describeChassisPurpose } from './chassisDescriptions';
+import { isAutoTrayModel } from '../trayModels';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
 
 export interface ReportInput {
@@ -278,22 +280,34 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
   if (hardwareNodes.length > 0) {
     content.push({ text: 'Hardware', style: 'subHeading' });
-    const chassisLines: string[] = [];
+    const plainLines: string[] = [];
     hardwareNodes.forEach((n) => {
       const data = n.data as HardwareNodeData;
+      const model = String(data.model || '');
       const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
-      if (
-        String(data.model || '')
-          .toUpperCase()
-          .includes('TAP')
-      ) {
+
+      if (isAutoTrayModel(model)) {
+        // TAP-M100T/M200T/M202ULT are passive mounting trays, not fibre-terminating
+        // appliances — they have no fibre type of their own, so they get the plain
+        // one-liner rather than being run through the TAP physical-link detail.
+        plainLines.push(headline);
+        return;
+      }
+
+      if (model.toUpperCase().includes('TAP')) {
         const bullets = describeTapPhysicalLink(n, nodes, edges);
         content.push(detailStack(headline, { headline, bullets }));
+        return;
+      }
+
+      const purpose = describeChassisPurpose(model);
+      if (purpose) {
+        content.push(detailStack(headline, { headline, bullets: [purpose] }));
       } else {
-        chassisLines.push(headline);
+        plainLines.push(headline);
       }
     });
-    if (chassisLines.length > 0) content.push({ ul: chassisLines, style: 'body' });
+    if (plainLines.length > 0) content.push({ ul: plainLines, style: 'body' });
   }
 
   // ── BOM appendix ──

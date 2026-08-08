@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.499",
+    date: "2026-08-07",
+    summary: "The PDF report now describes what each TA/HC appliance actually does (aggregation-only vs. onboard GigaSMART processing), and fixed a bug where a TAP-M100T/M200T tray - a passive mounting tray, not a fibre-terminating unit - was incorrectly shown with a multimode/singlemode fibre claim.",
+  },
+  {
     version: "1.0.498",
     date: "2026-08-07",
     summary: "The PDF report now explains the domain, not just the topology: each TAP lists its fibre type, SFP, and the chassis/optics it plugs into; Traffic Maps get a plain-English \"Includes / Excludes\" summary; every GigaSMART function (deduplication, SSL decrypt, header stripping, etc.) gets a full description of what it does and how it protects tools from being overwhelmed; and every destination tool gets a purpose description plus what happens if it receives more traffic than it's rated for.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.480",
     date: "2026-08-06",
     summary: "Rack View now shows real chassis photos with installed boards instead of generic bars. TAP-M100T/M200T trays can be racked and individual tap modules dropped into their bays.",
-  },
-  {
-    version: "1.0.479",
-    date: "2026-08-06",
-    summary: "Fixed the GigaVUE-HCT front-panel graphic - installed modules now composite onto the chassis photo like HC1/HC1-Plus/HC3, instead of leaving the blanking mesh visible.",
   },
 ];
