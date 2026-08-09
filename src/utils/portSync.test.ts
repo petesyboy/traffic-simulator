@@ -161,6 +161,49 @@ describe('syncPortAssignments', () => {
     expect(links[0].targetPortId).toBe('');
   });
 
+  it('never lands a fresh link on a port the user has pinned an optic to', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'ta', type: 'hardwareNode', position: { x: 0, y: 0 },
+        data: {
+          label: 'Core TA25E', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE',
+          optics: [{ board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x1' }],
+        },
+      } as CustomNode,
+      { id: 'span', type: 'inputNode', position: { x: 0, y: 0 }, data: { label: 'SPAN1', configType: 'SPAN' } } as CustomNode,
+    ];
+    const edges: Edge[] = [{ id: 'e1', source: 'span', target: 'ta' }];
+
+    const links = linksOf(syncPortAssignments(nodes, edges)[0]);
+    expect(links[0].targetPortId).toBe('1/1/x2');
+  });
+
+  it('keeps a non-pinned link stable on its own port across a re-sync, even when a new optic gets pinned elsewhere', () => {
+    // Regression: a SPAN (or any non-TAP) link auto-lands on some chassis
+    // port with no pin of its own. Its optic gets manually pinned to match
+    // wherever it landed. Before this fix, adding an unrelated pinned optic
+    // elsewhere on the same chassis could reshuffle *this* link onto a
+    // different port on the next sync (e.g. after a save/reload), stranding
+    // the optic the user had carefully matched to it and reporting "missing
+    // transceiver" on a port that in fact carried no link at all.
+    const ta = (extraOptics: { board: string; optic: string; qty: number; pinnedPortId?: string }[] = []): CustomNode => ({
+      id: 'ta', type: 'hardwareNode', position: { x: 0, y: 0 },
+      data: { label: 'Core TA25E', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: extraOptics },
+    } as CustomNode);
+    const span: CustomNode = { id: 'span', type: 'inputNode', position: { x: 0, y: 0 }, data: { label: 'SPAN1', configType: 'SPAN' } } as CustomNode;
+    const edges: Edge[] = [{ id: 'e1', source: 'span', target: 'ta' }];
+
+    const first = syncPortAssignments([span, ta()], edges);
+    const spanPort = linksOf(first[0])[0].targetPortId;
+    expect(spanPort).toBe('1/1/x1');
+
+    // Pin a brand-new optic on a different, previously-unused port, then re-sync.
+    const taWithNewPin = ta([{ board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1, pinnedPortId: '1/1/x5' }]);
+    const resynced = syncPortAssignments([span, taWithNewPin], first);
+
+    expect(linksOf(resynced[0])[0].targetPortId).toBe(spanPort);
+  });
+
   it('stops allocating once the chassis physically runs out of cages', () => {
     // 30 tapped links would need 60 SFP ports; a TA25E only has 48.
     const nodes = [tapNode('tap', 30), ta25eNode('ta', 48)];

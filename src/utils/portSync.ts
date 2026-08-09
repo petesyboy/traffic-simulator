@@ -114,6 +114,23 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     });
   });
 
+  // A port the user has pinned an optic to (OpticsPanel's port picker) also
+  // shouldn't be handed to some *other*, unrelated link's fresh allocation -
+  // but this is deliberately kept separate from occupiedByNode above rather
+  // than merged into it, because an edge whose own already-assigned port
+  // happens to be that exact pinned port must still be free to keep it (see
+  // the reuse pass below). Folding it into occupiedByNode would make a link
+  // permanently unable to sit on the one port its own optic is pinned to.
+  const opticPinnedByNode = new Map<string, Set<string>>();
+  nodes.forEach(node => {
+    if (node.type !== 'hardwareNode') return;
+    const pins = new Set<string>();
+    ((node.data as HardwareNodeData)?.optics || []).forEach(optic => {
+      if (optic.pinnedPortId) pins.add(optic.pinnedPortId);
+    });
+    if (pins.size > 0) opticPinnedByNode.set(node.id, pins);
+  });
+
   let changed = false;
   const nextEdges = edges.map(edge => {
     const sourceNode = nodes.find(n => n.id === edge.source);
@@ -150,37 +167,81 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     const sourceIsPanel = sourceNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(sourceNode.data?.model || ''));
     const targetIsPanel = targetNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(targetNode.data?.model || ''));
 
-    const sourceAuto = sourceIsTap
-      ? sourceTapIds.filter(id => !sourceOccupied.has(id)).slice(0, autoCount)
-      : allocatePorts(sourcePorts, sourceOccupied, autoCount, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode)).map(p => p.id);
-    const targetAuto = targetIsTap
-      ? targetTapIds.filter(id => !targetOccupied.has(id)).slice(0, autoCount)
-      : allocatePorts(targetPorts, targetOccupied, autoCount, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode)).map(p => p.id);
-
-    const sourceOptics = opticsFor(sourceNode);
-    const targetOptics = opticsFor(targetNode);
-
     // Only an end that actually has ports is expected to yield one. A chassis
     // wired to a leaf tool legitimately has no port at the tool end, so an
     // empty id there is normal rather than an exhausted chassis.
     const sourceExpectsPort = sourcePorts.length > 0 || sourceIsTap;
     const targetExpectsPort = targetPorts.length > 0 || targetIsTap;
 
-    const autoLinks: PortLink[] = [];
-    for (let i = 0; i < autoCount; i++) {
+    const isValidId = (
+      id: string,
+      expectsPort: boolean,
+      occupied: Set<string>,
+      ports: ChassisPort[],
+      isTap: boolean,
+      tapIds: string[],
+    ): boolean => {
+      if (!expectsPort) return !id;
+      if (!id || occupied.has(id)) return false;
+      return isTap ? tapIds.includes(id) : ports.some(p => p.id === id);
+    };
+
+    // A previously auto-allocated (non-pinned) link keeps its own port as long
+    // as that port is still valid and free, rather than being reallocated from
+    // scratch every sync. Without this, an unrelated change elsewhere on the
+    // chassis (e.g. pinning a new optic) could silently reshuffle where an
+    // already-fitted link lands - stranding whatever optic the user had
+    // carefully matched to its old port and leaving a *different* port
+    // without one, moving the "missing transceiver" error around on every
+    // save/reload instead of settling anywhere.
+    const existingAuto = existing.filter(l => !l.pinned);
+    const keptLinks: { sourcePortId: string; targetPortId: string }[] = [];
+    for (const link of existingAuto) {
+      if (keptLinks.length >= autoCount) break;
+      const srcId = link.sourcePortId || '';
+      const tgtId = link.targetPortId || '';
+      if (
+        !isValidId(srcId, sourceExpectsPort, sourceOccupied, sourcePorts, sourceIsTap, sourceTapIds) ||
+        !isValidId(tgtId, targetExpectsPort, targetOccupied, targetPorts, targetIsTap, targetTapIds)
+      ) {
+        continue;
+      }
+      if (srcId) sourceOccupied.add(srcId);
+      if (tgtId) targetOccupied.add(tgtId);
+      keptLinks.push({ sourcePortId: srcId, targetPortId: tgtId });
+    }
+
+    const remaining = autoCount - keptLinks.length;
+    const sourceFreshOccupied = new Set([...sourceOccupied, ...(opticPinnedByNode.get(edge.source) || [])]);
+    const targetFreshOccupied = new Set([...targetOccupied, ...(opticPinnedByNode.get(edge.target) || [])]);
+
+    const sourceAuto = sourceIsTap
+      ? sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining)
+      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode)).map(p => p.id);
+    const targetAuto = targetIsTap
+      ? targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining)
+      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode)).map(p => p.id);
+
+    const sourceOptics = opticsFor(sourceNode);
+    const targetOptics = opticsFor(targetNode);
+
+    const freshLinks: { sourcePortId: string; targetPortId: string }[] = [];
+    for (let i = 0; i < remaining; i++) {
       const sourcePortId = sourceAuto[i] || '';
       const targetPortId = targetAuto[i] || '';
       // Stop rather than emit half-links once a chassis has run out of cages;
       // the shortfall surfaces as a validation error instead.
       if ((sourceExpectsPort && !sourcePortId) || (targetExpectsPort && !targetPortId)) break;
-      autoLinks.push({
-        sourcePortId,
-        targetPortId,
-        opticSku: targetOptics.get(targetPortId) || sourceOptics.get(sourcePortId),
-      });
+      freshLinks.push({ sourcePortId, targetPortId });
       if (sourcePortId) sourceOccupied.add(sourcePortId);
       if (targetPortId) targetOccupied.add(targetPortId);
     }
+
+    const autoLinks: PortLink[] = [...keptLinks, ...freshLinks].map(l => ({
+      sourcePortId: l.sourcePortId,
+      targetPortId: l.targetPortId,
+      opticSku: targetOptics.get(l.targetPortId) || sourceOptics.get(l.sourcePortId),
+    }));
 
     const nextLinks = [...pinned, ...autoLinks];
     if (sameLinks(existing, nextLinks)) return edge;
