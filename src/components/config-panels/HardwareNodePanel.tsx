@@ -42,6 +42,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const edges = useStore(state => state.edges);
   const nodes = useStore(state => state.nodes);
   const projectLicenseMode = useStore(state => state.projectLicenseMode);
+  const advancedMode = useStore(state => state.advancedMode);
 
   const [activeTab, setActiveTab] = useState<'general' | 'optics' | 'apps'>('general');
   const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
@@ -210,7 +211,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           animation: pulse-orange 1.5s infinite ease-in-out;
         }
       `}</style>
-      {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
+      {advancedMode && !model?.includes('TAP') && !isBreakoutPanelModel(model) && (
         <div className="flex-row gap-2 mb-3 border-b border-subtle pb-2 flex-wrap">
           <button
             onClick={() => setActiveTab('general')}
@@ -222,34 +223,44 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           >
             General{conditions.length > 0 ? ` (${conditions.length} rule${conditions.length > 1 ? 's' : ''})` : ''}
           </button>
-          <button 
-            onClick={() => setActiveTab('optics')} 
+          <button
+            onClick={() => setActiveTab('optics')}
             className="btn btn-sm flex-row gap-2"
-            style={{ 
-              background: activeTab === 'optics' ? '#333' : 'transparent', 
+            style={{
+              background: activeTab === 'optics' ? '#333' : 'transparent',
               color: activeTab === 'optics' ? '#fff' : '#888'
             }}
           >
             <span>Optics</span>
             {isOpticsInvalid && (
-              <span 
+              <span
                 className="optics-alert-dot status-dot status-dot-orange"
                 title="Optics configuration invalid. Click to rectify."
               />
             )}
           </button>
           {gigaSmartApps.length > 0 && (
-            <button 
-              onClick={() => setActiveTab('apps')} 
+            <button
+              onClick={() => setActiveTab('apps')}
               className="btn btn-sm"
-              style={{ 
-                background: activeTab === 'apps' ? '#333' : 'transparent', 
-                color: activeTab === 'apps' ? '#fff' : '#888' 
+              style={{
+                background: activeTab === 'apps' ? '#333' : 'transparent',
+                color: activeTab === 'apps' ? '#fff' : '#888'
               }}
             >
               GigaSMART Apps
             </button>
           )}
+        </div>
+      )}
+
+      {!advancedMode && !model?.includes('TAP') && !isBreakoutPanelModel(model) && (
+        <div
+          className="panel-section"
+          style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', marginBottom: '10px' }}
+        >
+          Switch to Expert Designer (click the Gigamon logo 4×) for full hardware configuration — optics, board
+          slots, licensing, and GigaSMART apps.
         </div>
       )}
 
@@ -271,19 +282,19 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
       )}
 
       {/* ── GENERAL TAB ── */}
-      <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}>
+      <div style={{ display: !advancedMode || activeTab === 'general' ? 'block' : 'none' }}>
         <div className="panel-section">
-          <div 
-            onClick={() => setIsSpecsExpanded(!isSpecsExpanded)} 
-            className="flex-between cursor-pointer user-select-none"
+          <div
+            onClick={() => advancedMode && setIsSpecsExpanded(!isSpecsExpanded)}
+            className={advancedMode ? 'flex-between cursor-pointer user-select-none' : 'flex-between user-select-none'}
           >
             <h3 className="text-base font-semibold m-0">⚙️ Hardware Specifications</h3>
-            <span className="text-xs text-muted">{isSpecsExpanded ? '▲ Collapse' : '▼ Expand'}</span>
+            {advancedMode && <span className="text-xs text-muted">{isSpecsExpanded ? '▲ Collapse' : '▼ Expand'}</span>}
           </div>
-          
+
           {details ? (
             <div className="mt-2">
-              {!isSpecsExpanded ? (
+              {!advancedMode || !isSpecsExpanded ? (
                 <div className="text-md text-secondary bg-[#111] p-2 rounded-md border border-subtle">
                   Model: <strong className="text-white">{details.model}</strong> | SKU: <strong className="text-white">{resolved.hwSku}</strong>
                 </div>
@@ -321,31 +332,33 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           )}
         </div>
 
-        {!model?.includes('TAP') && !isBreakoutPanelModel(model) && (
+        {advancedMode && !model?.includes('TAP') && !isBreakoutPanelModel(model) && (
           <BoardSlotsPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 
-        <div className="panel-section">
-          <h3 className="text-base font-semibold mb-2">🌍 Deployment Configuration</h3>
-          <div className="flex-col gap-1">
-            <label className="form-label">Site Assignment (Optional)</label>
-            <datalist id="existing-sites-list">
-              {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).map(site => (
-                <option key={site as string} value={site as string} />
-              ))}
-            </datalist>
-            <input 
-              type="text" 
-              list="existing-sites-list"
-              placeholder="e.g. Datacenter London" 
-              value={(node.data?.site as string) || ''} 
-              onChange={(e) => updateNodeData(node.id, { site: e.target.value })} 
-              className="form-input w-full" 
-            />
+        {advancedMode && (
+          <div className="panel-section">
+            <h3 className="text-base font-semibold mb-2">🌍 Deployment Configuration</h3>
+            <div className="flex-col gap-1">
+              <label className="form-label">Site Assignment (Optional)</label>
+              <datalist id="existing-sites-list">
+                {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && s.trim() !== ''))).map(site => (
+                  <option key={site as string} value={site as string} />
+                ))}
+              </datalist>
+              <input
+                type="text"
+                list="existing-sites-list"
+                placeholder="e.g. Datacenter London"
+                value={(node.data?.site as string) || ''}
+                onChange={(e) => updateNodeData(node.id, { site: e.target.value })}
+                className="form-input w-full"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {(!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && !isBreakoutPanelModel(model) && (
+        {advancedMode && (!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && !isBreakoutPanelModel(model) && (
           <PowerSupplyPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 

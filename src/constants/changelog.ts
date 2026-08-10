@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.507",
+    date: "2026-08-08",
+    summary: "Simplified the hardware node configuration panel in Standard View: it now shows just the node label, a compact model/SKU line, and Traffic Map filter rules, with a note pointing to Expert Designer (Advanced Mode) for board slots, chassis/licensing settings, deployment site, optics, and GigaSMART apps. Advanced Mode is unchanged.",
+  },
+  {
     version: "1.0.506",
     date: "2026-08-08",
     summary: "Decluttered Standard View: Duplicate, Auto Demo, Screenshot and Generate Report have moved to Expert Designer (Advanced Mode) only, so the header stays focused on basic simulation and save/load in simple mode. All four remain exactly where they were in Advanced Mode.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.488",
     date: "2026-08-07",
     summary: "Port tooltips now say 'fitted but unused' for an optic that's installed but not linked, instead of just naming the optic as if it were connected.",
-  },
-  {
-    version: "1.0.487",
-    date: "2026-08-07",
-    summary: "Fixed the grab-hand cursor bleeding onto individual ports on a chassis front panel, making it fiddly to hover precisely over one - it's a plain arrow there now.",
   },
 ];
