@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.509",
+    date: "2026-08-08",
+    summary: "The Tapped Links panel and hardware node config panel now read SKU descriptions through the same price-list-aware lookup the BOM uses, so an uploaded price list updates them immediately instead of only affecting BOM output. Also fixed a crash when expanding a chassis's Hardware Specifications (a port-count field was rendered as a raw object instead of a summary), and added lint and test steps to the GitHub Pages deploy workflow so a broken build no longer ships.",
+  },
+  {
     version: "1.0.508",
     date: "2026-08-08",
     summary: "Restyled the General/Optics/GigaSMART Apps tabs on a chassis node's config panel (both TA and HC series) as proper underlined tabs with larger, bolder text, instead of small hard-to-notice pill buttons.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.490",
     date: "2026-08-07",
     summary: "Fixed the \"Saved to ...\" confirmation toast rendering behind the Save/Load modal's blurred background and becoming illegible when a slot is overwritten without closing the modal.",
-  },
-  {
-    version: "1.0.489",
-    date: "2026-08-07",
-    summary: "Advanced Mode has a new Update Price List button — upload the worldwide price list workbook (.xlsx/.xls/.csv) directly to refresh SKU descriptions and End of Sale/Life dates, no CSV conversion or rebuild needed.",
   },
 ];

@@ -20,7 +20,7 @@ const TERMINATION_CLASS_LABEL: Record<TapTerminationClass, string> = {
   'bidi': 'BiDi',
 };
 import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../../../utils/hardwareUtils';
-import skusData from '../../../constants/skus.json';
+import { getMergedSkus } from '../../../utils/skuOverrides';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
 
 interface TapLinksPanelProps {
@@ -39,12 +39,15 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   edges
 }) => {
   const addTrafficStream = useStore(state => state.addTrafficStream);
+  // Re-renders this panel when an uploaded price list changes SKU descriptions,
+  // so getMergedSkus() below picks it up immediately rather than needing a reselect.
+  useStore(state => state.skuCatalogueVersion);
 
   const tapModel = String(selectedNode.data?.model || '');
   const tapSku = String(selectedNode.data?.sku || '');
   const tapDescription = String(
-    selectedNode.data?.description || 
-    (tapSku && (skusData as Record<string, string>)[tapSku]) || 
+    selectedNode.data?.description ||
+    (tapSku && getMergedSkus()[tapSku]) ||
     ''
   );
   const hwData = selectedNode.data as HardwareNodeData;

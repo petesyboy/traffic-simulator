@@ -4,7 +4,7 @@ import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
-import skusData from '../../constants/skus.json';
+import { getMergedSkus } from '../../utils/skuOverrides';
 import {
   BoardSlotsPanel,
   CageSummaryPanel,
@@ -17,6 +17,19 @@ import {
 } from './hardware';
 import { MapNodePanel } from './MapNodePanel';
 import type { HardwareNodeData, InstalledOptic, GigaSmartNodeData, TappedLinkAllocation, MapCondition } from '../../store/types';
+
+/**
+ * Renders a catalogue `ports`/`base_ports` entry as a plain string. Modern
+ * entries are an array of `{ type, count, speeds }` objects (crashed here
+ * before as "Objects are not valid as a React child" when rendered raw);
+ * a few legacy catalogue entries are still a bare port count number.
+ */
+function formatPortSummary(ports: unknown): string {
+  if (!Array.isArray(ports)) return String(ports);
+  return ports
+    .map((p) => (p && typeof p === 'object' ? `${p.count}x ${p.type} (${(p.speeds || []).join('/')})` : String(p)))
+    .join(', ');
+}
 
 interface HardwareNodePanelProps {
   node: CustomNode;
@@ -43,6 +56,10 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   const nodes = useStore(state => state.nodes);
   const projectLicenseMode = useStore(state => state.projectLicenseMode);
   const advancedMode = useStore(state => state.advancedMode);
+  // Re-renders this panel when an uploaded price list changes SKU descriptions,
+  // so getMergedSkus() below picks it up immediately rather than needing a reselect.
+  useStore(state => state.skuCatalogueVersion);
+  const skusData = getMergedSkus();
 
   const [activeTab, setActiveTab] = useState<'general' | 'optics' | 'apps'>('general');
   const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
@@ -290,17 +307,17 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                 <div className="flex-col gap-2 text-md border-t border-subtle pt-2 mt-2">
                   <div><strong>Model:</strong> {details.model}</div>
                   <div><strong>Hardware SKU:</strong> {resolved.hwSku}</div>
-                  {skusData[resolved.hwSku as keyof typeof skusData] && (
+                  {skusData[resolved.hwSku] && (
                     <div className="bg-orange/10 p-2 rounded-md border border-orange/20 text-xs text-orange leading-normal">
-                      <strong>Hardware Description:</strong> {skusData[resolved.hwSku as keyof typeof skusData]}
+                      <strong>Hardware Description:</strong> {skusData[resolved.hwSku]}
                     </div>
                   )}
                   {resolved.swSku && (
                     <>
                       <div><strong>Software SKU:</strong> {resolved.swSku}</div>
-                      {skusData[resolved.swSku as keyof typeof skusData] && (
+                      {skusData[resolved.swSku] && (
                         <div className="bg-cyan/10 p-2 rounded-md border border-cyan/20 text-xs text-cyan leading-normal">
-                          <strong>Software Description:</strong> {skusData[resolved.swSku as keyof typeof skusData]}
+                          <strong>Software Description:</strong> {skusData[resolved.swSku]}
                         </div>
                       )}
                     </>
@@ -309,8 +326,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
                   {details.power && <div><strong>Power:</strong> {details.power}</div>}
                   {details.fans !== undefined && <div><strong>Fans:</strong> {details.fans}</div>}
                   {details.airflow && <div><strong>Airflow:</strong> {details.airflow}</div>}
-                  {!model?.includes('TAP') && details.ports !== undefined && <div><strong>Base Ports:</strong> {details.ports}</div>}
-                  {!model?.includes('TAP') && details.base_ports !== undefined && <div><strong>Base Ports:</strong> {details.base_ports}</div>}
+                  {!model?.includes('TAP') && details.ports !== undefined && <div><strong>Base Ports:</strong> {formatPortSummary(details.ports)}</div>}
+                  {!model?.includes('TAP') && details.base_ports !== undefined && <div><strong>Base Ports:</strong> {formatPortSummary(details.base_ports)}</div>}
                   {details.module_slots !== undefined && <div><strong>Module Slots:</strong> {details.module_slots}</div>}
                 </div>
               )}
