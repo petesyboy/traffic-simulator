@@ -8,14 +8,14 @@
  */
 
 import React from 'react';
-import type { HardwareNodeData } from '../../store/types';
+import type { ChassisPort, HardwareNodeData, PortBox } from '../../store/types';
 import { getBoardIcon } from '../../utils/hardwareUtils';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 export interface SlotPosition {
   number: number;
   label: string;
-  box?: { x: number; y: number; width: number; height: number };
+  box?: PortBox;
 }
 
 interface ChassisFrontPanelProps {
@@ -23,6 +23,27 @@ interface ChassisFrontPanelProps {
   model: string;
   slotPositions: SlotPosition[];
   installedBoards: NonNullable<HardwareNodeData['installedBoards']>;
+  /** When provided (with `portOpticMap`), draws a translucent "fitted" marker over
+   *  every cage that's calibrated (has a `box`) and currently holds an optic - only
+   *  the boards that have been pixel-calibrated in the catalogue show anything. */
+  ports?: ChassisPort[];
+  portOpticMap?: Map<string, string>;
+}
+
+/** A cage's box, transformed into chassis-image coordinates - directly for base ports
+ *  (slot '1', box already relative to the chassis image), or nested inside its
+ *  module's bay box for a board in a slot (box relative to the module's own image). */
+function resolveAbsoluteBox(port: ChassisPort, slotPositions: SlotPosition[]): PortBox | undefined {
+  if (!port.box) return undefined;
+  if (port.slot === '1') return port.box;
+  const bay = slotPositions.find(s => String(s.number) === port.slot)?.box;
+  if (!bay) return undefined;
+  return {
+    x: bay.x + port.box.x * bay.width,
+    y: bay.y + port.box.y * bay.height,
+    width: port.box.width * bay.width,
+    height: port.box.height * bay.height,
+  };
 }
 
 export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
@@ -30,6 +51,8 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
   model,
   slotPositions,
   installedBoards,
+  ports,
+  portOpticMap,
 }) => (
   <div style={{ position: 'relative', width: '100%', background: '#111', lineHeight: 0 }}>
     <img src={chassisImage} alt={model} style={{ display: 'block', width: '100%', height: 'auto' }} />
@@ -51,6 +74,30 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
             width: `${box.width * 100}%`,
             height: `${box.height * 100}%`,
             objectFit: 'fill',
+          }}
+        />
+      );
+    })}
+    {ports && portOpticMap && ports.map(port => {
+      const optic = portOpticMap.get(port.id);
+      if (!optic) return null;
+      const abs = resolveAbsoluteBox(port, slotPositions);
+      if (!abs) return null;
+      return (
+        <div
+          key={port.id}
+          title={`${port.id}: ${optic}`}
+          style={{
+            position: 'absolute',
+            left: `${abs.x * 100}%`,
+            top: `${abs.y * 100}%`,
+            width: `${abs.width * 100}%`,
+            height: `${abs.height * 100}%`,
+            background: 'rgba(0, 30, 20, 0.55)',
+            border: '1px solid rgba(102, 255, 178, 0.85)',
+            borderRadius: '2px',
+            boxSizing: 'border-box',
+            pointerEvents: 'auto',
           }}
         />
       );

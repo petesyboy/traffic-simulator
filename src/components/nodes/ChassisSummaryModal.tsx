@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom';
 import type { HardwareNodeData } from '../../store/types';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount, getModuleSlotPositions } from '../../utils/hardwareUtils';
+import { getChassisPorts, getPortOpticMap } from '../../utils/ports';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
 
@@ -51,6 +52,8 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
   const maxCapacityBySpeed = isHc ? getMaxChassisCapacityBySpeed(model) : [];
   const gigaSmartEngines = isHc ? getGigaSmartEngineCount(model, hwData) : 0;
   const hasFrontPanel = Boolean(chassisImage) && slotPositions.some(p => p.box);
+  const chassisPorts = getChassisPorts(model, hwData);
+  const portOpticMap = getPortOpticMap(chassisPorts, hwData.optics);
 
   const [zoomed, setZoomed] = useState(false);
 
@@ -107,6 +110,8 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
                   model={model}
                   slotPositions={slotPositions}
                   installedBoards={installedBoards}
+                  ports={chassisPorts}
+                  portOpticMap={portOpticMap}
                 />
               </div>
             </section>
@@ -237,6 +242,8 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
               model={model}
               slotPositions={slotPositions}
               installedBoards={installedBoards}
+              ports={chassisPorts}
+              portOpticMap={portOpticMap}
             />
           </div>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', fontSize: '11px', color: '#ccc' }}>

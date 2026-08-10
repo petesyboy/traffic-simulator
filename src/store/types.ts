@@ -72,10 +72,23 @@ export interface TappedLinkAllocation {
   southOptic?: string;
 }
 
+/** Fractional (0-1) rect of a cage's position on its board's own catalogue image. */
+export interface PortBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface PortInfo {
   type: string;
   count: number;
   speeds: string[];
+  /** Optional per-cage pixel-calibrated positions on the board's catalogue image, one
+   *  per physical cage in reading order (matches the port index expandPorts() assigns
+   *  within this cage family). Only populated for boards that have been calibrated -
+   *  absent elsewhere, in which case no occupancy overlay is drawn for that board. */
+  boxes?: PortBox[];
 }
 
 /**
@@ -101,6 +114,8 @@ export interface ChassisPort {
   speeds: string[];
   /** False when the port is physically present but outside the licence tier. */
   licensed: boolean;
+  /** Fractional position on the board's own catalogue image, if calibrated - see PortBox. */
+  box?: PortBox;
 }
 
 /**

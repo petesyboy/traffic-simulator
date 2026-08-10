@@ -85,6 +85,30 @@ describe('getChassisPorts', () => {
     expect(ports[0].board).toBe('HC1-X12G4 (Main board)');
   });
 
+  it('carries the catalogue\'s calibrated per-cage box through onto the matching port, in array order (regression: front-panel optic overlay needs box tied to the exact port id getPortOpticMap resolves)', () => {
+    const basePorts = getChassisPorts('GigaVUE-HC1', hw({}));
+    const baseSfp = basePorts.filter(p => p.cage === 'SFP');
+    expect(baseSfp.every(p => p.box)).toBe(true);
+    expect(baseSfp[0].box).toEqual({ x: 0.4996, y: 0.2752, width: 0.0277, height: 0.1835 });
+    // RJ45 built-in ports are fixed copper jacks, never take a pluggable optic, so
+    // they're deliberately uncalibrated - no box means no overlay is ever drawn there.
+    expect(basePorts.filter(p => p.cage === 'RJ45').every(p => p.box === undefined)).toBe(true);
+
+    const moduleSfp = getChassisPorts('GigaVUE-HC1', hw({ installedBoards: { '2': 'PRT-HC1-Q04X08' } }))
+      .filter(p => p.board.startsWith('PRT-HC1-Q04X08') && p.cage === 'SFP');
+    expect(moduleSfp).toHaveLength(8);
+    expect(moduleSfp.every(p => p.box)).toBe(true);
+    // Module boxes stay in the module's own image-local coordinate space here -
+    // ChassisFrontPanel nests them inside the slot's bay box at render time.
+    expect(moduleSfp[0].box).toEqual({ x: 0.4828, y: 0.2375, width: 0.117, height: 0.2075 });
+
+    // An uncalibrated board (no catalogue "boxes" entry) simply has no box on its
+    // ports - the front-panel overlay skips it rather than guessing a position.
+    const hc3Ports = getChassisPorts('GigaVUE-HC3', hw({ installedBoards: { '1': 'BPS-HC3-C25F2G' } }));
+    expect(hc3Ports.length).toBeGreaterThan(0);
+    expect(hc3Ports.every(p => p.box === undefined)).toBe(true);
+  });
+
   it('returns nothing for TAPs and unknown models, which have no typed port list', () => {
     expect(getChassisPorts('G-TAP A-SF2', hw({}))).toHaveLength(0);
     expect(getChassisPorts('Not-A-Real-Model', hw({}))).toHaveLength(0);
@@ -224,6 +248,34 @@ describe('getPortOpticMap', () => {
         { board: 'Base Ports', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 1, pinnedPortId: '1/1/x1' },
       ]);
       expect(map.size).toBe(0);
+    });
+
+    it("never leaks an optic onto a currently-installed board's own free cages just because that board has no optics of its own yet (regression: optics meant for a Slot 3 module landed on Slot 2's still-empty cages instead)", () => {
+      // Reproduces a real report: an HC1 with PRT-HC1-Q04X08 in Slot 2 (empty, no
+      // optics yet) and PRT-HC1-X12 in Slot 3. Adding 2x SFP-532T against the
+      // Slot 3 board should land on Slot 3's own cages, not Slot 2's - even though
+      // Slot 2 comes first in port order and currently has zero optics recorded
+      // against it (which used to make it look "swapped out" to the fallback).
+      const hc1Ports = getChassisPorts('GigaVUE-HC1', hw({
+        installedBoards: { '2': 'PRT-HC1-Q04X08', '3': 'PRT-HC1-X12' },
+      }));
+      const map = getPortOpticMap(hc1Ports, [
+        { board: 'PRT-HC1-X12 (Slot 3)', optic: 'SFP-532T (10G SFP+ SR)', qty: 2 },
+      ]);
+      const filledIds = Array.from(map.keys());
+      expect(filledIds.every(id => hc1Ports.find(p => p.id === id)?.board === 'PRT-HC1-X12 (Slot 3)')).toBe(true);
+      expect(filledIds).toHaveLength(2);
+    });
+
+    it('still falls back to any free cage of the right family when the named board has genuinely been swapped out', () => {
+      // The board this optic was recorded against ('PRT-HC1-X12 (Slot 3)') no
+      // longer has any ports at all in this list - simulating the module having
+      // been removed/replaced - so the fallback should still find it a home.
+      const hc1Ports = getChassisPorts('GigaVUE-HC1', hw({ installedBoards: { '2': 'PRT-HC1-Q04X08' } }));
+      const map = getPortOpticMap(hc1Ports, [
+        { board: 'PRT-HC1-X12 (Slot 3)', optic: 'SFP-532T (10G SFP+ SR)', qty: 1 },
+      ]);
+      expect(map.size).toBe(1);
     });
 
     it('the first of two pins targeting the same port wins; the second is dropped', () => {

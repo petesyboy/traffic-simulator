@@ -144,6 +144,7 @@ function expandPorts(
         index,
         speeds: raw.speeds || [],
         licensed,
+        box: raw.boxes?.[i],
       });
     }
   }
@@ -285,14 +286,20 @@ export function getPortOpticMap(ports: ChassisPort[], optics: InstalledOptic[] |
   for (const entry of optics) {
     if (!entry.optic || entry.pinnedPortId) continue;
     const cage = getOpticCage(entry.optic);
+    // Optics recorded against a board belong in that board's cages; fall back to
+    // any free cage of the right family only when the board itself no longer has
+    // any ports at all (e.g. a module was swapped out from under them). Checking
+    // whether *other* boards happen to have their own optics entries (the previous
+    // check) gets this backwards - a currently-installed board with no optics of
+    // its own yet would look "gone" and leak its free cages to an unrelated
+    // board's optics, e.g. optics meant for a Slot 3 module landing on Slot 2's
+    // still-empty cages instead.
+    const entryBoardHasPorts = ports.some(p => p.board === entry.board);
     let remaining = entry.qty;
     for (const port of ports) {
       if (remaining <= 0) break;
       if (port.cage !== cage || filled.has(port.id)) continue;
-      // Optics recorded against a board belong in that board's cages; fall back
-      // to any free cage of the right family when the board no longer exists
-      // (e.g. a module was swapped out from under them).
-      if (port.board !== entry.board && optics.some(o => o.board === port.board)) continue;
+      if (entryBoardHasPorts && port.board !== entry.board) continue;
       map.set(port.id, entry.optic);
       filled.add(port.id);
       remaining--;
