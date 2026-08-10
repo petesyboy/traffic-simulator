@@ -155,6 +155,54 @@ describe('BOM Engine', () => {
       expect(sfpLines.length).toBe(1);
       expect(sfpLines[0].qty).toBe(12);
     });
+
+    it('does not let a manually-added (non-pinned) optic get absorbed into the auto-added pool it happens to share a type with', () => {
+      // Regression: a chassis with a TAP feed AND an unrelated link (e.g. a
+      // SPAN/VMware input) sharing the same optic type used to let a plain
+      // manual "add 1 more" of that type get silently swallowed by the
+      // auto-added requirement calculation - the net total never actually
+      // grew, so a user trying to fix a "missing transceiver" on the
+      // unrelated link's port could never succeed by adding more of the same
+      // optic (only a *pinned* add worked, since only pins offset the
+      // auto-added quota now).
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TAP', configType: 'TAP', model: 'TAP-M251T', sku: 'TAP-M251T',
+            tappedLinksCount: 1,
+            tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)', toolOptic: 'SFP-532T' }],
+          },
+        },
+        {
+          id: 'ta-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'TA25E', configType: 'TA', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE',
+            // 2 auto-added SFP-532T already cover the TAP's 1 link (2 ports).
+            // A user then manually adds 1 more (e.g. for an unrelated SPAN
+            // link) as a plain, non-pinned entry of the same type.
+            optics: [
+              { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 2, isAutoAdded: true },
+              { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1 },
+            ],
+          },
+        },
+      ];
+      const edges = [{ id: 'e1', source: 'tap-1', target: 'ta-1' }];
+
+      const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
+      const taNode = syncedNodes.find(n => n.id === 'ta-1');
+      const totalSfp532 = (taNode?.data.optics as InstalledOptic[] | undefined)
+        ?.filter(o => o.optic.includes('SFP-532'))
+        .reduce((sum, o) => sum + o.qty, 0);
+
+      // 2 auto (still covering the TAP) + 1 manual (untouched) = 3, not capped at 2.
+      expect(totalSfp532).toBe(3);
+    });
   });
 
   describe('validateConfiguration', () => {

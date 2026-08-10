@@ -214,8 +214,14 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
       // single-port meaning (and corrupt qty for the merged entry).
       newOptics = [...installedOptics, { board: targetBoard, optic: selectedOptic, qty: 1, pinnedPortId: selectedPortId }];
     } else {
+      // Never merge into an isAutoAdded bucket - that flag means
+      // syncOpticsOnTapConnection owns and freely recomputes this entry's qty
+      // from scratch on every sync (e.g. on load), so folding a manual add into
+      // it would get silently discarded on the very next save/reload the
+      // moment the auto-calculated requirement doesn't happen to already
+      // include the extra unit the user just added.
       const existingOpticIdx = installedOptics.findIndex(
-        opt => !opt.pinnedPortId && (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic,
+        opt => !opt.pinnedPortId && !opt.isAutoAdded && (opt.board || 'Base Ports') === targetBoard && opt.optic === selectedOptic,
       );
       newOptics = [...installedOptics];
       if (existingOpticIdx >= 0) {

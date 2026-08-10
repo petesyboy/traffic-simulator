@@ -92,7 +92,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
       }
     });
 
-    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || [];
+    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean, pinnedPortId?: string }[]) || [];
     const userOptics = currentOptics.filter(opt => !opt.isAutoAdded);
     const nextOptics = [...userOptics];
     let changed = currentOptics.length !== userOptics.length;
@@ -110,8 +110,18 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     Object.entries(resolvedOpticsNeeded).forEach(([targetOptic, qty]) => {
       const targetSku = resolveOpticSku(targetOptic, chassisModel);
 
+      // Only a *pinned* entry claims a specific, already-spoken-for port, so
+      // only pinned entries offset how many auto-added units are still
+      // needed. A plain aggregate (non-pinned) manual entry of the same optic
+      // type doesn't necessarily exist for this TAP requirement at all - it
+      // might be there to cover a completely different link (a SPAN/ERSPAN/
+      // VMware feed, which this function never counts a requirement for in
+      // the first place). Counting it here used to let it silently cannibalise
+      // the auto-added pool: adding one more unit to fix a "missing
+      // transceiver" on such a link left the net total unchanged, since the
+      // auto portion just shrank by the same amount on the next sync.
       const existingQty = nextOptics
-        .filter(o => o.optic === targetOptic || resolveOpticSku(o.optic, chassisModel) === targetSku)
+        .filter(o => o.pinnedPortId && (o.optic === targetOptic || resolveOpticSku(o.optic, chassisModel) === targetSku))
         .reduce((sum, o) => sum + o.qty, 0);
 
       if (existingQty < qty) {

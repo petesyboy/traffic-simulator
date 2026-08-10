@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.510",
+    date: "2026-08-09",
+    summary: "Fixed the real cause of the missing-optic error coming back after a fix: adding an optic to cover a port with no transceiver could get silently merged into (and then discarded by) the chassis's auto-managed optic pool on the next save/reload, capping the total at whatever the TAP-derived requirement alone needed. Manually-added optics are now kept separate from that pool and always count in full.",
+  },
+  {
     version: "1.0.509",
     date: "2026-08-08",
     summary: "The Tapped Links panel and hardware node config panel now read SKU descriptions through the same price-list-aware lookup the BOM uses, so an uploaded price list updates them immediately instead of only affecting BOM output. Also fixed a crash when expanding a chassis's Hardware Specifications (a port-count field was rendered as a raw object instead of a summary), and added lint and test steps to the GitHub Pages deploy workflow so a broken build no longer ships.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.491",
     date: "2026-08-07",
     summary: "Added MPO breakout panels (PNL-M341T multimode / PNL-M343T singlemode) as real, sidebar-placeable modules - drag one into a TAP tray alongside tap modules, wire a GigaVUE port's parallel optic to its MPO connector, and fan out to 4 independently wireable LC ports (or wire 4 lower-speed sources in to aggregate them back into one uplink). Validates parallel-optic and lane-speed rules and quotes correctly in the BOM.",
-  },
-  {
-    version: "1.0.490",
-    date: "2026-08-07",
-    summary: "Fixed the \"Saved to ...\" confirmation toast rendering behind the Save/Load modal's blurred background and becoming illegible when a slot is overwritten without closing the modal.",
   },
 ];
