@@ -212,24 +212,16 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         }
       `}</style>
       {advancedMode && !model?.includes('TAP') && !isBreakoutPanelModel(model) && (
-        <div className="flex-row gap-2 mb-3 border-b border-subtle pb-2 flex-wrap">
+        <div className="node-panel-tabs mb-3 flex-wrap">
           <button
             onClick={() => setActiveTab('general')}
-            className="btn btn-sm"
-            style={{
-              background: activeTab === 'general' ? '#333' : 'transparent',
-              color: activeTab === 'general' ? '#fff' : '#888'
-            }}
+            className={`node-panel-tab${activeTab === 'general' ? ' node-panel-tab--active' : ''}`}
           >
             General{conditions.length > 0 ? ` (${conditions.length} rule${conditions.length > 1 ? 's' : ''})` : ''}
           </button>
           <button
             onClick={() => setActiveTab('optics')}
-            className="btn btn-sm flex-row gap-2"
-            style={{
-              background: activeTab === 'optics' ? '#333' : 'transparent',
-              color: activeTab === 'optics' ? '#fff' : '#888'
-            }}
+            className={`node-panel-tab${activeTab === 'optics' ? ' node-panel-tab--active' : ''}`}
           >
             <span>Optics</span>
             {isOpticsInvalid && (
@@ -242,11 +234,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           {gigaSmartApps.length > 0 && (
             <button
               onClick={() => setActiveTab('apps')}
-              className="btn btn-sm"
-              style={{
-                background: activeTab === 'apps' ? '#333' : 'transparent',
-                color: activeTab === 'apps' ? '#fff' : '#888'
-              }}
+              className={`node-panel-tab${activeTab === 'apps' ? ' node-panel-tab--active' : ''}`}
             >
               GigaSMART Apps
             </button>

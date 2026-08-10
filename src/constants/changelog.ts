@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.508",
+    date: "2026-08-08",
+    summary: "Restyled the General/Optics/GigaSMART Apps tabs on a chassis node's config panel (both TA and HC series) as proper underlined tabs with larger, bolder text, instead of small hard-to-notice pill buttons.",
+  },
+  {
     version: "1.0.507",
     date: "2026-08-08",
     summary: "Simplified the hardware node configuration panel in Standard View: it now shows just the node label, a compact model/SKU line, and Traffic Map filter rules, with a note pointing to Expert Designer (Advanced Mode) for board slots, chassis/licensing settings, deployment site, optics, and GigaSMART apps. Advanced Mode is unchanged.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.489",
     date: "2026-08-07",
     summary: "Advanced Mode has a new Update Price List button — upload the worldwide price list workbook (.xlsx/.xls/.csv) directly to refresh SKU descriptions and End of Sale/Life dates, no CSV conversion or rebuild needed.",
-  },
-  {
-    version: "1.0.488",
-    date: "2026-08-07",
-    summary: "Port tooltips now say 'fitted but unused' for an optic that's installed but not linked, instead of just naming the optic as if it were connected.",
   },
 ];

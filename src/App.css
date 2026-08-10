@@ -1530,6 +1530,41 @@
   font-size: var(--font-sm);
 }
 
+/* Node config panel tabs (General / Optics / GigaSMART Apps, etc.) - a proper
+   underline-tab look rather than small pill buttons, since the pill styling
+   at --font-sm read as too small/inconspicuous to notice at a glance. */
+.node-panel-tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.node-panel-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-family);
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.node-panel-tab:hover {
+  color: var(--text-primary);
+}
+
+.node-panel-tab--active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+}
+
 /* Badges & chips */
 .badge {
   display: inline-flex;
