@@ -282,7 +282,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 <RedoIcon />
               </button>
 
-              {nodes.length > 0 && (
+              {advancedMode && nodes.length > 0 && (
                 <button
                   className="header-btn header-btn--cyan"
                   onClick={() => setShowDuplicatePrompt(true)}
@@ -325,33 +325,39 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </button>
               )}
 
-              <button
-                className={`header-btn ${isTradeShowDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
-                onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
-                title="Toggle Automated Trade Show Demonstration Mode"
-              >
-                {isTradeShowDemoActive ? (
-                  <>
-                    <StopIcon /> Stop Demo
-                  </>
-                ) : (
-                  <>
-                    <PresentationIcon /> Auto Demo
-                  </>
-                )}
-              </button>
+              {advancedMode && (
+                <button
+                  className={`header-btn ${isTradeShowDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
+                  onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
+                  title="Toggle Automated Trade Show Demonstration Mode"
+                >
+                  {isTradeShowDemoActive ? (
+                    <>
+                      <StopIcon /> Stop Demo
+                    </>
+                  ) : (
+                    <>
+                      <PresentationIcon /> Auto Demo
+                    </>
+                  )}
+                </button>
+              )}
 
-              <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
-                <CameraIcon /> Screenshot
-              </button>
+              {advancedMode && (
+                <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
+                  <CameraIcon /> Screenshot
+                </button>
+              )}
 
-              <button
-                className="header-btn"
-                onClick={() => setShowReport(true)}
-                title="Generate a customer-facing PDF solution report"
-              >
-                <ReportIcon /> Generate Report
-              </button>
+              {advancedMode && (
+                <button
+                  className="header-btn"
+                  onClick={() => setShowReport(true)}
+                  title="Generate a customer-facing PDF solution report"
+                >
+                  <ReportIcon /> Generate Report
+                </button>
+              )}
 
               <div className="control-divider">
                 <span style={{ fontSize: '9px', color: '#666', fontWeight: 700 }}>SIZE</span>

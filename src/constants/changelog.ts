@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.506",
+    date: "2026-08-08",
+    summary: "Decluttered Standard View: Duplicate, Auto Demo, Screenshot and Generate Report have moved to Expert Designer (Advanced Mode) only, so the header stays focused on basic simulation and save/load in simple mode. All four remain exactly where they were in Advanced Mode.",
+  },
+  {
     version: "1.0.505",
     date: "2026-08-08",
     summary: "Fixed a chassis port-assignment bug where a link with no pinned port (e.g. a SPAN feed sharing a chassis with pinned/TAP-fed optics) could silently land on a different physical port every time the topology was saved and reloaded - stranding a manually-fitted transceiver and moving the \"missing transceiver\" BOM warning to a new port each time instead of staying put. Port assignments now stay put across reloads unless the topology actually changes.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.487",
     date: "2026-08-07",
     summary: "Fixed the grab-hand cursor bleeding onto individual ports on a chassis front panel, making it fiddly to hover precisely over one - it's a plain arrow there now.",
-  },
-  {
-    version: "1.0.486",
-    date: "2026-08-07",
-    summary: "Fixed the enlarged AMI event panel still drifting off-screen on shorter windows - its height and position could disagree with each other when stacked above the compact log.",
   },
 ];
