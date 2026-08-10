@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.511",
+    date: "2026-08-10",
+    summary: "Fixed the HC1-Plus, HC3 and HCT \"Maximum Possible Capacity\" figures in the chassis summary dialog, which understated 100G/40G capacity (built-in HC1-Plus ports were mistyped as non-25G/100G-capable) and 10G/25G capacity (didn't account for feeding QSFP cages through an external MPO breakout panel, 4 lanes per cage - the same technique Gigamon's own datasheet uses for its higher figures). All four HC chassis now match the published datasheet exactly.",
+  },
+  {
     version: "1.0.510",
     date: "2026-08-09",
     summary: "Fixed the real cause of the missing-optic error coming back after a fix: adding an optic to cover a port with no transceiver could get silently merged into (and then discarded by) the chassis's auto-managed optic pool on the next save/reload, capping the total at whatever the TAP-derived requirement alone needed. Manually-added optics are now kept separate from that pool and always count in full.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.492",
     date: "2026-08-07",
     summary: "The optic picker now marks every parallel-fibre optic as \"breakout-capable\", and once a cage is wired to an MPO breakout panel it only offers the optics that panel can actually use (SR4/PLR4/PSM4/DR4/DR4+) - LR4/CWDM4/SWDM4/FR4 optics are no longer selectable there.",
-  },
-  {
-    version: "1.0.491",
-    date: "2026-08-07",
-    summary: "Added MPO breakout panels (PNL-M341T multimode / PNL-M343T singlemode) as real, sidebar-placeable modules - drag one into a TAP tray alongside tap modules, wire a GigaVUE port's parallel optic to its MPO connector, and fan out to 4 independently wireable LC ports (or wire 4 lower-speed sources in to aggregate them back into one uplink). Validates parallel-optic and lane-speed rules and quotes correctly in the BOM.",
   },
 ];

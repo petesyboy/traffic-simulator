@@ -196,17 +196,18 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
                 Maximum Possible Capacity
               </h4>
               <div style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {maxCapacityBySpeed.map(({ speed, maxPorts, config }) => (
+                {maxCapacityBySpeed.map(({ speed, maxPorts, config, viaBreakout }) => (
                   <div key={speed} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
                     <span style={{ color: '#888' }}>{speed} ports:</span>
                     <strong style={{ textAlign: 'right', fontFamily: 'monospace' }}>
-                      {maxPorts} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({config})</span>
+                      {maxPorts}{viaBreakout ? '*' : ''} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({config})</span>
                     </strong>
                   </div>
                 ))}
               </div>
               <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '6px', fontSize: '11px' }}>
                 Best-case if every slot were filled with the single densest module for that speed — not necessarily the current configuration above.
+                {maxCapacityBySpeed.some(c => c.viaBreakout) && ' * Requires feeding QSFP cages through an external MPO breakout panel (e.g. PNL-M341T/M343T).'}
               </div>
             </section>
           )}

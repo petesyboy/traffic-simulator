@@ -218,15 +218,15 @@ describe('hardwareUtils', () => {
       ['PRT-HC1-G12', { 'RJ45': 6, 'SFP': 6 }],
       ['SMT-HC1-S', {}],
       ['TAP-HC1-G10040', { 'RJ45': 8 }],
-      ['PRT-HC3-X24', { 'SFP+': 24 }],
+      ['PRT-HC3-X24', { 'SFP28': 24 }],
       ['SMT-HC3-c08q08', { 'QSFP28': 8, 'QSFP+': 8 }],
       ['PRT-HC3-C08Q08', { 'QSFP28': 8, 'QSFP+': 8 }],
       ['SMT-HC3-c16', { 'QSFP28': 16 }],
       ['PRT-HC3-C16', { 'QSFP28': 16 }],
       ['SMT-HC3-c08', { 'QSFP28': 8 }],
-      ['BPS-HC3-C25F2G', { 'QSFP28': 4, 'SFP+': 16 }],
-      ['BPS-HC3-Q35C2G', { 'QSFP+': 4, 'SFP+': 16 }],
-      ['BPS-HC3-C35C2G', { 'QSFP28': 4, 'SFP+': 16 }],
+      ['BPS-HC3-C25F2G', { 'QSFP28': 4, 'SFP28': 16 }],
+      ['BPS-HC3-Q35C2G', { 'QSFP+': 4, 'SFP28': 16 }],
+      ['BPS-HC3-C35C2G', { 'QSFP28': 4, 'SFP28': 16 }],
     ])('%s returns %j', (boardSku, expected) => {
       expect(getBoardPortCapacity(boardSku)).toEqual(expected);
     });
@@ -236,7 +236,7 @@ describe('hardwareUtils', () => {
     it('should return correct base capacities for chassis models', () => {
       expect(getChassisBasePortCapacity('GigaVUE-TA25E')).toEqual({ 'SFP28': 48, 'QSFP28': 8 });
       expect(getChassisBasePortCapacity('GigaVUE-HC1')).toEqual({ 'RJ45': 4, 'SFP+': 12 });
-      expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ 'SFP+': 8, 'QSFP+': 4 });
+      expect(getChassisBasePortCapacity('GigaVUE-HC1-Plus')).toEqual({ 'SFP28': 8, 'QSFP28': 4 });
       expect(getChassisBasePortCapacity('GigaVUE-HC3')).toEqual({});
       expect(getChassisBasePortCapacity('GigaVUE-HCT')).toEqual({ 'QSFP28': 2 });
     });
@@ -329,7 +329,7 @@ describe('hardwareUtils', () => {
         optics: [],
         installedBoards: { '1': 'PRT-HC1-x12', '2': 'BPS-HC1-D35C60' },
       } as unknown as HardwareNodeData);
-      // base (SFP+:8, QSFP+:4) + PRT-HC1-x12 (SFP+:12) + BPS-HC1-D35C60 (SFP+:12)
+      // base (SFP28:8, QSFP28:4) + PRT-HC1-x12 (SFP+:12) + BPS-HC1-D35C60 (SFP+:12)
       expect(breakdown.totalSfpCages).toBe(8 + 12 + 12);
       expect(breakdown.totalQsfpCages).toBe(4);
     });
@@ -554,11 +554,59 @@ describe('hardwareUtils', () => {
       expect(entry?.config).toBe('built-in ports');
     });
 
-    it('GigaVUE-HC1 and GigaVUE-HC1-Plus both offer 100G on PRT-HC1-Q04X08 (2 slots x 4 cages = 8)', () => {
-      for (const model of ['GigaVUE-HC1', 'GigaVUE-HC1-Plus']) {
-        const entry = getMaxChassisCapacityBySpeed(model).find(e => e.speed === '100G');
-        expect(entry?.maxPorts).toBe(8);
-      }
+    it('GigaVUE-HC1 offers 100G only via PRT-HC1-Q04X08 (2 slots x 4 cages = 8) - its base ports are QSFP+ (40G only), no built-in 100G', () => {
+      const entry = getMaxChassisCapacityBySpeed('GigaVUE-HC1').find(e => e.speed === '100G');
+      expect(entry?.maxPorts).toBe(8);
+    });
+
+    it('GigaVUE-HC1-Plus adds its 4 built-in QSFP28 base cages on top of the module (4 + 2x4 = 12), matching the datasheet', () => {
+      const entry = getMaxChassisCapacityBySpeed('GigaVUE-HC1-Plus').find(e => e.speed === '100G');
+      expect(entry?.maxPorts).toBe(12);
+      expect(entry?.config).toBe('2x PRT-HC1-Q04X08 + built-in ports');
+    });
+
+    // Every number below is cross-checked against the official GigaVUE HC-series
+    // "Chassis Maximum Capabilities" datasheet table, including its "*" rows -
+    // those are footnoted there as "maximum density requires using port breakout,
+    // such as G-TAP PNL-M341", which is exactly what viaBreakout models: feeding a
+    // QSFP-family cage's 40G/100G parent optic through an MPO breakout panel for
+    // 4x the lower-speed (10G/25G) lane count.
+    describe('breakout-aware capacity (10G/25G via MPO breakout panel)', () => {
+      it('GigaVUE-HC1-Plus 25G/10G both reach 72 - 8 native SFP28 + all 12 QSFP28 cages (4 base + 2x4 module) broken out x4', () => {
+        const capacity = getMaxChassisCapacityBySpeed('GigaVUE-HC1-Plus');
+        const g25 = capacity.find(e => e.speed === '25G');
+        const g10 = capacity.find(e => e.speed === '10G');
+        expect(g25).toMatchObject({ maxPorts: 72, viaBreakout: true });
+        expect(g10).toMatchObject({ maxPorts: 72, viaBreakout: true });
+      });
+
+      it('GigaVUE-HC3 25G/10G both reach 128 - the datasheet-documented fanout cap (getMaxFanoutSfpPorts), below the raw 4x64=256 arithmetic', () => {
+        const capacity = getMaxChassisCapacityBySpeed('GigaVUE-HC3');
+        const g25 = capacity.find(e => e.speed === '25G');
+        const g10 = capacity.find(e => e.speed === '10G');
+        expect(g25).toMatchObject({ maxPorts: 128, viaBreakout: true });
+        expect(g10).toMatchObject({ maxPorts: 128, viaBreakout: true });
+      });
+
+      it('GigaVUE-HC3 40G reaches 64 via 4x PRT-HC3-C16 (16 dual-speed 40G/100G QSFP28 cages/slot), not just the 8-cage 40G-only boards', () => {
+        const entry = getMaxChassisCapacityBySpeed('GigaVUE-HC3').find(e => e.speed === '40G');
+        expect(entry).toMatchObject({ maxPorts: 64, viaBreakout: false, config: '4x PRT-HC3-C16' });
+      });
+
+      it('GigaVUE-HCT 25G/10G reach 12/32 via its single slot\'s QSFP28 breakout, with no native 25G cage on the chassis at all', () => {
+        const capacity = getMaxChassisCapacityBySpeed('GigaVUE-HCT');
+        expect(capacity.find(e => e.speed === '25G')).toMatchObject({ maxPorts: 12, viaBreakout: true });
+        expect(capacity.find(e => e.speed === '10G')).toMatchObject({ maxPorts: 32, viaBreakout: true });
+      });
+
+      it('speeds with no breakout path (40G, 100G, 1G) are never marked viaBreakout', () => {
+        for (const model of ['GigaVUE-HCT', 'GigaVUE-HC1', 'GigaVUE-HC1-Plus', 'GigaVUE-HC3']) {
+          for (const entry of getMaxChassisCapacityBySpeed(model)) {
+            if (entry.speed === '10G' || entry.speed === '25G') continue;
+            expect(entry.viaBreakout).toBeFalsy();
+          }
+        }
+      });
     });
   });
 

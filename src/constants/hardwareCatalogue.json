@@ -300,8 +300,8 @@
       "fans": 12,
       "airflow": "Front-to-Rear",
       "base_ports": [
-        { "type": "SFP+", "count": 8, "speeds": ["1G", "10G"] },
-        { "type": "QSFP+", "count": 4, "speeds": ["40G"] }
+        { "type": "SFP28", "count": 8, "speeds": ["1G", "10G", "25G"] },
+        { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] }
       ],
       "module_slots": 2,
       "module_slot_positions": [
@@ -426,7 +426,7 @@
         "model": "PRT-HC3-X24",
         "sku": "PRT-HC3-X24",
         "ports": [
-            { "type": "SFP+", "count": 24, "speeds": ["10G"] }
+            { "type": "SFP28", "count": 24, "speeds": ["10G", "25G"] }
         ],
         "image": "./hardware-icons/PRT-HC3-X24.png"
     },
@@ -452,7 +452,7 @@
         "model": "SMT-HC3-C16",
         "sku": "SMT-HC3-C16",
         "ports": [
-            { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
+            { "type": "QSFP28", "count": 16, "speeds": ["40G", "100G"] }
         ],
         "image": "./hardware-icons/PRT-HC3-C16.png"
     },
@@ -460,7 +460,7 @@
         "model": "PRT-HC3-C16",
         "sku": "PRT-HC3-C16",
         "ports": [
-            { "type": "QSFP28", "count": 16, "speeds": ["100G"] }
+            { "type": "QSFP28", "count": 16, "speeds": ["40G", "100G"] }
         ],
         "image": "./hardware-icons/PRT-HC3-C16.png"
     },
@@ -468,7 +468,7 @@
         "model": "SMT-HC3-C08",
         "sku": "SMT-HC3-C08",
         "ports": [
-            { "type": "QSFP28", "count": 8, "speeds": ["100G"] }
+            { "type": "QSFP28", "count": 8, "speeds": ["40G", "100G"] }
         ],
         "image": "./hardware-icons/SMT-HC3-C08.png"
     },
@@ -477,7 +477,7 @@
         "sku": "BPS-HC3-C25F2G",
         "ports": [
             { "type": "QSFP28", "count": 4, "speeds": ["40G", "100G"] },
-            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
+            { "type": "SFP28", "count": 16, "speeds": ["1G", "10G", "25G"] }
         ],
         "image": "./hardware-icons/BPS-HC3-C25F2G.png"
     },
@@ -486,7 +486,7 @@
         "sku": "BPS-HC3-Q35C2G",
         "ports": [
             { "type": "QSFP+", "count": 4, "speeds": ["40G"] },
-            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
+            { "type": "SFP28", "count": 16, "speeds": ["1G", "10G", "25G"] }
         ],
         "image": "./hardware-icons/BPS-HC3-Q35C2G.png"
     },
@@ -495,7 +495,7 @@
         "sku": "BPS-HC3-C35C2G",
         "ports": [
             { "type": "QSFP28", "count": 4, "speeds": ["100G"] },
-            { "type": "SFP+", "count": 16, "speeds": ["1G", "10G"] }
+            { "type": "SFP28", "count": 16, "speeds": ["1G", "10G", "25G"] }
         ],
         "image": "./hardware-icons/BPS-HC3-C35C2G.png"
     }

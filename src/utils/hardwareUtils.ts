@@ -309,9 +309,22 @@ export interface MaxSpeedCapacity {
   speed: string;
   maxPorts: number;
   config: string;
+  /** True when reaching `maxPorts` requires feeding some QSFP-family cages through an
+   *  external MPO breakout panel (PNL-M341T/M343T) rather than native cages alone. */
+  viaBreakout?: boolean;
 }
 
 const SPEED_DISPLAY_ORDER = ['400G', '100G', '40G', '25G', '10G', '1G'];
+
+/**
+ * The parent (MPO-side) optic speed that feeds each breakout lane speed, once run
+ * through an external MPO breakout panel - see breakoutRules.ts's LANE_SPEED_BY_PARENT.
+ * Duplicated here rather than imported: breakoutRules.ts already imports from this
+ * module, so importing it back would create a circular dependency.
+ */
+const BREAKOUT_PARENT_SPEED_FOR_LANE: Record<string, string> = { '10G': '40G', '25G': '100G', '100G': '400G' };
+/** Every breakout panel fans one QSFP-family cage out to this many LC lanes (breakoutRules.ts's PANEL_LC_PER_GROUP). */
+const BREAKOUT_LANES_PER_CAGE = 4;
 
 /**
  * The generic per-module `ports[].speeds` list in hardwareCatalogue.json isn't always
@@ -330,12 +343,35 @@ const getBoardSpeedsFromOptics = (model: string, board: string): Set<string> => 
   return speeds;
 };
 
+/** Cage count across `portSpecs` running `speed`, capped by any board-specific sub-cap. */
+const countAtSpeed = (model: string, board: string, portSpecs: PortInfo[], speed: string): number => {
+  let count = portSpecs.filter(p => p.speeds.includes(speed)).reduce((sum, p) => sum + p.count, 0);
+  const subCap = getBoardSpeedSubCap(model, board, speed);
+  if (subCap !== Infinity) count = Math.min(count, subCap);
+  return count;
+};
+
+/** How many extra `laneSpeed` ports a set of ports contributes by feeding their
+ *  QSFP-family cages (that carry the matching parent speed) through an external MPO
+ *  breakout panel - 0 if `laneSpeed` isn't a breakout lane speed, or none of these
+ *  ports actually carry the parent speed. */
+const breakoutCountAtSpeed = (model: string, board: string, portSpecs: PortInfo[], laneSpeed: string, availableSpeeds: Set<string>): number => {
+  const parentSpeed = BREAKOUT_PARENT_SPEED_FOR_LANE[laneSpeed];
+  if (!parentSpeed || !availableSpeeds.has(parentSpeed)) return 0;
+  const cages = countAtSpeed(model, board, portSpecs.filter(p => p.type.toUpperCase().includes('QSFP')), parentSpeed);
+  return cages * BREAKOUT_LANES_PER_CAGE;
+};
+
 /**
  * For HC-series chassis (which have interchangeable module slots), works out the
  * highest port count achievable at each optic speed if every slot were filled with
  * whichever single installable module maximises that speed - e.g. "how many 100G
- * ports can a GigaVUE-HC3 take?" (4x PRT-HC3-C16, 16 QSFP28 cages each = 64).
- * Returns [] for chassis with no module slots (TA-series, fixed-configuration units).
+ * ports can a GigaVUE-HC3 take?" (4x PRT-HC3-C16, 16 QSFP28 cages each = 64). For
+ * 10G/25G, also considers feeding QSFP-family cages through an external MPO breakout
+ * panel (PNL-M341T/M343T, 4 LC lanes per cage) when that beats native cages alone -
+ * matching the "*" entries in Gigamon's own "Chassis Maximum Capabilities" datasheet
+ * table, which are annotated exactly this way. Returns [] for chassis with no module
+ * slots (TA-series, fixed-configuration units).
  */
 export const getMaxChassisCapacityBySpeed = (model: string): MaxSpeedCapacity[] => {
   const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
@@ -347,44 +383,62 @@ export const getMaxChassisCapacityBySpeed = (model: string): MaxSpeedCapacity[] 
   const installableBoards = allBoards.map(b => b.board).filter(b => !b.toLowerCase().includes('main') && !b.toLowerCase().includes('base'));
   const mainBoard = allBoards.find(b => b.board.toLowerCase().includes('main'));
   const baseSpeeds = mainBoard ? getBoardSpeedsFromOptics(model, mainBoard.board) : null;
+  const mainBoardName = mainBoard?.board || '';
 
   const basePortSpecs = getChassisBasePortSpecs(model);
 
   const speedsSeen = new Set<string>();
   basePortSpecs.forEach(p => p.speeds.forEach(s => speedsSeen.add(s)));
   installableBoards.forEach(b => getBoardPortSpecs(b).forEach(p => p.speeds.forEach(s => speedsSeen.add(s))));
+  // A breakout lane speed can be reachable even with no cage natively running it -
+  // e.g. a chassis whose QSFP cages only run 40G/100G still yields 10G/25G lanes once
+  // fed through an MPO breakout panel.
+  Object.entries(BREAKOUT_PARENT_SPEED_FOR_LANE).forEach(([lane, parent]) => {
+    if (speedsSeen.has(parent)) speedsSeen.add(lane);
+  });
 
   const results: MaxSpeedCapacity[] = [];
 
   for (const speed of SPEED_DISPLAY_ORDER) {
     if (!speedsSeen.has(speed)) continue;
+    const baseAvailable = baseSpeeds || speedsSeen;
 
-    const baseCount =
-      !baseSpeeds || baseSpeeds.has(speed) ? basePortSpecs.filter(p => p.speeds.includes(speed)).reduce((sum, p) => sum + p.count, 0) : 0;
+    const baseNative = !baseSpeeds || baseSpeeds.has(speed) ? countAtSpeed(model, mainBoardName, basePortSpecs, speed) : 0;
+    const baseBreakout = breakoutCountAtSpeed(model, mainBoardName, basePortSpecs, speed, baseAvailable);
+    const baseCount = baseNative + baseBreakout;
 
     let bestBoard = '';
     let bestPerSlot = 0;
+    let bestUsedBreakout = false;
     for (const board of installableBoards) {
       const boardSpeeds = getBoardSpeedsFromOptics(model, board);
-      if (!boardSpeeds.has(speed)) continue;
-      let count = getBoardPortSpecs(board)
-        .filter(p => p.speeds.includes(speed))
-        .reduce((sum, p) => sum + p.count, 0);
-      const subCap = getBoardSpeedSubCap(model, board, speed);
-      if (subCap !== Infinity) count = Math.min(count, subCap);
+      const portSpecs = getBoardPortSpecs(board);
+      const nativeCount = boardSpeeds.has(speed) ? countAtSpeed(model, board, portSpecs, speed) : 0;
+      const breakoutCount = breakoutCountAtSpeed(model, board, portSpecs, speed, boardSpeeds);
+      const count = nativeCount + breakoutCount;
       if (count > bestPerSlot) {
         bestPerSlot = count;
         bestBoard = board;
+        bestUsedBreakout = breakoutCount > 0;
       }
     }
 
-    const maxPorts = baseCount + bestPerSlot * slotCount;
+    let maxPorts = baseCount + bestPerSlot * slotCount;
     if (maxPorts === 0) continue;
+
+    const viaBreakout = baseBreakout > 0 || bestUsedBreakout;
+    if (viaBreakout) {
+      // Per the datasheet, dense QSFP fanout via breakout panels is capped below the
+      // raw "every cage x4" arithmetic on some chassis (likely an ASIC/SerDes lane-
+      // sharing limit) - see getMaxFanoutSfpPorts.
+      maxPorts = Math.min(maxPorts, getMaxFanoutSfpPorts(model));
+    }
 
     const configParts: string[] = [];
     if (bestPerSlot > 0) configParts.push(`${slotCount}x ${bestBoard}`);
     if (baseCount > 0) configParts.push('built-in ports');
-    results.push({ speed, maxPorts, config: configParts.join(' + ') });
+    if (viaBreakout) configParts.push('using MPO breakout panel');
+    results.push({ speed, maxPorts, config: configParts.join(' + '), viaBreakout });
   }
 
   return results;
