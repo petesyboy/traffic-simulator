@@ -167,6 +167,23 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
           <circle cx="12" cy="14.5" r="0.8" fill="white"/>
         </svg>
       );
+    case 'flowvue':
+    case 'ip-flowvue':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          {/* Funnel: subscriber/flow selection down to a single sampled stream */}
+          <path d="M6 7h12l-4.5 5.5v3.7l-3-1.5v-2.2L6 7z" fill="white"/>
+        </svg>
+      );
+    case 'gtp-flow-filtering':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          <text x="12" y="11" fill="white" fontSize="6" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle">GTP</text>
+          <path d="M8 13.5h8l-3 4h-2l-3-4z" fill="white"/>
+        </svg>
+      );
     default:
       // Generic fallback: a simple blue square with a white inner square.
       return (

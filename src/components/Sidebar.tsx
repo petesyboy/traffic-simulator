@@ -86,6 +86,16 @@ const appsList = [
     type: NODE_TYPES.GIGASMART,
     initial: { actionType: ACTION_TYPES.SSL_DECRYPT, configType: ACTION_TYPES.SSL_DECRYPT },
   },
+  {
+    label: 'IP FlowVUE',
+    type: NODE_TYPES.GIGASMART,
+    initial: { actionType: ACTION_TYPES.IP_FLOWVUE, configType: ACTION_TYPES.IP_FLOWVUE },
+  },
+  {
+    label: 'GTP Flow Filtering',
+    type: NODE_TYPES.GIGASMART,
+    initial: { actionType: ACTION_TYPES.GTP_FLOW_FILTERING, configType: ACTION_TYPES.GTP_FLOW_FILTERING },
+  },
 ] as const;
 
 // ─── Sidebar component ────────────────────────────────────────────────────────

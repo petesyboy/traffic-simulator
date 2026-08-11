@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.516",
+    date: "2026-08-11",
+    summary: "Added IP FlowVUE and GTP Flow Filtering to the Applications palette, so they can be dragged onto an HC chassis like any other GigaSMART function and picked up correctly in the Bill of Materials.",
+  },
+  {
     version: "1.0.515",
     date: "2026-08-11",
     summary: "Renamed the disk save/load buttons to Export and Import, to better describe what they do (Browser Save/Browser Load are unchanged).",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.497",
     date: "2026-08-07",
     summary: "The PDF solution report is now far more detailed: each traffic source lists its link speed, encrypted %, matched traffic streams and what it ultimately reaches; each map/filter/GigaSMART stage lists what feeds it, what it forwards to, and (while a simulation is running) real observed throughput and reduction percentages; each destination lists which taps/SPAN sessions its traffic originates from.",
-  },
-  {
-    version: "1.0.496",
-    date: "2026-08-07",
-    summary: "Added a Generate Report button - produces a customer-facing PDF describing the current topology in plain English (traffic sources, maps, filters, GigaSMART processing, destinations), with the topology diagram and a Bill of Materials appendix, plus a physical/rack deployment appendix in Advanced Mode.",
   },
 ];
