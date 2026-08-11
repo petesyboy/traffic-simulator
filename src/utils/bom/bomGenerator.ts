@@ -311,10 +311,9 @@ export function generateBom(
     });
 
     if (model.includes('HC')) {
-      const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string }[], edges, syncedNodes);
-      gsActions.forEach(action => {
-        const gsSku = resolveGigaSmartSku(action, model, licenseMode);
-        if (gsSku) addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+      const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, syncedNodes);
+      resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {
+        addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
       });
     }
   });
@@ -440,6 +439,25 @@ function resolveGigaSmartSku(
   }
 }
 
+/**
+ * True when `action` needs a separate FlowVUE entitlement alongside its own
+ * licence, on the same Gen3 GigaSMART card. Per Gigamon's KB, GTPMAX and
+ * FlowVUE are independent entitlements that can both be licensed on one
+ * card: GTP whitelisting always needs both, and GTP flow sampling needs both
+ * for any sample rate strictly between 0% and 100% - a 0% or 100% rate
+ * needs GTPMAX alone. Unset `gtpSamplePercent` is treated as 100% (no
+ * sampling reduction configured yet), matching every other GigaSMART app's
+ * "no additional configuration required" default.
+ */
+function needsFlowVueAlongsideGtp(action: string, gtpSamplePercent: number | undefined): boolean {
+  if (action === 'GTP Whitelisting') return true;
+  if (action === 'GTP Flow Sampling') {
+    const pct = gtpSamplePercent ?? 100;
+    return pct > 0 && pct < 100;
+  }
+  return false;
+}
+
 /** Resolve the GVS-GSA110 chassis SKU for the GigaSMART Appliance (GSA), by power supply + licence mode */
 function resolveGsaChassisSku(power: string, licenseMode: 'HTL' | 'Perpetual'): string {
   const base = power === 'DC' ? 'GVS-GSA110-2DC' : 'GVS-GSA110-2AC';
@@ -490,15 +508,32 @@ function resolveGsaAppLicenseSku(
   }
 }
 
-/** Walk the graph from a given HC node and collect all GigaSMART actions */
-function resolveGsActionsFromGraph(
+interface GsAppRef {
+  actionType: string;
+  gtpSamplePercent?: number;
+}
+
+/**
+ * Walk the graph from a given HC node and collect all GigaSMART apps (as full
+ * refs, not just action-type strings) - callers that need per-app config,
+ * like GTP Flow Sampling's percentage, need more than the bare action name.
+ * Deduped by actionType, first occurrence wins.
+ */
+function resolveGsAppsFromGraph(
   nodeId: string,
-  localApps: { actionType?: string }[] | undefined,
+  localApps: { actionType?: string; gtpSamplePercent?: number }[] | undefined,
   edges: Edge[],
   nodes: CustomNode[],
-): Set<string> {
-  const gsActions = new Set<string>();
-  if (Array.isArray(localApps)) localApps.forEach((app) => app.actionType && gsActions.add(app.actionType));
+): GsAppRef[] {
+  const apps: GsAppRef[] = [];
+  const seen = new Set<string>();
+  const addApp = (actionType: string | undefined, gtpSamplePercent: number | undefined) => {
+    if (!actionType || seen.has(actionType)) return;
+    seen.add(actionType);
+    apps.push({ actionType, gtpSamplePercent });
+  };
+
+  if (Array.isArray(localApps)) localApps.forEach((app) => addApp(app.actionType, app.gtpSamplePercent));
 
   const visited = new Set<string>([nodeId]);
   const queue = [nodeId];
@@ -509,13 +544,35 @@ function resolveGsActionsFromGraph(
         visited.add(e.target);
         const targetNode = nodes.find(n => n.id === e.target);
         if (targetNode) {
-          if (targetNode.type === 'gigaSmartNode' && targetNode.data?.actionType) gsActions.add(targetNode.data.actionType);
+          if (targetNode.type === 'gigaSmartNode' && targetNode.data?.actionType) {
+            addApp(targetNode.data.actionType as string, targetNode.data?.gtpSamplePercent as number | undefined);
+          }
           if (targetNode.type !== 'hardwareNode') queue.push(e.target);
         }
       }
     });
   }
-  return gsActions;
+  return apps;
+}
+
+/**
+ * Resolve the full, deduplicated set of GigaSMART licence SKUs a node's apps
+ * need - including a FlowVUE entitlement implied by GTP whitelisting/sampling
+ * even when the user hasn't separately dropped an IP FlowVUE app (and without
+ * double-counting it when they have, since this is a Set).
+ */
+function resolveGsLicenseSkus(apps: GsAppRef[], model: string, licenseMode: 'HTL' | 'Perpetual'): Set<string> {
+  const skus = new Set<string>();
+  apps.forEach((app) => {
+    const sku = resolveGigaSmartSku(app.actionType, model, licenseMode);
+    if (!sku) return; // Chassis doesn't support this action at all - no implied FlowVUE either.
+    skus.add(sku);
+    if (needsFlowVueAlongsideGtp(app.actionType, app.gtpSamplePercent)) {
+      const fvuSku = resolveGigaSmartSku('IP FlowVUE', model, licenseMode);
+      if (fvuSku) skus.add(fvuSku);
+    }
+  });
+  return skus;
 }
 
 export function generateSingleNodeBom(
@@ -619,10 +676,9 @@ export function generateSingleNodeBom(
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
   ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic'); });
   if (model.includes('HC')) {
-    const gsActions = resolveGsActionsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string }[], edges, nodes);
-    gsActions.forEach(action => {
-      const gsSku = resolveGigaSmartSku(action, model, licenseMode);
-      if (gsSku) addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+    const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, nodes);
+    resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {
+      addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
     });
   }
   return Object.values(rowMap);

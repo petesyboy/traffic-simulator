@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.517",
+    date: "2026-08-11",
+    summary: "Fixed GigaSMART compatibility rules that wrongly refused combining FlowVUE with GTP Flow Filtering/Whitelisting/Flow Sampling on the same Gen3 card - per Gigamon's KB, they're separate entitlements that can coexist. Also modelled the licensing correctly: GTP whitelisting always needs both GTPMAX and FlowVUE, and GTP flow sampling needs both for any sample rate strictly between 0% and 100% (0% or 100% needs GTPMAX alone) - added a sample-rate control to the GigaSMART app panel that shows the licensing impact live.",
+  },
+  {
     version: "1.0.516",
     date: "2026-08-11",
     summary: "Added IP FlowVUE and GTP Flow Filtering to the Applications palette, so they can be dragged onto an HC chassis like any other GigaSMART function and picked up correctly in the Bill of Materials.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.498",
     date: "2026-08-07",
     summary: "The PDF report now explains the domain, not just the topology: each TAP lists its fibre type, SFP, and the chassis/optics it plugs into; Traffic Maps get a plain-English \"Includes / Excludes\" summary; every GigaSMART function (deduplication, SSL decrypt, header stripping, etc.) gets a full description of what it does and how it protects tools from being overwhelmed; and every destination tool gets a purpose description plus what happens if it receives more traffic than it's rated for.",
-  },
-  {
-    version: "1.0.497",
-    date: "2026-08-07",
-    summary: "The PDF solution report is now far more detailed: each traffic source lists its link speed, encrypted %, matched traffic streams and what it ultimately reaches; each map/filter/GigaSMART stage lists what feeds it, what it forwards to, and (while a simulation is running) real observed throughput and reduction percentages; each destination lists which taps/SPAN sessions its traffic originates from.",
   },
 ];

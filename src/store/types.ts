@@ -233,6 +233,10 @@ export interface GigaSmartNodeData extends BaseNodeData {
   metadataRate?: number;
   decryptionRate?: number;
   sliceSize?: number;
+  /** GTP Flow Sampling only: percentage of GTP flows sampled (0-100). Per Gigamon's
+   *  KB, 0% or 100% needs only the GTPMAX license; anything strictly in between also
+   *  needs a FlowVUE entitlement on the same card. Unset is treated as 100%. */
+  gtpSamplePercent?: number;
   // GSA-only: an AMI app can add the 5G mobile protocol decoding bundle
   // (SMT-GSA110-AMI-5G-100G-*) instead of the plain AMI license.
   gsa5gDecode?: boolean;

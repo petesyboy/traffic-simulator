@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.517",
+    "date": "2026-08-11",
+    "summary": "Fixed GigaSMART compatibility rules that wrongly refused combining FlowVUE with GTP Flow Filtering/Whitelisting/Flow Sampling on the same Gen3 card - per Gigamon's KB, they're separate entitlements that can coexist. Also modelled the licensing correctly: GTP whitelisting always needs both GTPMAX and FlowVUE, and GTP flow sampling needs both for any sample rate strictly between 0% and 100% (0% or 100% needs GTPMAX alone) - added a sample-rate control to the GigaSMART app panel that shows the licensing impact live."
+  },
+  {
     "version": "1.0.516",
     "date": "2026-08-11",
     "summary": "Added IP FlowVUE and GTP Flow Filtering to the Applications palette, so they can be dragged onto an HC chassis like any other GigaSMART function and picked up correctly in the Bill of Materials."

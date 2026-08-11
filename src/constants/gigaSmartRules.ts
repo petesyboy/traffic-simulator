@@ -313,17 +313,21 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
     'De-Dup', 'A SF', 'AFI (ASF)'
   ],
   'FlowVUE': [
-    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing'
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF',
+    'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing',
+    // Per Gigamon KB: GTPMAX and FlowVUE are separate feature entitlements
+    // that can both be licensed on the same Gen3 GigaSMART card - GTP flow
+    // sampling (0-100%) and GTP whitelisting specifically require both.
+    'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling'
   ],
   'GTP Flow Filter': [
-    'Load Balance', 'GTP Whitelist', 'Slicing'
+    'Load Balance', 'GTP Whitelist', 'Slicing', 'FlowVUE'
   ],
   'GTP Whitelist': [
-    'Load Balance', 'GTP Flow Filter', 'Slicing'
+    'Load Balance', 'GTP Flow Filter', 'Slicing', 'FlowVUE'
   ],
   'GTP Flow Sampling': [
-    'Load Balance', 'Slicing'
+    'Load Balance', 'Slicing', 'FlowVUE'
   ],
   'Strip Headers': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 

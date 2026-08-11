@@ -169,8 +169,46 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
+            {/* GTP Flow Sampling config — the sample rate decides the BOM's licensing:
+                per Gigamon's KB, 0% or 100% needs GTPMAX alone, anything in between
+                also needs a FlowVUE entitlement on the same card. */}
+            {actionType === 'GTP Flow Sampling' && (() => {
+              const pct = (app as Record<string, unknown>).gtpSamplePercent as number ?? 100;
+              const needsFlowVue = pct > 0 && pct < 100;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>GTP Flow Sample Rate (%)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={pct}
+                      onChange={e => handleUpdateApp(idx, { gtpSamplePercent: Number(e.target.value) })}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00e5ff', minWidth: '35px', textAlign: 'right', fontWeight: 'bold' }}>
+                      {pct}%
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#80cbc4', lineHeight: '1.3' }}>
+                    {needsFlowVue
+                      ? 'Licensing: GTPMAX + FlowVUE (any rate strictly between 0% and 100% needs both entitlements on this card).'
+                      : 'Licensing: GTPMAX only (0% or 100% sampling doesn\'t need a separate FlowVUE entitlement).'}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* GTP Whitelisting — always needs both entitlements, nothing to configure */}
+            {actionType === 'GTP Whitelisting' && (
+              <div style={{ fontSize: '10px', color: '#80cbc4', lineHeight: '1.3' }}>
+                Licensing: GTPMAX + FlowVUE (GTP whitelisting always needs both entitlements on this card).
+              </div>
+            )}
+
             {/* Default — no additional config */}
-            {actionType !== 'Deduplication' && actionType !== 'Dedup' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && actionType !== 'Packet Slicing' && actionType !== 'Application Filtering Intelligence' && actionType !== 'Application Visualization' && (
+            {actionType !== 'Deduplication' && actionType !== 'Dedup' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && actionType !== 'Packet Slicing' && actionType !== 'Application Filtering Intelligence' && actionType !== 'Application Visualization' && actionType !== 'GTP Flow Sampling' && actionType !== 'GTP Whitelisting' && (
               <div style={{ fontSize: '11px', color: '#aaa' }}>
                 No additional configuration required for {actionType}.
               </div>

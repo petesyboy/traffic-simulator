@@ -1151,6 +1151,63 @@ describe('Simulation Utils', () => {
       // GTP isn't offered on plain HC1 per GIGASMART_MATRIX - no licence, no crash.
       const bomHc1 = generateBom([hcNode('GigaVUE-HC1', 'GTP Whitelisting')], [], 'HTL', '36');
       expect(bomHc1.filter(r => r.type === 'License' && r.sku.includes('GTPMAX'))).toHaveLength(0);
+      // No GTPMAX means no implied FlowVUE either - even though plain HC1 does
+      // support IP FlowVUE on its own, it shouldn't appear just because an
+      // unsupported GTP action happened to be present in the node's data.
+      expect(bomHc1.filter(r => r.type === 'License' && r.sku.includes('FVU'))).toHaveLength(0);
+    });
+
+    // Regression: per Gigamon's KB, GTPMAX and FlowVUE are separate feature
+    // entitlements that can both be licensed on the same Gen3 GigaSMART card.
+    // GTP whitelisting always needs both; GTP flow sampling only needs both
+    // for a rate strictly between 0% and 100% - 0% or 100% needs GTPMAX alone.
+    it('quotes an implied FlowVUE licence alongside GTPMAX for GTP whitelisting and mid-range GTP flow sampling', () => {
+      const hc3Node = (actionType: string, gtpSamplePercent?: number): CustomNode => ({
+        id: 'hc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'HC3', configType: 'HC', model: 'GigaVUE-HC3', gigaSmartApps: [{ id: 'app-0', label: actionType, actionType, gtpSamplePercent }] },
+      });
+
+      // Whitelisting: always both, regardless of any sample-percent field.
+      const bomWhitelist = generateBom([hc3Node('GTP Whitelisting')], [], 'HTL', '36');
+      expect(bomWhitelist.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM')?.qty).toBe(1);
+      expect(bomWhitelist.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM')?.qty).toBe(1);
+
+      // Flow sampling at 50%: both.
+      const bom50 = generateBom([hc3Node('GTP Flow Sampling', 50)], [], 'HTL', '36');
+      expect(bom50.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM')?.qty).toBe(1);
+      expect(bom50.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM')?.qty).toBe(1);
+
+      // Flow sampling at 0% or 100%: GTPMAX only, no FlowVUE.
+      for (const pct of [0, 100]) {
+        const bom = generateBom([hc3Node('GTP Flow Sampling', pct)], [], 'HTL', '36');
+        expect(bom.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM')?.qty, `${pct}%`).toBe(1);
+        expect(bom.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM'), `${pct}%`).toBeUndefined();
+      }
+
+      // Unset gtpSamplePercent is treated as 100% - GTPMAX only, matching the
+      // "no additional configuration required" default of every other app.
+      const bomUnset = generateBom([hc3Node('GTP Flow Sampling')], [], 'HTL', '36');
+      expect(bomUnset.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM')?.qty).toBe(1);
+      expect(bomUnset.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM')).toBeUndefined();
+
+      // Explicitly adding a separate IP FlowVUE app alongside doesn't double
+      // the FlowVUE licence quantity - it's the same card-level entitlement.
+      const bomBoth: CustomNode = {
+        id: 'hc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'HC3', configType: 'HC', model: 'GigaVUE-HC3',
+          gigaSmartApps: [
+            { id: 'app-0', label: 'GTP Whitelisting', actionType: 'GTP Whitelisting' },
+            { id: 'app-1', label: 'IP FlowVUE', actionType: 'IP FlowVUE' },
+          ],
+        },
+      };
+      const bomCombined = generateBom([bomBoth], [], 'HTL', '36');
+      expect(bomCombined.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM')?.qty).toBe(1);
     });
   });
 
