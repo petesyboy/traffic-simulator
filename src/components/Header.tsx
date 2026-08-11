@@ -379,15 +379,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             {/* ── Group 3: File Operations ── */}
             <div className="control-group">
-              <button className="header-btn" onClick={onSaveFileClick} title="Save project to a .json file">
-                <SaveIcon /> Save
+              <button className="header-btn" onClick={onSaveFileClick} title="Export project to a .json file">
+                <SaveIcon /> Export
               </button>
               <label
                 className="header-btn"
                 style={{ cursor: 'pointer', margin: 0 }}
-                title="Load project from a .json file"
+                title="Import project from a .json file"
               >
-                <FolderOpenIcon /> Load
+                <FolderOpenIcon /> Import
                 <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
               </label>
 

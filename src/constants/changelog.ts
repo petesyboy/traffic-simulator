@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.515",
+    date: "2026-08-11",
+    summary: "Renamed the disk save/load buttons to Export and Import, to better describe what they do (Browser Save/Browser Load are unchanged).",
+  },
+  {
     version: "1.0.514",
     date: "2026-08-11",
     summary: "Fixed the BOM silently omitting a license when a GigaSMART app was set to IP FlowVUE or any GTP function (Flow Filtering, Rotational Sampling, Whitelisting, Flow Sampling) - the SKUs existed but the BOM engine had no mapping for those functions. Now correctly quotes the FlowVUE or GTP Filtering & Correlation (GTPMAX) license per chassis and license mode.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.496",
     date: "2026-08-07",
     summary: "Added a Generate Report button - produces a customer-facing PDF describing the current topology in plain English (traffic sources, maps, filters, GigaSMART processing, destinations), with the topology diagram and a Bill of Materials appendix, plus a physical/rack deployment appendix in Advanced Mode.",
-  },
-  {
-    version: "1.0.495",
-    date: "2026-08-07",
-    summary: "The Optics tab now lets you pick an exact port to install into, instead of only auto-assigning to the next free one - an optional \"Target Port\" dropdown appears once a board is chosen, and picking one there pins that specific optic to that specific port.",
   },
 ];
