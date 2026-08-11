@@ -93,13 +93,24 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
             top: `${abs.y * 100}%`,
             width: `${abs.width * 100}%`,
             height: `${abs.height * 100}%`,
-            background: 'rgba(0, 30, 20, 0.55)',
-            border: '1px solid rgba(102, 255, 178, 0.85)',
+            // Blue + a checkmark glyph rather than a green outline: blue-on-orange
+            // keeps working under red-green colour vision deficiency (protanopia/
+            // deuteranopia), where green markers can wash out against this chassis
+            // orange, and the glyph means "fitted" doesn't rely on colour at all.
+            background: 'rgba(0, 40, 90, 0.6)',
+            border: '2px solid #29b6f6',
             borderRadius: '2px',
             boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             pointerEvents: 'auto',
           }}
-        />
+        >
+          <svg viewBox="0 0 24 24" style={{ width: '65%', height: '65%' }} fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="4 12 10 18 20 6" />
+          </svg>
+        </div>
       );
     })}
   </div>

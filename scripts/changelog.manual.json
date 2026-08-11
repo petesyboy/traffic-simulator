@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.513",
+    "date": "2026-08-11",
+    "summary": "Extended the front-panel optic-occupancy overlay to GigaVUE-HC1-Plus and the GigaVUE-HC3 module family (PRT-HC3-X24, PRT-HC3-C16, PRT-HC3-C08Q08, SMT-HC3-C08, SMT-HC3-C05). Also switched the \"fitted\" marker from a green outline to a blue box with a checkmark, so it reads clearly under red-green colour vision deficiency and doesn't rely on colour alone."
+  },
+  {
     "version": "1.0.512",
     "date": "2026-08-10",
     "summary": "Fixed a bug where installing optics against a chassis module (e.g. a second board in Slot 3) could silently land them on a different, currently-fitted module's still-empty cages instead (e.g. Slot 2) - the port assignment logic mistook an installed-but-optic-free board for one that had been swapped out. Also added an optic-occupancy overlay to the HC1 front-panel graphic in the chassis summary dialog, showing which cages are actually fitted (currently calibrated for the base chassis plus the PRT-HC1-Q04X08 and PRT-HC1-X12 modules)."

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.513",
+    date: "2026-08-11",
+    summary: "Extended the front-panel optic-occupancy overlay to GigaVUE-HC1-Plus and the GigaVUE-HC3 module family (PRT-HC3-X24, PRT-HC3-C16, PRT-HC3-C08Q08, SMT-HC3-C08, SMT-HC3-C05). Also switched the \"fitted\" marker from a green outline to a blue box with a checkmark, so it reads clearly under red-green colour vision deficiency and doesn't rely on colour alone.",
+  },
+  {
     version: "1.0.512",
     date: "2026-08-10",
     summary: "Fixed a bug where installing optics against a chassis module (e.g. a second board in Slot 3) could silently land them on a different, currently-fitted module's still-empty cages instead (e.g. Slot 2) - the port assignment logic mistook an installed-but-optic-free board for one that had been swapped out. Also added an optic-occupancy overlay to the HC1 front-panel graphic in the chassis summary dialog, showing which cages are actually fitted (currently calibrated for the base chassis plus the PRT-HC1-Q04X08 and PRT-HC1-X12 modules).",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.494",
     date: "2026-08-07",
     summary: "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited.",
-  },
-  {
-    version: "1.0.493",
-    date: "2026-08-07",
-    summary: "The optic picker's LC-side guard now works too - once a cage is wired to one of a breakout panel's 4 lower-speed legs, only the optics matching that group's actual speed/fibre tier (derived from whatever's fitted on the panel's high-speed side) are offered.",
   },
 ];
