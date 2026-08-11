@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.514",
+    date: "2026-08-11",
+    summary: "Fixed the BOM silently omitting a license when a GigaSMART app was set to IP FlowVUE or any GTP function (Flow Filtering, Rotational Sampling, Whitelisting, Flow Sampling) - the SKUs existed but the BOM engine had no mapping for those functions. Now correctly quotes the FlowVUE or GTP Filtering & Correlation (GTPMAX) license per chassis and license mode.",
+  },
+  {
     version: "1.0.513",
     date: "2026-08-11",
     summary: "Extended the front-panel optic-occupancy overlay to GigaVUE-HC1-Plus and the GigaVUE-HC3 module family (PRT-HC3-X24, PRT-HC3-C16, PRT-HC3-C08Q08, SMT-HC3-C08, SMT-HC3-C05). Also switched the \"fitted\" marker from a green outline to a blue box with a checkmark, so it reads clearly under red-green colour vision deficiency and doesn't rely on colour alone.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.495",
     date: "2026-08-07",
     summary: "The Optics tab now lets you pick an exact port to install into, instead of only auto-assigning to the next free one - an optional \"Target Port\" dropdown appears once a board is chosen, and picking one there pins that specific optic to that specific port.",
-  },
-  {
-    version: "1.0.494",
-    date: "2026-08-07",
-    summary: "Fixed the breakout-panel optic guard blocking unrelated SFPs: on a chassis where one board carries both SFP and QSFP cages, wiring a single QSFP cage to a breakout panel no longer restricts that board's SFP cages too - only the specific cage family actually feeding the panel is limited.",
   },
 ];

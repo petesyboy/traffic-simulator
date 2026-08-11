@@ -1112,6 +1112,46 @@ describe('Simulation Utils', () => {
       expect(upgradeRowHTL).toBeDefined();
       expect(upgradeRowHTL?.qty).toBe(1);
     });
+
+    // Regression: 'IP FlowVUE' and the GTP action types are selectable GigaSMART
+    // functions (see GIGASMART_MATRIX) with real SKUs already in skus.json, but
+    // resolveGigaSmartSku's switch had no case for them - selecting either action
+    // silently produced no licence row at all.
+    it('quotes a FlowVUE licence for a GigaSMART app hosted on an HC chassis', () => {
+      const hc3Node = (gigaSmartApps: { actionType: string }[]): CustomNode => ({
+        id: 'hc3-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'HC3', configType: 'HC', model: 'GigaVUE-HC3', gigaSmartApps: gigaSmartApps.map((a, i) => ({ id: `app-${i}`, label: a.actionType, ...a })) },
+      });
+
+      const bomHTL = generateBom([hc3Node([{ actionType: 'IP FlowVUE' }])], [], 'HTL', '36');
+      expect(bomHTL.find(r => r.sku === 'SMT-HC3-GEN3-FVU-SW-TM')?.qty).toBe(1);
+
+      const bomPerpetual = generateBom([hc3Node([{ actionType: 'IP FlowVUE' }])], [], 'Perpetual', '36');
+      expect(bomPerpetual.find(r => r.sku === 'SMT-HC3-GEN3-FVU')?.qty).toBe(1);
+    });
+
+    it('quotes the GTPMAX licence for every GTP action type, on both HC3 and HC1-Plus', () => {
+      const hcNode = (model: string, actionType: string): CustomNode => ({
+        id: 'hc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: model, configType: 'HC', model, gigaSmartApps: [{ id: 'app-0', label: actionType, actionType }] },
+      });
+
+      for (const actionType of ['GTP Flow Filtering', 'GTP Rotational Sampling', 'GTP Whitelisting', 'GTP Flow Sampling']) {
+        const bom = generateBom([hcNode('GigaVUE-HC3', actionType)], [], 'HTL', '36');
+        expect(bom.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM')?.qty, `HC3 / ${actionType}`).toBe(1);
+      }
+
+      const bomHc1Plus = generateBom([hcNode('GigaVUE-HC1-Plus', 'GTP Whitelisting')], [], 'Perpetual', '36');
+      expect(bomHc1Plus.find(r => r.sku === 'SMT-HC1P-GEN3-GTPMAX-PL')?.qty).toBe(1);
+
+      // GTP isn't offered on plain HC1 per GIGASMART_MATRIX - no licence, no crash.
+      const bomHc1 = generateBom([hcNode('GigaVUE-HC1', 'GTP Whitelisting')], [], 'HTL', '36');
+      expect(bomHc1.filter(r => r.type === 'License' && r.sku.includes('GTPMAX'))).toHaveLength(0);
+    });
   });
 
   describe('GigaSMART Appliance (GSA) BOM', () => {

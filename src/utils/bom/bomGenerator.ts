@@ -420,6 +420,21 @@ function resolveGigaSmartSku(
       if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-AMI-SW-TM' : 'SMT-HC1P-GEN3-AMI-PL';
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-AMI-SW-TM' : 'SMT-HC3-GEN3-AMI';
       return '';
+    case 'IP FlowVUE':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-FVU-SW-TM' : 'SMT-HC1-FVU';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-FVU-SW-TM' : 'SMT-HC1P-GEN3-FVU-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-FVU-SW-TM' : 'SMT-HC3-GEN3-FVU';
+      return '';
+    // GTP Filtering, Whitelisting and Sampling all draw on the same "maximum
+    // subscribers" GTP Filtering & Correlation licence - Gigamon doesn't sell
+    // them as separate SKUs. Not offered on plain HC1 (see GIGASMART_MATRIX).
+    case 'GTP Flow Filtering':
+    case 'GTP Rotational Sampling':
+    case 'GTP Whitelisting':
+    case 'GTP Flow Sampling':
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-GTPMAX-SW-TM' : 'SMT-HC1P-GEN3-GTPMAX-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-GTPMAX-SW-TM' : 'SMT-HC3-GEN3-GTPMAX';
+      return '';
     default:
       return '';
   }
