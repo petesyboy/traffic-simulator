@@ -357,6 +357,9 @@ export interface RFState {
   isTradeShowDemoActive: boolean;
   tradeShowDemoStep: number;
   tradeShowDemoStatus: string;
+  isMissionDemoActive: boolean;
+  missionDemoStep: number;
+  missionDemoStatus: string;
   skuCatalogueVersion: number;
 
   // Actions
@@ -366,6 +369,9 @@ export interface RFState {
   setTradeShowDemoActive: (active: boolean) => void;
   setTradeShowDemoStep: (step: number) => void;
   setTradeShowDemoStatus: (status: string) => void;
+  setMissionDemoActive: (active: boolean) => void;
+  setMissionDemoStep: (step: number) => void;
+  setMissionDemoStatus: (status: string) => void;
   bumpSkuCatalogueVersion: () => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;

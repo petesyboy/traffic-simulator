@@ -1,13 +1,15 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.517",
+    "version": "1.0.518",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "prebuild": "node scripts/generate-changelog.mjs",
         "build": "tsc -b && vite build",
+        "postbuild": "node scripts/generate-checksums.mjs dist/index.html",
         "changelog": "node scripts/generate-changelog.mjs",
+        "checksums": "node scripts/generate-checksums.mjs",
         "lint": "eslint .",
         "test": "vitest",
         "preview": "vite preview",

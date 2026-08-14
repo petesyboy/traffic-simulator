@@ -78,6 +78,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const duplicateSolution = useStore((state) => state.duplicateSolution);
   const isTradeShowDemoActive = useStore((state) => state.isTradeShowDemoActive);
   const setTradeShowDemoActive = useStore((state) => state.setTradeShowDemoActive);
+  const isMissionDemoActive = useStore((state) => state.isMissionDemoActive);
+  const setMissionDemoActive = useStore((state) => state.setMissionDemoActive);
   const canUndo = useStore((state) => state.historyPast.length > 0);
   const canRedo = useStore((state) => state.historyFuture.length > 0);
   const undo = useStore((state) => state.undo);
@@ -338,6 +340,24 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   ) : (
                     <>
                       <PresentationIcon /> Auto Demo
+                    </>
+                  )}
+                </button>
+              )}
+
+              {advancedMode && (
+                <button
+                  className={`header-btn ${isMissionDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
+                  onClick={() => setMissionDemoActive(!isMissionDemoActive)}
+                  title="Toggle Mission (Before/After Visibility) Demonstration"
+                >
+                  {isMissionDemoActive ? (
+                    <>
+                      <StopIcon /> Stop Mission Demo
+                    </>
+                  ) : (
+                    <>
+                      <PresentationIcon /> Mission Demo
                     </>
                   )}
                 </button>

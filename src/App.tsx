@@ -39,6 +39,7 @@ import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TradeShowDemo } from './components/TradeShowDemo';
+import { MissionDemo } from './components/MissionDemo';
 import './App.css';
 import pkg from '../package.json';
 
@@ -632,6 +633,7 @@ function App() {
       <div className="main-content">
         <ReactFlowProvider>
           <TradeShowDemo />
+          <MissionDemo />
           <Sidebar />
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             {activeView === 'rack' ? (

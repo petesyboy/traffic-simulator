@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.518",
+    date: "2026-08-14",
+    summary: "Added a second auto-playing demo, \"Mission Demo\", based on the \"Our Long-Time Mission\" sales slide: animates a chaotic network (routers, core/dist/access switches wired directly to 10 separate point security tools with crossing connections) collapsing into a single Gigamon Deep Observability Pipeline with one clean connection per tool, then runs the traffic simulation to show it working end to end before looping. Toggled independently from the existing Auto Demo via a new header button in Advanced Mode.",
+  },
+  {
     version: "1.0.517",
     date: "2026-08-11",
     summary: "Fixed GigaSMART compatibility rules that wrongly refused combining FlowVUE with GTP Flow Filtering/Whitelisting/Flow Sampling on the same Gen3 card - per Gigamon's KB, they're separate entitlements that can coexist. Also modelled the licensing correctly: GTP whitelisting always needs both GTPMAX and FlowVUE, and GTP flow sampling needs both for any sample rate strictly between 0% and 100% (0% or 100% needs GTPMAX alone) - added a sample-rate control to the GigaSMART app panel that shows the licensing impact live.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.499",
     date: "2026-08-07",
     summary: "The PDF report now describes what each TA/HC appliance actually does (aggregation-only vs. onboard GigaSMART processing), and fixed a bug where a TAP-M100T/M200T tray - a passive mounting tray, not a fibre-terminating unit - was incorrectly shown with a multimode/singlemode fibre claim.",
-  },
-  {
-    version: "1.0.498",
-    date: "2026-08-07",
-    summary: "The PDF report now explains the domain, not just the topology: each TAP lists its fibre type, SFP, and the chassis/optics it plugs into; Traffic Maps get a plain-English \"Includes / Excludes\" summary; every GigaSMART function (deduplication, SSL decrypt, header stripping, etc.) gets a full description of what it does and how it protects tools from being overwhelmed; and every destination tool gets a purpose description plus what happens if it receives more traffic than it's rated for.",
   },
 ];

@@ -8,6 +8,9 @@ export interface UISlice {
   isTradeShowDemoActive: boolean;
   tradeShowDemoStep: number;
   tradeShowDemoStatus: string;
+  isMissionDemoActive: boolean;
+  missionDemoStep: number;
+  missionDemoStatus: string;
   /** Bumped whenever the uploaded SKU price list override changes, so mounted
    *  components re-read getSkus()/getSkusMetadata() without a page reload. */
   skuCatalogueVersion: number;
@@ -18,6 +21,9 @@ export interface UISlice {
   setTradeShowDemoActive: (active: boolean) => void;
   setTradeShowDemoStep: (step: number) => void;
   setTradeShowDemoStatus: (status: string) => void;
+  setMissionDemoActive: (active: boolean) => void;
+  setMissionDemoStep: (step: number) => void;
+  setMissionDemoStatus: (status: string) => void;
   bumpSkuCatalogueVersion: () => void;
 }
 
@@ -28,6 +34,9 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
   isTradeShowDemoActive: false,
   tradeShowDemoStep: 0,
   tradeShowDemoStatus: '',
+  isMissionDemoActive: false,
+  missionDemoStep: 0,
+  missionDemoStatus: '',
   skuCatalogueVersion: 0,
 
   setActiveView: (view) => set({ activeView: view }),
@@ -36,5 +45,8 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
   setTradeShowDemoActive: (active) => set({ isTradeShowDemoActive: active }),
   setTradeShowDemoStep: (step) => set({ tradeShowDemoStep: step }),
   setTradeShowDemoStatus: (status) => set({ tradeShowDemoStatus: status }),
+  setMissionDemoActive: (active) => set({ isMissionDemoActive: active }),
+  setMissionDemoStep: (step) => set({ missionDemoStep: step }),
+  setMissionDemoStatus: (status) => set({ missionDemoStatus: status }),
   bumpSkuCatalogueVersion: () => set({ skuCatalogueVersion: get().skuCatalogueVersion + 1 }),
 });
