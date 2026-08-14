@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.522",
+    date: "2026-08-14",
+    summary: "Removed the misleading \"Delivered to Tools\" figure from the Global Pipeline Dashboard - it summed traffic across every packet-consuming tool, so it inflated with fan-out (5 tools receiving the same stream looked like 5x the traffic). Traffic Volume Reduction is now calculated directly from what's actually deduped/filtered relative to ingest, instead of ingest-minus-delivered, which also fixes it being stuck at 0.0% even when real reduction was happening.",
+  },
+  {
     version: "1.0.521",
     date: "2026-08-14",
     summary: "Mission Demo now has a visible payoff at the pipeline: it drops a legacy VLAN 999 noise stream and deduplicates the rest (25%) on its own onboard engine, so the node's In/Out numbers and the dashboard's Deduped/Filtered figures actually move. Also removed the \"HC1-Plus\" model label from the pipeline node for this demo, since it's meant to represent the concept, not a specific appliance.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.503",
     date: "2026-08-08",
     summary: "The PDF report's Hardware section now shows each TA/HC chassis's front-panel photo, with installed modules composited into their real slot positions, underneath its description - the same graphic shown in the on-canvas hardware summary popup.",
-  },
-  {
-    version: "1.0.502",
-    date: "2026-08-07",
-    summary: "Fixed the PDF report's Traffic Maps count: every TA/HC chassis runs its own onboard flow map even without a separate Map node dragged out for it, so each one now counts alongside any explicit Traffic Map nodes. Also removed the Total Simulated Traffic line from the Executive Summary.",
   },
 ];

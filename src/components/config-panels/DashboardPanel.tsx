@@ -10,19 +10,18 @@ interface DashboardPanelProps {
 export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => {
   const nodes           = useStore((state) => state.nodes);
   const nodeMetrics     = useStore((state) => state.nodeMetrics);
-  const uniqueEgressMbps = useStore((state) => state.uniqueEgressMbps);
 
   let totalIngest = 0;
   let totalDedupDrops = 0;
   let totalFilterDrops = 0;
-  
+
   nodes.forEach((n) => {
     const metric = nodeMetrics[n.id];
     if (!metric) return;
-    
+
     totalDedupDrops += metric.dedupDroppedMbps || 0;
     totalFilterDrops += metric.filterDroppedMbps || 0;
-    
+
     if (
       n.type === NODE_TYPES.INPUT ||
       (n.type === NODE_TYPES.HARDWARE && typeof n.data?.model === 'string' && n.data.model.includes('TAP'))
@@ -31,9 +30,10 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
     }
   });
 
-  const totalEgress = uniqueEgressMbps;
-
-  const reductionRaw     = Math.max(0, totalIngest - totalEgress);
+  // Reduction is what was actually dropped (dedup + filter) relative to
+  // ingest - not ingest-minus-delivered, since "delivered" is a fan-out
+  // total that multiplies with tool count and isn't a meaningful baseline.
+  const reductionRaw     = totalDedupDrops + totalFilterDrops;
   const reductionPercent = totalIngest > 0 ? (reductionRaw / totalIngest) * 100 : 0;
 
   return (
@@ -74,12 +74,6 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
             <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', overflow: 'hidden', marginTop: '6px' }}>
               <div style={{ height: '100%', width: `${reductionPercent}%`, background: 'linear-gradient(90deg, #ff9100 0%, #ff5d00 100%)', borderRadius: '3px', transition: 'width 0.3s ease' }} />
             </div>
-          </div>
-
-          <div style={{ padding: '12px 16px', background: 'rgba(37, 179, 75, 0.03)', borderRadius: '6px', border: '1px solid rgba(37, 179, 75, 0.15)', borderLeft: '4px solid var(--color-tool)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Delivered to Tools</div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', fontFamily: 'monospace' }}>{formatBandwidth(totalEgress)}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{formatPackets(totalEgress * 250)} packet rate</div>
           </div>
 
           <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.01)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', marginTop: '10px' }}>
