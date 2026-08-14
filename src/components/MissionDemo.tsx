@@ -198,10 +198,19 @@ export const MissionDemo: React.FC = () => {
             height: 150,
             data: {
               label: 'Deep Observability Pipeline',
-              model: 'HC1-Plus',
+              model: 'HC1-Plus', // Kept internally for capacity/port math - not shown (hideModelLabel)
+              hideModelLabel: true,
               configType: 'Chassis',
               installedBoards: { 'Slot 1': 'HC1-Plus Base' },
-              optics: [{ board: 'Base', optic: 'SFP-532', qty: 24 }]
+              optics: [{ board: 'Base', optic: 'SFP-532', qty: 24 }],
+              // The visible payoff: drop the VLAN 999 noise stream outright,
+              // then deduplicate whatever's left - both run on the pipeline's
+              // own onboard engine, same as a real GigaVUE chassis, so
+              // "TRAFFIC VOLUME REDUCTION" on the dashboard actually moves.
+              conditions: [{ field: 'vlan', value: '999', action: 'drop' }],
+              gigaSmartApps: [
+                { id: 'mission-dedup', label: 'Packet Deduplication', actionType: 'Deduplication', dedupRate: 25 }
+              ]
             }
           });
           fitTargets = [{ id: 'mission-pipeline' }];
@@ -209,7 +218,7 @@ export const MissionDemo: React.FC = () => {
           break;
 
         case 7: {
-          setDemoStatus('After: Visibility delivers Security, Efficiency, and Agility.');
+          setDemoStatus('After: Filtering VLAN 999 noise and deduplicating traffic before it ever reaches a tool.');
           const converge = INFRA_NODES.map((n, i) => ({
             id: `mission-ce${i + 1}`,
             source: `mission-${n.id}`,
@@ -257,6 +266,24 @@ export const MissionDemo: React.FC = () => {
             portDst: '443',
             protocol: 'tcp',
             bandwidth: 9000,
+            active: true,
+            drift: 1,
+            lastDriftUpdate: 0
+          });
+          // Legacy broadcast/multicast noise on VLAN 999 - deliberately
+          // filtered out by the pipeline's conditions rule (case 6), so this
+          // stream is the visible "before" cost that disappears in the dashboard.
+          addTrafficStream({
+            id: 'mission-ts-3',
+            name: 'Dist SW1 - Legacy Broadcast Noise, VLAN 999 (6.0 Gbps)',
+            sourceNodeId: 'mission-distsw1',
+            vlan: '999',
+            ipSrc: '10.30.1.1',
+            ipDst: '255.255.255.255',
+            portSrc: '17500',
+            portDst: '17500',
+            protocol: 'udp',
+            bandwidth: 6000,
             active: true,
             drift: 1,
             lastDriftUpdate: 0

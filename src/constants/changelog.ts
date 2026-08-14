@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.521",
+    date: "2026-08-14",
+    summary: "Mission Demo now has a visible payoff at the pipeline: it drops a legacy VLAN 999 noise stream and deduplicates the rest (25%) on its own onboard engine, so the node's In/Out numbers and the dashboard's Deduped/Filtered figures actually move. Also removed the \"HC1-Plus\" model label from the pipeline node for this demo, since it's meant to represent the concept, not a specific appliance.",
+  },
+  {
     version: "1.0.520",
     date: "2026-08-14",
     summary: "Mission Demo polish: the Deep Observability Pipeline node is now bigger with its own zoomed-in reveal so its label is actually readable; suppressed the false \"Ingest Overloaded\" warnings the ten generic tool nodes triggered the instant traffic started (they had no vendor ingest profile, so they defaulted to a 10 Gbps ceiling against the demo's ~27 Gbps fan-out); hid the Bill of Materials button while the demo is running; and made the Mission Demo button visible in Standard View so it no longer requires switching to Advanced Mode first.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.502",
     date: "2026-08-07",
     summary: "Fixed the PDF report's Traffic Maps count: every TA/HC chassis runs its own onboard flow map even without a separate Map node dragged out for it, so each one now counts alongside any explicit Traffic Map nodes. Also removed the Total Simulated Traffic line from the Executive Summary.",
-  },
-  {
-    version: "1.0.501",
-    date: "2026-08-07",
-    summary: "The GigaSMART Processing section of the PDF report is now much more detailed - every function gets a fuller explanation of its mechanism and the concrete benefit of using it, drawn from Gigamon's own GigaSMART data sheet.",
   },
 ];

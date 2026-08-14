@@ -193,7 +193,11 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', marginTop: '2px' }}>
-          <div className="node-type-label" style={{ display: 'block', color: '#ff9800', fontWeight: 'bold', margin: 0 }}>{model}</div>
+          {/* hideModelLabel: opt-in per node (e.g. Mission Demo's pipeline) for
+              contexts that don't want to surface a specific appliance model. */}
+          {!data.hideModelLabel && (
+            <div className="node-type-label" style={{ display: 'block', color: '#ff9800', fontWeight: 'bold', margin: 0 }}>{model}</div>
+          )}
           {advancedMode && resolved.advSku && (
             <span style={{
               fontSize: '8px',
