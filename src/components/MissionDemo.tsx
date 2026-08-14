@@ -56,6 +56,17 @@ const TOOL_X = 1700;
 const PIPELINE_X = 880;
 const PIPELINE_Y = 690;
 
+// Split into readable-sized groups for the zoomed-in "here's what these are"
+// reveal - fitting all 14 infra nodes (or all 10 tools) into frame at once
+// zooms out too far for labels/icons to read, so pan through smaller chunks.
+const INFRA_GROUP_A = INFRA_NODES.slice(0, 7); // Routers + Core/Dist switches
+const INFRA_GROUP_B = INFRA_NODES.slice(7); // Access1-8
+const TOOL_GROUP_A = TOOL_NODES.slice(0, 5);
+const TOOL_GROUP_B = TOOL_NODES.slice(5);
+
+const toFitTargets = (nodes: Array<{ id: string }>, prefix: string) =>
+  nodes.map((n) => ({ id: `${prefix}${n.id}` }));
+
 export const MissionDemo: React.FC = () => {
   const isDemoActive = useStore((s) => s.isMissionDemoActive);
   const demoStatus = useStore((s) => s.missionDemoStatus);
@@ -101,6 +112,11 @@ export const MissionDemo: React.FC = () => {
       }
       setCountdown(0);
 
+      // Set by a case below to scope this step's post-switch fitView to a
+      // subset of nodes (for a zoomed-in, readable reveal) instead of the
+      // whole canvas. Left undefined = fit everything currently on canvas.
+      let fitTargets: Array<{ id: string }> | undefined;
+
       switch (step) {
         case 0:
           setDemoStatus('Initializing Mission Demo... Cleaning canvas...');
@@ -111,7 +127,7 @@ export const MissionDemo: React.FC = () => {
           break;
 
         case 1:
-          setDemoStatus('The Challenge: Complexity...');
+          setDemoStatus('The Challenge: Complexity - Routers & Core/Dist switches, each needing their own tool feeds...');
           INFRA_NODES.forEach((n) => {
             addNode({
               id: `mission-${n.id}`,
@@ -120,11 +136,18 @@ export const MissionDemo: React.FC = () => {
               data: { label: n.label, configType: n.configType }
             });
           });
-          timerRef.current = setTimeout(() => runStep(2), 2500);
+          fitTargets = toFitTargets(INFRA_GROUP_A, 'mission-');
+          timerRef.current = setTimeout(() => runStep(2), 3000);
           break;
 
         case 2:
-          setDemoStatus('...connecting directly to a fragmented toolchain of point security tools...');
+          setDemoStatus('...and 8 Access switches, every one wired directly into the tangle...');
+          fitTargets = toFitTargets(INFRA_GROUP_B, 'mission-');
+          timerRef.current = setTimeout(() => runStep(3), 3000);
+          break;
+
+        case 3:
+          setDemoStatus('...connecting directly to a fragmented toolchain: Firewall, DLP, WAF, NDR, APM...');
           TOOL_NODES.forEach((t) => {
             addNode({
               id: `mission-tool-${t.id}`,
@@ -133,10 +156,17 @@ export const MissionDemo: React.FC = () => {
               data: { label: t.label, toolName: t.label, configType: CONFIG_TYPES.PACKET_TOOL }
             });
           });
-          timerRef.current = setTimeout(() => runStep(3), 2500);
+          fitTargets = toFitTargets(TOOL_GROUP_A, 'mission-tool-');
+          timerRef.current = setTimeout(() => runStep(4), 3000);
           break;
 
-        case 3:
+        case 4:
+          setDemoStatus('...GRC, API SEC, NPM, UEBA, SIEM - ten separate point tools, ten separate feeds.');
+          fitTargets = toFitTargets(TOOL_GROUP_B, 'mission-tool-');
+          timerRef.current = setTimeout(() => runStep(5), 3000);
+          break;
+
+        case 5:
           setDemoStatus('Before: Direct connections create Blind Spots, rising Cost, and Inflexibility.');
           setEdges(
             MESSY_PAIRS.map(([from, to], i) => ({
@@ -147,10 +177,10 @@ export const MissionDemo: React.FC = () => {
               targetHandle: 'in'
             }))
           );
-          timerRef.current = setTimeout(() => runStep(4), 5000);
+          timerRef.current = setTimeout(() => runStep(6), 5000);
           break;
 
-        case 4:
+        case 6:
           setDemoStatus('Transforming: Introducing the Gigamon Deep Observability Pipeline...');
           setEdges([]);
           addNode({
@@ -165,10 +195,10 @@ export const MissionDemo: React.FC = () => {
               optics: [{ board: 'Base', optic: 'SFP-532', qty: 24 }]
             }
           });
-          timerRef.current = setTimeout(() => runStep(5), 2500);
+          timerRef.current = setTimeout(() => runStep(7), 2500);
           break;
 
-        case 5: {
+        case 7: {
           setDemoStatus('After: Visibility delivers Security, Efficiency, and Agility.');
           const converge = INFRA_NODES.map((n, i) => ({
             id: `mission-ce${i + 1}`,
@@ -185,11 +215,11 @@ export const MissionDemo: React.FC = () => {
             targetHandle: 'in'
           }));
           setEdges([...converge, ...diverge]);
-          timerRef.current = setTimeout(() => runStep(6), 3000);
+          timerRef.current = setTimeout(() => runStep(8), 3000);
           break;
         }
 
-        case 6: {
+        case 8: {
           setDemoStatus('Launching traffic flow simulation across the unified pipeline...');
           addTrafficStream({
             id: 'mission-ts-1',
@@ -240,10 +270,15 @@ export const MissionDemo: React.FC = () => {
           runStep(0);
       }
 
-      // Smoothly pan & zoom to center the currently placed nodes
+      // Smoothly pan & zoom - scoped to fitTargets for a readable close-up
+      // reveal when set, otherwise fit everything currently on canvas.
       setTimeout(() => {
         try {
-          fitView({ duration: 800, padding: 0.15 });
+          fitView(
+            fitTargets
+              ? { duration: 800, padding: 0.3, nodes: fitTargets, maxZoom: 1.4 }
+              : { duration: 800, padding: 0.15 }
+          );
         } catch (e) {
           console.warn('fitView failed', e);
         }

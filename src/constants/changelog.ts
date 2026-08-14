@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.519",
+    date: "2026-08-14",
+    summary: "Mission Demo: the infrastructure and tool icons were too small to read at the initial zoom level, so the camera now zooms into readable-sized groups (routers/core/dist switches, then Access1-8, then the first 5 tools, then the remaining 5) with a status line naming each one, before pulling back to show the full before/after transformation.",
+  },
+  {
     version: "1.0.518",
     date: "2026-08-14",
     summary: "Added a second auto-playing demo, \"Mission Demo\", based on the \"Our Long-Time Mission\" sales slide: animates a chaotic network (routers, core/dist/access switches wired directly to 10 separate point security tools with crossing connections) collapsing into a single Gigamon Deep Observability Pipeline with one clean connection per tool, then runs the traffic simulation to show it working end to end before looping. Toggled independently from the existing Auto Demo via a new header button in Advanced Mode.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.500",
     date: "2026-08-07",
     summary: "Fixed the PDF report's Executive Summary showing zero Traffic Sources/TAPs whenever TAPs were modelled as their own hardware unit wired to a chassis rather than a logical TAP input node - both representations now count correctly.",
-  },
-  {
-    version: "1.0.499",
-    date: "2026-08-07",
-    summary: "The PDF report now describes what each TA/HC appliance actually does (aggregation-only vs. onboard GigaSMART processing), and fixed a bug where a TAP-M100T/M200T tray - a passive mounting tray, not a fibre-terminating unit - was incorrectly shown with a multimode/singlemode fibre claim.",
   },
 ];
