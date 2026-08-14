@@ -294,7 +294,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </button>
               )}
 
-              {(advancedMode || nodes.some((n) => n.type === 'hardwareNode')) &&
+              {(advancedMode || nodes.some((n) => n.type === 'hardwareNode')) && !isMissionDemoActive &&
                 (() => {
                   const validationErrors = validateConfiguration(nodes, edges);
                   const hasErrors = validationErrors.length > 0;
@@ -345,23 +345,21 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </button>
               )}
 
-              {advancedMode && (
-                <button
-                  className={`header-btn ${isMissionDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
-                  onClick={() => setMissionDemoActive(!isMissionDemoActive)}
-                  title="Toggle Mission (Before/After Visibility) Demonstration"
-                >
-                  {isMissionDemoActive ? (
-                    <>
-                      <StopIcon /> Stop Mission Demo
-                    </>
-                  ) : (
-                    <>
-                      <PresentationIcon /> Mission Demo
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                className={`header-btn ${isMissionDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
+                onClick={() => setMissionDemoActive(!isMissionDemoActive)}
+                title="Toggle Mission (Before/After Visibility) Demonstration"
+              >
+                {isMissionDemoActive ? (
+                  <>
+                    <StopIcon /> Stop Mission Demo
+                  </>
+                ) : (
+                  <>
+                    <PresentationIcon /> Mission Demo
+                  </>
+                )}
+              </button>
 
               {advancedMode && (
                 <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">

@@ -153,7 +153,12 @@ export const MissionDemo: React.FC = () => {
               id: `mission-tool-${t.id}`,
               type: 'toolNode',
               position: { x: TOOL_X, y: t.y },
-              data: { label: t.label, toolName: t.label, configType: CONFIG_TYPES.PACKET_TOOL }
+              // ingestLimitMbps set generously above what this demo ever delivers
+              // (each tool receives the full fanned-out stream, ~27 Gbps) - these
+              // are generic tool names with no vendor profile in toolIngestLimits.ts,
+              // which would otherwise default to a 10 Gbps ceiling and flag every
+              // tool as overloaded the instant the simulation starts.
+              data: { label: t.label, toolName: t.label, configType: CONFIG_TYPES.PACKET_TOOL, ingestLimitMbps: 100000 }
             });
           });
           fitTargets = toFitTargets(TOOL_GROUP_A, 'mission-tool-');
@@ -187,6 +192,10 @@ export const MissionDemo: React.FC = () => {
             id: 'mission-pipeline',
             type: 'hardwareNode',
             position: { x: PIPELINE_X, y: PIPELINE_Y },
+            // Explicit width/height so it reads as a substantial centrepiece
+            // rather than the compact default hardwareNode footprint.
+            width: 320,
+            height: 150,
             data: {
               label: 'Deep Observability Pipeline',
               model: 'HC1-Plus',
@@ -195,7 +204,8 @@ export const MissionDemo: React.FC = () => {
               optics: [{ board: 'Base', optic: 'SFP-532', qty: 24 }]
             }
           });
-          timerRef.current = setTimeout(() => runStep(7), 2500);
+          fitTargets = [{ id: 'mission-pipeline' }];
+          timerRef.current = setTimeout(() => runStep(7), 3500);
           break;
 
         case 7: {
