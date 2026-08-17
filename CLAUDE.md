@@ -10,7 +10,7 @@ Interactive visual orchestration tool for demonstrating Gigamon network visibili
 
 ```bash
 npm run dev          # Start Vite dev server
-npm run build        # tsc + Vite bundle → single HTML in /dist
+npm run build        # tsc + Vite bundle → single HTML in /dist (+ dist/index.html.checksums.txt)
 npm run lint         # ESLint on TS/TSX
 npm run test         # Vitest test suite
 npm run format       # Prettier on src/
@@ -116,5 +116,6 @@ State is serialized to `localStorage` under keys `fm-simulator-slot-<name>` (up 
 
 - **Versioning**: bump the patch version in `package.json` with every change (`1.0.x` → `1.0.x+1`).
 - **Commit subjects are release notes**: `scripts/generate-changelog.mjs` runs on `prebuild` and turns each commit into a changelog entry shown in the app's About dialog (click the version number in the header). It pairs a commit with the version in *that commit's* `package.json`, so the versioning rule above is what makes it work. Write subjects that read well to a user. Exclude a commit by prefixing it `chore:`/`test:`/`ci:`/`docs:`/`build:`/`style:`/`refactor:` or adding `[skip changelog]`. To override the wording, or to describe work not yet committed, add an entry to `scripts/changelog.manual.json` — it wins over the generated text for that version. `src/constants/changelog.ts` is generated; don't hand-edit it.
+- **Checksums**: `npm run build` automatically runs `scripts/generate-checksums.mjs` on `postbuild`, writing `dist/index.html.checksums.txt` (MD5 + SHA-256 of the built single-file app) so a user can verify their copy hasn't been altered or corrupted. Every shipped deliverable copy (`traffic-reduction-simulator.html`, the versioned `-<rev>.html`, and the OneDrive copy) is a byte-identical copy of `dist/index.html`, so when shipping, copy `dist/index.html.checksums.txt` alongside each one as `<filename>.checksums.txt` rather than regenerating it. Run `npm run checksums <path>` to checksum an arbitrary file on demand.
 - **British English**: use British spelling in all node tooltips and user-facing copy (e.g. "analyse", "optimise", "colour").
 - **Number inputs**: don't validate integer bounds inside `onChange` for `<input type="number">` — deleting a digit briefly yields `""`/`NaN` and an eager check will reset the field. Track the raw string in state and defer `parseInt`/bounds validation to submit (button click) or use a `<select>` for small bounded ranges.
