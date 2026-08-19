@@ -180,15 +180,16 @@ export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = (() => {
   return Array.from(uniqueLabels)
     .map((raw) => {
       const fiberType = getOpticFiberType(raw);
-      return {
-        value: raw.split(' ')[0],
+      const value = raw.split(' ')[0];
+      const opt: TapOpticOption = {
+        value,
         label: formatOpticLabel(raw),
         isSM: fiberType === 'SM',
         isCopper: fiberType === 'Copper' ? true : undefined,
-        speed: getOpticSpeed(raw),
       };
+      return { opt, sortKey: `${SPEED_ORDER[getOpticSpeed(raw)]}-${value}` };
     })
-    .sort((a, b) => (SPEED_ORDER[a.speed] - SPEED_ORDER[b.speed]) || a.value.localeCompare(b.value))
-    .map(({ speed: _speed, ...opt }) => opt);
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+    .map((entry) => entry.opt);
 })();
 

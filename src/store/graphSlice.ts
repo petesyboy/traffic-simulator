@@ -179,7 +179,16 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
         selectedOpticVal = (srcData.tappedLinkOptic as string) || 'QSB-523T';
       }
 
-      if (getOpticCage(selectedOpticVal) === 'SFP' && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
+      // Advanced Mode's per-link TAP Settings panel writes tappedLinkAllocations
+      // (each with its own chassis-side toolOptic), not the legacy singular
+      // tappedLinkOptic field above - checking only that field meant an
+      // allocation-configured TAP with e.g. a 100G QSFP tool optic still fell
+      // through to the SFP default and got wrongly refused here.
+      const allocations = (srcData.tappedLinkAllocations as { optic: string; toolOptic?: string }[]) || [];
+      const sfpCageAllocation = allocations.find(a => getOpticCage(a.toolOptic || a.optic) === 'SFP');
+      const needsSfpCage = allocations.length > 0 ? !!sfpCageAllocation : getOpticCage(selectedOpticVal) === 'SFP';
+
+      if (needsSfpCage && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
         window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances only feature high-speed QSFP+/QSFP28 cages.`);
         return;
       }

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.528",
+    date: "2026-08-19",
+    summary: "Unify the two remaining hand-styled optic pickers",
+  },
+  {
     version: "1.0.527",
     date: "2026-08-19",
     summary: "Unify TAP termination-matrix optic labels with the rest of the app",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.509",
     date: "2026-08-08",
     summary: "The Tapped Links panel and hardware node config panel now read SKU descriptions through the same price-list-aware lookup the BOM uses, so an uploaded price list updates them immediately instead of only affecting BOM output. Also fixed a crash when expanding a chassis's Hardware Specifications (a port-count field was rendered as a raw object instead of a summary), and added lint and test steps to the GitHub Pages deploy workflow so a broken build no longer ships.",
-  },
-  {
-    version: "1.0.508",
-    date: "2026-08-08",
-    summary: "Restyled the General/Optics/GigaSMART Apps tabs on a chassis node's config panel (both TA and HC series) as proper underlined tabs with larger, bolder text, instead of small hard-to-notice pill buttons.",
   },
 ];
