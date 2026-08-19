@@ -9,6 +9,7 @@ import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { resolveTapAllocations } from '../ports';
 import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, packTapTrayTargets } from '../trayModels';
 import { isBreakoutPanelModel } from '../hardwareUtils';
+import { optimizeOpticPacks } from './opticPacks';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
@@ -378,7 +379,9 @@ export function generateBom(
     addRow(null, 'PCD-00051', numPstDC * 2, 'Dependency', undefined, siteKey);
   }
 
-  return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
+  return optimizeOpticPacks(Object.values(rowMap), skus).sort(
+    (a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku),
+  );
 }
 
 // ─── Shared GigaSMART helpers ─────────────────────────────────────────────────
@@ -628,7 +631,7 @@ export function generateSingleNodeBom(
         const sku = resolveGsaAppLicenseSku(app.actionType || '', licenseMode, !!app.gsa5gDecode);
         if (sku) addRow(sku, appLicenseQty, 'License', licenseMode === 'HTL' ? termOverride : undefined);
       });
-      return Object.values(rowMap);
+      return optimizeOpticPacks(Object.values(rowMap), skus);
     }
 
     const isPacketTool = node.data?.configType === 'Packet Tool', optic = (node.data?.ingestOptic as string) || '', isCustomerSupplied = optic.includes('Customer Supplied');
@@ -636,7 +639,7 @@ export function generateSingleNodeBom(
       const qty = parseInt(node.data?.ingestOpticQty as string || '0');
       if (optic && qty > 0) addRow(resolveOpticSku(optic, ''), qty, 'Optic');
     }
-    return Object.values(rowMap);
+    return optimizeOpticPacks(Object.values(rowMap), skus);
   }
 
   const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
@@ -661,7 +664,7 @@ export function generateSingleNodeBom(
       const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
       if (cordQty > 0) addRow(cordSku, cordQty, 'Dependency');
     }
-    return Object.values(rowMap);
+    return optimizeOpticPacks(Object.values(rowMap), skus);
   }
 
   if (isBreakoutPanelModel(model)) {
@@ -670,7 +673,7 @@ export function generateSingleNodeBom(
     // project (see generateBom's tapModulesPerSite bin-packing), so a panel
     // just gets a row for itself here.
     addRow(resolved.hwSku, 1, 'Module');
-    return Object.values(rowMap);
+    return optimizeOpticPacks(Object.values(rowMap), skus);
   }
 
   addRow(resolved.hwSku, 1, 'Chassis');
@@ -698,6 +701,6 @@ export function generateSingleNodeBom(
       addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
     });
   }
-  return Object.values(rowMap);
+  return optimizeOpticPacks(Object.values(rowMap), skus);
 }
 
