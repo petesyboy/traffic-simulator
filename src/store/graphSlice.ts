@@ -179,7 +179,8 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
         selectedOpticVal = (srcData.tappedLinkOptic as string) || 'QSB-523T';
       }
 
-      if (selectedOpticVal.includes('SFP') && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
+      const isQuadOptic = selectedOpticVal.includes('QSFP') || selectedOpticVal.includes('QSB');
+      if (selectedOpticVal.includes('SFP') && !isQuadOptic && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
         window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances only feature high-speed QSFP+/QSFP28 cages.`);
         return;
       }
