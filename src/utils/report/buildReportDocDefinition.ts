@@ -55,6 +55,8 @@ export interface ReportInput {
   isRunning: boolean;
   /** Composited front-panel PNGs (base photo + installed-module faceplates), keyed by hardware node id. Only chassis with a calibrated catalogue photo have an entry. */
   chassisFrontPanelImages?: Record<string, string>;
+  /** User-authored executive summary (what's being deployed and why, in the customer's context). Replaces the generic intro paragraph when provided. */
+  execSummaryText?: string;
 }
 
 /** Renders a node's headline + detail bullets + (optional) value-proposition line, as one report entry. */
@@ -99,6 +101,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     nodeMetrics,
     isRunning,
     chassisFrontPanelImages,
+    execSummaryText,
   } = input;
 
   const liveMetrics = isRunning ? nodeMetrics : undefined;
@@ -138,8 +141,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   content.push({ text: 'Executive Summary', style: 'sectionHeading' });
   content.push({
     text:
+      execSummaryText ||
       'This report describes the Gigamon visibility pipeline configured for this project: the traffic sources feeding it, ' +
-      'how traffic is filtered and processed, the tools and destinations receiving it, and the hardware required to deliver it.',
+        'how traffic is filtered and processed, the tools and destinations receiving it, and the hardware required to deliver it.',
     style: 'body',
     margin: [0, 0, 0, 12],
   });

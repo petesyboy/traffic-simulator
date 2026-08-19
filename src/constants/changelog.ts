@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.534",
+    date: "2026-08-19",
+    summary: "Stop claiming every chassis is \"filtering\" traffic in Export Diagram Mode",
+  },
+  {
     version: "1.0.533",
     date: "2026-08-19",
     summary: "Stop showing In/Out throughput on breakout panel nodes",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.515",
     date: "2026-08-11",
     summary: "Renamed the disk save/load buttons to Export and Import, to better describe what they do (Browser Save/Browser Load are unchanged).",
-  },
-  {
-    version: "1.0.514",
-    date: "2026-08-11",
-    summary: "Fixed the BOM silently omitting a license when a GigaSMART app was set to IP FlowVUE or any GTP function (Flow Filtering, Rotational Sampling, Whitelisting, Flow Sampling) - the SKUs existed but the BOM engine had no mapping for those functions. Now correctly quotes the FlowVUE or GTP Filtering & Correlation (GTPMAX) license per chassis and license mode.",
   },
 ];

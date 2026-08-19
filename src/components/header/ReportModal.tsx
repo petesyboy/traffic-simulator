@@ -73,6 +73,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'capturing' | 'building' | 'done'>('idle');
+  const [execSummaryText, setExecSummaryText] = useState('');
 
   const handleGenerate = async () => {
     setBusy(true);
@@ -115,6 +116,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         nodeMetrics,
         isRunning,
         chassisFrontPanelImages,
+        execSummaryText: execSummaryText.trim() || undefined,
       });
 
       const pdfMake = await loadPdfMake();
@@ -150,6 +152,30 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           processing, and destinations — with the topology diagram and a Bill of Materials appendix
           {advancedMode ? ' (plus a physical/rack deployment appendix)' : ''}.
         </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+          <label style={{ fontSize: '11px', fontWeight: 'bold' }} htmlFor="report-exec-summary">
+            Executive Summary (optional)
+          </label>
+          <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
+            A short summary of what's being deployed and why, in the customer's own context. Left blank, the report
+            uses a generic summary paragraph instead.
+          </p>
+          <textarea
+            id="report-exec-summary"
+            value={execSummaryText}
+            onChange={(e) => setExecSummaryText(e.target.value)}
+            disabled={busy}
+            rows={5}
+            style={{
+              fontSize: '11px',
+              padding: 'var(--space-2)',
+              resize: 'vertical',
+              fontFamily: 'inherit',
+            }}
+            placeholder="e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project…"
+          />
+        </div>
 
         <button className="btn btn-primary" onClick={handleGenerate} disabled={busy}>
           {buttonLabel}
