@@ -23,7 +23,7 @@ import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
 import { getChassisPorts, getPortOccupancy } from '../../utils/ports';
-import { getModuleSlotPositions } from '../../utils/hardwareUtils';
+import { getModuleSlotPositions, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const updateNodeData = useStore((state) => state.updateNodeData);
@@ -126,6 +126,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   
   const isTap = model.includes('TAP');
   const isChassis = (model.includes('HC') || model.includes('TA')) && !isTap;
+  const isPanel = isBreakoutPanelModel(model);
   const tapInfo = isTap ? getTapDetails(resolved.hwSku, model) : null;
   const conditions = (data.conditions as MapCondition[]) || [];
 
@@ -367,7 +368,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         )}
 
-        {isRunning && (
+        {isRunning && !isPanel && (
           <div className="node-metrics" style={{ marginTop: '8px', justifyContent: isTap ? 'flex-end' : 'space-between' }}>
             {!isTap && <span>In: {formatBandwidth(metrics?.rxMbps)}</span>}
             <span>Out: {formatBandwidth(metrics?.txMbps)}</span>

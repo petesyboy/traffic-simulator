@@ -4,6 +4,7 @@ import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from '../constants/nodeTypes';
 
 // Import sub-panels
 import { FormGroup, LiveMetrics } from './config-panels/LiveMetrics';
+import { isBreakoutPanelModel } from '../utils/hardwareUtils';
 import { DashboardPanel } from './config-panels/DashboardPanel';
 import { HardwareNodePanel } from './config-panels/HardwareNodePanel';
 import { InputNodePanel } from './config-panels/InputNodePanel';
@@ -309,7 +310,7 @@ const ConfigPanel: React.FC = () => {
             </div>
           )}
 
-          {isRunning && selectedNodeMetric && (
+          {isRunning && selectedNodeMetric && !isBreakoutPanelModel(String(selectedNode.data?.model || '')) && (
             <LiveMetrics nodeType={selectedNode.type || ''} metrics={selectedNodeMetric} />
           )}
         </div>
