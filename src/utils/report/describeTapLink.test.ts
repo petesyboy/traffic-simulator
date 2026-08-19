@@ -21,12 +21,12 @@ describe('describeTapPhysicalLink', () => {
         label: 'Core Tap 1',
         configType: 'TAP',
         tapFiberMode: 'Multimode',
-        tappedLinkOptic: '10G-SFP-SR',
+        tappedLinkOptic: 'SFP-532',
       }),
     ];
     const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
     expect(bullets[0]).toContain('Multimode');
-    expect(bullets[0]).toContain('10Gb SFP+ SR');
+    expect(bullets[0]).toContain('SFP-532 (10G SFP+ SR)');
   });
 
   it('describes a standalone singlemode TAP', () => {

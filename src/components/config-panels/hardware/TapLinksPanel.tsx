@@ -92,7 +92,7 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
   const [addOptic, setAddOptic] = useState('');
   const [addToolOptic, setAddToolOptic] = useState('');
 
-  const activeAddOptic = addOptic || (availableOptics.find(o => o.isSM === isSMTap)?.value) || availableOptics[0]?.value || (isSMTap ? '10G-SFP-LR' : '10G-SFP-SR');
+  const activeAddOptic = addOptic || (availableOptics.find(o => o.isSM === isSMTap)?.value) || availableOptics[0]?.value || (isSMTap ? 'SFP-533' : 'SFP-532');
 
   const networkSpeed = getOpticSpeed(activeAddOptic);
   const hasKnownSpeed = networkSpeed !== 'Unknown';

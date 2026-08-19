@@ -69,7 +69,7 @@ export const TradeShowDemo: React.FC = () => {
               portSpeed: '10G',
               tapFiberMode: 'Singlemode',
               tappedLinksCount: 6,
-              tappedLinkOptic: '10G-SFP-LR'
+              tappedLinkOptic: 'SFP-533'
             }
           });
           addNode({
@@ -82,7 +82,7 @@ export const TradeShowDemo: React.FC = () => {
               portSpeed: '10G',
               tapFiberMode: 'Multimode',
               tappedLinksCount: 6,
-              tappedLinkOptic: '10G-SFP-SR'
+              tappedLinkOptic: 'SFP-532'
             }
           });
 

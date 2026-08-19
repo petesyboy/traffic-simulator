@@ -152,36 +152,38 @@ export interface TapOpticOption {
   isCopper?: boolean;
 }
 
-// NOTE: every `value` here MUST have a matching entry in TAP_OPTIC_SKU_MAP
-// (src/utils/bom/skuUtils.ts) — that's what translates the picker value into
-// a real, orderable Gigamon transceiver SKU for the BOM. Optic types with no
-// confirmed real SKU (1G ZX, 10G direct-attach copper, 40G/100G BiDi, 100G
-// PSM4, and the 400G QSFP-DD family) were deliberately left out rather than
-// risk a fabricated part number appearing on a customer-facing BOM.
+// `value`/`label` here use the same real Gigamon transceiver SKUs and
+// wording as opticRules.json (the HC/TA chassis "Install Optics" picker) -
+// they used to be an independently-invented generic vocabulary (e.g.
+// '10G-SFP-SR') that never matched a chassis-side SKU, so a TAP's default
+// optic (already SKU-based elsewhere, e.g. 'SFP-532') couldn't display as
+// selected in this dropdown and the two pickers never agreed on wording.
+// resolveOpticSku() (src/utils/bom/skuUtils.ts) upgrades these to their TAA
+// ('T'-suffixed) variant for the BOM where one exists on the target chassis.
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
   // --- 1G Optics ---
-  { value: '1G-SFP-SX', label: '1Gb SFP SX (850nm) — Multimode LC (200-550m)', isSM: false },
-  { value: '1G-SFP-LX', label: '1Gb SFP LX (1310nm) — Singlemode LC (10km)', isSM: true },
-  { value: '1G-SFP-CU', label: '1Gb SFP Copper (CAT-5) — RJ45 (100m)', isSM: false, isCopper: true },
+  { value: 'SFP-502', label: 'SFP-502 (1G SFP SX)', isSM: false },
+  { value: 'SFP-503', label: 'SFP-503 (1G SFP LX)', isSM: true },
+  { value: 'SFP-501', label: 'SFP-501 (1G SFP Copper)', isSM: false, isCopper: true },
 
   // --- 10G Optics ---
-  { value: '10G-SFP-SR', label: '10Gb SFP+ SR (850nm) — Multimode LC (300m)', isSM: false },
-  { value: '10G-SFP-LR', label: '10Gb SFP+ LR (1310nm) — Singlemode LC (10km)', isSM: true },
-  { value: '10G-SFP-CU6', label: '10Gb SFP+ Copper (CAT-6a) — RJ45 (100m)', isSM: false, isCopper: true },
+  { value: 'SFP-532', label: 'SFP-532 (10G SFP+ SR)', isSM: false },
+  { value: 'SFP-533', label: 'SFP-533 (10G SFP+ LR)', isSM: true },
+  { value: 'SFP-531', label: 'SFP-531 (10G SFP+ Copper)', isSM: false, isCopper: true },
 
   // --- 25G Optics ---
-  { value: '25G-SFP28-SR', label: '25Gb SFP28 SR (850nm) — Multimode LC (100m)', isSM: false },
-  { value: '25G-SFP28-LR', label: '25Gb SFP28 LR (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: 'SFP-552', label: 'SFP-552 (25G SFP28 SR)', isSM: false },
+  { value: 'SFP-553T', label: 'SFP-553T (25G SFP28 LR)', isSM: true },
 
   // --- 40G Optics ---
-  { value: '40G-QSFP-SR4', label: '40Gb QSFP+ SR4 (850nm) — Multimode MPO (100m)', isSM: false },
-  { value: '40G-QSFP-SWDM4', label: '40Gb QSFP+ SWDM4 (850-940nm) — Multimode LC (240-440m)', isSM: false },
-  { value: '40G-QSFP-LR4', label: '40Gb QSFP+ LR4 (1310nm) — Singlemode LC (10km)', isSM: true },
-  { value: '40G-QSFP-PSM4', label: '40Gb QSFP+ PSM4 (1310nm) — Singlemode MPO (1.4km)', isSM: true },
+  { value: 'QSF-502', label: 'QSF-502 (40G QSFP+ SR4)', isSM: false },
+  { value: 'QSF-508', label: 'QSF-508 (40G QSFP+ SWDM4)', isSM: false },
+  { value: 'QSF-503T', label: 'QSF-503T (40G QSFP+ LR4)', isSM: true },
+  { value: 'QSF-506', label: 'QSF-506 (40G QSFP+ PSM4)', isSM: true },
 
   // --- 100G Optics ---
-  { value: '100G-QSFP28-SR4', label: '100Gb QSFP28 SR4 (850nm) — Multimode MPO (100m)', isSM: false },
-  { value: '100G-QSFP28-SWDM4', label: '100Gb QSFP28 SWDM4 (850-940nm) — Multimode LC (75-150m)', isSM: false },
-  { value: '100G-QSFP28-LR4', label: '100Gb QSFP28 LR4 (1310nm) — Singlemode LC (10km)', isSM: true },
+  { value: 'Q28-502T', label: 'Q28-502T (100G QSFP28 SR4)', isSM: false },
+  { value: 'Q28-508', label: 'Q28-508 (100G QSFP28 SWDM4)', isSM: false },
+  { value: 'Q28-503', label: 'Q28-503 (100G QSFP28 LR4)', isSM: true },
 ];
 

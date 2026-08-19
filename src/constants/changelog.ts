@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.523",
+    date: "2026-08-19",
+    summary: "Fix false TA200/TA400 QSFP connection refusal on high-speed tap links",
+  },
+  {
     version: "1.0.522",
     date: "2026-08-14",
     summary: "Removed the misleading \"Delivered to Tools\" figure from the Global Pipeline Dashboard - it summed traffic across every packet-consuming tool, so it inflated with fan-out (5 tools receiving the same stream looked like 5x the traffic). Traffic Volume Reduction is now calculated directly from what's actually deduped/filtered relative to ingest, instead of ingest-minus-delivered, which also fixes it being stuck at 0.0% even when real reduction was happening.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.504",
     date: "2026-08-08",
     summary: "Fixed two PDF report gaps: a tool's \"Traffic originates from\" line now credits a TAP modelled as its own hardware unit alongside any SPAN/other inputs feeding the same tool (it was being silently dropped), and GigaSMART functions running as an onboard app on a chassis or GSA tool (e.g. deduplication configured directly on an HC1) now get their own description in the GigaSMART Processing section instead of being omitted entirely.",
-  },
-  {
-    version: "1.0.503",
-    date: "2026-08-08",
-    summary: "The PDF report's Hardware section now shows each TA/HC chassis's front-panel photo, with installed modules composited into their real slot positions, underneath its description - the same graphic shown in the on-canvas hardware summary popup.",
   },
 ];

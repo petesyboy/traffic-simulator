@@ -14,7 +14,7 @@ import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges 
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
-import { getRequiredPortCount, isTapUnconfigured } from '../utils/ports';
+import { getRequiredPortCount, isTapUnconfigured, getOpticCage } from '../utils/ports';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
@@ -179,8 +179,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
         selectedOpticVal = (srcData.tappedLinkOptic as string) || 'QSB-523T';
       }
 
-      const isQuadOptic = selectedOpticVal.includes('QSFP') || selectedOpticVal.includes('QSB');
-      if (selectedOpticVal.includes('SFP') && !isQuadOptic && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
+      if (getOpticCage(selectedOpticVal) === 'SFP' && (targetModel.includes('TA200') || targetModel.includes('TA400'))) {
         window.alert(`🚫 CONNECTION REFUSED: ${targetModel} appliances only feature high-speed QSFP+/QSFP28 cages.`);
         return;
       }
