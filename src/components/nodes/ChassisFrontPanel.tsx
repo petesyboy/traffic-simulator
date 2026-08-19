@@ -30,12 +30,25 @@ interface ChassisFrontPanelProps {
   portOpticMap?: Map<string, string>;
 }
 
-/** A cage's box, transformed into chassis-image coordinates - directly for base ports
- *  (slot '1', box already relative to the chassis image), or nested inside its
- *  module's bay box for a board in a slot (box relative to the module's own image). */
+/** A board name of the form "<sku> (Slot N)" identifies a port belonging to an
+ *  installed add-in module, as opposed to the chassis's own fixed/base ports. */
+const MODULE_BOARD_RE = /\(Slot \d+\)$/;
+
+/** A cage's box, transformed into chassis-image coordinates - directly for the
+ *  chassis's own base ports (box already relative to the chassis image), or
+ *  nested inside its module's bay box for a port on an installed board.
+ *
+ *  Distinguishing these by `port.board` rather than `port.slot === '1'`
+ *  matters because on GigaVUE-HC3/HC1-Plus etc. the module bays are *also*
+ *  numbered starting at 1 - the same sentinel slot value `getChassisPorts()`
+ *  uses for the chassis's base ports - so a slot-number check alone can't
+ *  tell "this chassis's built-in ports" apart from "the module sitting in
+ *  its numbered Slot 1", and previously mis-rendered a Slot 1 module's
+ *  fitted-optic markers straight onto the chassis image instead of nesting
+ *  them inside that module's own bay. */
 function resolveAbsoluteBox(port: ChassisPort, slotPositions: SlotPosition[]): PortBox | undefined {
   if (!port.box) return undefined;
-  if (port.slot === '1') return port.box;
+  if (!MODULE_BOARD_RE.test(port.board)) return port.box;
   const bay = slotPositions.find(s => String(s.number) === port.slot)?.box;
   if (!bay) return undefined;
   return {

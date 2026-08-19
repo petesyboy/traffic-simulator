@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.540",
+    date: "2026-08-19",
+    summary: "Ship v1.0.540: Tidy Layout auto-arrange button",
+  },
+  {
     version: "1.0.539",
     date: "2026-08-19",
     summary: "Ship v1.0.539: Markdown support in the report executive summary",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.520",
     date: "2026-08-14",
     summary: "Mission Demo polish: the Deep Observability Pipeline node is now bigger with its own zoomed-in reveal so its label is actually readable; suppressed the false \"Ingest Overloaded\" warnings the ten generic tool nodes triggered the instant traffic started (they had no vendor ingest profile, so they defaulted to a 10 Gbps ceiling against the demo's ~27 Gbps fan-out); hid the Bill of Materials button while the demo is running; and made the Mission Demo button visible in Standard View so it no longer requires switching to Advanced Mode first.",
-  },
-  {
-    version: "1.0.519",
-    date: "2026-08-14",
-    summary: "Mission Demo: the infrastructure and tool icons were too small to read at the initial zoom level, so the camera now zooms into readable-sized groups (routers/core/dist switches, then Access1-8, then the first 5 tools, then the remaining 5) with a status line naming each one, before pulling back to show the full before/after transformation.",
   },
 ];
