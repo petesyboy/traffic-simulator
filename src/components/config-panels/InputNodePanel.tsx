@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { CONFIG_TYPES, SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
+import { QSB_BIDI_OPTICS } from '../../constants/tapOpticRules';
 import { FormGroup } from './LiveMetrics';
 
 interface InputNodePanelProps {
@@ -158,16 +159,9 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
               value={cleanOpticVal}
               onChange={(e) => onGenericChange('tappedLinkOptic', e.target.value)}
             >
-              {isM506T ? (
-                <>
-                  <option value="QSB-501">QSB-501 — 40Gb BiDi Multimode QSFP+</option>
-                  <option value="QSB-521">QSB-521 — 100Gb BiDi Multimode QSFP28</option>
-                  <option value="QSB-523T">QSB-523T — 100Gb Dual-Rate BiDi Multimode [TAA]</option>
-                  <option value="QSB-531">QSB-531 — 100Gb BiDi Multimode QSFP28</option>
-                </>
-              ) : (
-                SUPPORTED_TAP_OPTICS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)
-              )}
+              {(isM506T ? QSB_BIDI_OPTICS : SUPPORTED_TAP_OPTICS).map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </FormGroup>
 

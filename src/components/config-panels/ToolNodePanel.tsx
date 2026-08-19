@@ -6,6 +6,7 @@ import { isPacketToolConfig } from '../../utils/simulation/utils';
 import { getDefaultIngestLimitMbps, getToolConnectivity, getToolApplianceModel } from '../../constants/toolIngestLimits';
 import { GSA_DATA_PORT_OPTICS, GSA_METADATA_PORT_OPTICS, isValidGsaDataPortOptic } from '../../constants/gsaOptics';
 import { formatBandwidth } from '../../utils/format';
+import { formatOpticLabel } from '../../utils/hardwareUtils';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 import { GigaSmartAppsPanel } from './hardware';
@@ -217,7 +218,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
               onChange={(e) => onGenericChange('ingestOptic', e.target.value)}
             >
               <option value="">-- No Optic (Direct Cable / DAC) --</option>
-              {GSA_DATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{o}</option>)}
+              {GSA_DATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{formatOpticLabel(o)}</option>)}
             </select>
           </FormGroup>
 
@@ -239,7 +240,7 @@ export const ToolNodePanel: React.FC<ToolNodePanelProps> = ({
               onChange={(e) => onGenericChange('metadataOptic', e.target.value)}
             >
               <option value="">-- No Optic (Direct Cable) --</option>
-              {GSA_METADATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{o}</option>)}
+              {GSA_METADATA_PORT_OPTICS.map((o) => <option key={o} value={o}>{formatOpticLabel(o)}</option>)}
             </select>
             <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '3px' }}>
               Informational only — this port bank isn't individually costed in the BOM yet.

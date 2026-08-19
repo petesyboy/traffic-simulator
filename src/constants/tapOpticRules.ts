@@ -259,3 +259,14 @@ export function describeTapOptic(o: TapOpticSpec): string {
   const raw = SKU_TO_RAW_LABEL[o.sku] ?? `${o.sku} (${o.speed} ${o.cage} ${o.standard})`;
   return formatOpticLabel(raw);
 }
+
+/**
+ * The four QSB-* BiDi options for a TAP-M506T, in {value, label} shape so the
+ * simple "Target Optic" picker (InputNodePanel.tsx) can render them with the
+ * same formatOpticLabel() styling as every other optic dropdown, instead of
+ * its own hand-written strings.
+ */
+export const QSB_BIDI_OPTICS: { value: string; label: string }[] = BIDI_OPTICS.map((o) => ({
+  value: o.sku,
+  label: describeTapOptic(o),
+}));
