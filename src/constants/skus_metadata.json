@@ -1,1 +1,662 @@
-{}
+{
+  "QSB-504": {
+    "eos": "2027-01-06",
+    "eol": "2032-01-06",
+    "replacement": "QSB-524T"
+  },
+  "BPS-HC0-D25A4G-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "BPS-HC1-D25A60-SW-TM"
+  },
+  "BPS-HC0-D25B4G-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "BPS-HC0-D35C4G-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "BPS-HC1-D25A60-SW-TM"
+  },
+  "BPS-HC0-Q25A28-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "BPS-HC3-C25F2G-SW-TM"
+  },
+  "CLS-TA100-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "CLS-TAX20-SW-TM"
+  },
+  "CLS-TAC00-SW-TM": {
+    "eos": "2022-02-28",
+    "eol": "2027-02-28",
+    "replacement": "CLS-TAC20-SW-TM"
+  },
+  "CLS-TAC40-SW-TM": {
+    "eos": "2025-07-06",
+    "eol": "2030-12-07",
+    "replacement": "CLS-TAC40E-SW-TM"
+  },
+  "CLS-TAQ00-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "CLS-TAC20-SW-TM"
+  },
+  "CLS-WBX01": {
+    "eos": "2026-05-25",
+    "eol": "2028-10-27",
+    "replacement": ""
+  },
+  "GSW-WBX01": {
+    "eos": "2026-05-25",
+    "eol": "2028-10-27",
+    "replacement": ""
+  },
+  "GVS-HC101-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-HC100-SW-TM"
+  },
+  "GVS-HC102-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-HC100-SW-TM"
+  },
+  "GVS-HC200-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "GVS-HC2A0-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "GVS-HC2A1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "GVS-HC1P-SW-TM"
+  },
+  "GVS-HC2A2-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "GVS-HC1P-SW-TM"
+  },
+  "GVS-HC3A1-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-HC3A0-SW-TM"
+  },
+  "GVS-HC3A2-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-HC3A0-SW-TM"
+  },
+  "GVS-TAC01-SW-TM": {
+    "eos": "2022-02-28",
+    "eol": "2027-02-28",
+    "replacement": "GVS-TAC21-SW-TM"
+  },
+  "GVS-TAC02-SW-TM": {
+    "eos": "2022-02-28",
+    "eol": "2027-02-28",
+    "replacement": "GVS-TAC22-SW-TM"
+  },
+  "GVS-TAC21-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAC20-SW-TM"
+  },
+  "GVS-TAC22-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAC20-SW-TM"
+  },
+  "GVS-TAC40-SW-TM": {
+    "eos": "2025-07-06",
+    "eol": "2030-12-07",
+    "replacement": "GVS-TAC40E-SW-TM"
+  },
+  "GVS-TAQ01-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAC21-SW-TM"
+  },
+  "GVS-TAQ02-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAC22-SW-TM"
+  },
+  "GVS-TAX01-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAX21-SW-TM"
+  },
+  "GVS-TAX01A-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAX21A-SW-TM"
+  },
+  "GVS-TAX02-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAX22-SW-TM"
+  },
+  "GVS-TAX02A-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "GVS-TAX22A-SW-TM"
+  },
+  "GVS-TAX21-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAX20-SW-TM"
+  },
+  "GVS-TAX21A-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAX20A-SW-TM"
+  },
+  "GVS-TAX22-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAX20-SW-TM"
+  },
+  "GVS-TAX22A-SW-TM": {
+    "eos": "2023-02-28",
+    "eol": "",
+    "replacement": "GVS-TAX20A-SW-TM"
+  },
+  "PRT-HC0-C02-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "PRT-HC1-Q04X08-SW-TM"
+  },
+  "PRT-HC0-Q06-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "PRT-HC1-Q04X08-SW-TM"
+  },
+  "PRT-HC0-X24-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "PRT-HC1-Q04X08-SW-TM"
+  },
+  "QSB-501": {
+    "eos": "2026-09-30",
+    "eol": "2031-09-30",
+    "replacement": "QSB-523T"
+  },
+  "QSB-521": {
+    "eos": "2026-09-30",
+    "eol": "2031-09-30",
+    "replacement": "QSB-523T"
+  },
+  "SMT-HC0-AFI": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
+  },
+  "SMT-HC0-AFS": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-AFS"
+  },
+  "SMT-HC0-AMI": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
+  },
+  "SMT-HC0-GEN1-AFI-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
+  },
+  "SMT-HC0-GEN1-AFS-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-AFS-SW-TM"
+  },
+  "SMT-HC0-GEN1-AMI-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
+  },
+  "SMT-HC0-GEN1-APF-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-APF-SW-TM"
+  },
+  "SMT-HC0-GEN1-AT1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AT1-SW-TM"
+  },
+  "SMT-HC0-GEN1-DD1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-DD1-SW-TM"
+  },
+  "SMT-HC0-GEN1-FVU-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
+  },
+  "SMT-HC0-GEN1-GTP250-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
+  },
+  "SMT-HC0-GEN1-GTP500-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
+  },
+  "SMT-HC0-GEN1-GTPMAX-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
+  },
+  "SMT-HC0-GEN1-HS1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-HS1-SW-TM"
+  },
+  "SMT-HC0-GEN1-INSSL-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-INSSL-SW-TM"
+  },
+  "SMT-HC0-GEN1-NF1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-NF1-SW-TM"
+  },
+  "SMT-HC0-GEN1-SIP10-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
+  },
+  "SMT-HC0-GEN1-SIPMAX-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
+  },
+  "SMT-HC0-GEN1-SSL-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-SSL-SW-TM"
+  },
+  "SMT-HC0-GEN1-UPGINSSL-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC0-Q02X08-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1-S-SW-TM"
+  },
+  "SMT-HC0-R-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC0-X16-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1-S-SW-TM"
+  },
+  "SMT-HC2-AFI": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
+  },
+  "SMT-HC2-AFS": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-AFS"
+  },
+  "SMT-HC2-AMI": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
+  },
+  "SMT-HC2-BN-CORE": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-BN-MV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-BN-NV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-BN-NVP": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-BN-SV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-BN-SVP": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-GEN2-5GC-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-5GC-SW-TM"
+  },
+  "SMT-HC2-GEN2-AFI-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
+  },
+  "SMT-HC2-GEN2-AFS-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-AFS-SW-TM"
+  },
+  "SMT-HC2-GEN2-AMI-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
+  },
+  "SMT-HC2-GEN2-APF-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-APF-SW-TM"
+  },
+  "SMT-HC2-GEN2-AT1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-AT1-SW-TM"
+  },
+  "SMT-HC2-GEN2-BN-ZTA-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-GEN2-DCRP-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-INSSL-SW-TM"
+  },
+  "SMT-HC2-GEN2-DD1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-DD1-SW-TM"
+  },
+  "SMT-HC2-GEN2-FVU-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
+  },
+  "SMT-HC2-GEN2-GTPMAX-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-GTPMAX-SW-TM"
+  },
+  "SMT-HC2-GEN2-HS1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-HS1-SW-TM"
+  },
+  "SMT-HC2-GEN2-NF1-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC1P-GEN3-NF1-SW-TM"
+  },
+  "SMT-HC2-GEN2-SIP10-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
+  },
+  "SMT-HC2-GEN2-SIPMAX-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
+  },
+  "SMT-HC2-GEN2-VDR-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-GEN2-VDR-SW-TM"
+  },
+  "SMT-HC2-UPGBN-MV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-UPGBN-NV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-UPGBN-NVP": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-UPGBN-SV": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-UPGBN-SVP": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "SMT-HC2-VDR": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": "SMT-HC3-VDR"
+  },
+  "SMT-HC3-AFI": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-AFS": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-AMI": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-CORE": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-MV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-NV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-NVP": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-SV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-BN-SVP": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-C05-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-C08-SW-TM"
+  },
+  "SMT-HC3-GEN2-5GC-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-5GC-SW-TM"
+  },
+  "SMT-HC3-GEN2-AFI-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-AFI-SW-TM"
+  },
+  "SMT-HC3-GEN2-AFS-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-AFS-SW-TM"
+  },
+  "SMT-HC3-GEN2-AMI-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-AMI-SW-TM"
+  },
+  "SMT-HC3-GEN2-APF-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-APF-SW-TM"
+  },
+  "SMT-HC3-GEN2-AT1-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-AT1-SW-TM"
+  },
+  "SMT-HC3-GEN2-BN-ZTA-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-BN-ZTA-SW-TM"
+  },
+  "SMT-HC3-GEN2-DD1-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-DD1-SW-TM"
+  },
+  "SMT-HC3-GEN2-FVU-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
+  },
+  "SMT-HC3-GEN2-GTPMAX-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-GEN2-HS1-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-HS1-SW-TM"
+  },
+  "SMT-HC3-GEN2-INSSL-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-INSSL-SW-TM"
+  },
+  "SMT-HC3-GEN2-NF1-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-NF1-SW-TM"
+  },
+  "SMT-HC3-GEN2-SIPMAX-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-GEN2-SSL-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": "SMT-HC3-GEN3-SSL-SW-TM"
+  },
+  "SMT-HC3-GEN2-VDR-SW-TM": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGBN-MV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGBN-NV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGBN-NVP": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGBN-SV": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGBN-SVP": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "SMT-HC3-VDR": {
+    "eos": "2023-07-30",
+    "eol": "2028-07-30",
+    "replacement": ""
+  },
+  "TAP-HC0-D25AC0-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "TAP-HC0-D25BC0-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "TAP-HC0-D35CC0-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "TAP-HC0-G100C0-SW-TM": {
+    "eos": "2022-12-31",
+    "eol": "2027-12-31",
+    "replacement": ""
+  },
+  "UPG-TAC24-SW-TM": {
+    "eos": "2022-02-28",
+    "eol": "2027-02-28",
+    "replacement": "UPG-TAC20-SW-TM"
+  },
+  "UPG-TAC32-SW-TM": {
+    "eos": "2022-02-28",
+    "eol": "2027-02-28",
+    "replacement": "UPG-TAC20-SW-TM"
+  },
+  "UPG-TAX00-SW-TM": {
+    "eos": "2021-07-29",
+    "eol": "2026-07-29",
+    "replacement": "UPG-TAX20-SW-TM"
+  }
+}

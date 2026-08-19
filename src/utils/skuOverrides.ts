@@ -105,7 +105,12 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
     }
 
     let finalDesc = desc;
-    if (row.eos && !finalDesc.toLowerCase().includes(row.eos.toLowerCase())) {
+    // Some legacy SKUs' own Detailed Description text already ends with an
+    // "(EOS <human date>)" note that doesn't string-match the structured EOS
+    // column's ISO date (e.g. desc says "(EOS Dec 31, 2022)", column says
+    // "2022-12-31") - checking for any "(EOS" marker at all, not an exact
+    // date-string match, avoids appending a redundant second tag in that case.
+    if (row.eos && !/\(EOS\b/i.test(finalDesc)) {
       finalDesc += ` (EOS ${row.eos})`;
     }
 

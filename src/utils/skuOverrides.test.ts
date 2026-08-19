@@ -79,6 +79,18 @@ describe('skuOverrides', () => {
     expect(getMergedSkus()['LOWER-CASE-1']).toBe('Widget (EOS 2027-01-01)');
   });
 
+  it('does not double-tag a description that already ends with a human-formatted EOS note in a different format than the EOS column', () => {
+    // Real-world case: some legacy SKUs' own Detailed Description text already
+    // says "(EOS Dec 31, 2022)" while the structured EOS column holds the same
+    // date as an ISO string ("2022-12-31") - a naive substring match misses
+    // this and appends a redundant second tag.
+    applyPriceListRows(
+      [{ sku: 'LEGACY-1', description: 'Old widget (EOS Dec 31, 2022)', eos: '2022-12-31' }],
+      'price-list.xlsx',
+    );
+    expect(getMergedSkus()['LEGACY-1']).toBe('Old widget (EOS Dec 31, 2022)');
+  });
+
   it('records EOS/EOL/replacement metadata only when at least one is present', () => {
     applyPriceListRows(
       [

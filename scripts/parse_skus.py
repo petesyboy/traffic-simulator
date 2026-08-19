@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import re
 import sys
 
 # Define paths
@@ -103,8 +104,12 @@ def main():
             eol_val = row.get(eol_col, '').strip() if eol_col else ''
             repl_val = row.get(repl_col, '').strip().upper() if repl_col else ''
             
-            # Auto-suffix EOS date to description if present
-            if eos_val and eos_val.lower() not in desc.lower():
+            # Auto-suffix EOS date to description if present. Some legacy SKUs'
+            # own description text already ends with "(EOS <human date>)" that
+            # doesn't string-match the EOS column's ISO date (e.g. desc says
+            # "(EOS Dec 31, 2022)", column says "2022-12-31") - checking for
+            # any "(EOS" marker at all avoids appending a redundant second tag.
+            if eos_val and not re.search(r'\(EOS\b', desc, re.IGNORECASE):
                 desc += f" (EOS {eos_val})"
             
             # Save SKU description
