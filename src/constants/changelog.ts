@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.524",
+    date: "2026-08-19",
+    summary: "Unify TAP target-optic and chassis optic vocabularies onto real Gigamon SKUs",
+  },
+  {
     version: "1.0.523",
     date: "2026-08-19",
     summary: "Fix false TA200/TA400 QSFP connection refusal on high-speed tap links",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.505",
     date: "2026-08-08",
     summary: "Fixed a chassis port-assignment bug where a link with no pinned port (e.g. a SPAN feed sharing a chassis with pinned/TAP-fed optics) could silently land on a different physical port every time the topology was saved and reloaded - stranding a manually-fitted transceiver and moving the \"missing transceiver\" BOM warning to a new port each time instead of staying put. Port assignments now stay put across reloads unless the topology actually changes.",
-  },
-  {
-    version: "1.0.504",
-    date: "2026-08-08",
-    summary: "Fixed two PDF report gaps: a tool's \"Traffic originates from\" line now credits a TAP modelled as its own hardware unit alongside any SPAN/other inputs feeding the same tool (it was being silently dropped), and GigaSMART functions running as an onboard app on a chassis or GSA tool (e.g. deduplication configured directly on an HC1) now get their own description in the GigaSMART Processing section instead of being omitted entirely.",
   },
 ];

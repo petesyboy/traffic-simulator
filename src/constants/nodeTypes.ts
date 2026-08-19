@@ -19,6 +19,9 @@
  *   import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
  */
 
+import opticRules from './opticRules.json';
+import { getOpticFiberType, getOpticSpeed } from '../utils/hardwareUtils';
+
 // ─── React Flow node type identifiers ────────────────────────────────────────
 
 export const NODE_TYPES = {
@@ -152,38 +155,37 @@ export interface TapOpticOption {
   isCopper?: boolean;
 }
 
-// `value`/`label` here use the same real Gigamon transceiver SKUs and
-// wording as opticRules.json (the HC/TA chassis "Install Optics" picker) -
-// they used to be an independently-invented generic vocabulary (e.g.
-// '10G-SFP-SR') that never matched a chassis-side SKU, so a TAP's default
-// optic (already SKU-based elsewhere, e.g. 'SFP-532') couldn't display as
-// selected in this dropdown and the two pickers never agreed on wording.
-// resolveOpticSku() (src/utils/bom/skuUtils.ts) upgrades these to their TAA
-// ('T'-suffixed) variant for the BOM where one exists on the target chassis.
-export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = [
-  // --- 1G Optics ---
-  { value: 'SFP-502', label: 'SFP-502 (1G SFP SX)', isSM: false },
-  { value: 'SFP-503', label: 'SFP-503 (1G SFP LX)', isSM: true },
-  { value: 'SFP-501', label: 'SFP-501 (1G SFP Copper)', isSM: false, isCopper: true },
+const SPEED_ORDER: Record<string, number> = { '1G': 0, '10G': 1, '25G': 2, '40G': 3, '100G': 4, '400G': 5, Unknown: 6 };
 
-  // --- 10G Optics ---
-  { value: 'SFP-532', label: 'SFP-532 (10G SFP+ SR)', isSM: false },
-  { value: 'SFP-533', label: 'SFP-533 (10G SFP+ LR)', isSM: true },
-  { value: 'SFP-531', label: 'SFP-531 (10G SFP+ Copper)', isSM: false, isCopper: true },
+// Generated from opticRules.json - the exact same catalogue the HC/TA
+// chassis "Install Optics" picker reads (src/utils/opticValidation.ts /
+// OpticsPanel.tsx) - rather than a hand-typed, independently-worded list.
+// That hand list used to invent its own generic naming (e.g. '10G-SFP-SR')
+// that never matched a real chassis-side SKU, so a TAP's default optic
+// (SKU-based everywhere else, e.g. 'SFP-532') couldn't even display as
+// selected here, and the two pickers never agreed on wording. Deriving both
+// from one source guarantees they never diverge again.
+// resolveOpticSku() (src/utils/bom/skuUtils.ts) upgrades a chosen value to
+// its TAA ('T'-suffixed) variant for the BOM where the chassis has one.
+export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = (() => {
+  const rules = opticRules as Record<string, Record<string, string[]>>;
+  const uniqueLabels = new Set<string>();
+  Object.values(rules).forEach((boards) =>
+    Object.values(boards).forEach((optics) => optics.forEach((o) => uniqueLabels.add(o)))
+  );
 
-  // --- 25G Optics ---
-  { value: 'SFP-552', label: 'SFP-552 (25G SFP28 SR)', isSM: false },
-  { value: 'SFP-553T', label: 'SFP-553T (25G SFP28 LR)', isSM: true },
-
-  // --- 40G Optics ---
-  { value: 'QSF-502', label: 'QSF-502 (40G QSFP+ SR4)', isSM: false },
-  { value: 'QSF-508', label: 'QSF-508 (40G QSFP+ SWDM4)', isSM: false },
-  { value: 'QSF-503T', label: 'QSF-503T (40G QSFP+ LR4)', isSM: true },
-  { value: 'QSF-506', label: 'QSF-506 (40G QSFP+ PSM4)', isSM: true },
-
-  // --- 100G Optics ---
-  { value: 'Q28-502T', label: 'Q28-502T (100G QSFP28 SR4)', isSM: false },
-  { value: 'Q28-508', label: 'Q28-508 (100G QSFP28 SWDM4)', isSM: false },
-  { value: 'Q28-503', label: 'Q28-503 (100G QSFP28 LR4)', isSM: true },
-];
+  return Array.from(uniqueLabels)
+    .map((label) => {
+      const fiberType = getOpticFiberType(label);
+      return {
+        value: label.split(' ')[0],
+        label,
+        isSM: fiberType === 'SM',
+        isCopper: fiberType === 'Copper' ? true : undefined,
+        speed: getOpticSpeed(label),
+      };
+    })
+    .sort((a, b) => (SPEED_ORDER[a.speed] - SPEED_ORDER[b.speed]) || a.value.localeCompare(b.value))
+    .map(({ speed: _speed, ...opt }) => opt);
+})();
 
