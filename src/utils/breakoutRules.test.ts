@@ -11,14 +11,17 @@ import {
 } from './breakoutRules';
 
 describe('isParallelBreakoutOptic', () => {
-  it('accepts parallel-fibre standards', () => {
+  it('accepts every SKU on the KB\'s supported breakout list', () => {
     expect(isParallelBreakoutOptic('QSF-502 (40G QSFP+ SR4)')).toBe(true);
+    expect(isParallelBreakoutOptic('QSF-502T (40G QSFP+ SR4)')).toBe(true);
+    expect(isParallelBreakoutOptic('QSF-507 (40G QSFP+ SR4-ER)')).toBe(true);
+    expect(isParallelBreakoutOptic('QSF-507T (40G QSFP+ SR4-ER)')).toBe(true);
     expect(isParallelBreakoutOptic('QSF-506 (40G QSFP+ PSM4)')).toBe(true);
+    expect(isParallelBreakoutOptic('QSF-506T (40G QSFP+ PSM4)')).toBe(true);
     expect(isParallelBreakoutOptic('Q28-502T (100G QSFP28 SR4)')).toBe(true);
     expect(isParallelBreakoutOptic('Q28-506 (100G QSFP28 PLR4)')).toBe(true);
     expect(isParallelBreakoutOptic('QDD-511 (400G QSFP-DD DR4)')).toBe(true);
     expect(isParallelBreakoutOptic('QDD-512 (400G QSFP-DD DR4+)')).toBe(true);
-    expect(isParallelBreakoutOptic('QDD-501 (400G QSFP-DD SR4)')).toBe(true);
   });
 
   it('rejects single-lambda optics even though several are otherwise valid optics elsewhere', () => {
@@ -29,11 +32,26 @@ describe('isParallelBreakoutOptic', () => {
     expect(isParallelBreakoutOptic('QDD-503 (400G QSFP-DD LR4)')).toBe(false);
     expect(isParallelBreakoutOptic('QDD-514 (400G QSFP-DD FR4)')).toBe(false);
     expect(isParallelBreakoutOptic('Q28-508 (100G QSFP28 SWDM4)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSF-503T (40G QSFP+ LR4)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSF-504 (40G QSFP+ ER4)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSF-508 (40G QSFP+ SWDM4)')).toBe(false);
+    expect(isParallelBreakoutOptic('Q28-504T (100G QSFP28 ER4-lite)')).toBe(false);
+  });
+
+  it('rejects QSB BiDi optics - LC connector, not MPO, however many internal lanes', () => {
+    expect(isParallelBreakoutOptic('QSB-501 (40G QSFP+ BiDi)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSB-521 (100G QSFP28 BiDi)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSB-523T (100G QSFP28 BiDi)')).toBe(false);
+    expect(isParallelBreakoutOptic('QSB-531 (100G QSFP28 BiDi)')).toBe(false);
   });
 
   it('does not confuse a single-lane SR/DR with its parallel SR4/DR4 sibling', () => {
     expect(isParallelBreakoutOptic('Q28-515 (100G QSFP28 SR)')).toBe(false);
     expect(isParallelBreakoutOptic('SFP-532 (10G SFP+ SR)')).toBe(false);
+  });
+
+  it('rejects QDD-501 (400G QSFP-DD SR4) - a genuinely parallel multimode optic, but Gigamon has no supported multimode 400G breakout panel path', () => {
+    expect(isParallelBreakoutOptic('QDD-501 (400G QSFP-DD SR4)')).toBe(false);
   });
 });
 
@@ -67,8 +85,14 @@ describe('getBreakoutLcOptics', () => {
   it('100G singlemode -> 25G LR', () => {
     expect(getBreakoutLcOptics('Q28-506 (100G QSFP28 PLR4)')).toEqual(['SFP-553T (25G SFP28 LR)']);
   });
-  it('400G multimode -> single-lane 100G QSFP28 SR', () => {
-    expect(getBreakoutLcOptics('QDD-501 (400G QSFP-DD SR4)')).toEqual(['Q28-515 (100G QSFP28 SR)']);
+  it('400G has no multimode LC options - no supported multimode 400G parent optic exists', () => {
+    // QDD-501 isn't a valid parent per isParallelBreakoutOptic, but this
+    // asserts the LC-option lookup itself has no multimode 400G branch,
+    // independent of that gating.
+    expect(getBreakoutLcOptics('QDD-501 (400G QSFP-DD SR4)')).toEqual([
+      'Q28-511T (100G QSFP28 DR1)',
+      'Q28-514 (100G QSFP28 FR1)',
+    ]);
   });
   it('400G singlemode -> single-lane 100G QSFP28 DR1/FR1', () => {
     expect(getBreakoutLcOptics('QDD-511 (400G QSFP-DD DR4)')).toEqual([

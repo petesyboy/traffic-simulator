@@ -24,18 +24,36 @@ export type BreakoutParentSpeed = '40G' | '100G' | '400G';
 export type BreakoutLaneSpeed = '10G' | '25G' | '100G';
 
 /**
- * Parallel-fibre standards - the only optics legal as the parent (MPO-side)
- * optic of a breakout/aggregation link. Ordinary single-lambda optics (LR4,
- * CWDM4, SWDM4, FR4, ER4, and single-lane DR1/FR1) are NOT valid here, even
- * though several of them are otherwise perfectly normal optics elsewhere -
- * MPO breakout can't physically wire from a single-lambda transceiver.
- * Matches on a distinct "4" or "+" suffix so it never accidentally matches a
- * single-lane sibling (e.g. 'SR4' but not 'SR', 'DR4'/'DR4+' but not 'DR1').
+ * The exact SKUs Gigamon's transceiver datasheet and panel documentation
+ * list as valid parent (MPO-side) optics for physical breakout - NOT "any
+ * optic whose standard name ends in a parallel-lane suffix". A parallel-lane
+ * *form factor* (SR4/PLR4/PSM4/DR4/DR4+, all genuinely MPO/multi-lane parts)
+ * is necessary but not sufficient: QDD-501 (400G QSFP-DD SR4) is a real
+ * parallel multimode optic, but Gigamon has no supported multimode breakout
+ * panel path for 400G at all - the PNL-M341(T) family only breaks out 40G/
+ * 100G; 400G breakout is single-mode-only, via QDD-511/QDD-512 into the
+ * PNL-M343(T). A regex on the optic's name alone can't express that kind of
+ * "physically parallel but not on Gigamon's supported list" gap, so this is
+ * kept as an explicit allowlist instead, sourced from the KB's breakout
+ * table rather than inferred from naming conventions.
+ *
+ * Ordinary single-lambda optics (LR4, CWDM4, SWDM4, FR4, ER4, and
+ * single-lane DR1/FR1/SR) are excluded for the more fundamental reason that
+ * MPO breakout can't physically wire from a single-lambda transceiver at
+ * all - those were never candidates.
  */
-const PARALLEL_STANDARD = /\b(SR4|PLR4|PSM4|DR4\+?)\b/i;
+const PARALLEL_BREAKOUT_SKUS = new Set([
+  'QSF-502', 'QSF-502T',   // 40G QSFP+ SR4 (MM) -> 4x10G
+  'QSF-507', 'QSF-507T',   // 40G QSFP+ SR4-ER (MM, extended reach) -> 4x10G
+  'QSF-506', 'QSF-506T',   // 40G QSFP+ PSM4 (SM) -> 4x10G
+  'Q28-502T',              // 100G QSFP28 SR4 (MM) -> 4x25G; no non-TAA SKU exists
+  'Q28-506',               // 100G QSFP28 PLR4 (SM) -> 4x25G
+  'QDD-511',               // 400G QSFP-DD DR4 (SM) -> 4x100G
+  'QDD-512',               // 400G QSFP-DD DR4+ (SM) -> 4x100G
+]);
 
 export function isParallelBreakoutOptic(opticStr: string): boolean {
-  return PARALLEL_STANDARD.test(opticStr);
+  return PARALLEL_BREAKOUT_SKUS.has(opticStr.split(' ')[0].toUpperCase());
 }
 
 const LANE_SPEED_BY_PARENT: Record<BreakoutParentSpeed, BreakoutLaneSpeed> = {
@@ -55,6 +73,11 @@ export function getBreakoutLaneSpeed(parentSpeed: BreakoutParentSpeed): Breakout
  * single-lane QSFP28 (Q28-*), not an SFP28, despite landing on the panel's
  * same physical LC duplex connector as the 10G/25G tiers - see the comment
  * on getPanelPorts() in ports.ts for how that's handled in the port model.
+ *
+ * There's no multimode branch at 400G - PARALLEL_BREAKOUT_SKUS has no
+ * multimode 400G parent (Gigamon has no supported multimode 400G breakout
+ * panel path), so a valid parent optic reaching this function at 400G is
+ * always single-mode.
  */
 export function getBreakoutLcOptics(parentOpticStr: string): string[] {
   const speed = getOpticSpeed(parentOpticStr);
@@ -72,9 +95,7 @@ export function getBreakoutLcOptics(parentOpticStr: string): string[] {
       : ['SFP-553T (25G SFP28 LR)'];
   }
   if (speed === '400G') {
-    return isMM
-      ? ['Q28-515 (100G QSFP28 SR)']
-      : ['Q28-511T (100G QSFP28 DR1)', 'Q28-514 (100G QSFP28 FR1)'];
+    return ['Q28-511T (100G QSFP28 DR1)', 'Q28-514 (100G QSFP28 FR1)'];
   }
   return [];
 }
