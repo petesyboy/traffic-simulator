@@ -279,6 +279,13 @@ describe('MPO breakout panel validation', () => {
     data: { label: id, model: 'PNL-M341T', sku: 'PNL-M341T' },
   } as CustomNode);
 
+  const panelSM = (id: string): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data: { label: id, model: 'PNL-M343T', sku: 'PNL-M343T' },
+  } as CustomNode);
+
   const tool = (id: string): CustomNode => ({
     id,
     type: 'toolNode',
@@ -347,6 +354,40 @@ describe('MPO breakout panel validation', () => {
 
     const errors = validateConfiguration(nodes, edges);
     expect(errors.some(e => e.type === 'breakout_lane_speed_mismatch')).toBe(false);
+  });
+
+  // The panel/chassis edge can point either way - chassis->panel for breakout
+  // (chassis feeds the panel, fans out to lower-speed legs) or panel->chassis
+  // for aggregation (lower-speed legs feed the panel, funnels up into the
+  // chassis). validateBreakoutPanels() treats "the panel's MPO peer" the same
+  // regardless of edge direction, so the same parallel-optic rule (and its
+  // KB-sourced exclusions, e.g. QDD-501) must hold in both directions.
+  const qddChassis = (id: string, optic: string, qty = 1): CustomNode => ({
+    id,
+    type: 'hardwareNode',
+    position: { x: 0, y: 0 },
+    data: { label: id, model: 'GigaVUE-TA400E', sku: 'TA400E-BASE', optics: [{ board: 'Base Ports', optic, qty }] },
+  } as CustomNode);
+
+  it('flags QDD-501 (physically parallel but not a Gigamon-supported breakout SKU) wired in the aggregation direction (panel -> chassis)', () => {
+    const nodes = [panel('p1'), qddChassis('c1', 'QDD-501 (400G QSFP-DD SR4)')];
+    const edges: Edge[] = [{ id: 'e1', source: 'p1', target: 'c1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    const err = errors.find(e => e.type === 'breakout_optic_incompatible');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c1');
+    expect(err?.message).toContain('QDD-501');
+  });
+
+  it('accepts a genuinely supported aggregation parent (QDD-511, singlemode panel) wired panel -> chassis with no breakout errors', () => {
+    const nodes = [panelSM('p1'), qddChassis('c1', 'QDD-511 (400G QSFP-DD DR4)')];
+    const edges: Edge[] = [{ id: 'e1', source: 'p1', target: 'c1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    expect(errors.filter(e => e.type.startsWith('breakout_'))).toEqual([]);
   });
 
   it('flags a panel with more MPO groups wired than it physically has (defensive check for corrupted/hand-edited data)', () => {
