@@ -4,7 +4,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { areActionsCompatible } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
-import { getBoardPortCapacity, getChassisBasePortCapacity, isBreakoutPanelModel } from '../hardwareUtils';
+import { getBoardPortCapacity, getChassisBasePortCapacity, getOpticFiberType, isBreakoutPanelModel } from '../hardwareUtils';
 import {
   getChassisPorts,
   getOpticCage,
@@ -15,7 +15,7 @@ import {
 } from '../ports';
 import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
 import { getMergedSkusMetadata } from '../skuOverrides';
-import { isParallelBreakoutOptic, getBreakoutLcOptics, PANEL_MPO_GROUPS } from '../breakoutRules';
+import { isParallelBreakoutOptic, getBreakoutLcOptics, panelFiberType, PANEL_MPO_GROUPS } from '../breakoutRules';
 
 export interface ConfigurationValidationError {
   type:
@@ -32,7 +32,8 @@ export interface ConfigurationValidationError {
     | 'tap_optic_incompatible'
     | 'breakout_optic_incompatible'
     | 'breakout_panel_capacity_exceeded'
-    | 'breakout_lane_speed_mismatch';
+    | 'breakout_lane_speed_mismatch'
+    | 'breakout_panel_fiber_type_mismatch';
   message: string;
   nodeId?: string;
   nodeLabel?: string;
@@ -529,7 +530,9 @@ function validateBreakoutPanels(nodes: CustomNode[], edges: Edge[], errors: Conf
 
   linksByPanel.forEach((panelLinks, panelId) => {
     const panelNode = nodes.find((n) => n.id === panelId);
-    const panelLabel = String(panelNode?.data?.label || panelNode?.data?.model || panelId);
+    const panelModel = String(panelNode?.data?.model || '');
+    const panelLabel = String(panelNode?.data?.label || panelModel || panelId);
+    const panelFiber = panelFiberType(panelModel);
 
     // The MPO side determines each group's tier - resolve those first so the
     // LC-side pass below can check lane optics against the right speed.
@@ -541,13 +544,31 @@ function validateBreakoutPanels(nodes: CustomNode[], edges: Edge[], errors: Conf
         wiredGroups.add(panelPortId);
         const chassisOptic = peerPortId ? opticsByNode.get(peerNode?.id || '')?.get(peerPortId) : undefined;
         groupChassisOptic.set(panelPortId, chassisOptic);
-        if (chassisOptic && !isParallelBreakoutOptic(chassisOptic)) {
+        if (!chassisOptic) return;
+        const peerLabel = String(peerNode?.data?.label || peerNode?.data?.model || '');
+        if (!isParallelBreakoutOptic(chassisOptic)) {
           errors.push({
             type: 'breakout_optic_incompatible',
             nodeId: peerNode?.id,
-            nodeLabel: String(peerNode?.data?.label || peerNode?.data?.model || ''),
-            message: `Port ${peerPortId} on "${String(peerNode?.data?.label || peerNode?.data?.model)}" feeds breakout panel "${panelLabel}" but is fitted with ${chassisOptic.split(' ')[0]}, which is not a parallel-fibre optic. MPO breakout/aggregation requires SR4 (multimode) or PLR4/PSM4/DR4/DR4+ (singlemode) - not LR4, CWDM4, SWDM4, FR4 or single-lane DR1/FR1.`,
+            nodeLabel: peerLabel,
+            message: `Port ${peerPortId} on "${peerLabel}" feeds breakout panel "${panelLabel}" but is fitted with ${chassisOptic.split(' ')[0]}, which is not a parallel-fibre optic. MPO breakout/aggregation requires SR4 (multimode) or PLR4/PSM4/DR4/DR4+ (singlemode) - not LR4, CWDM4, SWDM4, FR4 or single-lane DR1/FR1.`,
           });
+        } else if (panelFiber) {
+          // A parallel-fibre optic can still be the wrong *fibre type* for this
+          // specific panel model - e.g. a multimode SR4 optic physically can't
+          // couple into a PNL-M343T's singlemode MPO/APC trunk connector, even
+          // though SR4 is a perfectly valid breakout parent in general.
+          const opticFiber = getOpticFiberType(chassisOptic);
+          if ((opticFiber === 'MM' || opticFiber === 'SM') && opticFiber !== panelFiber) {
+            const panelFiberWord = panelFiber === 'MM' ? 'multimode' : 'singlemode';
+            const opticFiberWord = opticFiber === 'MM' ? 'multimode' : 'singlemode';
+            errors.push({
+              type: 'breakout_panel_fiber_type_mismatch',
+              nodeId: peerNode?.id,
+              nodeLabel: peerLabel,
+              message: `Port ${peerPortId} on "${peerLabel}" feeds breakout panel "${panelLabel}" (${panelModel}, ${panelFiberWord}) with ${chassisOptic.split(' ')[0]}, a ${opticFiberWord} optic. Fit a ${panelFiberWord} parallel-fibre optic (${panelFiber === 'MM' ? 'SR4/SR4-ER' : 'PLR4/PSM4/DR4/DR4+'}) instead - the trunk connector's fibre type must match the panel.`,
+            });
+          }
         }
       });
 

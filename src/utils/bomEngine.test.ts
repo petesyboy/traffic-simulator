@@ -321,6 +321,55 @@ describe('MPO breakout panel validation', () => {
     expect(err?.message).toContain('Q28-503T');
   });
 
+  it('flags a multimode parallel optic (SR4) feeding a singlemode panel (PNL-M343T)', () => {
+    const nodes = [chassis('c1', 'Q28-502T (100G QSFP28 SR4)'), panelSM('p1')];
+    const edges: Edge[] = [{ id: 'e1', source: 'c1', target: 'p1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    // A genuinely parallel optic, so it must NOT also trip the separate
+    // "not a parallel-fibre optic" check - these are distinct problems.
+    expect(errors.some(e => e.type === 'breakout_optic_incompatible')).toBe(false);
+    const err = errors.find(e => e.type === 'breakout_panel_fiber_type_mismatch');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c1');
+    expect(err?.message).toContain('Q28-502T');
+    expect(err?.message).toContain('multimode');
+  });
+
+  it('flags a singlemode parallel optic (PLR4) feeding a multimode panel (PNL-M341T)', () => {
+    const nodes = [chassis('c1', 'Q28-506 (100G QSFP28 PLR4)'), panel('p1')];
+    const edges: Edge[] = [{ id: 'e1', source: 'c1', target: 'p1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    expect(errors.some(e => e.type === 'breakout_optic_incompatible')).toBe(false);
+    const err = errors.find(e => e.type === 'breakout_panel_fiber_type_mismatch');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c1');
+    expect(err?.message).toContain('Q28-506');
+  });
+
+  it('accepts a fibre-type-matched parallel optic (SR4 -> multimode panel) with no fibre mismatch error', () => {
+    const nodes = [chassis('c1', 'Q28-502T (100G QSFP28 SR4)'), panel('p1')];
+    const edges: Edge[] = [{ id: 'e1', source: 'c1', target: 'p1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    expect(errors.some(e => e.type === 'breakout_panel_fiber_type_mismatch')).toBe(false);
+  });
+
+  it('also flags a fibre-type mismatch wired in the aggregation direction (panel -> chassis)', () => {
+    const nodes = [panelSM('p1'), chassis('c1', 'Q28-502T (100G QSFP28 SR4)')];
+    const edges: Edge[] = [{ id: 'e1', source: 'p1', target: 'c1' }];
+    const synced = syncPortAssignments(nodes, edges);
+    const errors = validateConfiguration(nodes, synced);
+
+    const err = errors.find(e => e.type === 'breakout_panel_fiber_type_mismatch');
+    expect(err).toBeDefined();
+    expect(err?.nodeId).toBe('c1');
+  });
+
   it('flags an LC lane optic that does not match the group\'s derived speed/fibre tier', () => {
     // 100G MM parent -> lanes should be 25G SR (SFP-552/552T); wire the lane to a
     // second chassis fitted with a 10G optic instead, a genuine speed mismatch.
