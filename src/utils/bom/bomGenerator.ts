@@ -295,6 +295,14 @@ export function generateBom(
     addRow(node.id, resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) addRow(node.id, resolved.swSku, 1, 'License', termOverride);
     if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
+    // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default -
+    // going to Full (64 ports) needs a separate UPG-TAC20(E)(-SW-TM) add-on
+    // license. See the matching comment in generateSingleNodeBom below and in
+    // skuResolver.ts.
+    if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
+      const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
+      addRow(node.id, globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
+    }
     if (model.includes('TA') || model.includes('HC')) {
       if (node.data?.powerSupply === 'DC') addRow(node.id, 'PCD-00051', 2, 'Dependency');
       else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), 2, 'Dependency');
@@ -668,6 +676,15 @@ export function generateSingleNodeBom(
   addRow(resolved.hwSku, 1, 'Chassis');
   if (resolved.swSku) addRow(resolved.swSku, 1, 'License', termOverride);
   if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
+  // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default (the
+  // base GVS-TAC2[12](E)(-HW)/-SW-TM SKUs already cover that) - going to Full
+  // (64 ports) is a separate UPG-TAC20(E)(-SW-TM) add-on license, not a
+  // different base SKU. See the comment in skuResolver.ts for why this isn't
+  // baked into resolved.swSku like TA25(E)/TA400(E)'s suffixed variants are.
+  if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
+    const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
+    addRow(globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
+  }
   if (model.includes('TA') || model.includes('HC')) {
     if (node.data?.powerSupply === 'DC') addRow('PCD-00051', 2, 'Dependency');
     else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), 2, 'Dependency');

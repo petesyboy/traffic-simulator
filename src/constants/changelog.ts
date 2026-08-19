@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.536",
+    date: "2026-08-19",
+    summary: "Add an optional executive-summary field to the solution report export",
+  },
+  {
     version: "1.0.534",
     date: "2026-08-19",
     summary: "Stop claiming every chassis is \"filtering\" traffic in Export Diagram Mode",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.516",
     date: "2026-08-11",
     summary: "Added IP FlowVUE and GTP Flow Filtering to the Applications palette, so they can be dragged onto an HC chassis like any other GigaSMART function and picked up correctly in the Bill of Materials.",
-  },
-  {
-    version: "1.0.515",
-    date: "2026-08-11",
-    summary: "Renamed the disk save/load buttons to Export and Import, to better describe what they do (Browser Save/Browser Load are unchanged).",
   },
 ];

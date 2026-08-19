@@ -72,6 +72,29 @@ describe('skuResolver - resolveNodeSkus', () => {
     });
   });
 
+  it('should NOT suffix TA200/TA200E SKUs for the Half tier - unlike TA25(E)/TA400(E), Gigamon has no distinct Half SKU for them; the base SKU already is the 32-port state and Full is a separate UPG-TAC20(E) add-on (see bomGenerator.ts)', () => {
+    expect(resolveNodeSkus({ model: 'GigaVUE-TA200', powerSupply: 'AC', portCapacity: 'Half' }, 'Perpetual')).toEqual({
+      hwSku: 'GVS-TAC21',
+      swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-TA200', powerSupply: 'AC', portCapacity: 'Half' }, 'HTL')).toEqual({
+      hwSku: 'GVS-TAC21-HW',
+      swSku: 'GVS-TAC20-SW-TM',
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-TA200E', powerSupply: 'DC', portCapacity: 'Half' }, 'Perpetual')).toEqual({
+      hwSku: 'GVS-TAC22E',
+      swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-TA200E', powerSupply: 'DC', portCapacity: 'Half' }, 'HTL')).toEqual({
+      hwSku: 'GVS-TAC22E-HW',
+      swSku: 'GVS-TAC20E-SW-TM',
+      advSku: undefined,
+    });
+  });
+
   it('should resolve TAPs properly and return early without SW/Advanced licenses', () => {
     expect(resolveNodeSkus({ model: 'G-TAP A-TX', tapPower: 'Individual Power Brick' }, 'Perpetual')).toEqual({
       hwSku: 'GTP-ATX01-UN',

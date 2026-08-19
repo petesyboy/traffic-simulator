@@ -76,9 +76,13 @@ export function resolveNodeSkus(nodeData: HardwareNodeSkuData, globalLicenseMode
     return { hwSku: resolvedSku };
   }
 
-  // Adjust for port capacity in Perpetual mode
+  // Adjust for port capacity in Perpetual mode. TA200/TA200E are deliberately
+  // excluded here: unlike TA25(E)/TA400(E), Gigamon has no distinct "Half"
+  // SKU for them - the base GVS-TAC2[12](E) already *is* the 32-port/Half
+  // state, and going to Full/64 ports is a separate UPG-TAC20(E) add-on
+  // license (see bomGenerator.ts), not a suffixed variant of the base SKU.
   if (licenseMode !== 'HTL') {
-    if (model.includes('TA25E') || model.includes('TA25') || model.includes('TA200') || model.includes('TA400')) {
+    if (model.includes('TA25E') || model.includes('TA25') || model.includes('TA400')) {
       if (portCapacity === 'Half' || portCapacity === '100G' || portCapacity === 'Upgrade') {
         resolvedSku += 'A';
       } else if (portCapacity === 'Quarter') {
@@ -112,9 +116,11 @@ export function resolveNodeSkus(nodeData: HardwareNodeSkuData, globalLicenseMode
         baseSwSku = baseSwSku.replace(/[12]/, '0');
       }
 
-      if (portCapacity === 'Half' || portCapacity === '100G' || portCapacity === 'Upgrade') {
+      // TA200/TA200E have no distinct "Half" SW-TM SKU - see the Perpetual-mode
+      // comment above for why they're excluded from this suffix.
+      if (!model.includes('TA200') && (portCapacity === 'Half' || portCapacity === '100G' || portCapacity === 'Upgrade')) {
         baseSwSku += 'A';
-      } else if (portCapacity === 'Quarter') {
+      } else if (!model.includes('TA200') && portCapacity === 'Quarter') {
         baseSwSku += 'B';
       }
       swSku = baseSwSku + '-SW-TM';
