@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.538",
+    date: "2026-08-19",
+    summary: "Ship v1.0.538: refreshed SKU catalogue from the real price list",
+  },
+  {
     version: "1.0.537",
     date: "2026-08-19",
     summary: "Ship v1.0.537: executive-summary report field + TA200/TA200E licensing fix",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.518",
     date: "2026-08-14",
     summary: "Added a second auto-playing demo, \"Mission Demo\", based on the \"Our Long-Time Mission\" sales slide: animates a chaotic network (routers, core/dist/access switches wired directly to 10 separate point security tools with crossing connections) collapsing into a single Gigamon Deep Observability Pipeline with one clean connection per tool, then runs the traffic simulation to show it working end to end before looping. Toggled independently from the existing Auto Demo via a new header button in Advanced Mode.",
-  },
-  {
-    version: "1.0.517",
-    date: "2026-08-11",
-    summary: "Fixed GigaSMART compatibility rules that wrongly refused combining FlowVUE with GTP Flow Filtering/Whitelisting/Flow Sampling on the same Gen3 card - per Gigamon's KB, they're separate entitlements that can coexist. Also modelled the licensing correctly: GTP whitelisting always needs both GTPMAX and FlowVUE, and GTP flow sampling needs both for any sample rate strictly between 0% and 100% (0% or 100% needs GTPMAX alone) - added a sample-rate control to the GigaSMART app panel that shows the licensing impact live.",
   },
 ];

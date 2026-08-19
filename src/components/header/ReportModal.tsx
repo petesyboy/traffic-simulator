@@ -159,7 +159,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           </label>
           <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
             A short summary of what's being deployed and why, in the customer's own context. Left blank, the report
-            uses a generic summary paragraph instead.
+            uses a generic summary paragraph instead. Supports basic Markdown: <strong>**bold**</strong>,{' '}
+            <em>*italic*</em>, <code>`code`</code>, <code># headings</code>, and <code>-</code>/<code>1.</code> lists.
           </p>
           <textarea
             id="report-exec-summary"
@@ -173,7 +174,10 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               resize: 'vertical',
               fontFamily: 'inherit',
             }}
-            placeholder="e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project…"
+            placeholder={
+              'e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project.\n\n' +
+              '**Key outcomes:**\n- Full east/west visibility\n- Reduced tool load via deduplication'
+            }
           />
         </div>
 

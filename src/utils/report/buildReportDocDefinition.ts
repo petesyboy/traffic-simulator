@@ -37,6 +37,7 @@ import { describeTapPhysicalLink } from './describeTapLink';
 import { describeChassisPurpose } from './chassisDescriptions';
 import { isAutoTrayModel } from '../trayModels';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
+import { markdownToPdfmakeContent } from './markdownToPdfmake';
 
 export interface ReportInput {
   nodes: CustomNode[];
@@ -139,14 +140,17 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   // ── Executive summary ──
   content.push({ text: 'Executive Summary', style: 'sectionHeading' });
-  content.push({
-    text:
-      execSummaryText ||
-      'This report describes the Gigamon visibility pipeline configured for this project: the traffic sources feeding it, ' +
+  if (execSummaryText) {
+    content.push(...markdownToPdfmakeContent(execSummaryText));
+  } else {
+    content.push({
+      text:
+        'This report describes the Gigamon visibility pipeline configured for this project: the traffic sources feeding it, ' +
         'how traffic is filtered and processed, the tools and destinations receiving it, and the hardware required to deliver it.',
-    style: 'body',
-    margin: [0, 0, 0, 12],
-  });
+      style: 'body',
+      margin: [0, 0, 0, 12],
+    });
+  }
   content.push({
     columns: [
       statBlock('Traffic Sources', stats.inputCounts.total),
