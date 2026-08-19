@@ -20,7 +20,7 @@
  */
 
 import opticRules from './opticRules.json';
-import { getOpticFiberType, getOpticSpeed } from '../utils/hardwareUtils';
+import { getOpticFiberType, getOpticSpeed, formatOpticLabel } from '../utils/hardwareUtils';
 
 // ─── React Flow node type identifiers ────────────────────────────────────────
 
@@ -167,6 +167,9 @@ const SPEED_ORDER: Record<string, number> = { '1G': 0, '10G': 1, '25G': 2, '40G'
 // from one source guarantees they never diverge again.
 // resolveOpticSku() (src/utils/bom/skuUtils.ts) upgrades a chosen value to
 // its TAA ('T'-suffixed) variant for the BOM where the chassis has one.
+// `label` is run through the same formatOpticLabel() the HC/TA "Install
+// Optics" picker (OpticsPanel.tsx) uses, so an option reads identically
+// (e.g. "SFP-532 (10G SFP+ SR) [MM]") in both pickers.
 export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = (() => {
   const rules = opticRules as Record<string, Record<string, string[]>>;
   const uniqueLabels = new Set<string>();
@@ -175,14 +178,14 @@ export const SUPPORTED_TAP_OPTICS: TapOpticOption[] = (() => {
   );
 
   return Array.from(uniqueLabels)
-    .map((label) => {
-      const fiberType = getOpticFiberType(label);
+    .map((raw) => {
+      const fiberType = getOpticFiberType(raw);
       return {
-        value: label.split(' ')[0],
-        label,
+        value: raw.split(' ')[0],
+        label: formatOpticLabel(raw),
         isSM: fiberType === 'SM',
         isCopper: fiberType === 'Copper' ? true : undefined,
-        speed: getOpticSpeed(label),
+        speed: getOpticSpeed(raw),
       };
     })
     .sort((a, b) => (SPEED_ORDER[a.speed] - SPEED_ORDER[b.speed]) || a.value.localeCompare(b.value))

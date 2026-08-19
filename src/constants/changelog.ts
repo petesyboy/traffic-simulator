@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.525",
+    date: "2026-08-19",
+    summary: "Derive TAP target-optic list directly from opticRules.json",
+  },
+  {
     version: "1.0.524",
     date: "2026-08-19",
     summary: "Unify TAP target-optic and chassis optic vocabularies onto real Gigamon SKUs",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.506",
     date: "2026-08-08",
     summary: "Decluttered Standard View: Duplicate, Auto Demo, Screenshot and Generate Report have moved to Expert Designer (Advanced Mode) only, so the header stays focused on basic simulation and save/load in simple mode. All four remain exactly where they were in Advanced Mode.",
-  },
-  {
-    version: "1.0.505",
-    date: "2026-08-08",
-    summary: "Fixed a chassis port-assignment bug where a link with no pinned port (e.g. a SPAN feed sharing a chassis with pinned/TAP-fed optics) could silently land on a different physical port every time the topology was saved and reloaded - stranding a manually-fitted transceiver and moving the \"missing transceiver\" BOM warning to a new port each time instead of staying put. Port assignments now stay put across reloads unless the topology actually changes.",
   },
 ];
