@@ -452,8 +452,14 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                 .join(', ');
 
               desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}\n\n`;
-              desc += `Aggregating, filtering, and distributing network traffic to destination tools.`;
-              
+              const hasFiltering = conditions && conditions.length > 0;
+              const hasGigaSmart = gigaSmartApps.length > 0;
+              desc += 'Aggregating and distributing network traffic to destination tools';
+              if (hasFiltering && hasGigaSmart) desc += ', with traffic map filtering and GigaSMART processing applied (see below).';
+              else if (hasFiltering) desc += ', with traffic map filtering rules applied (see below).';
+              else if (hasGigaSmart) desc += ', with GigaSMART processing applied (see below).';
+              else desc += ' - no traffic map filtering or GigaSMART processing configured, so traffic passes through unmodified.';
+
               if (conditions && conditions.length > 0) {
                 desc += `\n\nTraffic Map (Filtering Rules):\n` + conditions.map((c, i) => {
                   const logicPrefix = i > 0 ? `${c.logic} ` : '';

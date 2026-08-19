@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.533",
+    date: "2026-08-19",
+    summary: "Stop showing In/Out throughput on breakout panel nodes",
+  },
+  {
     version: "1.0.532",
     date: "2026-08-19",
     summary: "Close the breakout-panel fibre-type gap: cross-check parent optic vs panel model",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.514",
     date: "2026-08-11",
     summary: "Fixed the BOM silently omitting a license when a GigaSMART app was set to IP FlowVUE or any GTP function (Flow Filtering, Rotational Sampling, Whitelisting, Flow Sampling) - the SKUs existed but the BOM engine had no mapping for those functions. Now correctly quotes the FlowVUE or GTP Filtering & Correlation (GTPMAX) license per chassis and license mode.",
-  },
-  {
-    version: "1.0.513",
-    date: "2026-08-11",
-    summary: "Extended the front-panel optic-occupancy overlay to GigaVUE-HC1-Plus and the GigaVUE-HC3 module family (PRT-HC3-X24, PRT-HC3-C16, PRT-HC3-C08Q08, SMT-HC3-C08, SMT-HC3-C05). Also switched the \"fitted\" marker from a green outline to a blue box with a checkmark, so it reads clearly under red-green colour vision deficiency and doesn't rely on colour alone.",
   },
 ];
