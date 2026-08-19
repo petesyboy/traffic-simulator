@@ -411,6 +411,7 @@ export interface RFState {
   setSnapToGrid: (snap: boolean) => void;
   setExportDiagramMode: (val: boolean) => void;
   snapAllNodesToGrid: () => void;
+  tidyLayout: () => void;
   addTrafficStream: (stream: TrafficStream) => void;
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
   deleteTrafficStream: (id: string) => void;

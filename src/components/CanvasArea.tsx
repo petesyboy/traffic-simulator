@@ -47,7 +47,7 @@ const CanvasArea: React.FC = () => {
   const {
     draggedNodeType, nodes, edges, activeEdges, blockedEdges, 
     encryptedEdges, decryptedEdges, edgeMetrics, edgeEncryptedMbps, isRunning,
-    showGrid, snapToGrid, snapAllNodesToGrid, exportDiagramMode,
+    showGrid, snapToGrid, snapAllNodesToGrid, tidyLayout, exportDiagramMode,
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
     addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger,
     zoomToNodeId, zoomToNodeTrigger,
@@ -320,6 +320,7 @@ const CanvasArea: React.FC = () => {
         <Controls />
         <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
+          <button onClick={tidyLayout} title="Re-arrange the whole topology into clean left-to-right columns by pipeline stage, so nodes of the same kind line up" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', fontSize: '11px', fontWeight: 600, color: exportDiagramMode ? '#00e5ff' : '#ccc', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', userSelect: 'none', transition: 'all 0.2s ease' }}>
             <input type="checkbox" checked={exportDiagramMode} onChange={(e) => setExportDiagramMode(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#00e5ff' }} /> Export Diagram Ready Mode
           </label>
