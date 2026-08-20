@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.544",
+    date: "2026-08-20",
+    summary: "Ship v1.0.544: consolidate standalone single-line BOM devices",
+  },
+  {
     version: "1.0.543",
     date: "2026-08-20",
     summary: "Ship v1.0.543: project-wide optic pack optimization + surplus notes",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.524",
     date: "2026-08-19",
     summary: "Unify TAP target-optic and chassis optic vocabularies onto real Gigamon SKUs",
-  },
-  {
-    version: "1.0.523",
-    date: "2026-08-19",
-    summary: "Fix false TA200/TA400 QSFP connection refusal on high-speed tap links",
   },
 ];

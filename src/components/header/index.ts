@@ -11,6 +11,8 @@ export { default as BomModal } from './BomModal';
 export { default as AboutModal } from './AboutModal';
 export { default as SkuUpdateModal } from './SkuUpdateModal';
 export { default as ReportModal } from './ReportModal';
+export { SaveSlotModal } from './SaveSlotModal';
+
 
 export {
   PlayIcon,
@@ -40,3 +42,5 @@ export type { BomModalProps } from './BomModal';
 export type { AboutModalProps } from './AboutModal';
 export type { SkuUpdateModalProps } from './SkuUpdateModal';
 export type { ReportModalProps } from './ReportModal';
+export type { SaveSlotModalProps } from './SaveSlotModal';
+

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from './consolidateSimpleDevices';
-import type { BomRow } from './bomGenerator';
+import { generateBom, type BomRow } from './bomGenerator';
+import { buildProjectWideOpticBom } from './opticPacks';
+import { getSkus } from './skuUtils';
+import type { CustomNode } from '../../store/types';
 
 const tapRow = (nodeId: string, site = 'HQ'): BomRow => ({
   sku: 'TAP-M273T',
@@ -74,5 +77,54 @@ describe('consolidateSimpleDeviceRows', () => {
     expect(result).toHaveLength(3);
     expect(result.find((r) => r.sku === 'TAP-M273T')).toMatchObject({ qty: 2, nodeId: CONSOLIDATED_DEVICES_NODE_ID });
     expect(result.filter((r) => r.nodeId === 'hc3-1')).toHaveLength(2);
+  });
+});
+
+describe('consolidation feeding into the Master (All Sites) view - reproduces BomModal.tsx\'s exact pipeline', () => {
+  const m273t = (id: string, site?: string): CustomNode =>
+    ({
+      id,
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: { label: 'TAP-M273T', model: 'TAP-M273T', sku: 'TAP-M273T', ...(site ? { site } : {}) },
+    }) as CustomNode;
+
+  it('shows one combined 9x TAP-M273T row on Master view for nine modules on one site', () => {
+    const nodes = Array.from({ length: 9 }, (_, i) => m273t(`tap-${i + 1}`, 'HQ'));
+    const raw = generateBom(nodes, [], 'HTL', '12');
+    const consolidated = consolidateSimpleDeviceRows(raw);
+    const master = buildProjectWideOpticBom(consolidated, getSkus());
+
+    const tapRows = master.filter((r) => r.sku === 'TAP-M273T');
+    expect(tapRows).toHaveLength(1);
+    expect(tapRows[0].qty).toBe(9);
+  });
+
+  it('still combines correctly into one Master row even across two different sites (9 + 9 = 18)', () => {
+    const nodes = [
+      ...Array.from({ length: 9 }, (_, i) => m273t(`tap-hq-${i + 1}`, 'HQ')),
+      ...Array.from({ length: 9 }, (_, i) => m273t(`tap-branch-${i + 1}`, 'Branch')),
+    ];
+    const raw = generateBom(nodes, [], 'HTL', '12');
+    const consolidated = consolidateSimpleDeviceRows(raw);
+    const master = buildProjectWideOpticBom(consolidated, getSkus());
+
+    const tapRows = master.filter((r) => r.sku === 'TAP-M273T');
+    expect(tapRows).toHaveLength(1);
+    expect(tapRows[0].qty).toBe(18);
+  });
+
+  it('produces the exact same Master-view totals whether or not the Site-tab consolidation step ran first', () => {
+    // The per-node/per-site merge is purely cosmetic for the Site tab - Master
+    // view already aggregates by SKU project-wide regardless, so running
+    // consolidateSimpleDeviceRows first must be a no-op for its numbers.
+    const nodes = Array.from({ length: 9 }, (_, i) => m273t(`tap-${i + 1}`, 'HQ'));
+    const raw = generateBom(nodes, [], 'HTL', '12');
+
+    const masterWithConsolidation = buildProjectWideOpticBom(consolidateSimpleDeviceRows(raw), getSkus());
+    const masterWithoutConsolidation = buildProjectWideOpticBom(raw, getSkus());
+
+    const sortBySku = (rows: BomRow[]) => [...rows].sort((a, b) => a.sku.localeCompare(b.sku));
+    expect(sortBySku(masterWithConsolidation)).toEqual(sortBySku(masterWithoutConsolidation));
   });
 });
