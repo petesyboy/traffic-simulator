@@ -153,11 +153,44 @@ export const processGigaSmartNode: NodeProcessor = (
     
     forwardStream = { ...item.stream, bandwidth: slicedBandwidth };
   } 
-  else if (actionType === 'Header Stripping') {
-    const strippedBandwidth = item.stream.bandwidth * 0.95;
+  else if (actionType === 'Header Stripping' || actionType === 'Header/Trailer Remove') {
+    const protocol = data.headerStripProtocol || 'VXLAN';
+    const protocolScales: Record<string, number> = {
+      VXLAN: 0.95,
+      ERSPAN: 0.955,
+      'GTP-U': 0.96,
+      MPLS: 0.985,
+      VLAN: 0.992,
+      Custom: data.headerStripRate !== undefined ? (1 - (data.headerStripRate / 100)) : 0.94,
+    };
+    const scale = protocolScales[protocol] ?? 0.95;
+    const strippedBandwidth = item.stream.bandwidth * scale;
+    dropBandwidth = item.stream.bandwidth * (1 - scale);
+
+    nodeMetric.droppedPackets += dropBandwidth * 250;
     nodeMetric.txMbps += strippedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: strippedBandwidth };
+  }
+  else if (actionType === 'GTP Flow Sampling' || actionType === 'IP FlowVUE') {
+    const sampleRate = ((data.gtpSamplePercent !== undefined ? data.gtpSamplePercent : 10)) / 100;
+    const sampledBandwidth = item.stream.bandwidth * sampleRate;
+    dropBandwidth = item.stream.bandwidth * (1 - sampleRate);
+
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.txMbps += sampledBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250 * sampleRate;
+    forwardStream = { ...item.stream, bandwidth: sampledBandwidth };
+  }
+  else if (actionType === 'GTP Whitelisting') {
+    const passRate = ((data.gtpWhitelistPassPercent !== undefined ? data.gtpWhitelistPassPercent : 25)) / 100;
+    const whitelistBandwidth = item.stream.bandwidth * passRate;
+    dropBandwidth = item.stream.bandwidth * (1 - passRate);
+
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.txMbps += whitelistBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250 * passRate;
+    forwardStream = { ...item.stream, bandwidth: whitelistBandwidth };
   }
   else {
     let scale = 1.0;
@@ -173,3 +206,4 @@ export const processGigaSmartNode: NodeProcessor = (
   }
   return { forwardStream, dropBandwidth };
 };
+

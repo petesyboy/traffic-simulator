@@ -87,6 +87,11 @@ const appsList = [
     initial: { actionType: ACTION_TYPES.SSL_DECRYPT, configType: ACTION_TYPES.SSL_DECRYPT },
   },
   {
+    label: 'Header Stripping',
+    type: NODE_TYPES.GIGASMART,
+    initial: { actionType: ACTION_TYPES.HEADER_STRIP, configType: ACTION_TYPES.HEADER_STRIP, headerStripProtocol: 'VXLAN' },
+  },
+  {
     label: 'IP FlowVUE',
     type: NODE_TYPES.GIGASMART,
     initial: { actionType: ACTION_TYPES.IP_FLOWVUE, configType: ACTION_TYPES.IP_FLOWVUE },
@@ -95,6 +100,16 @@ const appsList = [
     label: 'GTP Flow Filtering',
     type: NODE_TYPES.GIGASMART,
     initial: { actionType: ACTION_TYPES.GTP_FLOW_FILTERING, configType: ACTION_TYPES.GTP_FLOW_FILTERING },
+  },
+  {
+    label: 'GTP Whitelisting',
+    type: NODE_TYPES.GIGASMART,
+    initial: { actionType: ACTION_TYPES.GTP_WHITELISTING, configType: ACTION_TYPES.GTP_WHITELISTING },
+  },
+  {
+    label: 'GTP Flow Sampling',
+    type: NODE_TYPES.GIGASMART,
+    initial: { actionType: ACTION_TYPES.GTP_FLOW_SAMPLING, configType: ACTION_TYPES.GTP_FLOW_SAMPLING, gtpSamplePercent: 10 },
   },
 ] as const;
 

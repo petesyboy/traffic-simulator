@@ -148,6 +148,32 @@ export const isMetadataAction = (actionType: string): boolean =>
 export const isDedupAction = (actionType: string): boolean =>
   actionType === ACTION_TYPES.DEDUPLICATION;
 
+/**
+ * Returns true for any GigaSMART GTP flow intelligence action
+ * (GTP Flow Filtering, GTP Whitelisting, GTP Flow Sampling, GTP Rotational Sampling).
+ */
+export const isGtpAction = (actionType: string): boolean =>
+  actionType === ACTION_TYPES.GTP_FLOW_FILTERING ||
+  actionType === ACTION_TYPES.GTP_WHITELISTING ||
+  actionType === ACTION_TYPES.GTP_FLOW_SAMPLING ||
+  actionType === ACTION_TYPES.GTP_ROTATIONAL_SAMPLING ||
+  actionType.startsWith('GTP');
+
+/**
+ * Returns true for Header Stripping actions.
+ */
+export const isHeaderStripAction = (actionType: string): boolean =>
+  actionType === ACTION_TYPES.HEADER_STRIP ||
+  actionType === ACTION_TYPES.HEADER_TRAILER_REMOVE;
+
+/**
+ * Returns true for packet slicing actions.
+ */
+export const isSlicingAction = (actionType: string): boolean =>
+  actionType === ACTION_TYPES.PACKET_SLICING ||
+  actionType === ACTION_TYPES.ADVANCED_FLOW_SLICING;
+
+
 export interface TapOpticOption {
   value: string;
   label: string;

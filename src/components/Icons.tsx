@@ -78,11 +78,14 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
       );
     case 'headerstripping':
     case 'header-stripping':
+    case 'header-strip':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
           <rect width="24" height="24" rx="4" fill="#0091ea"/>
-          <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.5" strokeDasharray="2 2" fill="none"/>
-          <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+          {/* Outer header peel / strip icon */}
+          <rect x="5" y="6" width="14" height="4" rx="1" stroke="white" strokeWidth="1.2" strokeDasharray="2 1.5" fill="rgba(255,255,255,0.15)"/>
+          <path d="M19 8l2-2M5 8l-2-2" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+          <rect x="5" y="12" width="14" height="6" rx="1.2" fill="white"/>
         </svg>
       );
     case 'load-balancing':
@@ -177,11 +180,43 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
         </svg>
       );
     case 'gtp-flow-filtering':
+    case 'gtp-flow-filter':
+    case 'gtp-filtering':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
           <rect width="24" height="24" rx="4" fill="#0091ea"/>
-          <text x="12" y="11" fill="white" fontSize="6" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle">GTP</text>
-          <path d="M8 13.5h8l-3 4h-2l-3-4z" fill="white"/>
+          <text x="12" y="10.5" fill="white" fontSize="5.5" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle">GTP</text>
+          <path d="M8 13h8l-3 4h-2l-3-4z" fill="white"/>
+        </svg>
+      );
+    case 'gtp-whitelisting':
+    case 'gtp-whitelist':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          <text x="12" y="10" fill="white" fontSize="5" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle">GTP</text>
+          <path d="M7 14.5l3.5 3.5 6.5-6.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    case 'gtp-flow-sampling':
+    case 'gtp-sampling':
+    case 'gtp-rotational-sampling':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          <text x="12" y="9.5" fill="white" fontSize="4.5" fontFamily="sans-serif" fontWeight="bold" textAnchor="middle">GTP %</text>
+          <circle cx="12" cy="15" r="3.5" stroke="white" strokeWidth="1.2" strokeDasharray="1.5 1" fill="none"/>
+          <path d="M12 12v3l2 1" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+        </svg>
+      );
+    case 'gtp-correlation':
+    case 'gtp-call-correlation':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          <circle cx="8" cy="8" r="2" fill="white"/>
+          <circle cx="16" cy="16" r="2" fill="white"/>
+          <path d="M8 8l8 8M7 16h3M14 8h3" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       );
     default:

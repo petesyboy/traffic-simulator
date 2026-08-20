@@ -44,8 +44,30 @@ export function runGigaSmartApps(
       const drop = stream.bandwidth * (1 - ratio);
       nodeMetric.droppedPackets += drop * 250;
       stream.bandwidth *= ratio;
-    } else if (actionType === 'Header Stripping') {
-      stream.bandwidth *= 0.95;
+    } else if (actionType === 'Header Stripping' || actionType === 'Header/Trailer Remove') {
+      const protocol = (app.headerStripProtocol as string) || 'VXLAN';
+      const protocolScales: Record<string, number> = {
+        VXLAN: 0.95,
+        ERSPAN: 0.955,
+        'GTP-U': 0.96,
+        MPLS: 0.985,
+        VLAN: 0.992,
+        Custom: app.headerStripRate !== undefined ? (1 - (app.headerStripRate / 100)) : 0.94,
+      };
+      const scale = protocolScales[protocol] ?? 0.95;
+      const drop = stream.bandwidth * (1 - scale);
+      nodeMetric.droppedPackets += drop * 250;
+      stream.bandwidth *= scale;
+    } else if (actionType === 'GTP Flow Sampling' || actionType === 'IP FlowVUE') {
+      const sampleRate = ((app.gtpSamplePercent !== undefined ? app.gtpSamplePercent : 10)) / 100;
+      const drop = stream.bandwidth * (1 - sampleRate);
+      nodeMetric.droppedPackets += drop * 250;
+      stream.bandwidth *= sampleRate;
+    } else if (actionType === 'GTP Whitelisting') {
+      const passRate = ((app.gtpWhitelistPassPercent !== undefined ? app.gtpWhitelistPassPercent : 25)) / 100;
+      const drop = stream.bandwidth * (1 - passRate);
+      nodeMetric.droppedPackets += drop * 250;
+      stream.bandwidth *= passRate;
     } else {
       let scale = 1.0;
       if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;

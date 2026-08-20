@@ -66,4 +66,39 @@ describe('runGigaSmartApps', () => {
     expect(forwardStream.bandwidth).toBe(5000);
     expect(generatedMetadataStreams).toHaveLength(0);
   });
+
+  it('correctly models Header Stripping bandwidth reduction for various encapsulation protocols', () => {
+    const vxlanApp: GigaSmartNodeData[] = [
+      { id: 'hs-1', configType: 'GigaSMART', label: 'Header Strip', actionType: 'Header Stripping', headerStripProtocol: 'VXLAN' },
+    ];
+    const mplsApp: GigaSmartNodeData[] = [
+      { id: 'hs-2', configType: 'GigaSMART', label: 'Header Strip', actionType: 'Header Stripping', headerStripProtocol: 'MPLS' },
+    ];
+
+    const metric1 = makeMetric();
+    const res1 = runGigaSmartApps(makeStream(1000), vxlanApp, metric1);
+    expect(res1.forwardStream.bandwidth).toBeCloseTo(950, 4);
+
+    const metric2 = makeMetric();
+    const res2 = runGigaSmartApps(makeStream(1000), mplsApp, metric2);
+    expect(res2.forwardStream.bandwidth).toBeCloseTo(985, 4);
+  });
+
+  it('correctly models GTP Flow Sampling and Whitelisting session reduction', () => {
+    const gtpSampleApp: GigaSmartNodeData[] = [
+      { id: 'gtp-1', configType: 'GigaSMART', label: 'GTP Sampling', actionType: 'GTP Flow Sampling', gtpSamplePercent: 10 },
+    ];
+    const gtpWhitelistApp: GigaSmartNodeData[] = [
+      { id: 'gtp-2', configType: 'GigaSMART', label: 'GTP Whitelist', actionType: 'GTP Whitelisting', gtpWhitelistPassPercent: 20 },
+    ];
+
+    const metric1 = makeMetric();
+    const res1 = runGigaSmartApps(makeStream(1000), gtpSampleApp, metric1);
+    expect(res1.forwardStream.bandwidth).toBeCloseTo(100, 4);
+
+    const metric2 = makeMetric();
+    const res2 = runGigaSmartApps(makeStream(1000), gtpWhitelistApp, metric2);
+    expect(res2.forwardStream.bandwidth).toBeCloseTo(200, 4);
+  });
 });
+

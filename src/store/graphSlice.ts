@@ -216,7 +216,15 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       if (msg) set({ sidebarMessage: msg });
     }
 
-    const isDuplicate = get().edges.some(
+    const isHardwareA = nodeA.type === 'hardwareNode' && !String((nodeA.data as HardwareNodeData)?.model || '').includes('TAP');
+    const isHardwareB = nodeB.type === 'hardwareNode' && !String((nodeB.data as HardwareNodeData)?.model || '').includes('TAP');
+    const isToolA = nodeA.type === 'toolNode';
+    const isToolB = nodeB.type === 'toolNode';
+
+    // Allow multiple parallel physical/logical links between hardware chassis, from hardware to tools, and between tools
+    const allowsParallel = (isHardwareA && isHardwareB) || (isHardwareA && isToolB) || (isToolA && (isToolB || isHardwareB));
+
+    const isDuplicate = !allowsParallel && get().edges.some(
       (e) =>
         e.source === connection.source &&
         e.target === connection.target &&
@@ -226,7 +234,8 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (isDuplicate) return;
 
     get().pushHistory();
-    const nextEdges = addEdge({ ...connection, id: `e-${uuidv4()}` }, get().edges);
+    const newEdge: Edge = { ...connection, id: `e-${uuidv4()}` };
+    const nextEdges = allowsParallel ? [...get().edges, newEdge] : addEdge(newEdge, get().edges);
     const connectedNodes = syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, nextEdges), nextEdges);
     set({ edges: syncPortAssignments(connectedNodes, nextEdges), nodes: connectedNodes });
   },
