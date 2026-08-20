@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.543",
+    date: "2026-08-20",
+    summary: "Ship v1.0.543: project-wide optic pack optimization + surplus notes",
+  },
+  {
     version: "1.0.542",
     date: "2026-08-19",
     summary: "Ship v1.0.542: optic multipack BOM optimization",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.523",
     date: "2026-08-19",
     summary: "Fix false TA200/TA400 QSFP connection refusal on high-speed tap links",
-  },
-  {
-    version: "1.0.522",
-    date: "2026-08-14",
-    summary: "Removed the misleading \"Delivered to Tools\" figure from the Global Pipeline Dashboard - it summed traffic across every packet-consuming tool, so it inflated with fan-out (5 tools receiving the same stream looked like 5x the traffic). Traffic Volume Reduction is now calculated directly from what's actually deduped/filtered relative to ingest, instead of ingest-minus-delivered, which also fixes it being stuck at 0.0% even when real reduction was happening.",
   },
 ];

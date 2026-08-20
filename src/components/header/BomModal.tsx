@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
 import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
+import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
 import type { HardwareNodeData } from '../../store/types';
 
@@ -33,7 +34,13 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
 
-  const items = generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps);
+  // Nodes that only ever contribute a single BOM row (standalone TAP modules,
+  // breakout panels, ...) are merged into one shared line per SKU per site -
+  // a chassis with multiple line items (modules/optics/licenses) keeps its
+  // own per-node breakdown, since that detail is still useful there.
+  const items = consolidateSimpleDeviceRows(
+    generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+  );
   const validationErrors = validateConfiguration(nodes, edges);
 
   const physicalItems = buildPhysicalItems(nodes, items);
@@ -476,7 +483,9 @@ function renderBomTab(
                     ? `${nodeInfo.data?.label || ''} (${(nodeInfo.data as HardwareNodeData)?.model || ''})`
                     : nodeId === 'global'
                       ? 'Global Accessories & Dependencies'
-                      : 'System Components';
+                      : nodeId === CONSOLIDATED_DEVICES_NODE_ID
+                        ? 'Standalone Devices'
+                        : 'System Components';
 
                   return (
                     <React.Fragment key={nodeId}>
