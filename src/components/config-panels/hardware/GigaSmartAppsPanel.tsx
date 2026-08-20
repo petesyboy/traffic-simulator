@@ -169,6 +169,50 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
+            {/* Header Stripping config */}
+            {(actionType === 'Header Stripping' || actionType === 'Header/Trailer Remove') && (() => {
+              const protocol = (app.headerStripProtocol as string) || 'VXLAN';
+              const protocolSavings: Record<string, number> = { VXLAN: 5, MPLS: 1.5, VLAN: 0.8, ERSPAN: 4.5, 'GTP-U': 4, Custom: 6 };
+              const savings = protocolSavings[protocol] ?? 5;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>Encapsulation Header to Strip</label>
+                  <select
+                    value={protocol}
+                    onChange={e => handleUpdateApp(idx, { headerStripProtocol: e.target.value as 'VXLAN' | 'MPLS' | 'VLAN' | 'ERSPAN' | 'GTP-U' | 'Custom' })}
+                    style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                  >
+                    <option value="VXLAN">VXLAN (50B Tunnel &amp; Ethernet)</option>
+                    <option value="MPLS">MPLS (Label Stack)</option>
+                    <option value="VLAN">VLAN / QinQ (802.1Q Tags)</option>
+                    <option value="ERSPAN">ERSPAN / GRE (42B Tunnel)</option>
+                    <option value="GTP-U">GTP-U (40B Mobile Tunnel)</option>
+                    <option value="Custom">Custom Header Stripping</option>
+                  </select>
+                  <div style={{ padding: '6px', background: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.2)', borderRadius: '4px', fontSize: '10px', color: '#80cbc4' }}>
+                    📦 Strips outer <strong>[{protocol}]</strong> header (~{savings}% bandwidth offload). Recalculates L3/L4 checksums for downstream tools.
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* GTP Flow Filtering config */}
+            {actionType === 'GTP Flow Filtering' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '11px', color: '#ccc' }}>Subscriber IMSI / APN Filter</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 310410*, IMS, Corporate"
+                  value={app.gtpImsiFilter || ''}
+                  onChange={e => handleUpdateApp(idx, { gtpImsiFilter: e.target.value })}
+                  style={{ fontSize: '11px', padding: '4px 6px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                />
+                <div style={{ padding: '6px', background: 'rgba(0, 145, 234, 0.08)', border: '1px solid rgba(0, 145, 234, 0.25)', borderRadius: '4px', fontSize: '10px', color: '#00e5ff' }}>
+                  📶 Correlates GTP-C (signalling) with GTP-U (user tunnels). Pins sessions statefully across tool ports.
+                </div>
+              </div>
+            )}
+
             {/* GTP Flow Sampling config — the sample rate decides the BOM's licensing:
                 per Gigamon's KB, 0% or 100% needs GTPMAX alone, anything in between
                 also needs a FlowVUE entitlement on the same card. */}
@@ -200,15 +244,37 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               );
             })()}
 
-            {/* GTP Whitelisting — always needs both entitlements, nothing to configure */}
+            {/* GTP Whitelisting */}
             {actionType === 'GTP Whitelisting' && (
-              <div style={{ fontSize: '10px', color: '#80cbc4', lineHeight: '1.3' }}>
-                Licensing: GTPMAX + FlowVUE (GTP whitelisting always needs both entitlements on this card).
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '11px', color: '#ccc' }}>VIP Subscriber IMSI Whitelist</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 310410*, VIP-Users"
+                  value={app.gtpImsiFilter || ''}
+                  onChange={e => handleUpdateApp(idx, { gtpImsiFilter: e.target.value })}
+                  style={{ fontSize: '11px', padding: '4px 6px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                />
+                <div style={{ fontSize: '10px', color: '#80cbc4', lineHeight: '1.3' }}>
+                  Licensing: GTPMAX + FlowVUE (GTP whitelisting always needs both entitlements on this card).
+                </div>
               </div>
             )}
 
             {/* Default — no additional config */}
-            {actionType !== 'Deduplication' && actionType !== 'Dedup' && actionType !== 'Application Metadata' && actionType !== 'AMX' && actionType !== 'AMI' && actionType !== 'Packet Slicing' && actionType !== 'Application Filtering Intelligence' && actionType !== 'Application Visualization' && actionType !== 'GTP Flow Sampling' && actionType !== 'GTP Whitelisting' && (
+            {actionType !== 'Deduplication' &&
+              actionType !== 'Dedup' &&
+              actionType !== 'Application Metadata' &&
+              actionType !== 'AMX' &&
+              actionType !== 'AMI' &&
+              actionType !== 'Packet Slicing' &&
+              actionType !== 'Header Stripping' &&
+              actionType !== 'Header/Trailer Remove' &&
+              actionType !== 'Application Filtering Intelligence' &&
+              actionType !== 'Application Visualization' &&
+              actionType !== 'GTP Flow Filtering' &&
+              actionType !== 'GTP Flow Sampling' &&
+              actionType !== 'GTP Whitelisting' && (
               <div style={{ fontSize: '11px', color: '#aaa' }}>
                 No additional configuration required for {actionType}.
               </div>

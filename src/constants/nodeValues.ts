@@ -60,10 +60,22 @@ export const getNodeValueProposition = (
       return "Slices packet payloads to keep only the headers needed for protocol analysis, reducing tool bandwidth requirements by up to 80%.";
     }
     if (actionType === ACTION_TYPES.HEADER_STRIP) {
-      return "Strips protocol headers (like VxLAN/VLAN tags) before forwarding, ensuring legacy analysis tools can read modern encapsulated packets.";
+      return "Strips outer protocol headers (such as VXLAN, MPLS, or VLAN tags) before forwarding, ensuring security and analysis tools receive standard normalised packets without encapsulation overhead.";
+    }
+    if (actionType === ACTION_TYPES.GTP_FLOW_FILTERING) {
+      return "Statefully correlates mobile control (GTP-C) and user plane (GTP-U) traffic to filter sessions by subscriber IMSI, IMEI, or APN, offloading carrier monitoring tools.";
+    }
+    if (actionType === ACTION_TYPES.GTP_WHITELISTING) {
+      return "Prioritises and isolates high-value VIP subscriber sessions by IMSI or APN, ensuring critical traffic is forwarded to security tools while discarding bulk noise.";
+    }
+    if (actionType === ACTION_TYPES.GTP_FLOW_SAMPLING) {
+      return "Performs subscriber-aware session sampling across mobile carrier traffic, preserving complete multi-packet session integrity for sampled subscribers.";
+    }
+    if (actionType === ACTION_TYPES.IP_FLOWVUE) {
+      return "Provides intelligent subscriber flow sampling for mobile networks, reducing tool ingest bandwidth while maintaining complete visibility into sampled sessions.";
     }
     if (actionType === ACTION_TYPES.APP_METADATA) {
-      return "Application metadata captures who, what, where and how apps are used, helping organizations improve visibility, strengthen security, speed troubleshooting, and make smarter decisions about performance, risk, cost, and compliance overall.";
+      return "Application metadata captures who, what, where and how apps are used, helping organisations improve visibility, strengthen security, speed troubleshooting, and make smarter decisions about performance, risk, cost, and compliance overall.";
     }
     if (actionType === ACTION_TYPES.SSL_DECRYPT) {
       return "Decrypts SSL/TLS traffic once and forwards the cleartext to multiple security tools, eliminating duplicate decryption overhead.";

@@ -9,7 +9,7 @@ import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import { formatBandwidth } from '../../utils/format';
 import { AppIcon } from '../Icons';
-import { ACTION_TYPES, isMetadataAction, isDedupAction } from '../../constants/nodeTypes';
+import { ACTION_TYPES, isMetadataAction, isDedupAction, isGtpAction, isHeaderStripAction } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { useGlowClass } from './nodeStyles';
 
@@ -76,14 +76,39 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
         <div className="node-meta-small">
           {isDedupAction(actionType) && 'Action: Drop'}
           {actionType === ACTION_TYPES.PACKET_SLICING && `Action: Slice (${(data.sliceSize as number) || 128}B)`}
-          {actionType === ACTION_TYPES.HEADER_STRIP && 'Action: Strip'}
+          {isHeaderStripAction(actionType) && `Action: Strip ${String(data.headerStripProtocol || 'VXLAN')}`}
+          {actionType === ACTION_TYPES.GTP_WHITELISTING && 'Action: GTP Whitelist'}
+          {actionType === ACTION_TYPES.GTP_FLOW_SAMPLING && `Action: GTP Sample (${(data.gtpSamplePercent as number) ?? 10}%)`}
+          {actionType === ACTION_TYPES.GTP_FLOW_FILTERING && 'Action: GTP Correlation'}
           {isMetadataAction(actionType) && `Format: ${data.metadataFormat as string || 'CEF'}`}
           {!isDedupAction(actionType) &&
             actionType !== ACTION_TYPES.PACKET_SLICING &&
-            actionType !== ACTION_TYPES.HEADER_STRIP &&
+            !isHeaderStripAction(actionType) &&
+            !isGtpAction(actionType) &&
             !isMetadataAction(actionType) &&
             `Action: ${actionType}`}
         </div>
+
+        {/* Header Stripping packet breakdown chip */}
+        {isHeaderStripAction(actionType) && (
+          <div style={{ marginTop: '4px' }}>
+            <div style={{ padding: '2px 6px', background: 'rgba(0,0,0,0.4)', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '8.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: '#ef5350', textDecoration: 'line-through', opacity: 0.85 }}>[{String(data.headerStripProtocol || 'VXLAN')}]</span>
+              <span style={{ color: '#888' }}>➔</span>
+              <span style={{ color: '#81c784', fontWeight: 600 }}>[IP/Data]</span>
+            </div>
+          </div>
+        )}
+
+        {/* GTP Session Correlation chip */}
+        {isGtpAction(actionType) && (
+          <div style={{ marginTop: '4px' }}>
+            <div style={{ padding: '2px 6px', background: 'rgba(0, 145, 234, 0.12)', borderRadius: '3px', border: '1px solid rgba(0, 145, 234, 0.25)', fontSize: '8.5px', color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>📶</span>
+              <span style={{ fontWeight: 600 }}>GTP-C ⮂ GTP-U Correlated</span>
+            </div>
+          </div>
+        )}
 
         {/* Metadata output format chip — only shown for AMI/AMX/App Metadata */}
         {advancedMode && isMetadataAction(actionType) && (
