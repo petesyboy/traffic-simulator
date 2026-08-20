@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.549",
+    date: "2026-08-20",
+    summary: "Display link details panel with optics, speed, and role upon edge selection (v1.0.549)",
+  },
+  {
     version: "1.0.546",
     date: "2026-08-20",
     summary: "Add Header Stripping and GTP Call Correlation interactive visualisations and simulation",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.526",
     date: "2026-08-19",
     summary: "Ship v1.0.526: update deliverable HTML copies + checksums",
-  },
-  {
-    version: "1.0.525",
-    date: "2026-08-19",
-    summary: "Derive TAP target-optic list directly from opticRules.json",
   },
 ];

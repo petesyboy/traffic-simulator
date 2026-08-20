@@ -12,6 +12,7 @@ import type { CustomNode, HardwareNodeData, InputNodeData, PortLink } from '../.
 import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from '../../utils/ports';
 import { getOpticSpeed, getOpticFiberType, formatOpticLabel, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 import { getSkus } from '../../utils/bom/skuUtils';
+import { diagnoseLink, resolveLinkConnectionProblem } from '../../utils/linkResolution';
 
 interface LinkDetailPanelProps {
   selectedEdge: Edge;
@@ -29,6 +30,7 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
   const storeNodes = useStore((s) => s.nodes);
   const storeEdges = useStore((s) => s.edges);
   const onEdgesChange = useStore((s) => s.onEdgesChange);
+  const pushHistory = useStore((s) => s.pushHistory);
   const setSelectedNodeId = useStore((s) => s.setSelectedNodeId);
   const edgeMetrics = useStore((s) => s.edgeMetrics);
   const isRunning = useStore((s) => s.isRunning);
@@ -176,6 +178,18 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
       ? `${(throughputMbps / 1000).toFixed(2)} Gbps`
       : `${throughputMbps.toFixed(0)} Mbps`;
 
+  const diag = diagnoseLink(selectedEdge, nodes);
+
+  const handleResolveProblem = () => {
+    pushHistory();
+    const result = resolveLinkConnectionProblem(selectedEdge, nodes, edges);
+    useStore.setState({
+      nodes: result.updatedNodes,
+      edges: result.updatedEdges,
+      ...(result.message ? { sidebarMessage: result.message } : {}),
+    });
+  };
+
   const handleDeleteEdge = () => {
     onEdgesChange([{ id: selectedEdge.id, type: 'remove' }]);
   };
@@ -250,13 +264,60 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
           </div>
         </div>
 
-        {/* Mismatch warnings */}
-        {isSpeedMismatch && (
+        {/* Diagnostic Resolution Banner */}
+        {diag.hasProblem && (
+          <div
+            style={{
+              background: 'rgba(255, 152, 0, 0.1)',
+              border: '1px solid rgba(255, 152, 0, 0.4)',
+              borderRadius: '6px',
+              padding: '10px',
+              marginBottom: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
+            <div style={{ fontSize: '11px', color: '#ffb74d', lineHeight: 1.45 }}>
+              ⚠️ <b>Connection Issue Detected:</b> {diag.reason}
+            </div>
+            {diag.fixActionDescription && (
+              <div style={{ fontSize: '10px', color: '#ccc', fontStyle: 'italic' }}>
+                Proposed Resolution: {diag.fixActionDescription}
+              </div>
+            )}
+            <button
+              onClick={handleResolveProblem}
+              style={{
+                padding: '8px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #ff9800, #f57c00)',
+                color: '#000',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 6px rgba(255, 152, 0, 0.3)',
+                transition: 'all 0.15s ease',
+              }}
+              title="Automatically fit and assign the required matching transceivers"
+            >
+              <span>✨</span> Resolve Connection Problem
+            </button>
+          </div>
+        )}
+
+        {/* Mismatch warnings if any remain */}
+        {!diag.hasProblem && isSpeedMismatch && (
           <div style={{ fontSize: '10px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', padding: '6px 8px', borderRadius: '4px', border: '1px solid rgba(239,83,80,0.3)', marginBottom: '10px' }}>
             ⚠️ <b>Speed Mismatch:</b> Source is {sourceSpeed}, but Target is {targetSpeed}. Ensure transceivers operate at matching data rates.
           </div>
         )}
-        {isFiberMismatch && (
+        {!diag.hasProblem && isFiberMismatch && (
           <div style={{ fontSize: '10px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', padding: '6px 8px', borderRadius: '4px', border: '1px solid rgba(239,83,80,0.3)', marginBottom: '10px' }}>
             ⚠️ <b>Fibre Mismatch:</b> Source uses {sourceFiber}, but Target uses {targetFiber}.
           </div>
