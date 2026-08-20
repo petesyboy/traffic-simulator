@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.550",
+    date: "2026-08-20",
+    summary: "Add one-click resolve connection problem feature for mismatched or missing link optics (v1.0.550)",
+  },
+  {
     version: "1.0.549",
     date: "2026-08-20",
     summary: "Display link details panel with optics, speed, and role upon edge selection (v1.0.549)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.527",
     date: "2026-08-19",
     summary: "Unify TAP termination-matrix optic labels with the rest of the app",
-  },
-  {
-    version: "1.0.526",
-    date: "2026-08-19",
-    summary: "Ship v1.0.526: update deliverable HTML copies + checksums",
   },
 ];

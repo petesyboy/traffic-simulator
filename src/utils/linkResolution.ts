@@ -5,12 +5,12 @@
  * (mismatched transceivers, missing optics, speed/fibre discrepancies).
  *
  * Implements TAA-preference rule (preferring 'T'-suffix variants such as SFP-553T)
- * and double-optic bidirectional tap rules.
+ * and intelligent speed upgrade (upgrading lower speed side to higher speed peer).
  */
 import type { Edge } from '@xyflow/react';
 import type { CustomNode, HardwareNodeData, InstalledOptic, PortLink } from '../store/types';
 import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from './ports';
-import { getOpticSpeed, getOpticFiberType, isBreakoutPanelModel } from './hardwareUtils';
+import { getOpticSpeed, getOpticSpeedMbps, getOpticFiberType, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
 import { syncPortAssignments } from './portSync';
 import { syncOpticsOnTapConnection } from './bomEngine';
@@ -44,7 +44,6 @@ export function findBestMatchingOptic(
   for (const b of boards) {
     const exact = b.supportedOptics.find(opt => cleanTargetSku(opt) === refCleanSku || opt === referenceOpticStr);
     if (exact) {
-      // Check if a TAA variant exists in this board
       const taaSku = refCleanSku.endsWith('T') ? refCleanSku : `${refCleanSku}T`;
       const taaMatch = b.supportedOptics.find(opt => cleanTargetSku(opt) === taaSku);
       return { board: b.board, optic: taaMatch || exact };
@@ -139,6 +138,8 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
   // Speed and Fiber analysis
   const sourceSpeed = sourceOptic ? getOpticSpeed(sourceOptic) : 'Unknown';
   const targetSpeed = targetOptic ? getOpticSpeed(targetOptic) : 'Unknown';
+  const sourceMbps = getOpticSpeedMbps(sourceOptic);
+  const targetMbps = getOpticSpeedMbps(targetOptic);
   const sourceFiber = sourceOptic ? getOpticFiberType(sourceOptic) : '';
   const targetFiber = targetOptic ? getOpticFiberType(targetOptic) : '';
 
@@ -168,12 +169,17 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
         fixActionDescription: `Auto-fit standard matching 25G/10G transceivers on both appliances`,
       };
     }
-    if (sourceSpeed !== 'Unknown' && targetSpeed !== 'Unknown' && sourceSpeed !== targetSpeed) {
+    if (sourceSpeed !== 'Unknown' && targetSpeed !== 'Unknown' && sourceMbps !== targetMbps) {
+      const higherSpeed = sourceMbps >= targetMbps ? sourceSpeed : targetSpeed;
+      const higherOptic = sourceMbps >= targetMbps ? sourceOptic : targetOptic;
+      const nodeToUpgrade = sourceMbps >= targetMbps ? (targetNode.data?.label || targetModel) : (sourceNode.data?.label || sourceModel);
+      const nodeToKeep = sourceMbps >= targetMbps ? (sourceNode.data?.label || sourceModel) : (targetNode.data?.label || targetModel);
+
       return {
         hasProblem: true,
         problemType: 'speed_mismatch',
-        reason: `Speed mismatch: Source is operating at ${sourceSpeed} (${sourceOptic.split(' ')[0]}), but Target is configured for ${targetSpeed} (${targetOptic.split(' ')[0]}).`,
-        fixActionDescription: `Align transceivers to matching ${sourceSpeed} data rate on ${targetNode.data?.label || targetModel}`,
+        reason: `Speed mismatch: ${nodeToKeep} is configured for ${higherSpeed} (${higherOptic.split(' ')[0]}), but ${nodeToUpgrade} is operating at lower rate (${sourceMbps >= targetMbps ? targetSpeed : sourceSpeed}).`,
+        fixActionDescription: `Upgrade transceivers to matching ${higherSpeed} data rate on ${nodeToUpgrade}`,
       };
     }
     if (sourceFiber && targetFiber && sourceFiber !== targetFiber) {
@@ -196,7 +202,7 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
         fixActionDescription: `Auto-fit required transceivers on ${targetNode.data?.label || targetModel}`,
       };
     }
-    if (sourceSpeed !== 'Unknown' && targetSpeed !== 'Unknown' && sourceSpeed !== targetSpeed) {
+    if (sourceSpeed !== 'Unknown' && targetSpeed !== 'Unknown' && sourceMbps !== targetMbps) {
       return {
         hasProblem: true,
         problemType: 'speed_mismatch',
@@ -268,58 +274,101 @@ export function resolveLinkConnectionProblem(
   let nodesCopy = nodes.map(n => ({ ...n, data: { ...n.data } }));
   let message = 'Connection problem resolved.';
 
-  // Helper to add optic to a node
-  const addOpticToNode = (nodeId: string, opticCandidate: { board: string; optic: string }, qtyToAdd: number = 1) => {
+  // Helper to replace/update optic on a node
+  const updateNodeOptics = (
+    nodeId: string,
+    newOptic: { board: string; optic: string },
+    oldOpticStr?: string,
+    portId?: string,
+  ) => {
     nodesCopy = nodesCopy.map(n => {
       if (n.id !== nodeId) return n;
       const hwData = n.data as HardwareNodeData;
-      const currentOptics: InstalledOptic[] = [...(hwData.optics || [])];
+      let currentOptics: InstalledOptic[] = [...(hwData.optics || [])];
 
-      // Find existing unpinned entry for same board + optic
-      const idx = currentOptics.findIndex(o => o.board === opticCandidate.board && o.optic === opticCandidate.optic && !o.pinnedPortId);
-      if (idx >= 0) {
-        currentOptics[idx] = { ...currentOptics[idx], qty: currentOptics[idx].qty + qtyToAdd };
+      // If there was an old optic on this port or of this type, decrement/remove it
+      if (oldOpticStr) {
+        const oldClean = oldOpticStr.split(' ')[0].trim();
+        if (portId) {
+          currentOptics = currentOptics.filter(o => !(o.pinnedPortId === portId));
+        }
+        const oldIdx = currentOptics.findIndex(o => !o.pinnedPortId && (o.optic.startsWith(oldClean) || o.optic === oldOpticStr));
+        if (oldIdx >= 0) {
+          if (currentOptics[oldIdx].qty > 1) {
+            currentOptics[oldIdx] = { ...currentOptics[oldIdx], qty: currentOptics[oldIdx].qty - 1 };
+          } else {
+            currentOptics.splice(oldIdx, 1);
+          }
+        }
+      }
+
+      // Add new matching optic
+      const matchIdx = currentOptics.findIndex(o => !o.pinnedPortId && o.board === newOptic.board && o.optic === newOptic.optic);
+      if (matchIdx >= 0) {
+        currentOptics[matchIdx] = { ...currentOptics[matchIdx], qty: currentOptics[matchIdx].qty + 1 };
       } else {
         currentOptics.push({
-          board: opticCandidate.board,
-          optic: opticCandidate.optic,
-          qty: qtyToAdd,
+          board: newOptic.board,
+          optic: newOptic.optic,
+          qty: 1,
         });
       }
+
       return { ...n, data: { ...hwData, optics: currentOptics } };
     });
   };
 
-  // Case 1: Target is missing or mismatched to Source
-  if (sourceOptic && isTargetHw) {
+  const sourceMbps = getOpticSpeedMbps(sourceOptic);
+  const targetMbps = getOpticSpeedMbps(targetOptic);
+
+  // Scenario 1: Speed mismatch between two hardware chassis -> Upgrade the lower speed side to match higher speed!
+  if (isSourceHw && isTargetHw && sourceOptic && targetOptic && sourceMbps !== targetMbps) {
+    if (sourceMbps < targetMbps) {
+      // Upgrade Source to match Target's higher speed
+      const match = findBestMatchingOptic(sourceModel, targetOptic, sourceNode.data?.portCapacity as string);
+      if (match) {
+        updateNodeOptics(sourceNode.id, match, sourceOptic, sourcePortId);
+        message = `Resolved connection: Upgraded ${sourceNode.data?.label || sourceModel} to ${match.optic.split(' ')[0]} to match ${targetNode.data?.label || targetModel} (${targetOptic.split(' ')[0]}).`;
+      }
+    } else {
+      // Upgrade Target to match Source's higher speed
+      const match = findBestMatchingOptic(targetModel, sourceOptic, targetNode.data?.portCapacity as string);
+      if (match) {
+        updateNodeOptics(targetNode.id, match, targetOptic, targetPortId);
+        message = `Resolved connection: Upgraded ${targetNode.data?.label || targetModel} to ${match.optic.split(' ')[0]} to match ${sourceNode.data?.label || sourceModel} (${sourceOptic.split(' ')[0]}).`;
+      }
+    }
+  }
+  // Scenario 2: Target is missing optic (or fibre mismatch)
+  else if (sourceOptic && isTargetHw) {
     const match = findBestMatchingOptic(targetModel, sourceOptic, targetNode.data?.portCapacity as string);
     if (match) {
-      addOpticToNode(targetNode.id, match, 1);
+      updateNodeOptics(targetNode.id, match, targetOptic, targetPortId);
       message = `Resolved connection: Fitted 1x ${match.optic.split(' ')[0]} in ${targetNode.data?.label || targetModel} to match ${sourceNode.data?.label || sourceModel}.`;
     }
   }
-  // Case 2: Source is missing and Target has optic
+  // Scenario 3: Source is missing optic
   else if (targetOptic && isSourceHw) {
     const match = findBestMatchingOptic(sourceModel, targetOptic, sourceNode.data?.portCapacity as string);
     if (match) {
-      addOpticToNode(sourceNode.id, match, 1);
+      updateNodeOptics(sourceNode.id, match, sourceOptic, sourcePortId);
       message = `Resolved connection: Fitted 1x ${match.optic.split(' ')[0]} in ${sourceNode.data?.label || sourceModel} to match ${targetNode.data?.label || targetModel}.`;
     }
   }
-  // Case 3: Neither has optic -> provision standard matching pair
+  // Scenario 4: Neither has optic -> Provision matching pair
   else if (!sourceOptic && !targetOptic && isSourceHw && isTargetHw) {
     const defaultOptic = 'SFP-553T (25G SFP28 LR)';
     const srcMatch = findBestMatchingOptic(sourceModel, defaultOptic) || findBestMatchingOptic(sourceModel, 'SFP-532T (10G SFP+ SR)');
     const tgtMatch = srcMatch ? findBestMatchingOptic(targetModel, srcMatch.optic) : null;
 
     if (srcMatch && tgtMatch) {
-      addOpticToNode(sourceNode.id, srcMatch, 1);
-      addOpticToNode(targetNode.id, tgtMatch, 1);
+      updateNodeOptics(sourceNode.id, srcMatch);
+      updateNodeOptics(targetNode.id, tgtMatch);
       message = `Resolved connection: Fitted matching ${srcMatch.optic.split(' ')[0]} transceivers on both ${sourceNode.data?.label || sourceModel} and ${targetNode.data?.label || targetModel}.`;
     }
   }
 
-  // Re-synchronise
+  // Update edges with clean portLinks and sync
   const connectedNodes = syncOpticsOnTapConnection(nodesCopy, edges);
   const syncedEdges = syncPortAssignments(connectedNodes, edges);
 
