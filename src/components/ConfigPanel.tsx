@@ -12,10 +12,12 @@ import { FilterNodePanel } from './config-panels/FilterNodePanel';
 import { MapNodePanel } from './config-panels/MapNodePanel';
 import { GigaSmartPanel } from './config-panels/GigaSmartPanel';
 import { ToolNodePanel } from './config-panels/ToolNodePanel';
+import { LinkDetailPanel } from './config-panels/LinkDetailPanel';
 
 const ConfigPanel: React.FC = () => {
   const selectedNodeId = useStore((state) => state.selectedNodeId);
   const nodes          = useStore((state) => state.nodes);
+  const edges          = useStore((state) => state.edges);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
   const isRunning      = useStore((state) => state.isRunning);
@@ -25,6 +27,9 @@ const ConfigPanel: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [width, setWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
+
+  const selectedEdges = edges.filter((e) => e.selected);
+  const selectedEdgeId = selectedEdges.length > 0 ? selectedEdges[0].id : null;
 
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,14 +56,16 @@ const ConfigPanel: React.FC = () => {
   }, [isResizing]);
 
   // In Standard (simple) mode, respect a manual collapse — only Advanced Mode
-  // auto-expands the panel when a new node is selected. Adjusted during render
+  // auto-expands the panel when a new node or link is selected. Adjusted during render
   // (rather than in an effect) to avoid an extra commit-and-rerender pass.
   const [prevSelectedNodeId, setPrevSelectedNodeId] = useState(selectedNodeId);
+  const [prevSelectedEdgeId, setPrevSelectedEdgeId] = useState(selectedEdgeId);
   const [prevAdvancedMode, setPrevAdvancedMode] = useState(advancedMode);
-  if (selectedNodeId !== prevSelectedNodeId || advancedMode !== prevAdvancedMode) {
+  if (selectedNodeId !== prevSelectedNodeId || selectedEdgeId !== prevSelectedEdgeId || advancedMode !== prevAdvancedMode) {
     setPrevSelectedNodeId(selectedNodeId);
+    setPrevSelectedEdgeId(selectedEdgeId);
     setPrevAdvancedMode(advancedMode);
-    if (selectedNodeId && advancedMode) {
+    if ((selectedNodeId || selectedEdgeId) && advancedMode) {
       setIsCollapsed(false);
     }
   }
@@ -173,6 +180,28 @@ const ConfigPanel: React.FC = () => {
   );
 
   if (!selectedNodeId || !selectedNode) {
+    if (selectedEdges.length > 0) {
+      return (
+        <aside
+          className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
+          style={{
+            width: isCollapsed ? '0px' : `${width}px`,
+            padding: '0px',
+            borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
+            position: 'relative',
+            overflow: 'visible',
+            transition: isResizing ? 'none' : 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+            flexShrink: 0,
+            zoom: panelTextScale,
+          }}
+        >
+          {collapseToggle}
+          {resizeHandle}
+          {!isCollapsed && <LinkDetailPanel selectedEdge={selectedEdges[0]} selectedEdges={selectedEdges} />}
+        </aside>
+      );
+    }
+
     return (
       <aside
         className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}

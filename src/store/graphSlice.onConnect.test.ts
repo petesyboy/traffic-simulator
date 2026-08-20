@@ -62,4 +62,38 @@ describe('onConnect TAP -> TA200E QSFP-cage check', () => {
     const refusal = alertSpy.mock.calls.find(c => String(c[0]).includes('CONNECTION REFUSED') && String(c[0]).includes('QSFP+/QSFP28'));
     expect(refusal).toBeDefined();
   });
+
+  it('allows multiple parallel links between two TA25 chassis and allocates distinct ports', () => {
+    const taNodeA: CustomNode = {
+      id: 'ta-a',
+      type: NODE_TYPES.HARDWARE,
+      position: { x: 0, y: 0 },
+      data: { label: 'TA25-A', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: [] } as unknown as CustomNode['data'],
+    };
+    const taNodeB: CustomNode = {
+      id: 'ta-b',
+      type: NODE_TYPES.HARDWARE,
+      position: { x: 300, y: 0 },
+      data: { label: 'TA25-B', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE', optics: [] } as unknown as CustomNode['data'],
+    };
+    useStore.setState({ nodes: [taNodeA, taNodeB], edges: [] });
+
+    // Connect first link
+    useStore.getState().onConnect({ source: 'ta-a', target: 'ta-b', sourceHandle: 'out', targetHandle: 'in' });
+    expect(useStore.getState().edges).toHaveLength(1);
+
+    // Connect second parallel link
+    useStore.getState().onConnect({ source: 'ta-a', target: 'ta-b', sourceHandle: 'out', targetHandle: 'in' });
+    const edges = useStore.getState().edges;
+    expect(edges).toHaveLength(2);
+
+    // Both edges should have distinct port assignments on the source and target
+    const edge1Links = edges[0].data?.portLinks as { sourcePortId: string; targetPortId: string }[];
+    const edge2Links = edges[1].data?.portLinks as { sourcePortId: string; targetPortId: string }[];
+
+    expect(edge1Links).toHaveLength(1);
+    expect(edge2Links).toHaveLength(1);
+    expect(edge1Links[0].sourcePortId).not.toEqual(edge2Links[0].sourcePortId);
+    expect(edge1Links[0].targetPortId).not.toEqual(edge2Links[0].targetPortId);
+  });
 });

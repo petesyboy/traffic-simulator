@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.546",
+    date: "2026-08-20",
+    summary: "Add Header Stripping and GTP Call Correlation interactive visualisations and simulation",
+  },
+  {
     version: "1.0.544",
     date: "2026-08-20",
     summary: "Ship v1.0.544: consolidate standalone single-line BOM devices",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.525",
     date: "2026-08-19",
     summary: "Derive TAP target-optic list directly from opticRules.json",
-  },
-  {
-    version: "1.0.524",
-    date: "2026-08-19",
-    summary: "Unify TAP target-optic and chassis optic vocabularies onto real Gigamon SKUs",
   },
 ];
