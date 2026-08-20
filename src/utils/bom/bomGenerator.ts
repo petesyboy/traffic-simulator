@@ -27,6 +27,10 @@ export interface BomRow {
   type: 'Hardware' | 'Chassis' | 'License' | 'Support' | 'Optic' | 'Accessory' | 'TAP' | 'Module' | 'Dependency';
   nodeId?: string;
   site?: string;
+  /** Customer-facing explanation shown alongside this row - currently only set
+   *  when optic-pack optimization rounds a quantity up past what's strictly
+   *  needed, so the surplus isn't a silent surprise on the quote. */
+  note?: string;
 }
 
 // Not every chassis names its always-installed board "Base Ports" - e.g. GigaVUE-HC1's is
@@ -379,9 +383,14 @@ export function generateBom(
     addRow(null, 'PCD-00051', numPstDC * 2, 'Dependency', undefined, siteKey);
   }
 
-  return optimizeOpticPacks(Object.values(rowMap), skus).sort(
-    (a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku),
-  );
+  // Deliberately NOT pack-optimized here - a multipack is a physical box of
+  // loose transceivers, not tied to any one node/site, so rolling packs in at
+  // this per-node/per-site granularity would misleadingly attribute a shared
+  // pack to whichever node happened to push the count over the line. Callers
+  // that want the actual whole-project order (BomModal's Master tab, the PDF
+  // report's Appendix A) run these raw rows through
+  // `buildProjectWideOpticBom()` themselves after aggregating across nodes.
+  return Object.values(rowMap).sort((a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku));
 }
 
 // ─── Shared GigaSMART helpers ─────────────────────────────────────────────────

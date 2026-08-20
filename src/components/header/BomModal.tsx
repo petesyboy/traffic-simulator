@@ -7,7 +7,8 @@
 
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
-import { generateBom, validateConfiguration } from '../../utils/bomEngine';
+import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
+import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
 import type { HardwareNodeData } from '../../store/types';
 
@@ -322,7 +323,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
             </div>
 
             {activeTab === 'bom'
-              ? renderBomTab(items, nodes, bomViewMode)
+              ? renderBomTab(items, nodes, bomViewMode, getSkus())
               : renderPhysicalTab(
                   physicalItems,
                   physicalSiteGroups,
@@ -369,6 +370,7 @@ function renderBomTab(
   items: ReturnType<typeof generateBom>,
   nodes: ReturnType<typeof useStore.getState>['nodes'],
   bomViewMode: 'site' | 'master',
+  skus: Record<string, string>,
 ) {
   if (items.length === 0) {
     return (
@@ -378,16 +380,11 @@ function renderBomTab(
     );
   }
 
-  const masterBomItems = Object.values(
-    items.reduce(
-      (acc, item) => {
-        if (!acc[item.sku]) acc[item.sku] = { ...item, qty: 0 };
-        acc[item.sku].qty += item.qty;
-        return acc;
-      },
-      {} as Record<string, (typeof items)[0]>,
-    ) || {},
-  );
+  // The actual whole-project order: every row combined by SKU across every
+  // node and site, then rolled up into multipacks where that applies - not
+  // just summing whatever pack/singles split each node happened to land on
+  // independently, which would under-count cross-node pack opportunities.
+  const masterBomItems = buildProjectWideOpticBom(items, skus);
 
   // Group items by site, then by nodeId
   const siteGroups: Record<string, Record<string, typeof items>> = {};
@@ -432,7 +429,14 @@ function renderBomTab(
                   <td style={{ padding: '8px', color: '#00e5ff', fontFamily: 'monospace', fontWeight: 'bold' }}>
                     {item.sku}
                   </td>
-                  <td style={{ padding: '8px', color: '#aaa' }}>{item.description}</td>
+                  <td style={{ padding: '8px', color: '#aaa' }}>
+                    {item.description}
+                    {item.note && (
+                      <div style={{ color: '#66bb6a', fontSize: '10px', marginTop: '4px' }} title={item.note}>
+                        💡 {item.note}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding: '8px', color: '#fff', textAlign: 'right' }}>{item.term || '-'}</td>
                   <td style={{ padding: '8px', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}>{item.qty}</td>
                 </tr>

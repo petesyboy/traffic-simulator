@@ -23,8 +23,9 @@ import type {
 } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { generateBom, validateConfiguration } from '../../utils/bomEngine';
+import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
 import { buildPhysicalItems } from '../bom/physicalItems';
+import { buildProjectWideOpticBom } from '../bom/opticPacks';
 import {
   buildTopologyStats,
   describeInputNodeDetail,
@@ -119,6 +120,13 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   );
   const validationErrors = validateConfiguration(nodes, edges);
   const physicalItems = advancedMode ? buildPhysicalItems(nodes, bomRows) : [];
+  // A customer-facing quote shows one aggregated line per SKU across the whole
+  // project, rolled up into multipacks where that applies - not bomRows'
+  // internal per-node breakdown (kept above only for physicalItems, which
+  // needs it split by site for tray bin-packing).
+  const reportBomRows = buildProjectWideOpticBom(bomRows, getSkus()).sort(
+    (a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku),
+  );
 
   const generatedDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -351,7 +359,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   // ── BOM appendix ──
   content.push({ text: 'Appendix A: Bill of Materials', style: 'sectionHeading', pageBreak: 'before' });
-  if (bomRows.length === 0) {
+  if (reportBomRows.length === 0) {
     content.push({ text: 'No hardware nodes tracked in the current layout.', style: 'muted' });
   } else {
     content.push({
@@ -366,10 +374,17 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             { text: 'Term (Mo)', style: 'tableHeader' },
             { text: 'Qty', style: 'tableHeader' },
           ],
-          ...bomRows.map((row) => [
+          ...reportBomRows.map((row) => [
             { text: row.type, style: 'tableCell' },
             { text: row.sku, style: 'mono' },
-            { text: row.description, style: 'tableCell' },
+            row.note
+              ? {
+                  stack: [
+                    { text: row.description, style: 'tableCell' },
+                    { text: `💡 ${row.note}`, style: 'muted', margin: [0, 2, 0, 0] as [number, number, number, number] },
+                  ],
+                }
+              : { text: row.description, style: 'tableCell' },
             { text: row.term || '-', style: 'tableCell', alignment: 'right' as const },
             { text: String(row.qty), style: 'tableCell', alignment: 'right' as const },
           ]),
@@ -378,6 +393,13 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       layout: 'lightHorizontalLines',
       margin: [0, 0, 0, 10],
     });
+    if (reportBomRows.some((row) => row.note)) {
+      content.push({
+        text: 'Rows marked 💡 include a small surplus of pre-fitted optics because a full multipack works out cheaper and simpler to order than buying the exact number of loose singles.',
+        style: 'muted',
+        margin: [0, 0, 0, 10],
+      });
+    }
   }
 
   // ── Physical appendix (Advanced Mode only) ──
