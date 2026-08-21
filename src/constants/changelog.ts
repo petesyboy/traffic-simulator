@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.559",
+    date: "2026-08-21",
+    summary: "Updated primary and SE advanced documentation (README.md and README_advanced.md) with comprehensive guides covering recent features including one-click link problem resolution, multi-site architecture, breakout panel tray modelling, optic multipack optimisations, physical deployment specifications in PDF reports, and Tidy Layout auto-arrangement.",
+  },
+  {
+    version: "1.0.558",
+    date: "2026-08-21",
+    summary: "Cleaned up redundant legacy build artefacts and old versioned single-file HTML distributions from the repository root.",
+  },
+  {
     version: "1.0.557",
     date: "2026-08-21",
     summary: "Retained historical knowledge base for SKUs removed or omitted from subsequent price lists, automatically flagging them as Discontinued / Unavailable, and alert users during configuration validation.",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.538",
     date: "2026-08-19",
     summary: "Ship v1.0.538: refreshed SKU catalogue from the real price list",
-  },
-  {
-    version: "1.0.537",
-    date: "2026-08-19",
-    summary: "Ship v1.0.537: executive-summary report field + TA200/TA200E licensing fix",
-  },
-  {
-    version: "1.0.536",
-    date: "2026-08-19",
-    summary: "Add an optional executive-summary field to the solution report export",
   },
 ];
