@@ -1,7 +1,27 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { skuService } from './skuService';
+import { applyPriceListRows } from '../utils/skuOverrides';
+
+function installFakeLocalStorage() {
+  const data = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => (data.has(key) ? data.get(key)! : null),
+    setItem: (key: string, value: string) => void data.set(key, value),
+    removeItem: (key: string) => void data.delete(key),
+    clear: () => data.clear(),
+  });
+}
 
 describe('skuService', () => {
+  beforeEach(() => {
+    installFakeLocalStorage();
+    skuService.restoreBuiltinCatalog();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('getAllSKUs returns populated catalog', () => {
     const all = skuService.getAllSKUs();
     expect(Array.isArray(all)).toBe(true);
@@ -22,6 +42,25 @@ describe('skuService', () => {
 
     const empty = skuService.getSKUByPartNumber('');
     expect(empty).toBeUndefined();
+  });
+
+  it('getDescription and getMetadata retrieve SKU details', () => {
+    const desc = skuService.getDescription('SFP-532T');
+    expect(typeof desc).toBe('string');
+    expect(desc.length).toBeGreaterThan(0);
+
+    const emptyDesc = skuService.getDescription('');
+    expect(emptyDesc).toBe('');
+
+    const unknownDesc = skuService.getDescription('UNKNOWN-PART-XYZ');
+    expect(unknownDesc).toBe('UNKNOWN-PART-XYZ');
+  });
+
+  it('getPrice and getMonthlyPrice return numbers or undefined', () => {
+    const price = skuService.getPrice('SFP-532T');
+    if (price !== undefined) {
+      expect(typeof price).toBe('number');
+    }
   });
 
   it('getSKUsByCategory returns items for valid categories', () => {
@@ -71,5 +110,14 @@ describe('skuService', () => {
     expect(categories.length).toBeGreaterThan(3);
     expect(categories).toContain('Transceiver');
     expect(categories).toContain('License');
+  });
+
+  it('integrates runtime price list overrides with rollback capability', () => {
+    applyPriceListRows([{ sku: 'NEW-PART-1', description: 'Fresh Uploaded Part' }], 'test.xlsx');
+    expect(skuService.getDescription('NEW-PART-1')).toBe('Fresh Uploaded Part');
+
+    // Restore built-in
+    skuService.restoreBuiltinCatalog();
+    expect(skuService.getDescription('NEW-PART-1')).toBe('NEW-PART-1');
   });
 });

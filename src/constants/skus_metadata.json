@@ -1,52 +1,72 @@
 {
-  "QSB-504": {
-    "eos": "2027-01-06",
-    "eol": "2032-01-06",
-    "replacement": "QSB-524T"
-  },
   "BPS-HC0-D25A4G-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "BPS-HC1-D25A60-SW-TM"
   },
   "BPS-HC0-D25B4G-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "BPS-HC0-D35C4G-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "BPS-HC1-D25A60-SW-TM"
   },
   "BPS-HC0-Q25A28-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "BPS-HC3-C25F2G-SW-TM"
   },
   "CLS-TA100-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "CLS-TAX20-SW-TM"
   },
   "CLS-TAC00-SW-TM": {
-    "eos": "2022-02-28",
-    "eol": "2027-02-28",
+    "eos": "2/28/2022",
+    "eol": "2/28/2027",
     "replacement": "CLS-TAC20-SW-TM"
   },
+  "CLS-TAC40": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "CLS-TAC40E"
+  },
   "CLS-TAC40-SW-TM": {
-    "eos": "2025-07-06",
-    "eol": "2030-12-07",
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
     "replacement": "CLS-TAC40E-SW-TM"
   },
   "CLS-TAQ00-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "CLS-TAC20-SW-TM"
+  },
+  "CLS-TAX20": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "CLS-TAX20E"
+  },
+  "CLS-TAX20-SW-TM": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "CLS-TAX20E-SW-TM"
   },
   "CLS-WBX01": {
     "eos": "2026-05-25",
     "eol": "2028-10-27",
+    "replacement": ""
+  },
+  "FAN-TAC40": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": ""
+  },
+  "FAN-TAX20": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
     "replacement": ""
   },
   "GSW-WBX01": {
@@ -55,144 +75,269 @@
     "replacement": ""
   },
   "GVS-HC101-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-HC100-SW-TM"
   },
   "GVS-HC102-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-HC100-SW-TM"
   },
   "GVS-HC200-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "GVS-HC2A0-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "GVS-HC2A1-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "GVS-HC1P-SW-TM"
   },
   "GVS-HC2A2-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "GVS-HC1P-SW-TM"
   },
   "GVS-HC3A1-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-HC3A0-SW-TM"
   },
   "GVS-HC3A2-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-HC3A0-SW-TM"
   },
   "GVS-TAC01-SW-TM": {
-    "eos": "2022-02-28",
-    "eol": "2027-02-28",
+    "eos": "2/28/2022",
+    "eol": "2/28/2027",
     "replacement": "GVS-TAC21-SW-TM"
   },
   "GVS-TAC02-SW-TM": {
-    "eos": "2022-02-28",
-    "eol": "2027-02-28",
+    "eos": "2/28/2022",
+    "eol": "2/28/2027",
     "replacement": "GVS-TAC22-SW-TM"
   },
   "GVS-TAC21-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAC20-SW-TM"
   },
   "GVS-TAC22-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAC20-SW-TM"
   },
   "GVS-TAC40-SW-TM": {
-    "eos": "2025-07-06",
-    "eol": "2030-12-07",
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
     "replacement": "GVS-TAC40E-SW-TM"
   },
+  "GVS-TAC41": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAC41E"
+  },
+  "GVS-TAC41-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAC41E-HW"
+  },
+  "GVS-TAC42": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAC42E"
+  },
+  "GVS-TAC42-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAC42E-HW"
+  },
+  "GVS-TACX1-SW-TM": {
+    "eos": "5/31/2021",
+    "eol": "5/31/2026",
+    "replacement": ""
+  },
+  "GVS-TACX2-SW-TM": {
+    "eos": "5/31/2021",
+    "eol": "5/31/2026",
+    "replacement": ""
+  },
   "GVS-TAQ01-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAC21-SW-TM"
   },
   "GVS-TAQ02-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAC22-SW-TM"
   },
   "GVS-TAX01-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAX21-SW-TM"
   },
   "GVS-TAX01A-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAX21A-SW-TM"
   },
   "GVS-TAX02-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAX22-SW-TM"
   },
   "GVS-TAX02A-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "GVS-TAX22A-SW-TM"
   },
+  "GVS-TAX20-SW-TM": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX20E-SW-TM"
+  },
+  "GVS-TAX20A-SW-TM": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX20EA-SW-TM"
+  },
+  "GVS-TAX21": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX21E"
+  },
+  "GVS-TAX21-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX21E-HW"
+  },
   "GVS-TAX21-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAX20-SW-TM"
+  },
+  "GVS-TAX21A": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX21EA"
+  },
+  "GVS-TAX21A-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX21E-HW"
   },
   "GVS-TAX21A-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
   },
+  "GVS-TAX22": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX22E"
+  },
+  "GVS-TAX22-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX22E-HW"
+  },
   "GVS-TAX22-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAX20-SW-TM"
   },
+  "GVS-TAX22A": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX22EA"
+  },
+  "GVS-TAX22A-HW": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "GVS-TAX22E-HW"
+  },
   "GVS-TAX22A-SW-TM": {
-    "eos": "2023-02-28",
+    "eos": "2/28/2023",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
   },
+  "IBP-TAX20": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "IBP-TAX20E"
+  },
+  "IBP-TAX20-SW-TM": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": "IBP-TAX20E-SW-TM"
+  },
   "PRT-HC0-C02-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PRT-HC0-Q06-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PRT-HC0-X24-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
+  },
+  "PWR-TAC41": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": ""
+  },
+  "PWR-TAC42": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": ""
+  },
+  "PWR-TAX21": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": ""
+  },
+  "PWR-TAX22": {
+    "eos": "7/7/2025",
+    "eol": "12/7/2030",
+    "replacement": ""
   },
   "QSB-501": {
     "eos": "2026-09-30",
     "eol": "2031-09-30",
     "replacement": "QSB-523T"
   },
+  "QSB-502": {
+    "eos": "7/3/2025",
+    "eol": "7/3/2025",
+    "replacement": "QSB-504"
+  },
+  "QSB-504": {
+    "eos": "2027-01-06",
+    "eol": "2032-01-06",
+    "replacement": "QSB-524T"
+  },
   "QSB-521": {
     "eos": "2026-09-30",
     "eol": "2031-09-30",
     "replacement": "QSB-523T"
+  },
+  "RMK-TAC40E": {
+    "eos": "7/1/2025",
+    "eol": "7/1/2025",
+    "replacement": ""
   },
   "SMT-HC0-AFI": {
     "eos": "2022-12-31",
@@ -545,8 +690,8 @@
     "replacement": "SMT-HC3-GEN3-AT1-SW-TM"
   },
   "SMT-HC3-GEN2-BN-ZTA-SW-TM": {
-    "eos": "2023-07-30",
-    "eol": "2028-07-30",
+    "eos": "7/31/2023",
+    "eol": "7/31/2028",
     "replacement": "SMT-HC3-GEN3-BN-ZTA-SW-TM"
   },
   "SMT-HC3-GEN2-DD1-SW-TM": {
@@ -625,38 +770,38 @@
     "replacement": ""
   },
   "TAP-HC0-D25AC0-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "TAP-HC0-D25BC0-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "TAP-HC0-D35CC0-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "TAP-HC0-G100C0-SW-TM": {
-    "eos": "2022-12-31",
-    "eol": "2027-12-31",
+    "eos": "12/31/2022",
+    "eol": "12/31/2027",
     "replacement": ""
   },
   "UPG-TAC24-SW-TM": {
-    "eos": "2022-02-28",
-    "eol": "2027-02-28",
+    "eos": "2/28/2022",
+    "eol": "2/28/2027",
     "replacement": "UPG-TAC20-SW-TM"
   },
   "UPG-TAC32-SW-TM": {
-    "eos": "2022-02-28",
-    "eol": "2027-02-28",
+    "eos": "2/28/2022",
+    "eol": "2/28/2027",
     "replacement": "UPG-TAC20-SW-TM"
   },
   "UPG-TAX00-SW-TM": {
-    "eos": "2021-07-29",
-    "eol": "2026-07-29",
+    "eos": "7/30/2021",
+    "eol": "7/30/2026",
     "replacement": "UPG-TAX20-SW-TM"
   }
 }

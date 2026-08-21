@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import skus from './skus.json';
+import { getMergedSkus } from '../utils/skuOverrides';
 import {
   getCompatibleTapOptics,
   getTapTerminationClass,
@@ -7,7 +7,7 @@ import {
   getMpoBreakoutOption,
 } from './tapOpticRules';
 
-const skuSet = skus as Record<string, string>;
+const skuSet = getMergedSkus();
 
 describe('getTapTerminationClass', () => {
   it('classifies the LC module TAPs by fibre type', () => {

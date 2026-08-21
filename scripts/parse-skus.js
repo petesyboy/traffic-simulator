@@ -241,6 +241,35 @@ export function generateSkuCatalog() {
   console.log('[parse-skus] Ingesting SKU reference data from CSV files...');
   const skuMap = new Map();
 
+  // 1. Seed with base master catalogue entries if available
+  const SEED_FILE = path.join(OUTPUT_DIR, 'skus.seed.json');
+  if (fs.existsSync(SEED_FILE)) {
+    try {
+      const seedData = JSON.parse(fs.readFileSync(SEED_FILE, 'utf-8'));
+      const seedSkus = seedData.skus || {};
+      const seedMeta = seedData.metadata || {};
+      for (const [sku, desc] of Object.entries(seedSkus)) {
+        const key = sku.toUpperCase();
+        const meta = seedMeta[key];
+        skuMap.set(key, {
+          partNumber: key,
+          description: desc,
+          category: determineCategory(key, desc),
+          endOfSale: meta?.eos || undefined,
+          endOfLife: meta?.eol || undefined,
+          eosReplacementSku: meta?.replacement || undefined,
+          portDensity: extractPortDensity(desc),
+          speedsSupported: extractSpeeds(desc),
+          formFactor: extractFormFactor(key, desc),
+          isTaaCompliant: /TAA Compliant/i.test(desc) ? true : key.endsWith('T') ? true : undefined,
+        });
+      }
+      console.log(`[parse-skus] Pre-seeded ${skuMap.size} master entries`);
+    } catch (e) {
+      console.warn(`[parse-skus] Could not read seed file: ${e.message}`);
+    }
+  }
+
   for (const filename of CSV_FILES) {
     const filePath = path.join(REFERENCES_DIR, filename);
     const parsed = parseCsvFile(filePath);
@@ -281,8 +310,45 @@ export function generateSkuCatalog() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
+  // Retain a backup of the previous single source of truth if it exists
+  const BACKUP_JSON_PATH = path.join(OUTPUT_DIR, 'skus.backup.json');
+  if (fs.existsSync(OUTPUT_JSON_PATH)) {
+    try {
+      fs.copyFileSync(OUTPUT_JSON_PATH, BACKUP_JSON_PATH);
+      console.log(`[parse-skus] Backed up previous SKU catalogue to ${BACKUP_JSON_PATH}`);
+    } catch (e) {
+      console.warn(`[parse-skus] Could not write backup file: ${e.message}`);
+    }
+  }
+
   fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(allItems, null, 2), 'utf-8');
   console.log(`[parse-skus] Successfully generated ${allItems.length} structured SKU records in ${OUTPUT_JSON_PATH}`);
+
+  // Automatically keep legacy flat dictionaries (src/constants/skus.json & skus_metadata.json) in sync
+  const CONSTANTS_DIR = path.join(ROOT_DIR, 'src', 'constants');
+  const flatSkus = {};
+  const flatMetadata = {};
+
+  for (const item of allItems) {
+    const key = item.partNumber.toUpperCase();
+    flatSkus[key] = item.description;
+    if (item.endOfSale || item.endOfLife || item.eosReplacementSku) {
+      flatMetadata[key] = {
+        eos: item.endOfSale || '',
+        eol: item.endOfLife || '',
+        replacement: item.eosReplacementSku ? item.eosReplacementSku.toUpperCase() : '',
+      };
+    }
+  }
+
+  try {
+    fs.writeFileSync(path.join(CONSTANTS_DIR, 'skus.json'), JSON.stringify(flatSkus, null, 2), 'utf-8');
+    fs.writeFileSync(path.join(CONSTANTS_DIR, 'skus_metadata.json'), JSON.stringify(flatMetadata, null, 2), 'utf-8');
+    console.log(`[parse-skus] Synced legacy flat mappings to src/constants/`);
+  } catch (e) {
+    console.warn(`[parse-skus] Could not write legacy constant mappings: ${e.message}`);
+  }
+
   return allItems;
 }
 

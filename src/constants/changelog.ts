@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.556",
+    date: "2026-08-21",
+    summary: "Unified SKU data layer into a single source of truth backed by src/data/skus.json, updated skuService and skuOverrides to maintain automatic previous backups with rollback capabilities, and synced SKU lookup pipelines.",
+  },
+  {
     version: "1.0.555",
     date: "2026-08-21",
     summary: "Implemented Vitest unit test suite with coverage, isolated pure math engine (calculator.ts), build-time reference CSV catalog ingestion pipeline (scripts/parse-skus.js), typed SKU service data layer (skuService.ts), and CI/CD test automation.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.534",
     date: "2026-08-19",
     summary: "Stop claiming every chassis is \"filtering\" traffic in Export Diagram Mode",
-  },
-  {
-    version: "1.0.533",
-    date: "2026-08-19",
-    summary: "Stop showing In/Out throughput on breakout panel nodes",
   },
 ];
