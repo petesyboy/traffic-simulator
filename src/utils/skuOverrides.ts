@@ -19,6 +19,7 @@ export interface SkuMetadataEntry {
   eos?: string;
   eol?: string;
   replacement?: string;
+  unavailable?: boolean;
 }
 
 export interface PriceListRow {
@@ -190,6 +191,25 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
         eol: row.eol || '',
         replacement: row.replacement ? row.replacement.toUpperCase() : '',
       };
+    }
+  }
+
+  const uploadedSkuSet = new Set(rows.map((r) => r.sku.trim().toUpperCase()).filter(Boolean));
+
+  // If a full price list was uploaded, retain historical SKUs and mark unmentioned active ones as Discontinued
+  if (uploadedSkuSet.size > 20) {
+    for (const [sku] of Object.entries(nextSkus)) {
+      if (!uploadedSkuSet.has(sku)) {
+        if (!nextMetadata[sku]) {
+          nextMetadata[sku] = {
+            eos: 'Discontinued (Removed from Price List)',
+            unavailable: true,
+          };
+        } else if (!nextMetadata[sku].eos && !nextMetadata[sku].eol) {
+          nextMetadata[sku].eos = 'Discontinued (Removed from Price List)';
+          nextMetadata[sku].unavailable = true;
+        }
+      }
     }
   }
 

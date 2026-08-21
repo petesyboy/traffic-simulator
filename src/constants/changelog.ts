@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.557",
+    date: "2026-08-21",
+    summary: "Retained historical knowledge base for SKUs removed or omitted from subsequent price lists, automatically flagging them as Discontinued / Unavailable, and alert users during configuration validation.",
+  },
+  {
     version: "1.0.556",
     date: "2026-08-21",
     summary: "Unified SKU data layer into a single source of truth backed by src/data/skus.json, updated skuService and skuOverrides to maintain automatic previous backups with rollback capabilities, and synced SKU lookup pipelines.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.536",
     date: "2026-08-19",
     summary: "Add an optional executive-summary field to the solution report export",
-  },
-  {
-    version: "1.0.534",
-    date: "2026-08-19",
-    summary: "Stop claiming every chassis is \"filtering\" traffic in Export Diagram Mode",
   },
 ];

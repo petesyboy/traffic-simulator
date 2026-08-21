@@ -71,17 +71,29 @@ export const skuService = {
 
     if (!desc && !base) return undefined;
 
+    const isUnavailable = Boolean(meta?.unavailable || meta?.eos || meta?.eol || base?.isUnavailable || base?.endOfSale || base?.endOfLife);
+    const status: 'Active' | 'EOS' | 'EOL' | 'Discontinued' | 'Unavailable' =
+      (meta?.eol || base?.endOfLife)
+        ? 'EOL'
+        : (meta?.eos || base?.endOfSale)
+          ? 'EOS'
+          : (meta?.unavailable || base?.isUnavailable)
+            ? 'Discontinued'
+            : 'Active';
+
     return {
       partNumber: target,
       description: desc || base?.description || target,
       category: base?.category || 'Other',
+      status,
+      isUnavailable,
       productFamily: base?.productFamily,
       productSubFamily: base?.productSubFamily,
       countryOfOrigin: base?.countryOfOrigin,
       endOfSale: meta?.eos || base?.endOfSale,
       endOfLife: meta?.eol || base?.endOfLife,
       eosReplacementSku: meta?.replacement || base?.eosReplacementSku,
-      supportAvailable: base?.supportAvailable,
+      supportAvailable: isUnavailable ? false : (base?.supportAvailable ?? true),
       listPrice: base?.listPrice,
       listPriceMonthly: base?.listPriceMonthly,
       portDensity: base?.portDensity,
@@ -98,11 +110,24 @@ export const skuService = {
     return getMergedSkus()[target] || target;
   },
 
-  /** Retrieves the lifecycle metadata (EOS, EOL, replacement) for a SKU. */
+  /** Retrieves the lifecycle metadata (EOS, EOL, replacement, unavailable) for a SKU. */
   getMetadata(partNumber: string): SkuMetadataEntry | undefined {
     if (!partNumber) return undefined;
     const target = partNumber.trim().toUpperCase();
     return getMergedSkusMetadata()[target];
+  },
+
+  /** Checks whether a SKU is active and available for quotation. */
+  isAvailable(partNumber: string): boolean {
+    const item = this.getSKUByPartNumber(partNumber);
+    if (!item) return false;
+    return !item.isUnavailable && item.status === 'Active';
+  },
+
+  /** Returns the current availability lifecycle status for a SKU. */
+  getStatus(partNumber: string): 'Active' | 'EOS' | 'EOL' | 'Discontinued' | 'Unavailable' {
+    const item = this.getSKUByPartNumber(partNumber);
+    return item?.status || 'Unavailable';
   },
 
   /** Retrieves the list price for a SKU if known. */
@@ -156,14 +181,19 @@ export const skuService = {
     );
   },
 
-  /** Returns all active (non-EOS/EOL) SKUs. */
+  /** Returns all active, currently orderable SKUs. */
   getActiveSKUs(): SKUItem[] {
-    return this.getAllSKUs().filter((item) => !item.endOfSale && !item.endOfLife);
+    return this.getAllSKUs().filter((item) => !item.endOfSale && !item.endOfLife && !item.isUnavailable);
   },
 
   /** Returns all End-of-Sale or End-of-Life SKUs. */
   getEosEolSKUs(): SKUItem[] {
     return this.getAllSKUs().filter((item) => Boolean(item.endOfSale || item.endOfLife));
+  },
+
+  /** Returns all historical SKUs that are discontinued or removed from active price lists. */
+  getDiscontinuedSKUs(): SKUItem[] {
+    return this.getAllSKUs().filter((item) => Boolean(item.isUnavailable || item.status === 'Discontinued'));
   },
 
   /** Returns all distinct categories present in the catalog. */

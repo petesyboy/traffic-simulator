@@ -43,6 +43,7 @@ interface SkuMetadata {
   eos?: string;
   eol?: string;
   replacement?: string;
+  unavailable?: boolean;
 }
 
 // Tests pin this to a fixed fixture via setMockSkusMetadata; production code leaves
@@ -67,15 +68,19 @@ function checkSkuStatus(
 
   const hasEos = Boolean(entry.eos);
   const hasEol = Boolean(entry.eol);
+  const isUnavailable = Boolean(entry.unavailable);
 
-  if (hasEos || hasEol) {
-    const statusStr = hasEol ? 'End of Life' : 'End of Sale';
+  if (hasEos || hasEol || isUnavailable) {
+    let statusStr = hasEol ? 'End of Life' : hasEos ? 'End of Sale' : 'Discontinued';
+    if (entry.eos && entry.eos.toLowerCase().includes('discontinued')) {
+      statusStr = 'Discontinued (Removed from Price List)';
+    }
     const dateStr = hasEol ? entry.eol : entry.eos;
-    let msg = `${typeName} SKU "${sku}" on chassis "${chassisLabel}" is ${statusStr} (effective ${dateStr}).`;
+    let msg = `${typeName} SKU "${sku}" on chassis "${chassisLabel}" is ${statusStr}${dateStr && !dateStr.includes('Discontinued') ? ` (effective ${dateStr})` : ''}.`;
     if (entry.replacement) {
       msg += ` It is not available. Please use replacement SKU "${entry.replacement}" instead.`;
     } else {
-      msg += ` It is no longer supported.`;
+      msg += ` It is no longer orderable.`;
     }
 
     errors.push({

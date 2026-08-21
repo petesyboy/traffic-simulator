@@ -120,4 +120,19 @@ describe('skuService', () => {
     skuService.restoreBuiltinCatalog();
     expect(skuService.getDescription('NEW-PART-1')).toBe('NEW-PART-1');
   });
+
+  it('correctly reports status and availability for active, EOS/EOL, and discontinued items', () => {
+    const active = skuService.isAvailable('SFP-532T');
+    expect(active).toBe(true);
+    expect(skuService.getStatus('SFP-532T')).toBe('Active');
+
+    const eosItem = skuService.getEosEolSKUs()[0];
+    if (eosItem) {
+      expect(skuService.isAvailable(eosItem.partNumber)).toBe(false);
+      expect(['EOS', 'EOL']).toContain(skuService.getStatus(eosItem.partNumber));
+    }
+
+    const discontinued = skuService.getDiscontinuedSKUs();
+    expect(Array.isArray(discontinued)).toBe(true);
+  });
 });

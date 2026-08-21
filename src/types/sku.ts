@@ -43,6 +43,8 @@ export interface SKUItem {
   partNumber: string;
   description: string;
   category: string;
+  status?: 'Active' | 'EOS' | 'EOL' | 'Discontinued' | 'Unavailable';
+  isUnavailable?: boolean;
   productFamily?: string;
   productSubFamily?: string;
   countryOfOrigin?: string;

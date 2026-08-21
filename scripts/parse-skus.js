@@ -270,6 +270,8 @@ export function generateSkuCatalog() {
     }
   }
 
+  const newlySeenSkus = new Set();
+
   for (const filename of CSV_FILES) {
     const filePath = path.join(REFERENCES_DIR, filename);
     const parsed = parseCsvFile(filePath);
@@ -277,6 +279,8 @@ export function generateSkuCatalog() {
 
     for (const item of parsed) {
       const key = item.partNumber.toUpperCase();
+      newlySeenSkus.add(key);
+
       if (!skuMap.has(key)) {
         skuMap.set(key, item);
       } else {
@@ -301,6 +305,29 @@ export function generateSkuCatalog() {
         };
         skuMap.set(key, merged);
       }
+    }
+  }
+
+  // Determine lifecycle status and flag discontinued/removed items across historical knowledge base
+  for (const [key, item] of skuMap.entries()) {
+    const isPresentInActivePriceLists = newlySeenSkus.has(key);
+    if (item.endOfLife) {
+      item.status = 'EOL';
+      item.isUnavailable = true;
+    } else if (item.endOfSale) {
+      item.status = 'EOS';
+      item.isUnavailable = true;
+    } else if (!isPresentInActivePriceLists) {
+      // Retained in the knowledge base, but discontinued / removed from active price list
+      item.status = 'Discontinued';
+      item.isUnavailable = true;
+      item.supportAvailable = false;
+      if (!item.endOfSale) {
+        item.endOfSale = 'Discontinued (Removed from Price List)';
+      }
+    } else {
+      item.status = 'Active';
+      item.isUnavailable = false;
     }
   }
 
