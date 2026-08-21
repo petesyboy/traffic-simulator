@@ -149,8 +149,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>Generate Solution Report</h3>
         <p className="text-muted" style={{ fontSize: '11px', margin: 0, lineHeight: 1.4 }}>
           Produces a PDF describing the current topology in plain English — traffic sources, maps, filters, GigaSMART
-          processing, and destinations — with the topology diagram and a Bill of Materials appendix
-          {advancedMode ? ' (plus a physical/rack deployment appendix)' : ''}.
+          processing, and destinations — with the topology diagram, Bill of Materials, and physical rack deployment appendices.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>

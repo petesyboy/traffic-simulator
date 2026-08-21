@@ -68,9 +68,9 @@ export function describeToolOverloadRisk(toolName: string | undefined, nodeInges
   const limitMbps = nodeIngestLimitMbps || (applianceModel ? getDefaultIngestLimitMbps(toolName) : undefined);
 
   if (limitMbps) {
-    const modelClause = applianceModel ? ` (modelled here as a ${applianceModel})` : '';
-    return `Rated for up to ${formatBandwidth(limitMbps)}${modelClause} — sustained traffic beyond this typically causes dropped packets, an analysis backlog, or missed detections.`;
+    const modelClause = applianceModel ? ` (modelled here as a baseline ${applianceModel})` : '';
+    return `Rated for up to ${formatBandwidth(limitMbps)}${modelClause} — this is an assumed baseline for simulation purposes. Sustained traffic beyond the tool's actual capacity typically causes dropped packets, an analysis backlog, or missed detections (consult the tool manufacturer to verify exact appliance ingest limits).`;
   }
 
-  return 'If sent more traffic than it can process, this tool typically falls behind — queuing or discarding data, delaying analysis, or increasing storage/ingest cost — rather than analysing everything in real time.';
+  return 'If sent more traffic than it can process, this tool typically falls behind — queuing or discarding data, delaying analysis, or increasing storage/ingest cost — rather than analysing everything in real time (consult the tool vendor to determine exact sustained and peak ingest capacity).';
 }

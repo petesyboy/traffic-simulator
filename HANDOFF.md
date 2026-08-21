@@ -24,8 +24,8 @@ One-line-each; see the commit for the full story:
 | 1.0.514 | `919b70b` | Fixed BOM silently omitting a licence for IP FlowVUE / GTP GigaSMART functions (SKUs existed, engine had no mapping) |
 | 1.0.515 | `88d0899` | Renamed disk Save/Load buttons to Export/Import |
 | — | `0f647e0` | Stopped tracking `.obsidian/*` vault state files (repo doubles as the user's Obsidian vault) |
-| 1.0.516 | `f90db47` | Added IP FlowVUE + GTP Flow Filtering to the Applications drag palette (SKU mapping existed but nothing could add them to a chassis) |
-| 1.0.517 | `2d25205` | Fixed FlowVUE/GTP compatibility rules (wrongly refused combining) and modelled the real per-mode licensing: GTP whitelisting always needs GTPMAX+FlowVUE; GTP flow sampling needs both only for a rate strictly between 0–100% |
+| 1.0.554 | `49208a1` | Added site assignment consistency verification modal before generating BOM or PDF reports |
+| 1.0.555 | `0a8c2f1` | Implemented isolated core math engine (`calculator.ts`), build-time CSV data ingestion pipeline (`parse-skus.js`), typed data service (`skuService.ts`), Vitest test suite with coverage, and CI/CD test automation |
 
 ---
 

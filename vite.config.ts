@@ -1,4 +1,5 @@
-import { defineConfig, type Plugin } from 'vite'
+/// <reference types="vitest" />
+import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { execSync } from 'node:child_process'
@@ -23,7 +24,7 @@ function getGitCommit(): string {
 function buildInfoPlugin(): Plugin {
   return {
     name: 'inject-build-info',
-    transformIndexHtml(html) {
+    transformIndexHtml(html: string) {
       const meta = [
         `<meta name="build-version" content="${pkg.version}" />`,
         `<meta name="build-date" content="${new Date().toISOString()}" />`,
@@ -44,4 +45,13 @@ export default defineConfig({
     buildInfoPlugin(),
   ],
   base: './', // Use relative path for standalone opening
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{js,ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
 })

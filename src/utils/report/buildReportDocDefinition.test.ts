@@ -30,6 +30,7 @@ function collectTexts(node: unknown, out: string[] = []): string[] {
     const obj = node as Record<string, unknown>;
     if ('text' in obj) collectTexts(obj.text, out);
     if ('stack' in obj) collectTexts(obj.stack, out);
+    if ('columns' in obj) collectTexts(obj.columns, out);
     if ('table' in obj) collectTexts((obj.table as Record<string, unknown>).body, out);
     if ('ul' in obj) collectTexts(obj.ul, out);
     if ('ol' in obj) collectTexts(obj.ol, out);
@@ -83,4 +84,67 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).not.toContain('💡');
     expect(allText).not.toContain('include a small surplus');
   });
+
+  it('renders Appendix B Physical Rack & Deployment report with multi-site breakdown and aggregate metrics', () => {
+    const nodeA: CustomNode = {
+      id: 'ta-site1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Datacentre A TA25E',
+        model: 'GigaVUE-TA25E',
+        sku: 'TA25E-BASE',
+        powerSupply: 'AC',
+        site: 'Datacentre A (North)',
+        optics: [{ board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 2 }],
+      },
+    } as CustomNode;
+
+    const nodeB: CustomNode = {
+      id: 'ta-site2',
+      type: 'hardwareNode',
+      position: { x: 300, y: 0 },
+      data: {
+        label: 'Datacentre B TA25E',
+        model: 'GigaVUE-TA25E',
+        sku: 'TA25E-BASE',
+        powerSupply: 'AC',
+        site: 'Datacentre B (South)',
+        optics: [{ board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 2 }],
+      },
+    } as CustomNode;
+
+    const doc = buildReportDocDefinition({ ...baseInput, nodes: [nodeA, nodeB], edges: [] });
+    const allText = collectTexts(doc.content).join(' ');
+
+    expect(allText).toContain('Appendix B: Physical Rack & Deployment Report');
+    expect(allText).toContain('Site-by-Site Deployment Breakdown');
+    expect(allText).toContain('Datacentre A (North)');
+    expect(allText).toContain('Datacentre B (South)');
+    expect(allText).toContain('Master Aggregate Deployment (All Sites Combined)');
+    expect(allText).toContain('Total Space Required');
+    expect(allText).toContain('Total Max Power');
+  });
+
+  it('renders tool ingest capacity advisory notice when tool nodes are present', () => {
+    const toolNode: CustomNode = {
+      id: 'tool-1',
+      type: 'toolNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Vectra NDR',
+        toolName: 'Vectra',
+        ingestLimitMbps: 10000,
+      },
+    } as CustomNode;
+
+    const doc = buildReportDocDefinition({ ...baseInput, nodes: [toolNode], edges: [] });
+    const allText = collectTexts(doc.content).join(' ');
+
+    expect(allText).toContain('Destinations & Tools');
+    expect(allText).toContain('Important Notice: Tool Ingest Capacities & Vendor Verification');
+    expect(allText).toContain('simulation baseline assumptions and estimates only');
+    expect(allText).toContain('consult the respective tool, probe, or sensor manufacturer directly');
+  });
 });
+

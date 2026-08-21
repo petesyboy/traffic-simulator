@@ -63,4 +63,44 @@ Here is how to set up a basic flow map that routes mirror traffic through a Giga
 3. Click **"▶ Run Simulation"** in the top menu bar to watch the live traffic streams flow!
 
 ---
+
+## Developer Guide & Testing
+
+### Installation & Local Setup
+```bash
+# Install dependencies
+npm install
+
+# Start local Vite development server
+npm run dev
+```
+
+### Data Pipeline & Catalog Ingestion
+To parse and normalize reference price lists and SKU matrices from `references/` into the structured catalog (`src/data/skus.json`):
+```bash
+# Run data ingestion pipeline
+npm run generate:data
+```
+*Note: `generate:data` is automatically executed during `prebuild` and `pretest` hooks.*
+
+### Running Unit Tests & Coverage
+The project uses [Vitest](https://vitest.dev/) for unit testing core calculation logic, SKU services, BOM generation, topology modeling, and hardware constraints.
+```bash
+# Run all unit tests once
+npm test
+
+# Run tests in interactive watch mode
+npm run test:watch
+
+# Generate code coverage report
+npm run test:coverage
+```
+
+### Production Build
+```bash
+# Build single-file production artifact in dist/
+npm run build
+```
+
+---
 <sub>Looking for Systems Engineer (SE) details or physical hardware configurations? See the [advanced reference guide](README_advanced.md).</sub>

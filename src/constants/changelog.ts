@@ -16,14 +16,44 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.555",
+    date: "2026-08-21",
+    summary: "Implemented Vitest unit test suite with coverage, isolated pure math engine (calculator.ts), build-time reference CSV catalog ingestion pipeline (scripts/parse-skus.js), typed SKU service data layer (skuService.ts), and CI/CD test automation.",
+  },
+  {
+    version: "1.0.554",
+    date: "2026-08-21",
+    summary: "Added site assignment consistency verification modal before generating Bill of Materials or PDF Solution Reports, preventing unintentional discrepancies from partially tagged physical topologies.",
+  },
+  {
+    version: "1.0.553",
+    date: "2026-08-21",
+    summary: "Added an advisory notice and vendor verification disclaimer to the solution report and tool descriptions for tool/sensor ingest ratings, clarifying that rated capacities (e.g. 5 Gbps, 10 Gbps) are baseline simulation estimates and advising customers to confirm exact sustained and peak limits with the tool manufacturer.",
+  },
+  {
+    version: "1.0.552",
+    date: "2026-08-21",
+    summary: "Added comprehensive Physical Rack & Deployment specifications to the solution report (Appendix B), rendering both a side-by-side per-site breakdown and a master aggregated deployment table with full RU, dimension, weight, power, heat dissipation, and airflow metrics.",
+  },
+  {
+    version: "1.0.551",
+    date: "2026-08-20",
+    summary: "Enhanced the Link Resolution Engine to intelligently upgrade lower-speed transceivers to match higher-speed peers (e.g. upgrading 1G to 10G/25G instead of downgrading) and cleanly replace mismatched optics in the chassis inventory and port map.",
+  },
+  {
     version: "1.0.550",
     date: "2026-08-20",
-    summary: "Add one-click resolve connection problem feature for mismatched or missing link optics (v1.0.550)",
+    summary: "Added one-click 'Resolve Connection Problem' diagnostic feature to the Link Detail panel, automatically detecting missing, mismatched, or unassigned link transceivers and fitting matching TAA-compliant optics with one click.",
   },
   {
     version: "1.0.549",
     date: "2026-08-20",
-    summary: "Display link details panel with optics, speed, and role upon edge selection (v1.0.549)",
+    summary: "Added interactive Link Details side panel when selecting any link on the canvas, showing source and target appliances, fitted transceiver SKUs, link speed, physical media, traffic purpose, and live simulation throughput.",
+  },
+  {
+    version: "1.0.548",
+    date: "2026-08-20",
+    summary: "Enabled multi-link connections between hardware nodes and tools on canvas with parallel curved routing, allowing multiple parallel physical links between the same appliances.",
   },
   {
     version: "1.0.546",
@@ -84,35 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.533",
     date: "2026-08-19",
     summary: "Stop showing In/Out throughput on breakout panel nodes",
-  },
-  {
-    version: "1.0.532",
-    date: "2026-08-19",
-    summary: "Close the breakout-panel fibre-type gap: cross-check parent optic vs panel model",
-  },
-  {
-    version: "1.0.531",
-    date: "2026-08-19",
-    summary: "Confirm and lock in aggregation-direction breakout validation with tests",
-  },
-  {
-    version: "1.0.530",
-    date: "2026-08-19",
-    summary: "Tie breakout-capability to Gigamon's actual supported SKU list, not a naming heuristic",
-  },
-  {
-    version: "1.0.529",
-    date: "2026-08-19",
-    summary: "Fix TA200/TA400 QSFP-cage check ignoring Advanced Mode's per-link allocations",
-  },
-  {
-    version: "1.0.528",
-    date: "2026-08-19",
-    summary: "Unify the two remaining hand-styled optic pickers",
-  },
-  {
-    version: "1.0.527",
-    date: "2026-08-19",
-    summary: "Unify TAP termination-matrix optic labels with the rest of the app",
   },
 ];
