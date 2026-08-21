@@ -3,20 +3,23 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Lets an SE refresh SKU descriptions and EOS/EOL/replacement metadata straight
  * from an uploaded worldwide price list (see priceListParser.ts + SkuUpdateModal),
- * without running scripts/parse_skus.py and rebuilding the app.
+ * without running scripts/parse-skus.js and rebuilding the app.
  *
- * Overrides are a full snapshot (base catalogue + everything uploaded so far),
- * persisted to localStorage so they survive a reload. They're per-browser, not
- * part of a saved project - deliberately excluded from the save-slot/JSON export
- * payload in settingsSlice.ts.
+ * Overrides are layered on top of the built-in single source of truth (src/data/skus.json),
+ * persisted to localStorage so they survive a reload.
+ *
+ * Automatically maintains a backup of the previous active override set, allowing
+ * the user to easily revert to the prior state or restore the original built-in catalog.
  */
-import baseSkus from '../constants/skus.json';
-import baseMetadata from '../constants/skus_metadata.json';
+
+import baseSkuCatalog from '../data/skus.json';
+import { type SKUItem } from '../types/sku';
 
 export interface SkuMetadataEntry {
   eos?: string;
   eol?: string;
   replacement?: string;
+  unavailable?: boolean;
 }
 
 export interface PriceListRow {
@@ -43,10 +46,27 @@ interface SkuOverrideData {
 }
 
 const STORAGE_KEY = 'fm-simulator-sku-overrides';
+const STORAGE_KEY_BACKUP = 'fm-simulator-sku-overrides-backup';
 
-function loadStoredOverrides(): SkuOverrideData | null {
+// Generate base flat mappings from the single source of truth (src/data/skus.json)
+const baseSkus: Record<string, string> = {};
+const baseMetadata: Record<string, SkuMetadataEntry> = {};
+
+(baseSkuCatalog as SKUItem[]).forEach((item) => {
+  const key = item.partNumber.toUpperCase();
+  baseSkus[key] = item.description;
+  if (item.endOfSale || item.endOfLife || item.eosReplacementSku) {
+    baseMetadata[key] = {
+      eos: item.endOfSale || '',
+      eol: item.endOfLife || '',
+      replacement: item.eosReplacementSku ? item.eosReplacementSku.toUpperCase() : '',
+    };
+  }
+});
+
+function loadStoredOverrides(key: string): SkuOverrideData | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !parsed.skus || !parsed.metadata) return null;
@@ -56,7 +76,8 @@ function loadStoredOverrides(): SkuOverrideData | null {
   }
 }
 
-let overrides: SkuOverrideData | null = loadStoredOverrides();
+let overrides: SkuOverrideData | null = loadStoredOverrides(STORAGE_KEY);
+let backupOverrides: SkuOverrideData | null = loadStoredOverrides(STORAGE_KEY_BACKUP);
 
 export function getSkuOverrideInfo(): { sourceFileName: string; updatedAt: string; count: number } | null {
   if (!overrides) return null;
@@ -67,27 +88,72 @@ export function getSkuOverrideInfo(): { sourceFileName: string; updatedAt: strin
   };
 }
 
+export function getBackupOverrideInfo(): { sourceFileName: string; updatedAt: string; count: number } | null {
+  if (!backupOverrides) return null;
+  return {
+    sourceFileName: backupOverrides.sourceFileName,
+    updatedAt: backupOverrides.updatedAt,
+    count: Object.keys(backupOverrides.skus).length,
+  };
+}
+
 export function getMergedSkus(): Record<string, string> {
-  const base = baseSkus as Record<string, string>;
-  return overrides ? { ...base, ...overrides.skus } : base;
+  return overrides ? { ...baseSkus, ...overrides.skus } : baseSkus;
 }
 
 export function getMergedSkusMetadata(): Record<string, SkuMetadataEntry> {
-  const base = baseMetadata as Record<string, SkuMetadataEntry>;
-  return overrides ? { ...base, ...overrides.metadata } : base;
+  return overrides ? { ...baseMetadata, ...overrides.metadata } : baseMetadata;
 }
 
+/** Clears all overrides and restores the built-in single source of truth. */
 export function clearSkuOverrides(): void {
+  if (overrides) {
+    backupOverrides = overrides;
+    try {
+      localStorage.setItem(STORAGE_KEY_BACKUP, JSON.stringify(backupOverrides));
+    } catch {
+      // Ignore quota error
+    }
+  }
   overrides = null;
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // Storage unavailable - the in-memory override is already cleared above.
+    // Storage unavailable
   }
 }
 
-/** Mirrors scripts/parse_skus.py's merge logic: load what's there, apply new rows on top. */
+/** Reverts to the previous backup override set. */
+export function revertToPreviousOverrides(): boolean {
+  if (!backupOverrides) return false;
+  const temp = overrides;
+  overrides = backupOverrides;
+  backupOverrides = temp;
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+    if (backupOverrides) {
+      localStorage.setItem(STORAGE_KEY_BACKUP, JSON.stringify(backupOverrides));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_BACKUP);
+    }
+  } catch {
+    // Storage unavailable
+  }
+  return true;
+}
+
+/** Applies newly uploaded price list rows on top of existing SKUs and creates a backup. */
 export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string): ApplyPriceListResult {
+  if (overrides) {
+    backupOverrides = overrides;
+    try {
+      localStorage.setItem(STORAGE_KEY_BACKUP, JSON.stringify(backupOverrides));
+    } catch {
+      // Ignore quota error
+    }
+  }
+
   const nextSkus = { ...getMergedSkus() };
   const nextMetadata = { ...getMergedSkusMetadata() };
 
@@ -105,11 +171,6 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
     }
 
     let finalDesc = desc;
-    // Some legacy SKUs' own Detailed Description text already ends with an
-    // "(EOS <human date>)" note that doesn't string-match the structured EOS
-    // column's ISO date (e.g. desc says "(EOS Dec 31, 2022)", column says
-    // "2022-12-31") - checking for any "(EOS" marker at all, not an exact
-    // date-string match, avoids appending a redundant second tag in that case.
     if (row.eos && !/\(EOS\b/i.test(finalDesc)) {
       finalDesc += ` (EOS ${row.eos})`;
     }
@@ -133,6 +194,25 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
     }
   }
 
+  const uploadedSkuSet = new Set(rows.map((r) => r.sku.trim().toUpperCase()).filter(Boolean));
+
+  // If a full price list was uploaded, retain historical SKUs and mark unmentioned active ones as Discontinued
+  if (uploadedSkuSet.size > 20) {
+    for (const [sku] of Object.entries(nextSkus)) {
+      if (!uploadedSkuSet.has(sku)) {
+        if (!nextMetadata[sku]) {
+          nextMetadata[sku] = {
+            eos: 'Discontinued (Removed from Price List)',
+            unavailable: true,
+          };
+        } else if (!nextMetadata[sku].eos && !nextMetadata[sku].eol) {
+          nextMetadata[sku].eos = 'Discontinued (Removed from Price List)';
+          nextMetadata[sku].unavailable = true;
+        }
+      }
+    }
+  }
+
   overrides = {
     skus: nextSkus,
     metadata: nextMetadata,
@@ -143,7 +223,7 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
   } catch {
-    // Quota exceeded or storage unavailable - overrides still apply for this session.
+    // Storage unavailable
   }
 
   return { added, updated, unchanged, skipped, total: rows.length };

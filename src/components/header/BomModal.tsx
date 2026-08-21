@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
-import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
+import { generateBom, validateConfiguration, detectMixedSiteAssignment, getSkus } from '../../utils/bomEngine';
 import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
@@ -42,6 +42,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
   );
   const validationErrors = validateConfiguration(nodes, edges);
+  const siteCheck = detectMixedSiteAssignment(nodes);
 
   const physicalItems = buildPhysicalItems(nodes, items);
 
@@ -222,6 +223,26 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* Mixed site assignment warning notice */}
+        {siteCheck.hasMixedSites && activeTab === 'bom' && (
+          <div
+            style={{
+              marginBottom: '16px',
+              padding: '10px 14px',
+              background: 'rgba(255, 152, 0, 0.08)',
+              border: '1px solid rgba(255, 152, 0, 0.3)',
+              borderRadius: '6px',
+              color: '#ffb74d',
+              fontSize: '12px',
+              lineHeight: '1.4',
+            }}
+          >
+            <strong>📍 Note on Site Locations:</strong> Some equipment is assigned to physical sites (
+            {siteCheck.taggedSites.join(', ')}) whilst {siteCheck.untaggedNodes.length} item(s) are unassigned and
+            categorised under <strong>Global / Unassigned</strong>.
           </div>
         )}
 

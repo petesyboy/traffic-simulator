@@ -1,4 +1,4 @@
-import { getMergedSkus } from '../skuOverrides';
+import { skuService } from '../../services/skuService';
 
 // Maps SUPPORTED_TAP_OPTICS picker values (src/constants/nodeTypes.ts) to the
 // real Gigamon transceiver SKU. Every value in that list must have an entry
@@ -57,12 +57,16 @@ export function resolveOpticSku(opticStr: string, chassisModel: string): string 
     return 'CBL-205';
   }
   const taaSku = firstWord + 'T';
-  if (getMergedSkus()[taaSku]) {
+  if (skuService.getSKUByPartNumber(taaSku)) {
     return taaSku;
   }
   return firstWord;
 }
 
-export function getSkus() {
-  return getMergedSkus();
+export function getSkus(): Record<string, string> {
+  const map: Record<string, string> = {};
+  skuService.getAllSKUs().forEach((item) => {
+    map[item.partNumber.toUpperCase()] = item.description;
+  });
+  return map;
 }

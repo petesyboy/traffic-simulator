@@ -1,35 +1,37 @@
 # Gigamon Flow Map Simulator — Systems Engineer (SE) Reference Guide
 
-Welcome to the SE edition of the **Gigamon Fabric Manager & Flow Map Simulator** documentation. This reference guide outlines both Simple Mode and Advanced Mode (Physical Hardware configurations) including the technical logic, validation constraints, and Bill of Materials (BOM) engine behaviors.
+Welcome to the SE edition of the **Gigamon Fabric Manager & Flow Map Simulator** documentation. This reference guide outlines both Simple Mode and Advanced Mode (Physical Hardware configurations) including technical logic, optical resolution engines, validation constraints, and Bill of Materials (BOM) engine behaviours.
 
 ---
 
 ## 1. System Architectures & Modes
 
-The simulator supports two runtime visualization modes, toggleable via the header menu:
+The simulator supports two runtime visualisation modes, toggleable via the header menu:
 
 ### A. Simple Mode (Logical Flow Map)
 Designed for high-level logical path mapping. Nodes represent logical objects:
 - **SPAN Port / TAP Device**: Abstract traffic sources.
 - **Traffic Maps & Filters**: Route and select traffic streams matching VLAN, IP version, IP subnets, or port values.
-- **GigaSMART Engines**: Deduplication, slicing, stripping, etc. (Includes duplicate drop rate drift animations).
-- **Target Tools**: Security/compliance tools categorized as Packet-consuming, Metadata-consuming, or Storage-oriented.
+- **GigaSMART Engines**: Deduplication, slicing, header stripping, GTP correlation, SSL decrypt, and load balancing (includes dynamic duplicate drop rate drift animations).
+- **Target Tools**: Security and compliance tools categorised as Packet-consuming, Metadata-consuming, or Storage-oriented.
 
 ### B. Advanced Mode (Physical Hardware Design)
-Transitions the canvas to a physical hardware configuration layout. Users place actual chassis models, physical TAP modules, configure power supplies, and view real-time interface metrics:
+Transitions the canvas to a physical hardware configuration layout. Users place actual chassis models, physical TAP modules, breakout panels, configure power supplies, and inspect real-time interface metrics:
 - **Real-time Metrics**: Displays live throughput parameters directly on physical hardware nodes (`In: X.X Gbps` / `Out: X.X Gbps`).
 - **Input Node Aggregation**: TAPs and input nodes on the far-left summarise total ingress bandwidth.
-- **BOM Engine**: Generates a physical inventory, matching optics, licenses, and cables automatically.
-- **Photographic Hardware Diagrams**: HC1, HC1-Plus, HC3, and HCT chassis nodes render an actual front-panel photo with whichever port/GigaSMART/bypass modules you've installed composited on at their real physical slot position — not a generic box — so the diagram on screen matches what a customer would see racked in front of them. The same composite renders in the **Hardware Summary Panel** (below) and in **Rack Elevation View**.
-- **Hardware Summary Panel**: Click the 📋 icon in a chassis node's header to open a full-size hardware summary — a larger version of the front-panel photo with a slot legend, live port state, and installed board/optic detail, useful for walking a customer through exactly what's fitted where.
-- **Collapsible Board Details**: When a chassis has multiple modules installed, its canvas node can grow tall from stacking each board's port map. Click the **−/+** icon next to 📋 to collapse the photo/port-map section down to just the header, and expand it again when you need the detail back.
+- **Photographic Hardware Diagrams**: HC1, HC1-Plus, HC3, and HCT chassis nodes render an actual front-panel photo with whichever port/GigaSMART/bypass modules you have installed composited at their real physical slot position — not a generic box.
+- **Front-Panel Optic Occupancy Overlays**: Real-time optic occupancy markers overlay directly onto front-panel photography for HC1, HC1-Plus, and HC3 chassis. Color-blind accessible blue badges with checkmarks highlight fitted cages with exact pixel-level alignment.
+- **Hardware Summary Panel**: Click the 📋 icon in a chassis node's header to open a full-size hardware summary with a slot legend, live port state, and installed board/optic details.
+- **Collapsible Board Details**: Click the **−/+** icon next to 📋 to collapse the photo/port-map section down to just the header when managing dense multi-board layouts.
+- **Tidy Layout Auto-Arrangement**: Click the **Tidy Layout** button on the canvas toolbar to instantly auto-align complex topologies into structured, presentation-ready columns (Sources → TAPs/Aggregation → Maps/GigaSMART → Target Tools).
+- **Multi-Site Architecture**: Assign hardware appliances and target tools to distinct physical sites (e.g. Primary DC, Secondary DC, Branch). Enables site-specific BOM filtering and scoped rack elevation.
 
 ### C. Toggling Modes (4-Click Gigamon Logo Toggle)
 - **4-Click Logo Toggle**: Click the **Gigamon logo** in the top-left corner of the header **four times in quick succession** to switch between **Standard View** and **Expert Designer** (Advanced Mode).
 - **Unlocked Features in Advanced Mode**:
-  - **Bill of Materials (BOM)**: The **BOM** tab appears in the top header bar, enabling real-time physical hardware inventory, exact SKU resolution, and optional pricing breakdown.
-  - **Hardware Categories**: The left sidebar expands to reveal physical **Traffic Aggregation (TAs)** appliances, **Optical TAPs**, and **GigaVUE-HC Series Chassis**. Note: TAP-M100T/M200T/M202ULT tray chassis are *not* in this list — see [Rack Elevation View](#8-rack-elevation-view) below for why.
-  - **Detailed Hardware Configuration**: Selecting any hardware node opens advanced configuration side panels to manage board module slots, transceiver cages, license capacity, and power/battery accessories. This configuration panel can be dragged wider from the handle on its left edge if long optic/board labels are getting cut off. When you install a new optic, the exact cage(s) it just landed in flash briefly on the chassis's port map, so it's obvious which cage a click just filled.
+  - **Bill of Materials (BOM)**: The **BOM** tab appears in the top header bar, enabling real-time physical hardware inventory, exact SKU resolution, multipack rollups, and optional pricing breakdown.
+  - **Hardware Categories**: The left sidebar expands to reveal physical **Traffic Aggregation (TAs)** appliances, **Optical TAPs**, **Breakout Panels**, and **GigaVUE-HC Series Chassis**.
+  - **Detailed Hardware Configuration**: Selecting any hardware node opens advanced configuration side panels to manage board module slots, transceiver cages, licence capacity, and power/battery accessories.
 
 ---
 
@@ -38,28 +40,44 @@ Transitions the canvas to a physical hardware configuration layout. Users place 
 The Bill of Materials (BOM) is dynamically generated under the **BOM** tab based on canvas configuration and connection paths:
 
 1. **Licensing Modes**:
-   - **Perpetual**: Lists hardware chassis, ports, base software, and perpetual licenses.
-   - **HTL (Hybrid Trial/Term License)**: Incorporates term duration multipliers (e.g., 36 months) for term-based GigaSMART and core licenses.
-2. **SKU Matching**:
-   - Matches GigaSMART software licenses (e.g. `SMT-HC1P-GEN3-DD1-SW-TM` for GigaVUE-HC1 Plus) and maps them explicitly as **licences** (not "modules") in the BOM.
-   - Automatically appends upgrading SKU suffixes for chassis capacity configurations (e.g., TA400 capacity license upgrades).
+   - **Perpetual**: Lists hardware chassis, ports, base software, and perpetual licences.
+   - **HTL (Hybrid Trial/Term License)**: Incorporates term duration multipliers (e.g., 36 months) for term-based GigaSMART and core licences.
+2. **SKU Matching & Card-Level GigaSMART Licensing**:
+   - Matches GigaSMART software licences (e.g. `SMT-HC1P-GEN3-DD1-SW-TM` for GigaVUE-HC1 Plus) and maps them explicitly as **licences** (not "modules") in the BOM.
+   - Models advanced combined licensing rules for FlowVUE, GTP Whitelisting, GTP Flow Sampling, and GTP Flow Filtering, deduplicating card-level requirements so implied dependencies are never double-billed.
+   - Automatically appends upgrading SKU suffixes for chassis capacity configurations (e.g., TA400 capacity licence upgrades).
 3. **Double Optic Rule**:
    - Because network traffic is northbound and southbound, every connected link requires two optics (e.g., SFP/QSFP) on the chassis side. The BOM engine automatically doubles the optic quantity for connected ports.
+4. **Optic Multipack Optimisations**:
+   - Large quantities of identical transceivers automatically roll up into cost-effective multipack SKUs (e.g. 10-packs, 8-packs, 4-packs) on the BOM, accompanied by transparent surplus notes.
+5. **Standalone Device Consolidation**:
+   - Standalone devices and single-line BOM items roll up cleanly on the Site tab for streamlined procurement review.
+6. **Historical SKU Knowledge Base**:
+   - Retains a persistent knowledge base of legacy and unlisted SKUs. If a topology contains older modules or optics omitted from current price lists, they are flagged as "Discontinued / Unavailable" with replacement guidance rather than silently failing.
+7. **Site Consistency Verification**:
+   - When generating the BOM or PDF reports from a multi-site project, a verification modal alerts users if any devices lack explicit site assignments, preventing accidental quote discrepancies.
 
 ---
 
-## 3. Optical Auto-Suggestions & Validation
+## 3. Optical Auto-Suggestions, Validation & Link Resolution Engine
 
-To ensure proper hardware connectivity, the simulator performs real-time interface validation:
+To ensure proper hardware connectivity, the simulator performs real-time interface validation and automated repair:
 
-1. **TAP Fiber Mode Validation**:
-   - Checks that the connected interface fiber matches (Singlemode vs. Multimode). Flags a mismatch warning if there is a conflict.
-2. **Auto-Suggest Matrix**:
-   - Connected TAPs automatically select appropriate transceivers (`SFP-532` for multimode, `SFP-533` for singlemode).
-   - TA25E links to HC1 Plus suggest `Q28-502T` (100G QSFP28).
-3. **Forced TAP-M506T Constraint**:
+1. **One-Click Link Diagnostic & Resolution ("Resolve Connection Problem")**:
+   - Selecting any link opens the **Link Detail Panel**, displaying connected transceiver SKUs, media speeds, and port roles.
+   - If transceivers are missing, mismatched in speed, or unassigned, a diagnostic alert appears with a one-click **"Resolve Connection Problem"** action.
+   - Automatically fits matching optics to both ends, syncs the chassis inventory, and updates the port map.
+2. **Intelligent Speed Upgrading**:
+   - When resolving link mismatches, the resolution engine upgrades the lower-speed peer to match the higher-speed optic (e.g. upgrading a 1G optic to 10G/25G) rather than downgrading the link.
+3. **TAA-Compliant Optics Preference**:
+   - Transceiver auto-assignment and link resolution always default to TAA-compliant (`-T` suffix) optic variants whenever supported by the chassis.
+4. **TAP Fiber Mode Validation**:
+   - Checks that the connected interface fiber matches (Singlemode vs Multimode). Flags a mismatch warning if there is a conflict.
+5. **Breakout Panels & MPO Fan-Out**:
+   - Single-mode and multi-mode breakout panels (`PNL-M341`, `PNL-M343`) model MPO-to-LC fan-outs (e.g. 1 QSFP cage → 4 SFP lanes).
+   - Breakout panels consume one bay slot inside a `TAP-M100T` (3 slots) or `TAP-M200T` (6 slots) tray alongside optical TAPs, properly factored into tray bin-packing math.
+6. **Forced TAP-M506T Constraint**:
    - Connecting a **TAP-M506T** module to a GigaVUE chassis automatically suggests and locks the target optic to **`QSB-523T (40/100G QSFP28 Dual-Rate BiDi)`**.
-   - Manual override is disabled in the configuration panel for this model to enforce termination rules.
 
 ---
 
@@ -76,10 +94,9 @@ When a physical chassis or active TAP is selected, configure power supply and re
 2. **AC Power**:
    - Automatically assigns power cords matching the active **Project Region**.
 3. **DC Power**:
-   - Assigns DC wiring terminals instead of regional wall cords.
-   - Displays a warning reminder if DC configuration is selected: *"DC wiring must be terminated by a certified electrician."*
+   - Assigns DC wiring terminals instead of regional wall cords with safety reminders (*"DC wiring must be terminated by a certified electrician."*).
 4. **Active TAP Power & Battery Accessories**:
-   - Active TAPs (such as `G-TAP A-SF2` and `G-TAP A-TX2`) support configuring redundant power supply bricks (`PBK-GTA21`), battery backup modules (`BAT-GTA20`), and extra regional power cords directly in the chassis configuration panel.
+   - Active TAPs (`G-TAP A-SF2`, `G-TAP A-TX2`) support redundant power bricks (`PBK-GTA21`), battery backup modules (`BAT-GTA20`), and extra power cords in the configuration panel.
 
 ---
 
@@ -89,33 +106,47 @@ When a physical chassis or active TAP is selected, configure power supply and re
    - Configure GigaStream link counts with mismatch warning badges if the physical link count diverges.
    - Routes streams dynamically: **Round Robin** splits bandwidth evenly, while **L4 Hash** hashes the five-tuple header (IPs, ports, protocol) to route the full stream down a single selected link.
 2. **Storage Tool Suppression (AMI / Metadata)**:
-   - When a GigaSMART app is active and generating metadata (e.g. Application Metadata / AMI) on a chassis connected to S3 Object Storage, the simulator suppresses the raw packet stream to the storage tool.
-   - The S3 Object Storage tool only receives the metadata stream (e.g. 5% of the total throughput), preventing link flooding.
+   - When a GigaSMART app generates metadata (e.g. Application Metadata / AMI) on a chassis connected to S3 Object Storage, raw packet streams are suppressed. S3 receives only the lightweight metadata stream (~5% throughput), preventing storage flooding.
 
 ---
 
-## 6. Solution Management & Browser Storage
+## 6. Comprehensive PDF Solution Reports & Physical Deployment Specifications
 
-1. **Solution Naming**:
-   - Click the solution title in the top-left corner of the header bar (which defaults to `"Untitled Solution"` or custom project title).
-   - Type in your desired solution name to label the active topology layout.
-2. **Saving to Browser**:
-   - Click the **Save** button or save slot option in the top control bar to save the complete canvas topology, node configurations, and custom solution name directly to your browser's local storage for future retrieval and editing.
+Advanced Mode includes a PDF report generator (**Report** button in the header) producing client-ready documentation:
+
+1. **Executive Summary with Markdown**:
+   - Includes editable executive summaries supporting rich Markdown formatting (bold, lists, headers).
+2. **Visual Topology & Chassis Capture**:
+   - Automatically renders high-resolution captures of the active canvas topology and photographic chassis front panels directly into the PDF.
+3. **Appendix B: Physical Deployment & Environmental Specifications**:
+   - Renders comprehensive per-site breakdowns and master aggregated deployment tables covering:
+     - Rack Units (RU)
+     - Physical dimensions (Height × Width × Depth in mm and inches)
+     - Unit weights (kg and lbs)
+     - Typical and maximum power consumption (Watts)
+     - Heat dissipation (BTU/hr)
+     - Airflow direction (Front-to-Back, Side-to-Side)
+4. **Tool Ingest Advisory Notice**:
+   - Displays an advisory notice clarifying that rated sensor throughputs are baseline simulation benchmarks, encouraging verification of exact sustained/peak limits with tool manufacturers.
 
 ---
 
-## 7. Presentation Focus Mode
+## 7. Solution Management & Presentation Mode
 
-Double-clicking any node on the canvas highlights it with a bright, pulsing orange halo (`.node-presentation-glow`). This allows presenters to draw focus to specific layout entities during meetings. Double-clicking again or clicking the background canvas clears the glow.
+1. **Solution Naming & Save Slots**:
+   - Click the solution title in the top header bar to rename the project.
+   - Use multi-slot browser storage or JSON file Export/Import to save and share complete topologies.
+2. **Presentation Focus Mode**:
+   - Double-clicking any node on the canvas highlights it with a pulsing orange halo (`.node-presentation-glow`). Double-clicking again or clicking the canvas background clears the highlight.
 
 ---
 
 ## 8. Rack Elevation View
 
-Advanced Mode includes a physical **Rack Elevation View**, toggled from the header bar (**Canvas View ↔ Rack View**), for laying hardware out the way it would actually sit in a 42U rack rather than as a logical flow diagram.
+Physical **Rack Elevation View** (**Canvas View ↔ Rack View**) models hardware layout inside a standard 42U rack:
 
-1. **Real Chassis Photos**: Racked units render the same real product photography used on the canvas node and Hardware Summary Panel — for HC1/HC1-Plus/HC3/HCT, that includes whichever boards are installed, composited at their correct slot position — instead of a generic coloured bar. Each row takes its correct physical RU height.
-2. **Placing Hardware**: Drag any hardware node from the **"Unracked Hardware"** list (scoped to the currently selected site) onto an empty U position to rack it. Click the **✕** on a racked unit to return it to Unracked Hardware.
-3. **TAP Trays Are Automatic**: TAP-M100T (3 bays), TAP-M200T (6 bays), and TAP-M202ULT (2 bays, for ULT-variant modules) tray chassis are **not** dragged from the sidebar — they're generated automatically to match however many physical tap modules (TAP-M251T, TAP-M253T, etc.) exist on the canvas, using the same bin-packing math the BOM has always used for tray quantities. They appear only in Rack View's Unracked Hardware list once needed.
-4. **Nesting Tap Modules**: Drag an individual tap module from Unracked Hardware into one of a racked tray's bay slots to nest it there. Un-racking the tray automatically returns its nested modules to Unracked Hardware; re-racking it restores them.
-5. **BOM Independence**: Rack placement is visual/organisational only — the BOM's tray quantities are computed independently from total tap module count, regardless of whether trays have actually been racked.
+1. **Real Chassis Photos**: Racked units render real product photography with installed modules composited at their exact physical slot positions and accurate RU heights.
+2. **Placing Hardware**: Drag any hardware node from the site-scoped **"Unracked Hardware"** list onto an empty U position. Click **✕** on a racked unit to unrack it.
+3. **Automatic TAP Trays**: TAP-M100T (3 bays), TAP-M200T (6 bays), and TAP-M202ULT (2 bays) trays generate automatically based on physical tap module count and breakout panels using bin-packing math.
+4. **Nesting Tap Modules & Breakout Panels**: Drag tap modules and breakout panels into tray bay slots. Unracking a tray safely returns nested modules to the unracked pool.
+5. **BOM Independence**: Rack layout is visual and spatial; BOM quantities remain strictly driven by required physical capacity.

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   applyPriceListRows,
   clearSkuOverrides,
+  revertToPreviousOverrides,
   getMergedSkus,
   getMergedSkusMetadata,
   getSkuOverrideInfo,
@@ -140,5 +141,19 @@ describe('skuOverrides', () => {
     expect(getSkuOverrideInfo()).toBeNull();
     expect(getMergedSkus()).toEqual(baseSkus);
     expect(localStorage.getItem('fm-simulator-sku-overrides')).toBeNull();
+  });
+
+  it('retains a backup and supports revertToPreviousOverrides', () => {
+    applyPriceListRows([{ sku: 'FIRST-REV', description: 'Version 1' }], 'v1.xlsx');
+    expect(getMergedSkus()['FIRST-REV']).toBe('Version 1');
+
+    applyPriceListRows([{ sku: 'SECOND-REV', description: 'Version 2' }], 'v2.xlsx');
+    expect(getMergedSkus()['SECOND-REV']).toBe('Version 2');
+
+    // Revert to v1 backup
+    const reverted = revertToPreviousOverrides();
+    expect(reverted).toBe(true);
+    expect(getMergedSkus()['FIRST-REV']).toBe('Version 1');
+    expect(getMergedSkus()['SECOND-REV']).toBeUndefined();
   });
 });

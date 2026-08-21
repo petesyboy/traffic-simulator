@@ -24,7 +24,7 @@ import type {
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
-import { buildPhysicalItems } from '../bom/physicalItems';
+import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../bom/physicalItems';
 import { buildProjectWideOpticBom } from '../bom/opticPacks';
 import {
   buildTopologyStats,
@@ -97,7 +97,6 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     projectLicenseMode,
     defaultTermDuration,
     peakNodeRxMbps,
-    advancedMode,
     diagramDataUrl,
     logoDataUrl,
     nodeMetrics,
@@ -119,7 +118,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     peakNodeRxMbps,
   );
   const validationErrors = validateConfiguration(nodes, edges);
-  const physicalItems = advancedMode ? buildPhysicalItems(nodes, bomRows) : [];
+  const physicalItems = buildPhysicalItems(nodes, bomRows);
   // A customer-facing quote shows one aggregated line per SKU across the whole
   // project, rolled up into multipacks where that applies - not bomRows'
   // internal per-node breakdown (kept above only for physicalItems, which
@@ -303,6 +302,42 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const toolNodes = nodes.filter((n) => n.type === NODE_TYPES.TOOL);
   if (toolNodes.length > 0) {
     content.push({ text: 'Destinations & Tools', style: 'subHeading' });
+    content.push({
+      table: {
+        widths: ['*'],
+        body: [
+          [
+            {
+              stack: [
+                {
+                  text: '⚠ Important Notice: Tool Ingest Capacities & Vendor Verification',
+                  style: 'warningTitle',
+                  fontSize: 9.5,
+                  bold: true,
+                  margin: [0, 0, 0, 3],
+                },
+                {
+                  text:
+                    'All tool, sensor, and probe ingest capacities stated in this report (e.g. 5 Gbps, 10 Gbps, 40 Gbps, 50 Gbps) are simulation baseline assumptions and estimates only. ' +
+                    'Actual maximum real-time traffic processing limits depend upon physical appliance sizing, allocated CPU/memory resources, software licence tiers, packet size distribution, and enabled inspection features. ' +
+                    'While the Gigamon visibility fabric can scale and deliver hundreds of gigabits per second of high-speed aggregated traffic, customers must consult the respective tool, probe, or sensor manufacturer directly to confirm the maximum sustained and burst ingest rates for their specific environment and model.',
+                  style: 'body',
+                  fontSize: 8.5,
+                  lineHeight: 1.35,
+                },
+              ],
+            },
+          ],
+        ],
+      },
+      layout: {
+        fillColor: () => REPORT_COLOURS.warningBg,
+        hLineColor: () => REPORT_COLOURS.warningBorder,
+        vLineColor: () => REPORT_COLOURS.warningBorder,
+      },
+      margin: [0, 4, 0, 10],
+    });
+
     toolNodes.forEach((n) => {
       const data = n.data as ToolNodeData;
       const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
@@ -402,40 +437,156 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     }
   }
 
-  // ── Physical appendix (Advanced Mode only) ──
-  if (advancedMode && physicalItems.length > 0) {
-    content.push({ text: 'Appendix B: Physical Rack & Deployment', style: 'sectionHeading', pageBreak: 'before' });
-    content.push({
-      table: {
-        headerRows: 1,
-        widths: ['*', 'auto', 'auto', 'auto', 'auto'],
-        body: [
-          [
-            { text: 'Hardware', style: 'tableHeader' },
-            { text: 'Qty', style: 'tableHeader' },
-            { text: 'RU', style: 'tableHeader' },
-            { text: 'Power', style: 'tableHeader' },
-            { text: 'Heat', style: 'tableHeader' },
-          ],
-          ...physicalItems.map((item) => [
-            { text: item.name, style: 'tableCell' },
-            { text: String(item.qty), style: 'tableCell', alignment: 'right' as const },
-            { text: item.ru, style: 'tableCell', alignment: 'right' as const },
+// Helper to aggregate physical items by name across all sites
+function aggregatePhysicalItems(items: PhysicalItem[]): PhysicalItem[] {
+  const map = new Map<string, PhysicalItem>();
+  for (const item of items) {
+    const existing = map.get(item.name);
+    if (!existing) {
+      map.set(item.name, { ...item, site: 'All Sites (Aggregated)' });
+    } else {
+      const newQty = existing.qty + item.qty;
+      const newRuNum = existing.ruNum + item.ruNum;
+      const newWeightNum = existing.weightNum + item.weightNum;
+      const newPowerNum = existing.powerNum + item.powerNum;
+      const newHeatNum = existing.heatNum + item.heatNum;
+
+      map.set(item.name, {
+        ...existing,
+        qty: newQty,
+        ruNum: newRuNum,
+        ru: `${newRuNum.toFixed(1)} RU`,
+        weightNum: newWeightNum,
+        weight: `${newWeightNum.toFixed(1)} lbs (${(newWeightNum * 0.45359237).toFixed(1)} kg)`,
+        powerNum: newPowerNum,
+        power: `${newPowerNum} W`,
+        heatNum: newHeatNum,
+        heat: `${newHeatNum.toFixed(1)} BTU/hr`,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+// Helper to render physical spec table
+function renderPhysicalTable(items: PhysicalItem[]): Content {
+  const physicalTableHeader = [
+    { text: 'Hardware Node / Chassis', style: 'tableHeader' },
+    { text: 'Qty', style: 'tableHeader', alignment: 'center' as const },
+    { text: 'Rack Space', style: 'tableHeader', alignment: 'center' as const },
+    { text: 'Dimensions (H × W × D)', style: 'tableHeader' },
+    { text: 'Weight', style: 'tableHeader', alignment: 'right' as const },
+    { text: 'Max Power', style: 'tableHeader', alignment: 'right' as const },
+    { text: 'Heat Output', style: 'tableHeader', alignment: 'right' as const },
+    { text: 'Airflow', style: 'tableHeader', alignment: 'center' as const },
+  ];
+
+  return {
+    table: {
+      headerRows: 1,
+      widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+      body: [
+        physicalTableHeader,
+        ...items.map((item) => {
+          const { inches, cm } = parseAndConvertDimensions(item.dimensions);
+          const lbs = `${item.weightNum.toFixed(1)} lbs`;
+          const kg = `${(item.weightNum * 0.45359237).toFixed(1)} kg`;
+
+          return [
+            { text: item.name, style: 'tableCell', bold: true },
+            { text: String(item.qty), style: 'tableCell', alignment: 'center' as const },
+            { text: item.ru, style: 'tableCell', alignment: 'center' as const, color: REPORT_COLOURS.navy, bold: true },
+            {
+              stack: [
+                { text: cm, style: 'tableCell', fontSize: 8 },
+                { text: `(${inches})`, style: 'muted', fontSize: 7 },
+              ],
+            },
+            {
+              stack: [
+                { text: `${kg}`, style: 'tableCell', alignment: 'right' as const, fontSize: 8 },
+                { text: `(${lbs})`, style: 'muted', fontSize: 7, alignment: 'right' as const },
+              ],
+            },
             { text: item.power, style: 'tableCell', alignment: 'right' as const },
             { text: item.heat, style: 'tableCell', alignment: 'right' as const },
-          ]),
-        ],
-      },
-      layout: 'lightHorizontalLines',
-      margin: [0, 0, 0, 10],
+            { text: item.airflow, style: 'tableCell', alignment: 'center' as const },
+          ];
+        }),
+      ],
+    },
+    layout: 'lightHorizontalLines',
+    margin: [0, 0, 0, 10],
+  };
+}
+
+  // ── Physical appendix ──
+  if (physicalItems.length > 0) {
+    content.push({ text: 'Appendix B: Physical Rack & Deployment Report', style: 'sectionHeading', pageBreak: 'before' });
+    content.push({
+      text: 'Detailed physical and environmental specifications for the hardware deployment, including rack space (RU), physical dimensions (metric and imperial), estimated equipment weights, maximum electrical power draws, heat dissipation, and airflow requirements.',
+      style: 'body',
+      margin: [0, 0, 0, 12],
     });
+
     const totalRU = physicalItems.reduce((a, i) => a + i.ruNum, 0);
+    const totalWeight = physicalItems.reduce((a, i) => a + i.weightNum, 0);
     const totalPower = physicalItems.reduce((a, i) => a + i.powerNum, 0);
     const totalHeat = physicalItems.reduce((a, i) => a + i.heatNum, 0);
+
     content.push({
-      text: `Total: ${totalRU.toFixed(1)} RU · ${totalPower.toFixed(0)} W · ${totalHeat.toFixed(0)} BTU/hr`,
+      columns: [
+        statBlock('Total Space Required', `${totalRU.toFixed(1)} RU`),
+        statBlock('Total Est. Weight', `${(totalWeight * 0.45359237).toFixed(1)} kg`),
+        statBlock('Total Max Power', `${totalPower.toFixed(0)} W`),
+        statBlock('Total Heat Output', `${totalHeat.toFixed(0)} BTU/hr`),
+      ],
+      columnGap: 12,
+      margin: [0, 0, 0, 15],
+    });
+
+    // Site groups (for side-by-side site breakdown)
+    const siteGroups: Record<string, PhysicalItem[]> = {};
+    physicalItems.forEach((item) => {
+      const siteKey = item.site || 'Global / Unassigned';
+      if (!siteGroups[siteKey]) siteGroups[siteKey] = [];
+      siteGroups[siteKey].push(item);
+    });
+
+    const siteKeys = Object.keys(siteGroups);
+
+    // If multiple sites are configured, show the per-site breakdown first
+    if (siteKeys.length > 1) {
+      content.push({ text: 'Site-by-Site Deployment Breakdown', style: 'subHeading', margin: [0, 5, 0, 8] });
+      siteKeys.forEach((siteKey) => {
+        const siteItems = siteGroups[siteKey];
+        const siteRU = siteItems.reduce((a, i) => a + i.ruNum, 0);
+        const sitePower = siteItems.reduce((a, i) => a + i.powerNum, 0);
+        const siteHeat = siteItems.reduce((a, i) => a + i.heatNum, 0);
+
+        content.push({
+          text: `Site: ${siteKey}  ·  ${siteRU.toFixed(1)} RU · ${sitePower.toFixed(0)} W · ${siteHeat.toFixed(0)} BTU/hr`,
+          style: 'body',
+          bold: true,
+          color: REPORT_COLOURS.navy,
+          margin: [0, 6, 0, 4],
+        });
+        content.push(renderPhysicalTable(siteItems));
+      });
+
+      content.push({ text: 'Master Aggregate Deployment (All Sites Combined)', style: 'subHeading', margin: [0, 15, 0, 8] });
+      const aggregatedItems = aggregatePhysicalItems(physicalItems);
+      content.push(renderPhysicalTable(aggregatedItems));
+    } else {
+      content.push({ text: 'Hardware Deployment Specifications', style: 'subHeading', margin: [0, 5, 0, 8] });
+      content.push(renderPhysicalTable(physicalItems));
+    }
+
+    content.push({
+      text: `Total Deployment Footprint: ${totalRU.toFixed(1)} RU · ${(totalWeight * 0.45359237).toFixed(1)} kg (${totalWeight.toFixed(1)} lbs) · ${totalPower.toFixed(0)} W · ${totalHeat.toFixed(0)} BTU/hr`,
       style: 'body',
       bold: true,
+      margin: [0, 8, 0, 0],
     });
   }
 

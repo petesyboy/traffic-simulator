@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import pkg from '../../package.json';
-import { validateConfiguration } from '../utils/bomEngine';
+import { validateConfiguration, detectMixedSiteAssignment } from '../utils/bomEngine';
 import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagram';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
@@ -22,6 +22,7 @@ import {
   AboutModal,
   SkuUpdateModal,
   ReportModal,
+  MixedSiteConfirmModal,
   PlayIcon,
   PauseIcon,
   CopyIcon,
@@ -94,9 +95,31 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [showSkuUpdate, setShowSkuUpdate] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showMixedSiteConfirm, setShowMixedSiteConfirm] = useState(false);
+  const [pendingSiteAction, setPendingSiteAction] = useState<'bom' | 'report'>('bom');
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+
+  const handleOpenBom = () => {
+    const siteCheck = detectMixedSiteAssignment(nodes);
+    if (siteCheck.hasMixedSites) {
+      setPendingSiteAction('bom');
+      setShowMixedSiteConfirm(true);
+    } else {
+      setShowBom(true);
+    }
+  };
+
+  const handleOpenReport = () => {
+    const siteCheck = detectMixedSiteAssignment(nodes);
+    if (siteCheck.hasMixedSites) {
+      setPendingSiteAction('report');
+      setShowMixedSiteConfirm(true);
+    } else {
+      setShowReport(true);
+    }
+  };
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -153,6 +176,27 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           onCancel={handleClearCancel}
         />
       )}
+
+      {showMixedSiteConfirm && (() => {
+        const siteCheck = detectMixedSiteAssignment(nodes);
+        return (
+          <MixedSiteConfirmModal
+            targetType={pendingSiteAction}
+            taggedSites={siteCheck.taggedSites}
+            taggedNodes={siteCheck.taggedNodes}
+            untaggedNodes={siteCheck.untaggedNodes}
+            onConfirm={() => {
+              setShowMixedSiteConfirm(false);
+              if (pendingSiteAction === 'bom') {
+                setShowBom(true);
+              } else {
+                setShowReport(true);
+              }
+            }}
+            onCancel={() => setShowMixedSiteConfirm(false)}
+          />
+        );
+      })()}
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
@@ -301,7 +345,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   return (
                     <button
                       className={`header-btn ${hasErrors ? 'header-btn--red' : 'header-btn--orange'}`}
-                      onClick={() => setShowBom(true)}
+                      onClick={handleOpenBom}
                       title={hasErrors ? 'Configuration errors detected' : 'View Bill of Materials'}
                     >
                       <ClipboardIcon /> BOM{hasErrors ? ' (!)' : ''}
@@ -370,7 +414,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               {advancedMode && (
                 <button
                   className="header-btn"
-                  onClick={() => setShowReport(true)}
+                  onClick={handleOpenReport}
                   title="Generate a customer-facing PDF solution report"
                 >
                   <ReportIcon /> Generate Report
