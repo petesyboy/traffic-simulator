@@ -251,3 +251,27 @@ export const PriceListIcon: React.FC<IconProps> = ({ size = 14 }) => (
     <path d="M8 18.5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
+
+export const SunIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.7" />
+    <path
+      d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const MoonIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

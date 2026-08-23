@@ -59,16 +59,16 @@ const FilterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
       {exportDiagramMode && (
         <div style={{
-          background: 'rgba(20, 20, 20, 0.95)',
+          background: 'var(--node-desc-bg, rgba(20, 20, 20, 0.95))',
           border: '1px solid #e91e63',
           borderRadius: '4px',
           padding: '6px 8px',
           width: '170px',
           boxSizing: 'border-box',
-          color: '#fff',
+          color: 'var(--text-primary, #fff)',
           fontSize: '9px',
           fontFamily: 'monospace',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          boxShadow: 'var(--shadow-md, 0 2px 8px rgba(0,0,0,0.8))',
           pointerEvents: 'none',
           whiteSpace: 'pre-wrap',
           marginTop: '6px'

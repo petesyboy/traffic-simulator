@@ -20,6 +20,19 @@
   --color-tool: #25b34b;
   --color-gigasmart: #0091ea;
 
+  /* Canvas & node surfaces */
+  --canvas-bg: #121212;
+  --canvas-grid: rgba(255, 255, 255, 0.06);
+  --node-bg: #131313;
+  --node-border: #2d2d2d;
+  --node-hover-border: #3e3e3e;
+  --node-header-color: #ffffff;
+  --node-chip-bg: #1a1a1a;
+  --node-chip-border: #282828;
+  --node-desc-bg: rgba(20, 20, 20, 0.95);
+  --node-desc-border: #ff9800;
+  --shadow-node: 0 4px 10px rgba(0, 0, 0, 0.5);
+
   /* Panel & card surfaces */
   --bg-panel: #1a1a2e;
   --bg-card: #0d0d1a;
@@ -44,6 +57,11 @@
   --accent-green: #4caf50;
   --accent-green-bg: rgba(76, 175, 80, 0.1);
   --accent-purple: #7c4dff;
+
+  /* Scrollbar */
+  --scrollbar-track: #161616;
+  --scrollbar-thumb: #2a2a2a;
+  --scrollbar-thumb-hover: #3e3e3e;
 
   /* Typography */
   --font-xs: 9px;
@@ -83,6 +101,77 @@
   --transition-normal: 0.2s ease;
 }
 
+[data-theme='light'] {
+  --bg-primary: #f8fafc;      /* Canvas/main background */
+  --bg-secondary: #ffffff;    /* Inner elements sidebar */
+  --bg-tertiary: #f1f5f9;     /* Outer sessions sidebar */
+  --bg-header: #ffffff;       /* Top brand header */
+  --border-color: #e2e8f0;    /* Thin layout dividers */
+  --border-hover: #cbd5e1;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --color-blue: #0284c7;      /* Gigamon primary blue */
+  --color-green: #16a34a;     /* Gigamon primary green */
+  --color-orange: #ea580c;
+  
+  --color-input: #0284c7;
+  --color-map: #0284c7;
+  --color-filter: #0284c7;
+  --color-tool: #16a34a;
+  --color-gigasmart: #0284c7;
+
+  /* Canvas & node surfaces */
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(0, 0, 0, 0.08);
+  --node-bg: #ffffff;
+  --node-border: #cbd5e1;
+  --node-hover-border: #94a3b8;
+  --node-header-color: #0f172a;
+  --node-chip-bg: #f8fafc;
+  --node-chip-border: #e2e8f0;
+  --node-desc-bg: #ffffff;
+  --node-desc-border: #f97316;
+  --shadow-node: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Panel & card surfaces */
+  --bg-panel: #ffffff;
+  --bg-card: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-surface: #f1f5f9;
+  --bg-hover: #e2e8f0;
+
+  /* Borders */
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+
+  /* Accent colours */
+  --accent-cyan: #0284c7;
+  --accent-cyan-bg: rgba(2, 132, 199, 0.08);
+  --accent-cyan-hover: rgba(2, 132, 199, 0.15);
+  --accent-cyan-border: rgba(2, 132, 199, 0.3);
+  --accent-orange: #ea580c;
+  --accent-orange-bg: rgba(234, 88, 12, 0.1);
+  --accent-red: #dc2626;
+  --accent-red-bg: rgba(220, 38, 38, 0.1);
+  --accent-green: #16a34a;
+  --accent-green-bg: rgba(22, 163, 74, 0.1);
+  --accent-purple: #7c3aed;
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -106,14 +195,14 @@ code {
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: var(--scrollbar-track, var(--bg-secondary));
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  background: var(--scrollbar-thumb, #2a2a2a);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3e3e3e;
+  background: var(--scrollbar-thumb-hover, #3e3e3e);
 }
 
 /* Style React Flow selection box as an oval */

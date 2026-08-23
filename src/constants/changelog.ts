@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.584",
+    date: "2026-08-23",
+    summary: "Added Light Theme and Dark Theme system with localStorage persistence, instant header toggle, document-ready white canvas screenshots, and crisp high-contrast node, edge, and UI tokens.",
+  },
+  {
     version: "1.0.583",
     date: "2026-08-23",
     summary: "Removed references to end-of-sale/end-of-life SMT-HC3-C05 cards from GigaSMART chassis expansion recommendations, prompting exclusively for SMT-HC3-C08 on GigaVUE-HC3.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.565",
     date: "2026-08-23",
     summary: "Added Auto-Deploy to 42U Rack Elevation View using datacenter weight/hierarchy standards (heaviest chassis at bottom, TAP trays/modules at top) and added debounced working session autosave and slot tracking.",
-  },
-  {
-    version: "1.0.564",
-    date: "2026-08-23",
-    summary: "Updated TAP-M200T 2U modular tray layout to render accurately as 3 across in the top row and 3 across in the bottom row (2x3 grid).",
   },
 ];

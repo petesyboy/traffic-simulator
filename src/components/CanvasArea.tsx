@@ -50,7 +50,7 @@ const CanvasArea: React.FC = () => {
     showGrid, snapToGrid, snapAllNodesToGrid, tidyLayout, exportDiagramMode,
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
     addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger, fitViewNodeIds,
-    zoomToNodeId, zoomToNodeTrigger,
+    zoomToNodeId, zoomToNodeTrigger, theme,
     advancedMode, updateNodeData, setEdges, pushHistory
   } = useStore();
 
@@ -335,7 +335,7 @@ const CanvasArea: React.FC = () => {
         onPaneClick={() => useStore.getState().setGlowingNodeId(null)}
         deleteKeyCode={['Backspace', 'Delete']} nodeOrigin={[0.5, 0.5]} snapToGrid={snapToGrid} snapGrid={[15, 15]}
       >
-        {showGrid && <Background variant={BackgroundVariant.Lines} color="rgba(255,255,255,0.06)" gap={15} size={1} />}
+        {showGrid && <Background variant={BackgroundVariant.Lines} color={theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)'} gap={15} size={1} />}
         <Controls />
         <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: '#1e1e1e', border: '1px solid #333', borderRadius: '4px', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>

@@ -330,6 +330,9 @@ export interface RFState {
   showGrid: boolean;
   snapToGrid: boolean;
   exportDiagramMode: boolean;
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleTheme: () => void;
   fitViewTrigger: number;
   fitViewNodeIds: string[] | null;
   zoomToNodeId: string | null;

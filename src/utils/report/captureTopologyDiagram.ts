@@ -107,8 +107,11 @@ export async function captureTopologyDiagramPng(
   const element = document.querySelector('.react-flow') as HTMLElement | null;
   if (!element) throw new Error('Canvas not found — switch to Canvas View before capturing a diagram.');
 
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const bgColor = isLight ? '#ffffff' : '#121212';
+
   return toPng(element, {
-    backgroundColor: '#121212',
+    backgroundColor: bgColor,
     cacheBust: true,
     pixelRatio: 2,
     filter: (domNode) => {

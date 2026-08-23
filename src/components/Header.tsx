@@ -41,6 +41,8 @@ import {
   UndoIcon,
   RedoIcon,
   PriceListIcon,
+  SunIcon,
+  MoonIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -85,6 +87,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const canRedo = useStore((state) => state.historyFuture.length > 0);
   const undo = useStore((state) => state.undo);
   const redo = useStore((state) => state.redo);
+  const theme = useStore((state) => state.theme);
+  const toggleTheme = useStore((state) => state.toggleTheme);
   const bumpSkuCatalogueVersion = useStore((state) => state.bumpSkuCatalogueVersion);
 
   // Local UI state for modals
@@ -474,6 +478,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   <PriceListIcon />
                 </button>
               )}
+              <button
+                className="header-btn icon-only"
+                onClick={toggleTheme}
+                title={theme === 'dark' ? 'Switch to Light Theme (White Canvas for Documents)' : 'Switch to Dark Theme'}
+                style={{ color: theme === 'light' ? '#ff9800' : '#00e5ff' }}
+              >
+                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              </button>
               <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
                 <GearIcon />
               </button>

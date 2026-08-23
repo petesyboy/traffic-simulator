@@ -769,24 +769,24 @@
 .custom-node {
   padding: 8px 12px;
   border-radius: 4px; /* MATCHES SCREENSHOT */
-  background-color: #131313;
-  border: 1px solid #2d2d2d;
+  background-color: var(--node-bg, #131313);
+  border: 1px solid var(--node-border, #2d2d2d);
   color: var(--text-primary);
   min-width: 170px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-node, 0 4px 10px rgba(0, 0, 0, 0.5));
   font-family: 'Inter', sans-serif;
   text-align: left;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
   position: relative;
 }
 
 .custom-node:hover {
-  border-color: #3e3e3e;
+  border-color: var(--node-hover-border, #3e3e3e);
 }
 
 .custom-node.selected-node {
   border-color: var(--color-blue) !important;
-  box-shadow: 0 0 8px rgba(0, 124, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 8px rgba(0, 124, 255, 0.4), var(--shadow-node, 0 4px 10px rgba(0, 0, 0, 0.5));
 }
 
 .node-header {
@@ -796,7 +796,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #ffffff;
+  color: var(--node-header-color, #ffffff);
 }
 
 .node-title {
@@ -836,8 +836,8 @@
 }
 
 .node-inner-chip {
-  background-color: #1a1a1a;
-  border: 1px solid #282828;
+  background-color: var(--node-chip-bg, #1a1a1a);
+  border: 1px solid var(--node-chip-border, #282828);
   padding: 3px 6px;
   border-radius: 2px;
   font-size: 9px;
@@ -846,8 +846,8 @@
 }
 
 .node-port-chip {
-  background-color: #1a1a1a;
-  border: 1px solid #282828;
+  background-color: var(--node-chip-bg, #1a1a1a);
+  border: 1px solid var(--node-chip-border, #282828);
   padding: 3px 5px;
   border-radius: 2px;
   font-size: 9px;
@@ -861,7 +861,7 @@
   margin-top: 4px;
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid #1c1c1c;
+  border-top: 1px solid var(--border-subtle, #1c1c1c);
   padding-top: 4px;
   font-family: monospace;
 }
@@ -1087,7 +1087,7 @@
 
 .custom-node.storage-tool-node {
   border-left: 3px solid #00bfa5;
-  background: radial-gradient(circle at 90% 15%, rgba(0, 150, 136, 0.12) 0%, #131313 75%);
+  background: radial-gradient(circle at 90% 15%, rgba(0, 150, 136, 0.12) 0%, var(--node-bg, #131313) 75%);
   border-color: rgba(0, 150, 136, 0.35);
   transition: all 0.3s ease;
 }

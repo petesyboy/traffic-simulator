@@ -34,6 +34,8 @@ export {
   RedoIcon,
   PriceListIcon,
   ReportIcon,
+  SunIcon,
+  MoonIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';
