@@ -563,6 +563,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                             installedBoards={hwData.installedBoards || {}}
                             ports={chassisPorts}
                             portOpticMap={portOpticMap}
+                            fillContainer
                           />
                         </div>
                       ) : (

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.567",
+    date: "2026-08-23",
+    summary: "Fixed ChassisFrontPanel height scaling in Rack Elevation View (fillContainer) ensuring full 3U HC3 chassis with all 4 module bays and ports is fully visible without clipping.",
+  },
+  {
     version: "1.0.566",
     date: "2026-08-23",
     summary: "Fixed multi-RU chassis vertical positioning in 42U Rack Elevation View (preventing HC3 bottom truncation) and mapped all TAP module stencils to authentic orange LC connector faceplates.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.548",
     date: "2026-08-20",
     summary: "Enabled multi-link connections between hardware nodes and tools on canvas with parallel curved routing, allowing multiple parallel physical links between the same appliances.",
-  },
-  {
-    version: "1.0.546",
-    date: "2026-08-20",
-    summary: "Add Header Stripping and GTP Call Correlation interactive visualisations and simulation",
   },
 ];

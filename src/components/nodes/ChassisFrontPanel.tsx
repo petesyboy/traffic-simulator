@@ -28,6 +28,8 @@ interface ChassisFrontPanelProps {
    *  the boards that have been pixel-calibrated in the catalogue show anything. */
   ports?: ChassisPort[];
   portOpticMap?: Map<string, string>;
+  style?: React.CSSProperties;
+  fillContainer?: boolean;
 }
 
 /** A board name of the form "<sku> (Slot N)" identifies a port belonging to an
@@ -66,9 +68,29 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
   installedBoards,
   ports,
   portOpticMap,
+  style,
+  fillContainer,
 }) => (
-  <div style={{ position: 'relative', width: '100%', background: '#111', lineHeight: 0 }}>
-    <img src={chassisImage} alt={model} style={{ display: 'block', width: '100%', height: 'auto' }} />
+  <div
+    style={{
+      position: 'relative',
+      width: '100%',
+      height: fillContainer ? '100%' : undefined,
+      background: '#111',
+      lineHeight: 0,
+      ...style,
+    }}
+  >
+    <img
+      src={chassisImage}
+      alt={model}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: fillContainer ? '100%' : 'auto',
+        objectFit: fillContainer ? 'fill' : undefined,
+      }}
+    />
     {slotPositions.map(({ number, label, box }) => {
       const boardName = installedBoards[number];
       const rawIcon = boardName ? getBoardIcon(boardName) : undefined;
