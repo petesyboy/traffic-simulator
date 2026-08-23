@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.573",
+    date: "2026-08-23",
+    summary: "Added diagram legibility detection and multi-site diagram splitting to automatically generate focused, high-resolution per-site architecture diagrams in addition to the global end-to-end overview in the PDF report.",
+  },
+  {
     version: "1.0.572",
     date: "2026-08-23",
     summary: "Tidied PDF report by deduplicating identical chassis and tool descriptions with deployed instance counts, auto-deploying 42U rack layouts with embedded elevation diagrams in Appendix B physical report, and automatically enabling diagram-ready descriptions for topology capture.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.554",
     date: "2026-08-21",
     summary: "Added site assignment consistency verification modal before generating Bill of Materials or PDF Solution Reports, preventing unintentional discrepancies from partially tagged physical topologies.",
-  },
-  {
-    version: "1.0.553",
-    date: "2026-08-21",
-    summary: "Added an advisory notice and vendor verification disclaimer to the solution report and tool descriptions for tool/sensor ingest ratings, clarifying that rated capacities (e.g. 5 Gbps, 10 Gbps) are baseline simulation estimates and advising customers to confirm exact sustained and peak limits with the tool manufacturer.",
   },
 ];

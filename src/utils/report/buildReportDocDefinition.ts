@@ -62,6 +62,8 @@ export interface ReportInput {
   chassisFrontPanelImages?: Record<string, string>;
   /** 42U Rack Elevation diagrams, keyed by physical site name. Embedded in Appendix B alongside physical specs. */
   siteRackImages?: Record<string, string>;
+  /** Zoomed-in per-site architecture diagrams, keyed by site name, rendered when multi-site topologies are split for legibility. */
+  siteDiagrams?: Record<string, string>;
   /** User-authored executive summary (what's being deployed and why, in the customer's context). Replaces the generic intro paragraph when provided. */
   execSummaryText?: string;
 }
@@ -107,6 +109,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     nodeMetrics,
     isRunning,
     chassisFrontPanelImages,
+    siteDiagrams,
     execSummaryText,
   } = input;
 
@@ -198,7 +201,34 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   // ── Topology diagram ──
   content.push({ text: 'Topology Diagram', style: 'sectionHeading', pageBreak: 'before' });
+  if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
+    content.push({
+      text: 'End-to-End Multi-Site Architecture Overview',
+      style: 'subHeading',
+      margin: [0, 0, 0, 6],
+    });
+  }
   content.push({ image: diagramDataUrl, width: 500, margin: [0, 0, 0, 10] });
+
+  if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
+    Object.entries(siteDiagrams).forEach(([siteName, siteDiagramUrl]) => {
+      content.push({
+        text: `Site Architecture Breakdown — ${siteName}`,
+        style: 'subHeading',
+        margin: [0, 10, 0, 4],
+      });
+      content.push({
+        text: `High-resolution focused diagram for ${siteName}, ensuring legible port allocations, TAP feeds, and tool configurations.`,
+        style: 'muted',
+        margin: [0, 0, 0, 8],
+      });
+      content.push({
+        image: siteDiagramUrl,
+        width: 500,
+        margin: [0, 0, 0, 14],
+      });
+    });
+  }
 
   // ── Configuration warnings ──
   if (validationErrors.length > 0) {

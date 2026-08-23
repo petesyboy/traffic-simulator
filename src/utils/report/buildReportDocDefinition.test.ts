@@ -227,5 +227,26 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     const stringified = JSON.stringify(doc.content);
     expect(stringified).toContain('data:image/png;base64,fake-rack-image');
   });
+
+  it('renders split site architecture diagrams when siteDiagrams are provided', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      siteDiagrams: {
+        'Site A': 'data:image/png;base64,site-a-diagram',
+        'Site B': 'data:image/png;base64,site-b-diagram',
+      },
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('End-to-End Multi-Site Architecture Overview');
+    expect(allText).toContain('Site Architecture Breakdown — Site A');
+    expect(allText).toContain('Site Architecture Breakdown — Site B');
+
+    const stringified = JSON.stringify(doc.content);
+    expect(stringified).toContain('data:image/png;base64,site-a-diagram');
+    expect(stringified).toContain('data:image/png;base64,site-b-diagram');
+  });
 });
 

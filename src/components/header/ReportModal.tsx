@@ -11,7 +11,11 @@
  */
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
-import { captureTopologyDiagramForReport } from '../../utils/report/captureTopologyDiagram';
+import {
+  captureTopologyDiagramForReport,
+  captureSiteTopologyDiagramForReport,
+  detectDiagramSplitting,
+} from '../../utils/report/captureTopologyDiagram';
 import { captureChassisFrontPanelPng } from '../../utils/report/captureChassisFrontPanel';
 import { captureRackElevationPng } from '../../utils/report/captureRackElevation';
 import { buildReportDocDefinition } from '../../utils/report/buildReportDocDefinition';
@@ -130,6 +134,21 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         }),
       );
 
+      // Check if multi-site diagram splitting is recommended for legibility
+      const splitJudgement = detectDiagramSplitting(currentNodes, edges);
+      const siteDiagrams: Record<string, string> = {};
+
+      if (splitJudgement.shouldSplit) {
+        for (const partition of splitJudgement.partitions) {
+          try {
+            const sitePng = await captureSiteTopologyDiagramForReport(partition.nodeIds);
+            if (sitePng) siteDiagrams[partition.siteName] = sitePng;
+          } catch {
+            // Fallback gracefully to overview diagram if sub-diagram capture fails
+          }
+        }
+      }
+
       setStep('building');
       const docDefinition = buildReportDocDefinition({
         nodes: currentNodes,
@@ -147,6 +166,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         isRunning,
         chassisFrontPanelImages,
         siteRackImages,
+        siteDiagrams,
         execSummaryText: execSummaryText.trim() || undefined,
       });
 

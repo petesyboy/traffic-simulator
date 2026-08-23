@@ -331,6 +331,7 @@ export interface RFState {
   snapToGrid: boolean;
   exportDiagramMode: boolean;
   fitViewTrigger: number;
+  fitViewNodeIds: string[] | null;
   zoomToNodeId: string | null;
   zoomToNodeTrigger: number;
 

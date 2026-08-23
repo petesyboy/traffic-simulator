@@ -49,7 +49,7 @@ const CanvasArea: React.FC = () => {
     encryptedEdges, decryptedEdges, edgeMetrics, edgeEncryptedMbps, isRunning,
     showGrid, snapToGrid, snapAllNodesToGrid, tidyLayout, exportDiagramMode,
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
-    addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger,
+    addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger, fitViewNodeIds,
     zoomToNodeId, zoomToNodeTrigger,
     advancedMode, updateNodeData, setEdges, pushHistory
   } = useStore();
@@ -57,9 +57,19 @@ const CanvasArea: React.FC = () => {
   const { screenToFlowPosition, fitView } = useReactFlow();
 
   useEffect(() => {
-    const timer = setTimeout(() => fitView({ padding: 0.1 }), 100);
+    const timer = setTimeout(() => {
+      if (fitViewNodeIds && fitViewNodeIds.length > 0) {
+        fitView({
+          nodes: fitViewNodeIds.map((id) => ({ id })),
+          padding: 0.15,
+          duration: 200,
+        });
+      } else {
+        fitView({ padding: 0.1 });
+      }
+    }, 100);
     return () => clearTimeout(timer);
-  }, [fitViewTrigger, fitView]);
+  }, [fitViewTrigger, fitViewNodeIds, fitView]);
 
   useEffect(() => {
     if (!zoomToNodeId) return;

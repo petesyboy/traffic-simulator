@@ -31,6 +31,7 @@ export interface GraphSlice {
   snapToGrid: boolean;
   exportDiagramMode: boolean;
   fitViewTrigger: number;
+  fitViewNodeIds: string[] | null;
   zoomToNodeId: string | null;
   zoomToNodeTrigger: number;
 
@@ -68,6 +69,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   snapToGrid: false,
   exportDiagramMode: false,
   fitViewTrigger: 0,
+  fitViewNodeIds: null,
   zoomToNodeId: null,
   zoomToNodeTrigger: 0,
 
