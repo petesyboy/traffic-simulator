@@ -22,7 +22,7 @@ import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
-import { getChassisPorts, getPortOccupancy } from '../../utils/ports';
+import { getChassisPorts, getPortOccupancy, getPortOpticMap } from '../../utils/ports';
 import { getModuleSlotPositions, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
@@ -73,14 +73,17 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
     [chassisPorts, id, data, nodes, edges],
   );
 
-  // Photographic front panel, drawn only for chassis whose bays have been calibrated
-  // (see `module_slot_positions` in the hardware catalogue). It shows which bays are
-  // populated; the ChassisFaceplate below it carries live per-port state.
+  const portOpticMap = useMemo(
+    () => (chassisPorts.length > 0 ? getPortOpticMap(chassisPorts, hwData.optics) : new Map()),
+    [chassisPorts, hwData.optics],
+  );
+
+  // Photographic front panel, drawn for chassis with calibrated slots or base port cages
   const slotPositions = useMemo(
     () => (advancedMode ? getModuleSlotPositions(model, data.sku as string) : []),
     [advancedMode, model, data.sku],
   );
-  const showFrontPanel = Boolean(image) && slotPositions.some(p => p.box);
+  const showFrontPanel = Boolean(image) && (slotPositions.some(p => p.box) || chassisPorts.some(p => p.box));
 
   // Chassis photos are extremely wide (an HC1 is 10.6:1), so cap width as well as
   // height - a height-only constraint let the icon alone stretch an HC1 node to
@@ -226,6 +229,8 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                   model={model}
                   slotPositions={slotPositions}
                   installedBoards={hwData.installedBoards || {}}
+                  ports={chassisPorts}
+                  portOpticMap={portOpticMap}
                 />
               </div>
             )}

@@ -4,6 +4,7 @@ import type { HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
 import { getModuleSlotPositions, getTrayBayCount, isTapModule } from '../utils/hardwareUtils';
+import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
 
 const RackElevationView: React.FC = () => {
@@ -311,7 +312,10 @@ const RackElevationView: React.FC = () => {
 
                 const resolvedImage = resolveHardwareIcon(occupyingNode.data?.image as string | undefined);
                 const slotPositions = getModuleSlotPositions(model, sku);
-                const hasFrontPanel = Boolean(resolvedImage) && slotPositions.some(p => p.box);
+                const hwData = (occupyingNode.data || {}) as HardwareNodeData;
+                const chassisPorts = getChassisPorts(model, hwData);
+                const portOpticMap = getPortOpticMap(chassisPorts, hwData.optics);
+                const hasFrontPanel = Boolean(resolvedImage) && (slotPositions.some(p => p.box) || chassisPorts.some(p => p.box));
 
                 return (
                   <div
@@ -340,7 +344,9 @@ const RackElevationView: React.FC = () => {
                             chassisImage={resolvedImage}
                             model={model}
                             slotPositions={slotPositions}
-                            installedBoards={(occupyingNode.data as HardwareNodeData).installedBoards || {}}
+                            installedBoards={hwData.installedBoards || {}}
+                            ports={chassisPorts}
+                            portOpticMap={portOpticMap}
                           />
                         </div>
                       ) : (

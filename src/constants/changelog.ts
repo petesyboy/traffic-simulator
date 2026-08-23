@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.560",
+    date: "2026-08-23",
+    summary: "Extended physical front-panel photographic visualization and real-time cage-level optic occupancy overlays to GigaVUE-HCT, TA-series chassis (TA25E, TA200, TA200E, TA400, TA400E), and PRT-HC1-G12 across canvas nodes, summary modals, rack elevation view, and solution reports.",
+  },
+  {
     version: "1.0.559",
     date: "2026-08-21",
     summary: "Updated primary and SE advanced documentation (README.md and README_advanced.md) with comprehensive guides covering recent features including one-click link problem resolution, multi-site architecture, breakout panel tray modelling, optic multipack optimisations, physical deployment specifications in PDF reports, and Tidy Layout auto-arrangement.",
@@ -76,6 +81,11 @@ export const CHANGELOG: ChangelogEntry[] = [
     summary: "Enabled multi-link connections between hardware nodes and tools on canvas with parallel curved routing, allowing multiple parallel physical links between the same appliances.",
   },
   {
+    version: "1.0.546",
+    date: "2026-08-20",
+    summary: "Add Header Stripping and GTP Call Correlation interactive visualisations and simulation",
+  },
+  {
     version: "1.0.544",
     date: "2026-08-20",
     summary: "Ship v1.0.544: consolidate standalone single-line BOM devices",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.539",
     date: "2026-08-19",
     summary: "Ship v1.0.539: Markdown support in the report executive summary",
-  },
-  {
-    version: "1.0.538",
-    date: "2026-08-19",
-    summary: "Ship v1.0.538: refreshed SKU catalogue from the real price list",
-  },
-  {
-    version: "1.0.537",
-    date: "2026-08-19",
-    summary: "Ship v1.0.537: executive-summary report field + TA200/TA200E licensing fix",
   },
 ];

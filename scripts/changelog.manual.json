@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.560",
+    "date": "2026-08-23",
+    "summary": "Extended physical front-panel photographic visualization and real-time cage-level optic occupancy overlays to GigaVUE-HCT, TA-series chassis (TA25E, TA200, TA200E, TA400, TA400E), and PRT-HC1-G12 across canvas nodes, summary modals, rack elevation view, and solution reports."
+  },
+  {
     "version": "1.0.559",
     "date": "2026-08-21",
     "summary": "Updated primary and SE advanced documentation (README.md and README_advanced.md) with comprehensive guides covering recent features including one-click link problem resolution, multi-site architecture, breakout panel tray modelling, optic multipack optimisations, physical deployment specifications in PDF reports, and Tidy Layout auto-arrangement."

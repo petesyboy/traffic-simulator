@@ -82,10 +82,10 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
           title={`Slot ${number}${label ? ` (${label})` : ''}: ${boardName}`}
           style={{
             position: 'absolute',
-            left: `${box.x * 100}%`,
-            top: `${box.y * 100}%`,
-            width: `${box.width * 100}%`,
-            height: `${box.height * 100}%`,
+            left: `${Number((box.x * 100).toFixed(4))}%`,
+            top: `${Number((box.y * 100).toFixed(4))}%`,
+            width: `${Number((box.width * 100).toFixed(4))}%`,
+            height: `${Number((box.height * 100).toFixed(4))}%`,
             objectFit: 'fill',
           }}
         />
@@ -102,10 +102,10 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
           title={`${port.id}: ${optic}`}
           style={{
             position: 'absolute',
-            left: `${abs.x * 100}%`,
-            top: `${abs.y * 100}%`,
-            width: `${abs.width * 100}%`,
-            height: `${abs.height * 100}%`,
+            left: `${Number((abs.x * 100).toFixed(4))}%`,
+            top: `${Number((abs.y * 100).toFixed(4))}%`,
+            width: `${Number((abs.width * 100).toFixed(4))}%`,
+            height: `${Number((abs.height * 100).toFixed(4))}%`,
             // Blue + a checkmark glyph rather than a green outline: blue-on-orange
             // keeps working under red-green colour vision deficiency (protanopia/
             // deuteranopia), where green markers can wash out against this chassis

@@ -32,7 +32,7 @@ export async function captureChassisFrontPanelPng(
   slotPositions: SlotPosition[],
   installedBoards: NonNullable<HardwareNodeData['installedBoards']>,
 ): Promise<string | undefined> {
-  if (!chassisImage || !slotPositions.some((p) => p.box)) return undefined;
+  if (!chassisImage) return undefined;
 
   const baseImg = await loadImage(chassisImage);
   const canvas = document.createElement('canvas');

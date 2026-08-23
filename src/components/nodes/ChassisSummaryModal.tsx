@@ -51,9 +51,9 @@ export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model,
   const capVal = (hwData.portCapacity as string) || 'Full';
   const maxCapacityBySpeed = isHc ? getMaxChassisCapacityBySpeed(model) : [];
   const gigaSmartEngines = isHc ? getGigaSmartEngineCount(model, hwData) : 0;
-  const hasFrontPanel = Boolean(chassisImage) && slotPositions.some(p => p.box);
   const chassisPorts = getChassisPorts(model, hwData);
   const portOpticMap = getPortOpticMap(chassisPorts, hwData.optics);
+  const hasFrontPanel = Boolean(chassisImage) && (slotPositions.some(p => p.box) || chassisPorts.some(p => p.box));
 
   const [zoomed, setZoomed] = useState(false);
 
