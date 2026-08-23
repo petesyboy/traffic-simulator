@@ -963,26 +963,20 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
       if (purpose) {
         content.push(detailStack(headline, { headline, bullets: [purpose] }));
-        group.forEach((cn) => {
-          const frontPanelImage = chassisFrontPanelImages?.[cn.id];
-          if (frontPanelImage) {
-            const cdata = cn.data as HardwareNodeData;
-            const sitePrefix = cdata.site ? `${cdata.site} · ` : '';
-            const unitLabel = `${sitePrefix}${cdata.label || cdata.model}${cdata.sku ? ` (${cdata.sku})` : ''}`;
-            content.push({
-              text: unitLabel,
-              style: 'body',
-              bold: true,
-              color: REPORT_COLOURS.structural,
-              margin: [0, 6, 0, 2],
-            });
-            content.push({
-              image: frontPanelImage,
-              width: 380,
-              margin: [0, 0, 0, 10],
-            });
-          }
-        });
+
+        // Single representative front panel image for the chassis model group
+        const representativeImage = group
+          .map((cn) => chassisFrontPanelImages?.[cn.id])
+          .find((img): img is string => Boolean(img));
+
+        if (representativeImage) {
+          content.push({
+            image: representativeImage,
+            width: 380,
+            alignment: 'left',
+            margin: [0, 2, 0, 10],
+          });
+        }
       } else {
         plainLines.push(headline);
       }

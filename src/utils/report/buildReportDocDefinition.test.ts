@@ -38,6 +38,22 @@ function collectTexts(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
+/** Recursively collects every string found under an `image` key anywhere in a pdfmake Content tree. */
+function collectImages(node: unknown, out: string[] = []): string[] {
+  if (node == null) return out;
+  if (typeof node === 'object') {
+    const obj = node as Record<string, unknown>;
+    if ('image' in obj && typeof obj.image === 'string') out.push(obj.image);
+    if ('stack' in obj) collectImages(obj.stack, out);
+    if ('columns' in obj) collectImages(obj.columns, out);
+    if ('table' in obj) collectImages((obj.table as Record<string, unknown>).body, out);
+  }
+  if (Array.isArray(node)) {
+    node.forEach((n) => collectImages(n, out));
+  }
+  return out;
+}
+
 describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
   it('flags a rounded-up pack quantity with a customer-facing note in the BOM appendix', () => {
     const node: CustomNode = {
@@ -169,7 +185,7 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(occurrences).toBe(1);
   });
 
-  it('deduplicates multiple identical chassis into a single consolidated description', () => {
+  it('deduplicates multiple identical chassis into a single consolidated description and single image', () => {
     const ta25Nodes: CustomNode[] = [
       {
         id: 'ta25-1',
@@ -179,6 +195,7 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
           label: 'Leaf TA25E #1',
           model: 'GigaVUE-TA25E',
           sku: 'GVS-TA2501',
+          site: 'Site North',
         },
       } as CustomNode,
       {
@@ -189,17 +206,30 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
           label: 'Leaf TA25E #2',
           model: 'GigaVUE-TA25E',
           sku: 'GVS-TA2501',
+          site: 'Site South',
         },
       } as CustomNode,
     ];
 
-    const doc = buildReportDocDefinition({ ...baseInput, nodes: ta25Nodes, edges: [] });
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: ta25Nodes,
+      edges: [],
+      chassisFrontPanelImages: {
+        'ta25-1': 'data:image/png;base64,CHASSIS_IMG_1',
+        'ta25-2': 'data:image/png;base64,CHASSIS_IMG_2',
+      },
+    });
     const allText = collectTexts(doc.content).join(' ');
 
-    expect(allText).toContain('GigaVUE-TA25E (GVS-TA2501) (2 units deployed: Leaf TA25E #1, Leaf TA25E #2)');
+    expect(allText).toContain('GigaVUE-TA25E (GVS-TA2501) (2 units deployed: Site North · Leaf TA25E #1, Site South · Leaf TA25E #2)');
     // Chassis description should appear once
     const occurrences = (allText.match(/a 1RU, high-density 25GbE traffic aggregation node/g) || []).length;
     expect(occurrences).toBe(1);
+
+    // Front-panel picture should appear only once (not repeated for each unit)
+    const images = collectImages(doc.content).filter((img) => img.startsWith('data:image/png;base64,CHASSIS_IMG'));
+    expect(images.length).toBe(1);
   });
 
   it('embeds siteRackImages in Appendix B', () => {

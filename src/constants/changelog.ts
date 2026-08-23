@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.587",
+    date: "2026-08-23",
+    summary: "Consolidated hardware platform descriptions in the Solution Report to display a single representative front-panel photograph per chassis/node model, with all deployed instances, sites, and labels detailed in the text.",
+  },
+  {
     version: "1.0.586",
     date: "2026-08-23",
     summary: "Redesigned Solution Report Generator with 'Signal Path' design system: full-bleed dark navy cover with vector fan-in graphics, automated Table of Contents, section wayfinding kickers, hairline stat tiles with zero-value handling, multi-severity notice plates, compact rack elevations, and bespoke table styling.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.568",
     date: "2026-08-23",
     summary: "Added a dedicated Left RU Number Rail displaying permanent 1-42 slot numbers on the rack exterior regardless of hardware occupancy, and refined fitted SFP cage overlays with crisp 1px borders and enhanced background clarity.",
-  },
-  {
-    version: "1.0.567",
-    date: "2026-08-23",
-    summary: "Fixed ChassisFrontPanel height scaling in Rack Elevation View (fillContainer) ensuring full 3U HC3 chassis with all 4 module bays and ports is fully visible without clipping.",
   },
 ];
