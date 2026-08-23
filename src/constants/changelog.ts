@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.586",
+    date: "2026-08-23",
+    summary: "Redesigned Solution Report Generator with 'Signal Path' design system: full-bleed dark navy cover with vector fan-in graphics, automated Table of Contents, section wayfinding kickers, hairline stat tiles with zero-value handling, multi-severity notice plates, compact rack elevations, and bespoke table styling.",
+  },
+  {
     version: "1.0.585",
     date: "2026-08-23",
     summary: "Fixed Light Theme styling across canvas background, header toolbars, sidebars, traffic drawer, and configuration panels for full high-contrast visibility.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.567",
     date: "2026-08-23",
     summary: "Fixed ChassisFrontPanel height scaling in Rack Elevation View (fillContainer) ensuring full 3U HC3 chassis with all 4 module bays and ports is fully visible without clipping.",
-  },
-  {
-    version: "1.0.566",
-    date: "2026-08-23",
-    summary: "Fixed multi-RU chassis vertical positioning in 42U Rack Elevation View (preventing HC3 bottom truncation) and mapped all TAP module stencils to authentic orange LC connector faceplates.",
   },
 ];

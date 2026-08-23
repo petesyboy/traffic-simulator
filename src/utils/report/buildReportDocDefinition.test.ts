@@ -122,8 +122,8 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('Datacentre A (North)');
     expect(allText).toContain('Datacentre B (South)');
     expect(allText).toContain('Master Aggregate Deployment (All Sites Combined)');
-    expect(allText).toContain('Total Space Required');
-    expect(allText).toContain('Total Max Power');
+    expect(allText).toMatch(/TOTAL SPACE REQUIRED/i);
+    expect(allText).toMatch(/TOTAL MAX POWER/i);
   });
 
   it('renders tool ingest capacity advisory notice when tool nodes are present', () => {
@@ -306,6 +306,34 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('G-TAP Modular Mounting Trays');
     expect(allText).toContain('2 × TAP-M200T (1RU, 6-slot chassis tray)');
     expect(allText).toContain('2 × TAP-M100T (0.5RU, 3-slot chassis tray)');
+  });
+
+  it('renders Signal Path Table of Contents, section wayfinding kickers, and zero-value stat captions', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+
+    // TOC
+    expect(allText).toContain('Table of Contents');
+    expect(allText).toContain('§01 Executive Summary & Key Metrics');
+    expect(allText).toContain('§02 Fabric Topology & Architecture Diagram');
+    expect(allText).toContain('§03 Solution Overview & Component Narrative');
+    expect(allText).toContain('§04 Appendix A: Bill of Materials (BOM)');
+
+    // Section kickers
+    expect(allText).toContain('§01 · STRATEGY & METRICS');
+    expect(allText).toContain('§02 · NETWORK VISIBILITY FABRIC');
+    expect(allText).toContain('§03 · COMPONENT SPECIFICATIONS');
+    expect(allText).toContain('§04 · PROCUREMENT & LICENSING');
+
+    // Zero value handling on stats
+    expect(allText).toContain('pure optical TAP design');
+    expect(allText).toContain('not required · pure aggregation');
+    expect(allText).toContain('static architecture');
   });
 });
 

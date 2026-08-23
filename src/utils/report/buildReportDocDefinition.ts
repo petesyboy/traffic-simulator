@@ -2,13 +2,13 @@
  * buildReportDocDefinition.ts
  * ─────────────────────────────────────────────────────────────────────────────
  * Assembles the pdfmake document-definition for a customer-facing solution
- * report: cover page, executive summary, topology diagram, plain-English
- * narrative per node category, a configuration-warnings callout, a Bill of
- * Materials appendix, and (Advanced Mode only) a physical/rack appendix.
- *
- * The BOM/physical figures are computed with the exact same calls the BOM
- * modal uses (generateBom / validateConfiguration / buildPhysicalItems) so the
- * report's numbers can never drift from what the BOM modal shows.
+ * report implementing the "Signal Path" design system:
+ * • Full-bleed dark navy (#16213D) cover with abstract vector fan-in graphic
+ * • Automated Table of Contents with section wayfinding kickers (§01, §02, etc.)
+ * • Hairline stat tiles grid with intelligent zero-value handling (em-dash + caption)
+ * • Multi-severity notice plates (Critical, Warning, Info) with 2px status borders
+ * • High-contrast equipment-panel table headers (#16213D) and zebra rows
+ * • Clean running headers, footers, and orphan prevention
  */
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { Edge } from '@xyflow/react';
@@ -58,44 +58,256 @@ export interface ReportInput {
   advancedMode: boolean;
   diagramDataUrl: string;
   logoDataUrl?: string;
-  /** Live per-node traffic metrics, only rendered when `isRunning` is true — never shown as if live when the simulation hasn't actually been run. */
+  /** Live per-node traffic metrics, only rendered when `isRunning` is true. */
   nodeMetrics: Record<string, NodeMetrics>;
   isRunning: boolean;
-  /** Composited front-panel PNGs (base photo + installed-module faceplates), keyed by hardware node id. Only chassis with a calibrated catalogue photo have an entry. */
+  /** Composited front-panel PNGs, keyed by hardware node id. */
   chassisFrontPanelImages?: Record<string, string>;
-  /** 42U Rack Elevation diagrams, keyed by physical site name. Embedded in Appendix B alongside physical specs. */
+  /** 42U Rack Elevation diagrams, keyed by physical site name. */
   siteRackImages?: Record<string, string>;
-  /** Zoomed-in per-site architecture diagrams, keyed by site name, rendered when multi-site topologies are split for legibility. */
+  /** Zoomed-in per-site architecture diagrams, keyed by site name. */
   siteDiagrams?: Record<string, string>;
-  /** User-authored executive summary (what's being deployed and why, in the customer's context). Replaces the generic intro paragraph when provided. */
+  /** User-authored executive summary. */
   execSummaryText?: string;
 }
 
-/** Renders a node's headline + detail bullets + (optional) value-proposition line, as one report entry. */
+/** Cleans trailing punctuation and stray brackets from generated bullets. */
+function cleanBulletText(text: string): string {
+  return text.trim().replace(/[,;]\s*$/, '').replace(/\)\s*\)$/, ')');
+}
+
+/** Renders a node's headline + detail bullets + value-proposition line, as one report entry. */
 const detailStack = (headline: string, detail: NodeDetail, valueProposition?: string): Content => ({
   stack: [
     { text: headline, style: 'body', bold: true },
-    ...(detail.bullets.length > 0 ? [{ ul: detail.bullets, style: 'muted' }] : []),
+    ...(detail.bullets.length > 0
+      ? [{ ul: detail.bullets.map(cleanBulletText), style: 'bodySecondary', margin: [0, 2, 0, 0] as [number, number, number, number] }]
+      : []),
     ...(valueProposition
       ? [
           {
             text: valueProposition,
             style: 'muted',
             italics: true,
-            margin: [0, 2, 0, 0] as [number, number, number, number],
+            margin: [0, 3, 0, 0] as [number, number, number, number],
           },
         ]
       : []),
   ],
   margin: [0, 0, 0, 10],
+  unbreakable: true,
 });
 
-const statBlock = (label: string, value: string | number) => ({
-  stack: [
-    { text: label, style: 'statLabel' },
-    { text: String(value), style: 'statValue' },
-  ],
-});
+/** Stat Tile options with intelligent zero-value handling */
+interface StatTileOptions {
+  label: string;
+  value: number | string;
+  zeroCaption?: string;
+  activeColor?: string;
+}
+
+function buildStatTile(options: StatTileOptions): Content {
+  const { label, value, zeroCaption = 'not used in this design', activeColor = REPORT_COLOURS.accent } = options;
+  const numVal = typeof value === 'number' ? value : parseInt(String(value), 10);
+  const isZero = isNaN(numVal) ? value === '0' || value === '0.0' : numVal === 0;
+
+  return {
+    stack: [
+      // LED indicator + mono uppercase label
+      {
+        columns: [
+          {
+            canvas: [
+              {
+                type: 'ellipse',
+                x: 3.5,
+                y: 3.5,
+                r1: 3.5,
+                r2: 3.5,
+                color: isZero ? '#94A3B8' : activeColor,
+              },
+            ],
+            width: 10,
+          },
+          {
+            text: label.toUpperCase(),
+            style: 'statLabel',
+            color: isZero ? '#64748B' : REPORT_COLOURS.structural,
+          },
+        ],
+        margin: [0, 0, 0, 3],
+      },
+      // Number or Em-dash
+      {
+        text: isZero ? '—' : String(value),
+        style: 'statValue',
+        color: isZero ? '#64748B' : activeColor,
+        margin: [0, 0, 0, isZero ? 2 : 0],
+      },
+      // Zero caption
+      ...(isZero
+        ? [
+            {
+              text: zeroCaption,
+              style: 'statCaption',
+              color: '#8B8D99',
+            },
+          ]
+        : []),
+    ],
+    margin: [6, 6, 6, 6],
+    fillColor: isZero ? '#FAF9F6' : '#FFFFFF',
+  };
+}
+
+/** Notice Plate severity definition */
+export type NoticeSeverity = 'critical' | 'warning' | 'info';
+
+export interface NoticePlateOptions {
+  severity: NoticeSeverity;
+  title: string;
+  message?: string;
+  bullets?: string[];
+}
+
+export function buildNoticePlate(options: NoticePlateOptions): Content {
+  const { severity, title, message, bullets } = options;
+
+  const config = {
+    critical: {
+      color: REPORT_COLOURS.statusCritical,
+      bg: REPORT_COLOURS.statusCriticalBg,
+      icon: '✕',
+      style: 'noticeTitleCritical',
+    },
+    warning: {
+      color: REPORT_COLOURS.statusWarning,
+      bg: REPORT_COLOURS.statusWarningBg,
+      icon: '!',
+      style: 'noticeTitleWarning',
+    },
+    info: {
+      color: REPORT_COLOURS.statusInfo,
+      bg: REPORT_COLOURS.statusInfoBg,
+      icon: 'ℹ',
+      style: 'noticeTitleInfo',
+    },
+  }[severity];
+
+  return {
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            stack: [
+              // 2.5px top status color bar
+              {
+                canvas: [
+                  {
+                    type: 'line',
+                    x1: 0,
+                    y1: 0,
+                    x2: 500,
+                    y2: 0,
+                    lineWidth: 2.5,
+                    lineColor: config.color,
+                  },
+                ],
+                margin: [0, 0, 0, 6],
+              },
+              {
+                columns: [
+                  {
+                    text: `[ ${config.icon} ]`,
+                    bold: true,
+                    fontSize: 9.5,
+                    color: config.color,
+                    width: 22,
+                  },
+                  {
+                    text: title,
+                    style: config.style,
+                  },
+                ],
+                margin: [0, 0, 0, 4],
+              },
+              ...(message
+                ? [
+                    {
+                      text: message,
+                      style: 'noticeBody',
+                      margin: [22, 0, 0, bullets?.length ? 4 : 0] as [number, number, number, number],
+                    },
+                  ]
+                : []),
+              ...(bullets && bullets.length > 0
+                ? [
+                    {
+                      ul: bullets.map(cleanBulletText),
+                      style: 'noticeBody',
+                      margin: [22, 0, 0, 0] as [number, number, number, number],
+                    },
+                  ]
+                : []),
+            ],
+            fillColor: config.bg,
+            margin: [8, 6, 8, 8],
+          },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => REPORT_COLOURS.lineStrong,
+      vLineColor: () => REPORT_COLOURS.lineStrong,
+    },
+    margin: [0, 6, 0, 10],
+    unbreakable: true,
+  };
+}
+
+/** Cover background full-bleed SVG (Dark Navy + Signal Path fan-in vector lines) */
+function generateCoverSvg(): string {
+  return `
+  <svg width="595.28" height="841.89" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">
+    <!-- Dark Navy Equipment-Panel Surface -->
+    <rect width="595.28" height="841.89" fill="#16213D" />
+    
+    <!-- Subtle gradient wash -->
+    <defs>
+      <linearGradient id="navGlow" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#24304F" stop-opacity="0.8"/>
+        <stop offset="60%" stop-color="#16213D" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#0E1526" stop-opacity="0.9"/>
+      </linearGradient>
+    </defs>
+    <rect width="595.28" height="841.89" fill="url(#navGlow)" />
+
+    <!-- Signal Path Fan-in Graphic (Converging to GigaSMART Hero Hub) -->
+    <g stroke-linecap="round">
+      <path d="M 40 100 Q 220 200 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 40 160 Q 220 230 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 40 220 Q 220 260 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 40 280 Q 220 290 460 300" stroke="#E1592A" stroke-width="2.5" stroke-opacity="0.95" fill="none" />
+      <path d="M 40 340 Q 220 320 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 40 400 Q 220 350 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+
+      <!-- Convergence Focus Node -->
+      <circle cx="460" cy="300" r="5" fill="#E1592A" />
+      <circle cx="460" cy="300" r="10" stroke="#E1592A" stroke-width="1" stroke-opacity="0.5" fill="none" />
+
+      <!-- Fan-out to Monitoring Tools -->
+      <path d="M 460 300 Q 505 300 550 260" stroke="#E1592A" stroke-width="2.0" stroke-opacity="0.9" fill="none" />
+      <path d="M 460 300 Q 505 310 550 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 460 300 Q 505 320 550 340" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+    </g>
+
+    <!-- Bottom metadata divider hairline -->
+    <line x1="40" y1="720" x2="555.28" y2="720" stroke="#2B3859" stroke-width="1" />
+  </svg>`;
+}
 
 export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitions {
   const {
@@ -130,34 +342,136 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   );
   const validationErrors = validateConfiguration(nodes, edges);
   const physicalItems = buildPhysicalItems(nodes, bomRows);
-  // A customer-facing quote shows one aggregated line per SKU across the whole
-  // project, rolled up into multipacks where that applies - not bomRows'
-  // internal per-node breakdown (kept above only for physicalItems, which
-  // needs it split by site for tray bin-packing).
   const reportBomRows = buildProjectWideOpticBom(bomRows, getSkus()).sort(
     (a, b) => a.type.localeCompare(b.type) || a.sku.localeCompare(b.sku),
   );
 
   const generatedDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Gather unique physical sites
+  const uniqueSites = Array.from(
+    new Set(
+      nodes
+        .map((n) => resolveNodeSite(n, nodes, edges))
+        .filter(Boolean),
+    ),
+  );
+  const siteCountDisplay = uniqueSites.length > 0 ? uniqueSites.length : 1;
+  const hardwareUnitCount = Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0);
+  const monitoredLinkCount = stats.inputCounts.total;
+
   const content: Content[] = [];
 
-  // ── Cover ──
+  // ═══════════════════════════════════════════════════════════════
+  // COVER PAGE (Full Bleed Dark Navy Panel + Vector Fan-in Graphic)
+  // ═══════════════════════════════════════════════════════════════
   const coverStack: Content[] = [];
   if (logoDataUrl) {
-    coverStack.push({ image: logoDataUrl, width: 160, margin: [0, 0, 0, 40] });
+    coverStack.push({ image: logoDataUrl, width: 140, margin: [0, 0, 0, 30] });
+  } else {
+    coverStack.push({ text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5, margin: [0, 0, 0, 30] });
   }
+
+  coverStack.push({ text: '§00 · VISIBILITY FABRIC SPECIFICATION', style: 'coverKicker' });
   coverStack.push({ text: projectName, style: 'coverTitle' });
-  coverStack.push({ text: 'Gigamon Visibility Solution Report', style: 'coverSubtitle' });
+  coverStack.push({ text: 'Next-Generation Network Visibility & Traffic Optimisation Report', style: 'coverSubtitle' });
   coverStack.push({
-    text: `Generated ${generatedDate} · Region: ${projectRegion} · Licensing: ${projectLicenseMode}`,
-    style: 'coverSubtitle',
+    text: `Generated ${generatedDate}  ·  Region: ${projectRegion}  ·  Licensing Model: ${projectLicenseMode} (${defaultTermDuration} Mo)`,
+    style: 'coverMeta',
+    margin: [0, 0, 0, 60],
   });
-  content.push({ stack: coverStack, margin: [0, 120, 0, 0] });
+
+  // Hairline Teaser Stat Row on Cover
+  coverStack.push({
+    columns: [
+      {
+        stack: [
+          { text: 'DEPLOYMENT SITES', style: 'coverStatLabel' },
+          { text: `${siteCountDisplay} ${siteCountDisplay === 1 ? 'Site' : 'Sites'}`, style: 'coverStatValue' },
+        ],
+      },
+      {
+        stack: [
+          { text: 'MONITORED LINKS', style: 'coverStatLabel' },
+          { text: `${monitoredLinkCount} Feeds`, style: 'coverStatValue' },
+        ],
+      },
+      {
+        stack: [
+          { text: 'HARDWARE PLATFORMS', style: 'coverStatLabel' },
+          { text: `${hardwareUnitCount} Units`, style: 'coverStatValue' },
+        ],
+      },
+      {
+        stack: [
+          { text: 'TRAFFIC PROCESSED', style: 'coverStatLabel' },
+          {
+            text: isRunning && Object.values(nodeMetrics).length > 0
+              ? formatBandwidth(Object.values(nodeMetrics).reduce((s, m) => s + (m.rxMbps || 0), 0))
+              : 'Multi-Tbps Ready',
+            style: 'coverStatValue',
+          },
+        ],
+      },
+    ],
+    columnGap: 16,
+    margin: [0, 10, 0, 0],
+  });
+
+  content.push({ stack: coverStack, margin: [0, 220, 0, 0] });
   content.push({ text: '', pageBreak: 'after' });
 
-  // ── Executive summary ──
+  // ═══════════════════════════════════════════════════════════════
+  // TABLE OF CONTENTS
+  // ═══════════════════════════════════════════════════════════════
+  content.push({ text: '§00 · NAVIGATION', style: 'sectionKicker' });
+  content.push({ text: 'Table of Contents', style: 'sectionHeading' });
+  content.push({
+    text: 'This specification report details the visibility pipeline architecture, active hardware platforms, transformation operations, and deployment logistics.',
+    style: 'bodySecondary',
+    margin: [0, 0, 0, 16],
+  });
+
+  const tocItems: { num: string; title: string; desc: string }[] = [
+    { num: '§01', title: 'Executive Summary & Key Metrics', desc: 'Solution strategy, fabric inventory metrics, and platform summary.' },
+    { num: '§02', title: 'Fabric Topology & Architecture Diagram', desc: 'Visual network diagram, multi-site signal flow, and connection topology.' },
+    { num: '§03', title: 'Solution Overview & Component Narrative', desc: 'Detailed breakdown of traffic sources, maps, filters, GigaSMART engines, and tools.' },
+    { num: '§04', title: 'Appendix A: Bill of Materials (BOM)', desc: 'Itemised SKUs, quantities, optic multipacks, and licence requirements.' },
+  ];
+
+  if (physicalItems.length > 0) {
+    tocItems.push({
+      num: '§05',
+      title: 'Appendix B: Physical Rack & Deployment Specifications',
+      desc: 'Rack space (RU), dimensions, power draw, heat dissipation, and rack elevation views.',
+    });
+  }
+
+  content.push({
+    table: {
+      widths: [40, 180, '*'],
+      body: tocItems.map((item) => [
+        { text: item.num, style: 'mono', color: REPORT_COLOURS.accent },
+        { text: item.title, style: 'body', bold: true },
+        { text: item.desc, style: 'bodySecondary' },
+      ]),
+    },
+    layout: {
+      hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+      vLineWidth: () => 0,
+      hLineColor: () => REPORT_COLOURS.line,
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
+    },
+    margin: [0, 0, 0, 24],
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // §01 EXECUTIVE SUMMARY & STAT TILES GRID
+  // ═══════════════════════════════════════════════════════════════
+  content.push({ text: '§01 · STRATEGY & METRICS', style: 'sectionKicker', pageBreak: 'before' });
   content.push({ text: 'Executive Summary', style: 'sectionHeading' });
+
   if (execSummaryText) {
     content.push(...markdownToPdfmakeContent(execSummaryText));
   } else {
@@ -169,51 +483,93 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       margin: [0, 0, 0, 12],
     });
   }
+
+  const totalGigaSmartOps = Object.values(stats.gigaSmartActionCounts).reduce((a, b) => a + b, 0);
+
+  // Hairline Stat Tile Grid (2 rows x 4 columns)
   content.push({
-    stack: [
-      {
-        columns: [
-          statBlock('Traffic Sources', stats.inputCounts.total),
-          statBlock('TAPs', stats.inputCounts.tap),
-          statBlock('SPAN Sessions', stats.inputCounts.span),
-          statBlock('Traffic Maps', stats.mapNodeCount),
-          statBlock('Filters', stats.filterNodeCount),
+    table: {
+      widths: ['25%', '25%', '25%', '25%'],
+      body: [
+        [
+          buildStatTile({
+            label: 'Traffic Sources',
+            value: stats.inputCounts.total,
+            zeroCaption: 'no ingress feeds mapped',
+          }),
+          buildStatTile({
+            label: 'Optical TAPs',
+            value: stats.inputCounts.tap,
+            zeroCaption: 'SPAN / virtual feeds only',
+          }),
+          buildStatTile({
+            label: 'SPAN Sessions',
+            value: stats.inputCounts.span,
+            zeroCaption: 'pure optical TAP design',
+          }),
+          buildStatTile({
+            label: 'Traffic Maps',
+            value: stats.mapNodeCount,
+            zeroCaption: 'direct pass-through',
+          }),
         ],
-        columnGap: 12,
-        margin: [0, 0, 0, 8],
-      },
-      {
-        columns: [
-          statBlock(
-            'GigaSMART Functions',
-            Object.values(stats.gigaSmartActionCounts).reduce((a, b) => a + b, 0),
-          ),
-          statBlock('Destinations / Tools', stats.toolCount),
-          statBlock(
-            'Chassis / Hardware Units',
-            Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0),
-          ),
-          statBlock('Traffic Streams', stats.trafficStreamCount),
+        [
+          buildStatTile({
+            label: 'GigaSMART Ops',
+            value: totalGigaSmartOps,
+            zeroCaption: 'not required · pure aggregation',
+          }),
+          buildStatTile({
+            label: 'Destinations',
+            value: stats.toolCount,
+            zeroCaption: 'pipeline stage only',
+          }),
+          buildStatTile({
+            label: 'Chassis / Units',
+            value: hardwareUnitCount,
+            zeroCaption: 'virtual deployment',
+          }),
+          buildStatTile({
+            label: 'Traffic Streams',
+            value: stats.trafficStreamCount,
+            zeroCaption: 'static architecture',
+          }),
         ],
-        columnGap: 12,
-        margin: [0, 0, 0, 8],
-      },
-      ...(Object.keys(stats.chassisCounts).length > 0
-        ? [
-            { text: 'Hardware Platforms', style: 'subHeading', margin: [0, 6, 0, 4] as [number, number, number, number] },
-            {
-              ul: Object.entries(stats.chassisCounts).map(([model, count]) => `${model} × ${count}`),
-              style: 'body',
-            },
-          ]
-        : []),
-    ],
+      ],
+    },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => REPORT_COLOURS.line,
+      vLineColor: () => REPORT_COLOURS.line,
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
+    },
+    margin: [0, 4, 0, 14],
     unbreakable: true,
-    margin: [0, 4, 0, 0],
   });
 
-  // ── Topology diagram ──
-  content.push({ text: 'Topology Diagram', style: 'sectionHeading', pageBreak: 'before' });
+  if (Object.keys(stats.chassisCounts).length > 0) {
+    content.push({
+      text: 'Active Hardware Platform Summary',
+      style: 'subHeading',
+      margin: [0, 6, 0, 4],
+    });
+    content.push({
+      ul: Object.entries(stats.chassisCounts).map(([model, count]) => `${model} × ${count}`),
+      style: 'body',
+      margin: [0, 0, 0, 10],
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // §02 TOPOLOGY DIAGRAM
+  // ═══════════════════════════════════════════════════════════════
+  content.push({ text: '§02 · NETWORK VISIBILITY FABRIC', style: 'sectionKicker', pageBreak: 'before' });
+  content.push({ text: 'Topology Diagram', style: 'sectionHeading' });
+
   if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
     content.push({
       text: 'End-to-End Multi-Site Architecture Overview',
@@ -221,7 +577,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       margin: [0, 0, 0, 6],
     });
   }
-  content.push({ image: diagramDataUrl, width: 500, margin: [0, 0, 0, 10] });
+
+  content.push({
+    text: 'High-level signal flow across network tap points, aggregation switches, transformation engines, and monitoring tools.',
+    style: 'bodySecondary',
+    margin: [0, 0, 0, 8],
+  });
+
+  content.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
 
   if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
     Object.entries(siteDiagrams).forEach(([siteName, siteDiagramUrl]) => {
@@ -230,16 +593,16 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           {
             text: `Site Architecture Breakdown — ${siteName}`,
             style: 'subHeading',
-            margin: [0, 8, 0, 4],
+            margin: [0, 10, 0, 4],
           },
           {
-            text: `High-resolution focused diagram for ${siteName}, ensuring legible port allocations, TAP feeds, and tool configurations.`,
-            style: 'muted',
+            text: `Focused topology diagram for ${siteName}, illustrating local TAP allocations, aggregation chassis ports, and tool feeds.`,
+            style: 'bodySecondary',
             margin: [0, 0, 0, 8],
           },
           {
             image: siteDiagramUrl,
-            width: 500,
+            width: 515,
             margin: [0, 0, 0, 10],
           },
         ],
@@ -249,38 +612,23 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     });
   }
 
-  // ── Configuration warnings ──
+  // Configuration Attention Notice Plate (if validation errors exist)
   if (validationErrors.length > 0) {
-    content.push({
-      table: {
-        widths: ['*'],
-        body: [
-          [
-            {
-              stack: [
-                { text: 'Configuration Attention Required', style: 'warningTitle' },
-                {
-                  text: 'The current configuration has unresolved items. The Bill of Materials in this report may be incomplete or invalid until these are addressed:',
-                  style: 'body',
-                  margin: [0, 4, 0, 6],
-                },
-                { ul: validationErrors.map((e) => e.message), style: 'body' },
-              ],
-            },
-          ],
-        ],
-      },
-      layout: {
-        fillColor: () => REPORT_COLOURS.warningBg,
-        hLineColor: () => REPORT_COLOURS.warningBorder,
-        vLineColor: () => REPORT_COLOURS.warningBorder,
-      },
-      margin: [0, 10, 0, 10],
-    });
+    content.push(
+      buildNoticePlate({
+        severity: 'warning',
+        title: 'Configuration Scope Considerations & Unresolved Items',
+        message: 'The current configuration contains items requiring verification. The Bill of Materials in this report may require adjustment before final procurement:',
+        bullets: validationErrors.map((e) => e.message),
+      }),
+    );
   }
 
-  // ── Narrative sections ──
-  content.push({ text: 'Solution Overview', style: 'sectionHeading', pageBreak: 'before' });
+  // ═══════════════════════════════════════════════════════════════
+  // §03 FABRIC NARRATIVE & COMPONENT BREAKDOWN
+  // ═══════════════════════════════════════════════════════════════
+  content.push({ text: '§03 · COMPONENT SPECIFICATIONS', style: 'sectionKicker', pageBreak: 'before' });
+  content.push({ text: 'Solution Overview & Workflow Specifications', style: 'sectionHeading' });
 
   const inputNodes = nodes.filter((n) => n.type === NODE_TYPES.INPUT);
   if (inputNodes.length > 0) {
@@ -457,41 +805,18 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const toolNodes = nodes.filter((n) => n.type === NODE_TYPES.TOOL);
   if (toolNodes.length > 0) {
     content.push({ text: 'Destinations & Tools', style: 'subHeading' });
-    content.push({
-      table: {
-        widths: ['*'],
-        body: [
-          [
-            {
-              stack: [
-                {
-                  text: 'Important Notice: Tool Ingest Capacities & Vendor Verification',
-                  style: 'warningTitle',
-                  fontSize: 9.5,
-                  bold: true,
-                  margin: [0, 0, 0, 3],
-                },
-                {
-                  text:
-                    'All tool, sensor, and probe ingest capacities stated in this report (e.g. 5 Gbps, 10 Gbps, 40 Gbps, 50 Gbps) are simulation baseline assumptions and estimates only. ' +
-                    'Actual maximum real-time traffic processing limits depend upon physical appliance sizing, allocated CPU/memory resources, software licence tiers, packet size distribution, and enabled inspection features. ' +
-                    'While the Gigamon visibility fabric can scale and deliver hundreds of gigabits per second of high-speed aggregated traffic, customers must consult the respective tool, probe, or sensor manufacturer directly to confirm the maximum sustained and burst ingest rates for their specific environment and model.',
-                  style: 'body',
-                  fontSize: 8.5,
-                  lineHeight: 1.35,
-                },
-              ],
-            },
-          ],
-        ],
-      },
-      layout: {
-        fillColor: () => REPORT_COLOURS.warningBg,
-        hLineColor: () => REPORT_COLOURS.warningBorder,
-        vLineColor: () => REPORT_COLOURS.warningBorder,
-      },
-      margin: [0, 4, 0, 10],
-    });
+    
+    // Vendor Verification Advisory Notice Plate (Info severity)
+    content.push(
+      buildNoticePlate({
+        severity: 'info',
+        title: 'Important Notice: Tool Ingest Capacities & Vendor Verification',
+        message:
+          'All tool, sensor, and probe ingest capacities stated in this report (e.g. 5 Gbps, 10 Gbps, 40 Gbps, 50 Gbps) are simulation baseline assumptions and estimates only. ' +
+          'Actual maximum real-time traffic processing limits depend upon physical appliance sizing, allocated CPU/memory resources, software licence tiers, packet size distribution, and enabled inspection features. ' +
+          'While the Gigamon visibility fabric can scale and deliver hundreds of gigabits per second of high-speed aggregated traffic, customers must consult the respective tool, probe, or sensor manufacturer directly to confirm the maximum sustained and burst ingest rates for their specific environment and model.',
+      }),
+    );
 
     // Group identical tool nodes by toolName / configType
     const toolGroups = new Map<string, CustomNode[]>();
@@ -574,7 +899,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
   if (hardwareNodes.length > 0) {
-    content.push({ text: 'Hardware', style: 'subHeading' });
+    content.push({ text: 'Hardware Platforms & Physical Inventory', style: 'subHeading' });
     const plainLines: string[] = [];
 
     // 1. Group & Deduplicate Optical TAP Modules
@@ -648,7 +973,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
               text: unitLabel,
               style: 'body',
               bold: true,
-              color: REPORT_COLOURS.navy,
+              color: REPORT_COLOURS.structural,
               margin: [0, 6, 0, 2],
             });
             content.push({
@@ -710,8 +1035,12 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     if (plainLines.length > 0) content.push({ ul: plainLines, style: 'body' });
   }
 
-  // ── BOM appendix ──
-  content.push({ text: 'Appendix A: Bill of Materials', style: 'sectionHeading', pageBreak: 'before' });
+  // ═══════════════════════════════════════════════════════════════
+  // §04 BILL OF MATERIALS APPENDIX
+  // ═══════════════════════════════════════════════════════════════
+  content.push({ text: '§04 · PROCUREMENT & LICENSING', style: 'sectionKicker', pageBreak: 'before' });
+  content.push({ text: 'Appendix A: Bill of Materials', style: 'sectionHeading' });
+
   if (reportBomRows.length === 0) {
     content.push({ text: 'No hardware nodes tracked in the current layout.', style: 'muted' });
   } else {
@@ -721,31 +1050,42 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         widths: ['auto', 'auto', '*', 'auto', 'auto'],
         body: [
           [
-            { text: 'Type', style: 'tableHeader' },
+            { text: 'TYPE', style: 'tableHeader' },
             { text: 'SKU', style: 'tableHeader' },
-            { text: 'Description', style: 'tableHeader' },
-            { text: 'Term (Mo)', style: 'tableHeader' },
-            { text: 'Qty', style: 'tableHeader' },
+            { text: 'DESCRIPTION', style: 'tableHeader' },
+            { text: 'TERM (MO)', style: 'tableHeader', alignment: 'right' },
+            { text: 'QTY', style: 'tableHeader', alignment: 'right' },
           ],
-          ...reportBomRows.map((row) => [
-            { text: row.type, style: 'tableCell' },
-            { text: row.sku, style: 'mono' },
-            row.note
-              ? {
-                  stack: [
-                    { text: row.description, style: 'tableCell' },
-                    { text: `💡 ${row.note}`, style: 'muted', margin: [0, 2, 0, 0] as [number, number, number, number] },
-                  ],
-                }
-              : { text: row.description, style: 'tableCell' },
-            { text: row.term || '-', style: 'tableCell', alignment: 'right' as const },
-            { text: String(row.qty), style: 'tableCell', alignment: 'right' as const },
-          ]),
+          ...reportBomRows.map((row, idx) => {
+            const rowFill = idx % 2 === 1 ? REPORT_COLOURS.paper : '#FFFFFF';
+            return [
+              { text: row.type, style: 'tableCell', fillColor: rowFill },
+              { text: row.sku, style: 'mono', fillColor: rowFill },
+              row.note
+                ? {
+                    stack: [
+                      { text: row.description, style: 'tableCell' },
+                      { text: `💡 ${row.note}`, style: 'muted', margin: [0, 2, 0, 0] as [number, number, number, number] },
+                    ],
+                    fillColor: rowFill,
+                  }
+                : { text: row.description, style: 'tableCell', fillColor: rowFill },
+              { text: row.term || '-', style: 'tableCell', alignment: 'right' as const, fillColor: rowFill },
+              { text: String(row.qty), style: 'tableCell', bold: true, alignment: 'right' as const, fillColor: rowFill },
+            ];
+          }),
         ],
       },
-      layout: 'lightHorizontalLines',
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5),
+        vLineWidth: () => 0,
+        hLineColor: () => REPORT_COLOURS.line,
+        paddingTop: () => 6,
+        paddingBottom: () => 6,
+      },
       margin: [0, 0, 0, 10],
     });
+
     if (reportBomRows.some((row) => row.note)) {
       content.push({
         text: 'Rows marked 💡 include a small surplus of pre-fitted optics because a full multipack works out cheaper and simpler to order than buying the exact number of loose singles.',
@@ -755,95 +1095,105 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     }
   }
 
-// Helper to aggregate physical items by name across all sites
-function aggregatePhysicalItems(items: PhysicalItem[]): PhysicalItem[] {
-  const map = new Map<string, PhysicalItem>();
-  for (const item of items) {
-    const existing = map.get(item.name);
-    if (!existing) {
-      map.set(item.name, { ...item, site: 'All Sites (Aggregated)' });
-    } else {
-      const newQty = existing.qty + item.qty;
-      const newRuNum = existing.ruNum + item.ruNum;
-      const newWeightNum = existing.weightNum + item.weightNum;
-      const newPowerNum = existing.powerNum + item.powerNum;
-      const newHeatNum = existing.heatNum + item.heatNum;
+  // ═══════════════════════════════════════════════════════════════
+  // §05 PHYSICAL RACK & DEPLOYMENT REPORT
+  // ═══════════════════════════════════════════════════════════════
+  function aggregatePhysicalItems(items: PhysicalItem[]): PhysicalItem[] {
+    const map = new Map<string, PhysicalItem>();
+    for (const item of items) {
+      const existing = map.get(item.name);
+      if (!existing) {
+        map.set(item.name, { ...item, site: 'All Sites (Aggregated)' });
+      } else {
+        const newQty = existing.qty + item.qty;
+        const newRuNum = existing.ruNum + item.ruNum;
+        const newWeightNum = existing.weightNum + item.weightNum;
+        const newPowerNum = existing.powerNum + item.powerNum;
+        const newHeatNum = existing.heatNum + item.heatNum;
 
-      map.set(item.name, {
-        ...existing,
-        qty: newQty,
-        ruNum: newRuNum,
-        ru: `${newRuNum.toFixed(1)} RU`,
-        weightNum: newWeightNum,
-        weight: `${newWeightNum.toFixed(1)} lbs (${(newWeightNum * 0.45359237).toFixed(1)} kg)`,
-        powerNum: newPowerNum,
-        power: `${newPowerNum} W`,
-        heatNum: newHeatNum,
-        heat: `${newHeatNum.toFixed(1)} BTU/hr`,
-      });
+        map.set(item.name, {
+          ...existing,
+          qty: newQty,
+          ruNum: newRuNum,
+          ru: `${newRuNum.toFixed(1)} RU`,
+          weightNum: newWeightNum,
+          weight: `${newWeightNum.toFixed(1)} lbs (${(newWeightNum * 0.45359237).toFixed(1)} kg)`,
+          powerNum: newPowerNum,
+          power: `${newPowerNum} W`,
+          heatNum: newHeatNum,
+          heat: `${newHeatNum.toFixed(1)} BTU/hr`,
+        });
+      }
     }
+    return Array.from(map.values());
   }
-  return Array.from(map.values());
-}
 
-// Helper to render physical spec table
-function renderPhysicalTable(items: PhysicalItem[]): Content {
-  const physicalTableHeader = [
-    { text: 'Hardware Node / Chassis', style: 'tableHeader' },
-    { text: 'Qty', style: 'tableHeader', alignment: 'center' as const },
-    { text: 'Rack Space', style: 'tableHeader', alignment: 'center' as const },
-    { text: 'Dimensions (H × W × D)', style: 'tableHeader' },
-    { text: 'Weight', style: 'tableHeader', alignment: 'right' as const },
-    { text: 'Max Power', style: 'tableHeader', alignment: 'right' as const },
-    { text: 'Heat Output', style: 'tableHeader', alignment: 'right' as const },
-    { text: 'Airflow', style: 'tableHeader', alignment: 'center' as const },
-  ];
+  function renderPhysicalTable(items: PhysicalItem[]): Content {
+    const physicalTableHeader = [
+      { text: 'HARDWARE / CHASSIS', style: 'tableHeader' },
+      { text: 'QTY', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'RACK SPACE', style: 'tableHeader', alignment: 'center' as const },
+      { text: 'DIMENSIONS (H × W × D)', style: 'tableHeader' },
+      { text: 'WEIGHT', style: 'tableHeader', alignment: 'right' as const },
+      { text: 'MAX POWER', style: 'tableHeader', alignment: 'right' as const },
+      { text: 'HEAT OUTPUT', style: 'tableHeader', alignment: 'right' as const },
+      { text: 'AIRFLOW', style: 'tableHeader', alignment: 'center' as const },
+    ];
 
-  return {
-    table: {
-      headerRows: 1,
-      widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
-      body: [
-        physicalTableHeader,
-        ...items.map((item) => {
-          const { inches, cm } = parseAndConvertDimensions(item.dimensions);
-          const lbs = `${item.weightNum.toFixed(1)} lbs`;
-          const kg = `${(item.weightNum * 0.45359237).toFixed(1)} kg`;
+    return {
+      table: {
+        headerRows: 1,
+        widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+        body: [
+          physicalTableHeader,
+          ...items.map((item, idx) => {
+            const { inches, cm } = parseAndConvertDimensions(item.dimensions);
+            const lbs = `${item.weightNum.toFixed(1)} lbs`;
+            const kg = `${(item.weightNum * 0.45359237).toFixed(1)} kg`;
+            const rowFill = idx % 2 === 1 ? REPORT_COLOURS.paper : '#FFFFFF';
 
-          return [
-            { text: item.name, style: 'tableCell', bold: true },
-            { text: String(item.qty), style: 'tableCell', alignment: 'center' as const },
-            { text: item.ru, style: 'tableCell', alignment: 'center' as const, color: REPORT_COLOURS.navy, bold: true },
-            {
-              stack: [
-                { text: cm, style: 'tableCell', fontSize: 8 },
-                { text: `(${inches})`, style: 'muted', fontSize: 7 },
-              ],
-            },
-            {
-              stack: [
-                { text: `${kg}`, style: 'tableCell', alignment: 'right' as const, fontSize: 8 },
-                { text: `(${lbs})`, style: 'muted', fontSize: 7, alignment: 'right' as const },
-              ],
-            },
-            { text: item.power, style: 'tableCell', alignment: 'right' as const },
-            { text: item.heat, style: 'tableCell', alignment: 'right' as const },
-            { text: item.airflow, style: 'tableCell', alignment: 'center' as const },
-          ];
-        }),
-      ],
-    },
-    layout: 'lightHorizontalLines',
-    margin: [0, 0, 0, 10],
-  };
-}
+            return [
+              { text: item.name, style: 'tableCell', bold: true, fillColor: rowFill },
+              { text: String(item.qty), style: 'tableCell', bold: true, alignment: 'center' as const, fillColor: rowFill },
+              { text: item.ru, style: 'tableCell', alignment: 'center' as const, color: REPORT_COLOURS.structural, bold: true, fillColor: rowFill },
+              {
+                stack: [
+                  { text: cm, style: 'tableCell', fontSize: 8 },
+                  { text: `(${inches})`, style: 'muted', fontSize: 7 },
+                ],
+                fillColor: rowFill,
+              },
+              {
+                stack: [
+                  { text: `${kg}`, style: 'tableCell', alignment: 'right' as const, fontSize: 8 },
+                  { text: `(${lbs})`, style: 'muted', fontSize: 7, alignment: 'right' as const },
+                ],
+                fillColor: rowFill,
+              },
+              { text: item.power, style: 'tableCell', alignment: 'right' as const, fillColor: rowFill },
+              { text: item.heat, style: 'tableCell', alignment: 'right' as const, fillColor: rowFill },
+              { text: item.airflow, style: 'tableCell', alignment: 'center' as const, fillColor: rowFill },
+            ];
+          }),
+        ],
+      },
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5),
+        vLineWidth: () => 0,
+        hLineColor: () => REPORT_COLOURS.line,
+        paddingTop: () => 5,
+        paddingBottom: () => 5,
+      },
+      margin: [0, 0, 0, 10],
+    };
+  }
 
-  // ── Physical appendix ──
   if (physicalItems.length > 0) {
-    content.push({ text: 'Appendix B: Physical Rack & Deployment Report', style: 'sectionHeading', pageBreak: 'before' });
+    content.push({ text: '§05 · DATACENTRE DEPLOYMENT', style: 'sectionKicker', pageBreak: 'before' });
+    content.push({ text: 'Appendix B: Physical Rack & Deployment Report', style: 'sectionHeading' });
     content.push({
       text: 'Detailed physical and environmental specifications for the hardware deployment, including rack space (RU), physical dimensions (metric and imperial), estimated equipment weights, maximum electrical power draws, heat dissipation, and airflow requirements.',
-      style: 'body',
+      style: 'bodySecondary',
       margin: [0, 0, 0, 12],
     });
 
@@ -852,18 +1202,46 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
     const totalPower = physicalItems.reduce((a, i) => a + i.powerNum, 0);
     const totalHeat = physicalItems.reduce((a, i) => a + i.heatNum, 0);
 
+    // Stat tiles for physical metrics
     content.push({
-      columns: [
-        statBlock('Total Space Required', `${totalRU.toFixed(1)} RU`),
-        statBlock('Total Est. Weight', `${(totalWeight * 0.45359237).toFixed(1)} kg`),
-        statBlock('Total Max Power', `${totalPower.toFixed(0)} W`),
-        statBlock('Total Heat Output', `${totalHeat.toFixed(0)} BTU/hr`),
-      ],
-      columnGap: 12,
+      table: {
+        widths: ['25%', '25%', '25%', '25%'],
+        body: [
+          [
+            buildStatTile({
+              label: 'Total Space Required',
+              value: `${totalRU.toFixed(1)} RU`,
+            }),
+            buildStatTile({
+              label: 'Total Est. Weight',
+              value: `${(totalWeight * 0.45359237).toFixed(1)} kg`,
+            }),
+            buildStatTile({
+              label: 'Total Max Power',
+              value: `${totalPower.toFixed(0)} W`,
+            }),
+            buildStatTile({
+              label: 'Total Heat Output',
+              value: `${totalHeat.toFixed(0)} BTU/hr`,
+            }),
+          ],
+        ],
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => REPORT_COLOURS.line,
+        vLineColor: () => REPORT_COLOURS.line,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
       margin: [0, 0, 0, 15],
+      unbreakable: true,
     });
 
-    // Site groups (for side-by-side site breakdown)
+    // Site groups
     const siteGroups: Record<string, PhysicalItem[]> = {};
     physicalItems.forEach((item) => {
       const siteKey = item.site || 'Global / Unassigned';
@@ -873,7 +1251,6 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
 
     const siteKeys = Object.keys(siteGroups);
 
-    // If multiple sites are configured, show the per-site breakdown first
     if (siteKeys.length > 1) {
       content.push({ text: 'Site-by-Site Deployment Breakdown', style: 'subHeading', margin: [0, 5, 0, 8] });
       siteKeys.forEach((siteKey) => {
@@ -886,7 +1263,7 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
           text: `Site: ${siteKey}  ·  ${siteRU.toFixed(1)} RU · ${sitePower.toFixed(0)} W · ${siteHeat.toFixed(0)} BTU/hr`,
           style: 'body',
           bold: true,
-          color: REPORT_COLOURS.navy,
+          color: REPORT_COLOURS.structural,
           margin: [0, 6, 0, 4],
         });
         content.push(renderPhysicalTable(siteItems));
@@ -895,7 +1272,7 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
         if (rackImage) {
           content.push({
             image: rackImage,
-            width: 150,
+            width: 220,
             alignment: 'center',
             margin: [0, 4, 0, 12],
           });
@@ -914,7 +1291,7 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
       if (rackImage) {
         content.push({
           image: rackImage,
-          width: 160,
+          width: 220,
           alignment: 'center',
           margin: [0, 6, 0, 12],
         });
@@ -934,6 +1311,43 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
     pageMargins: REPORT_PAGE_MARGINS,
     defaultStyle: { font: 'Roboto' },
     styles: reportStyleDictionary,
+    background: (currentPage) => {
+      if (currentPage === 1) {
+        return { svg: generateCoverSvg(), width: 595.28, height: 841.89 };
+      }
+      return {
+        canvas: [
+          {
+            type: 'rect',
+            x: 0,
+            y: 0,
+            w: 595.28,
+            h: 841.89,
+            color: REPORT_COLOURS.paper,
+          },
+        ],
+      };
+    },
+    header: (currentPage) => {
+      if (currentPage <= 2) return null; // No header on Cover or TOC
+      return {
+        columns: [
+          { text: 'GIGAMON VISIBILITY FABRIC SPECIFICATION', fontSize: 7.5, bold: true, color: REPORT_COLOURS.inkMuted, characterSpacing: 0.8 },
+          { text: projectName, alignment: 'right', fontSize: 7.5, color: REPORT_COLOURS.inkMuted },
+        ],
+        margin: [40, 18, 40, 0],
+      };
+    },
+    footer: (currentPage, pageCount) => {
+      if (currentPage === 1) return null; // No footer on Cover
+      return {
+        columns: [
+          { text: 'CONFIDENTIAL & PROPRIETARY  ·  GIGAMON SOLUTION ARCHITECTURE', fontSize: 7.5, color: REPORT_COLOURS.inkMuted },
+          { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', fontSize: 8, bold: true, color: REPORT_COLOURS.structural },
+        ],
+        margin: [40, 0, 40, 18],
+      };
+    },
     info: { title: `${projectName} — Gigamon Visibility Solution Report` },
     content,
   };

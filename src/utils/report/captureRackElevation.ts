@@ -1,17 +1,22 @@
 /**
  * captureRackElevation.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * Rasterises a 42U Rack Elevation View diagram for a specified physical site into
- * a high-resolution PNG data URL for embedding in the PDF solution report (Appendix B).
+ * Rasterises a compact, legible Rack Elevation diagram for a specified site
+ * into a high-resolution PNG data URL for embedding in the PDF solution report.
  *
- * Uses an offscreen <canvas> to render the permanent outer RU numbers (42..1),
- * cabinet rail enclosures, racked modular chassis, and G-TAP trays with nested
- * module stencils.
+ * Implements the "Signal Path" specification:
+ * • Collapses excessive empty RUs with a clean indicator ("34U available capacity ↑")
+ * • Scales populated block so device labels and module bays are crisp & legible
+ * • Role-based colour coding:
+ *   - GigaSMART hero units (HC3/HC1/HC2) in Gigamon Accent Orange (#E1592A)
+ *   - Aggregation nodes (TA series) in Structural Navy (#16213D)
+ *   - Passive TAP trays (M100T/M200T) with outlined/unfilled subtle frames
  */
 
 import type { CustomNode, HardwareNodeData } from '../../store/types';
 import { getDeviceRU, getTrayBayCount, getTrayLayout, isRackableGigamonEquipment, getChassisImagePath } from '../hardwareUtils';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
+import { REPORT_COLOURS } from './reportStyles';
 
 const loadImage = (src: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
@@ -47,10 +52,52 @@ export async function captureRackElevationPng(
     (n) => n.data?.rackId === rackId && typeof n.data?.rackU === 'number',
   );
 
-  // If no racked hardware for this site, still render a clean empty 42U rack
+  // Determine occupied RU boundaries
+  let minU: number;
+  let maxU: number;
+  let hasCollapsedTop = false;
+  let emptyCountTop = 0;
+
+  if (rackedNodes.length > 0) {
+    let highestOccupiedU = 1;
+    let lowestOccupiedU = 42;
+
+    rackedNodes.forEach((n) => {
+      const startU = Number(n.data?.rackU);
+      const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
+      const topU = ru >= 1 ? startU + ru - 1 : startU;
+      if (topU > highestOccupiedU) highestOccupiedU = topU;
+      if (startU < lowestOccupiedU) lowestOccupiedU = startU;
+    });
+
+    // If populated units fit in a fraction of 42U, draw compact view
+    if (highestOccupiedU <= 16) {
+      minU = 1;
+      maxU = Math.min(highestOccupiedU + 2, 16);
+      emptyCountTop = 42 - maxU;
+      hasCollapsedTop = emptyCountTop > 0;
+    } else {
+      minU = 1;
+      maxU = 42;
+    }
+  } else {
+    // Empty rack view
+    minU = 1;
+    maxU = 12;
+    emptyCountTop = 30;
+    hasCollapsedTop = true;
+  }
+
+  const renderedUnits = maxU - minU + 1;
+  const unitHeight = 32; // Larger unit height for high legibility
+  const collapsedHeaderHeight = hasCollapsedTop ? 28 : 0;
+  const headerHeight = 36;
+  const rackTop = headerHeight + collapsedHeaderHeight + 8;
+  const rackHeight = renderedUnits * unitHeight;
+  const width = 420;
+  const height = rackTop + rackHeight + 16;
+
   const canvas = document.createElement('canvas');
-  const width = 340;
-  const height = 1060;
   canvas.width = width;
   canvas.height = height;
 
@@ -58,35 +105,45 @@ export async function captureRackElevationPng(
   if (!ctx) return undefined;
 
   // Background
-  ctx.fillStyle = '#181818';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
-  // Header banner
-  ctx.fillStyle = '#0e2238';
-  ctx.fillRect(0, 0, width, 32);
-  ctx.strokeStyle = '#0056b3';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(0, 0, width, 32);
+  // Header Banner
+  ctx.fillStyle = REPORT_COLOURS.structural;
+  ctx.fillRect(0, 0, width, headerHeight);
 
-  ctx.font = 'bold 12px sans-serif';
-  ctx.fillStyle = '#00e5ff';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillStyle = REPORT_COLOURS.structuralInk;
   ctx.textAlign = 'left';
-  ctx.fillText(`42U RACK ELEVATION — ${siteName.toUpperCase()}`, 12, 20);
+  ctx.fillText(`RACK ELEVATION — ${siteName.toUpperCase()}`, 14, 22);
 
   // Layout metrics
-  const railLeft = 8;
-  const railWidth = 28;
-  const rackLeft = 38;
-  const rackWidth = 290;
-  const rackTop = 40;
-  const unitHeight = 24;
-  const totalUnits = 42;
-  const rackHeight = totalUnits * unitHeight; // 1008px
+  const railLeft = 10;
+  const railWidth = 32;
+  const rackLeft = 46;
+  const rackWidth = width - rackLeft - 14;
+
+  // Collapsed space indicator banner
+  if (hasCollapsedTop) {
+    const colY = headerHeight + 6;
+    ctx.fillStyle = REPORT_COLOURS.paper;
+    ctx.fillRect(rackLeft, colY, rackWidth, 22);
+    ctx.strokeStyle = REPORT_COLOURS.lineStrong;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(rackLeft, colY, rackWidth, 22);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = REPORT_COLOURS.inkSecondary;
+    ctx.font = 'italic 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`↑  ${emptyCountTop}U Unpopulated Capacity Available (U${maxU + 1} – U42)  ↑`, rackLeft + rackWidth / 2, colY + 15);
+  }
 
   // Cabinet Frame
-  ctx.fillStyle = '#1e1e1e';
+  ctx.fillStyle = '#FAFAF8';
   ctx.fillRect(rackLeft, rackTop, rackWidth, rackHeight);
-  ctx.strokeStyle = '#444444';
+  ctx.strokeStyle = REPORT_COLOURS.structural;
   ctx.lineWidth = 2;
   ctx.strokeRect(rackLeft, rackTop, rackWidth, rackHeight);
 
@@ -103,7 +160,7 @@ export async function captureRackElevationPng(
           const img = await loadImage(iconPath);
           imageMap.set(iconPath, img);
         } catch {
-          // Fallback to vector box if image fails to load
+          // Ignore
         }
       }
     }),
@@ -128,18 +185,18 @@ export async function captureRackElevationPng(
     }),
   );
 
-  // Draw Left RU Rail & Slot Backgrounds
-  for (let u = totalUnits; u >= 1; u--) {
-    const y = rackTop + (totalUnits - u) * unitHeight;
+  // Draw RU Rail & Grid Lines
+  for (let u = maxU; u >= minU; u--) {
+    const y = rackTop + (maxU - u) * unitHeight;
 
     // Draw RU Number on rail
-    ctx.fillStyle = u % 5 === 0 ? '#00e5ff' : '#888888';
-    ctx.font = u % 5 === 0 ? 'bold 10px monospace' : '9px monospace';
+    ctx.fillStyle = u % 5 === 0 ? REPORT_COLOURS.accent : REPORT_COLOURS.inkSecondary;
+    ctx.font = u % 5 === 0 ? 'bold 11px monospace' : '10px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(String(u), railLeft + railWidth - 4, y + 15);
+    ctx.fillText(String(u), railLeft + railWidth - 4, y + 20);
 
     // Slot row separator
-    ctx.strokeStyle = '#2d2d2d';
+    ctx.strokeStyle = REPORT_COLOURS.line;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(rackLeft, y + unitHeight);
@@ -148,7 +205,7 @@ export async function captureRackElevationPng(
   }
 
   // Draw Racked Hardware Nodes
-  for (let u = totalUnits; u >= 1; u--) {
+  for (let u = maxU; u >= minU; u--) {
     const occupyingNode = rackedNodes.find((n) => {
       const startU = Number(n.data?.rackU);
       const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
@@ -171,27 +228,26 @@ export async function captureRackElevationPng(
     const sku = data.sku as string | undefined;
     const ru = getDeviceRU(model, sku);
     const boxHeight = ru * unitHeight;
-    const boxY = rackTop + (totalUnits - u) * unitHeight;
+    const boxY = rackTop + (maxU - u) * unitHeight;
 
     const bays = getTrayBayCount(model, sku);
     const trayLayout = getTrayLayout(model, sku);
 
-    // Node frame background
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
+    // Identify role
+    const isGigaSmartHero = model.includes('HC3') || model.includes('HC1') || model.includes('HC2') || model.includes('HCT');
+    const isTray = bays > 0 || model.includes('M100') || model.includes('M200') || model.includes('TAP');
 
-    ctx.strokeStyle = '#0284c7';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
-
-    if (bays > 0) {
-      // ── Modular TAP Tray (e.g. TAP-M200T 1RU or TAP-M100T 0.5RU) ──
+    if (isTray) {
+      // ── Modular TAP Tray (Outlined/unfilled passive style) ──
       const nested = siteHardware.filter((n) => n.data?.trayId === occupyingNode.id);
       const rowHeight = boxHeight / trayLayout.rows;
       const colWidth = (rackWidth - 10) / trayLayout.cols;
 
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(rackLeft + 2, boxY + 2, rackWidth - 4, boxHeight - 4);
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
 
       for (let r = 0; r < trayLayout.rows; r++) {
         for (let c = 0; c < trayLayout.cols; c++) {
@@ -200,9 +256,9 @@ export async function captureRackElevationPng(
           const bayX = rackLeft + 5 + c * colWidth;
           const bayY = boxY + 2 + r * rowHeight;
 
-          ctx.fillStyle = mod ? '#7c2d12' : '#0f172a';
+          ctx.fillStyle = mod ? '#F1F5F9' : '#FFFFFF';
           ctx.fillRect(bayX, bayY, colWidth - 2, rowHeight - 2);
-          ctx.strokeStyle = mod ? '#ea580c' : '#334155';
+          ctx.strokeStyle = mod ? '#64748B' : '#E2E8F0';
           ctx.lineWidth = 1;
           ctx.strokeRect(bayX, bayY, colWidth - 2, rowHeight - 2);
 
@@ -213,42 +269,50 @@ export async function captureRackElevationPng(
             if (img) {
               ctx.drawImage(img, bayX + 1, bayY + 1, colWidth - 4, rowHeight - 4);
             }
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 7px sans-serif';
+            ctx.fillStyle = REPORT_COLOURS.structural;
+            ctx.font = 'bold 8px sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(`B${slotNum}: ${modModel}`, bayX + 3, bayY + rowHeight - 4);
+            ctx.fillText(`B${slotNum}: ${modModel}`, bayX + 3, bayY + rowHeight - 5);
           } else {
-            ctx.fillStyle = '#64748b';
-            ctx.font = '7px sans-serif';
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = '8px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`Bay ${slotNum}`, bayX + (colWidth - 2) / 2, bayY + rowHeight / 2 + 2);
+            ctx.fillText(`Bay ${slotNum}`, bayX + (colWidth - 2) / 2, bayY + rowHeight / 2 + 3);
           }
         }
       }
     } else {
-      // ── Active Chassis (e.g. HC3, HC2, TA25E, TA100, TA200, HC1) ──
+      // ── Powered Chassis (Hero GigaSMART Orange vs Aggregation Structural Navy) ──
       const rawPath = data.image || getChassisImagePath(model, sku);
       const iconPath = resolveHardwareIcon(rawPath);
       const img = iconPath ? imageMap.get(iconPath) : undefined;
+
+      const borderColor = isGigaSmartHero ? REPORT_COLOURS.accent : REPORT_COLOURS.structural;
+      const badgeBg = isGigaSmartHero ? REPORT_COLOURS.accent : REPORT_COLOURS.structural;
+
+      ctx.fillStyle = isGigaSmartHero ? '#FFF7ED' : '#F1F5F9';
+      ctx.fillRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
 
       if (img) {
         ctx.drawImage(img, rackLeft + 2, boxY + 2, rackWidth - 4, boxHeight - 4);
       }
 
-      // Semi-transparent label badge on the left
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-      ctx.fillRect(rackLeft + 4, boxY + 4, 150, 16);
-      ctx.strokeStyle = '#0284c7';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(rackLeft + 4, boxY + 4, 150, 16);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rackLeft + 1, boxY + 1, rackWidth - 2, boxHeight - 2);
 
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 9px sans-serif';
+      // Label badge
+      ctx.fillStyle = badgeBg;
+      ctx.fillRect(rackLeft + 4, boxY + 4, 180, 20);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 9.5px sans-serif';
       ctx.textAlign = 'left';
       const labelText = `${data.label || model} (${ru}U)`;
-      ctx.fillText(labelText.length > 24 ? labelText.slice(0, 22) + '…' : labelText, rackLeft + 8, boxY + 15);
+      ctx.fillText(labelText.length > 28 ? labelText.slice(0, 26) + '…' : labelText, rackLeft + 8, boxY + 17);
     }
   }
 
   return canvas.toDataURL('image/png');
 }
+
