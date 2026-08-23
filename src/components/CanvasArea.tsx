@@ -225,8 +225,16 @@ const CanvasArea: React.FC = () => {
         const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || '');
         const installedModules = Object.values((targetNode.data?.installedBoards as Record<string, string>) || {});
         if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) { alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`); return; }
-        const apps = targetNode.data.gigaSmartApps || [], incompatibleApp = apps.find((a: GigaSmartNodeData) => !areActionsCompatible(actionType, a.actionType).compatible);
-        if (incompatibleApp) { alert(`🚫 COMBINATION REFUSED: ${areActionsCompatible(actionType, incompatibleApp.actionType).reason}`); return; }
+        const apps = targetNode.data.gigaSmartApps || [];
+        const incompatibleApp = apps.find(
+          (a: GigaSmartNodeData) =>
+            !areActionsCompatible(actionType, a.actionType, undefined, chassisModel, installedModules).compatible,
+        );
+        if (incompatibleApp) {
+          const comp = areActionsCompatible(actionType, incompatibleApp.actionType, undefined, chassisModel, installedModules);
+          alert(`🚫 COMBINATION REFUSED: ${comp.reason}`);
+          return;
+        }
         updateNodeData(targetNode.id, { gigaSmartApps: [...apps, { id: `gs-${Date.now()}`, label, actionType, dedupRate: 20, metadataFormat: 'CEF' }] });
       } else alert(advancedMode && !nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC')) ? "GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first." : "In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
       return;

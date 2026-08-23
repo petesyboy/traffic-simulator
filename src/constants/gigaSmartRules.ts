@@ -377,8 +377,43 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
 /**
  * Returns the number of physical GigaSMART engines available on a chassis.
  */
-export function getGigaSmartEngineCount(chassisModel: string, modules: string[]): number {
-  return getAvailableEngines(chassisModel, modules).length;
+export function getGigaSmartEngineCount(chassisModel: string, modules: string[] = []): number {
+  const modelLower = chassisModel.toLowerCase();
+  
+  if (modelLower.includes('hc3')) {
+    const smtBlades = modules.filter(m => {
+      const u = String(m).toUpperCase();
+      return u.includes('SMT-HC3') || u.includes('SMT-') || u.includes('C08') || u.includes('C05');
+    }).length;
+    return Math.max(smtBlades, 1);
+  }
+
+  if (modelLower.includes('hc1') && !modelLower.includes('plus')) {
+    const count = 1; // 1 onboard Gen2 engine
+    const extra = modules.filter(m => String(m).toUpperCase().includes('SMT-HC1-S')).length;
+    return count + extra;
+  }
+
+  if (modelLower.includes('hc1-plus') || modelLower.includes('hc1 plus')) {
+    const count = 1; // 1 built-in rear Gen3 engine (SMT-HC1A-R)
+    const extra = modules.filter(m => String(m).toUpperCase().includes('SMT-HC1-S')).length;
+    return count + extra;
+  }
+
+  if (modelLower.includes('hc2')) {
+    const smtBlades = modules.filter(m => {
+      const u = String(m).toUpperCase();
+      return u.includes('SMT-HC0') || u.includes('SMT-') || u.includes('R25') || u.includes('X16');
+    }).length;
+    return Math.max(smtBlades, 1);
+  }
+
+  if (modelLower.includes('hct')) {
+    const smtBlades = modules.filter(m => String(m).toUpperCase().includes('SMT-HC1-S')).length;
+    return Math.max(smtBlades, 1);
+  }
+
+  return 1;
 }
 
 /**
@@ -412,12 +447,12 @@ export function getGigaSmartEnginePrompt(
 
 /**
  * Validates if two GigaSMART action types can be combined together.
- * If engineCount >= 2, multi-engine distribution permits the combination.
+ * If 2 or more physical engines are installed on the chassis, multi-engine distribution permits the combination.
  */
 export function areActionsCompatible(
   actionA: string,
   actionB: string,
-  engineCount = 1,
+  engineCount?: number,
   chassisModel = '',
   installedModules: string[] = [],
 ): { compatible: boolean; reason?: string; multiEngine?: boolean } {
@@ -425,9 +460,17 @@ export function areActionsCompatible(
     return { compatible: true };
   }
 
+  // Derive engine count if not explicitly supplied
+  const effectiveEngineCount =
+    engineCount !== undefined
+      ? engineCount
+      : chassisModel
+      ? getGigaSmartEngineCount(chassisModel, installedModules)
+      : 1;
+
   // If the chassis has multiple physical GigaSMART engines installed,
   // operations that cannot share a single GSOP can be distributed across engines!
-  if (engineCount >= 2) {
+  if (effectiveEngineCount >= 2) {
     return { compatible: true, multiEngine: true };
   }
 

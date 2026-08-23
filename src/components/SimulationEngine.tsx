@@ -133,7 +133,13 @@ const SimulationEngine: React.FC = () => {
               if (!hasGigaSmartError && updatedApps.length >= 2) {
                 for (let i = 0; i < updatedApps.length; i++) {
                   for (let j = i + 1; j < updatedApps.length; j++) {
-                    const comp = areActionsCompatible(updatedApps[i].actionType || '', updatedApps[j].actionType || '');
+                    const comp = areActionsCompatible(
+                      updatedApps[i].actionType || '',
+                      updatedApps[j].actionType || '',
+                      undefined,
+                      chassisModel,
+                      installedModules,
+                    );
                     if (!comp.compatible) {
                       hasGigaSmartError = true;
                       gigaSmartErrorMsg = comp.reason || 'Incompatible GigaSMART operations';

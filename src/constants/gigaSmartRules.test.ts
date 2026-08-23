@@ -34,6 +34,17 @@ describe('areActionsCompatible', () => {
     );
     expect(result.compatible).toBe(true);
     expect(result.multiEngine).toBe(true);
+
+    // Exact user scenario: De-Dup and GTP Flow Sampling on HC3 with 2x SMT-HC3-C0800 cards
+    const resultUserCase = areActionsCompatible(
+      'Deduplication',
+      'GTP Flow Sampling',
+      undefined,
+      'GigaVUE-HC3',
+      ['SMT-HC3-C0800', 'SMT-HC3-C0800'],
+    );
+    expect(resultUserCase.compatible).toBe(true);
+    expect(resultUserCase.multiEngine).toBe(true);
   });
 
   it('correctly validates supported combinations within a single GSOP according to the official matrix', () => {

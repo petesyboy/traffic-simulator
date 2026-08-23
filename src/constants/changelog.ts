@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.580",
+    date: "2026-08-23",
+    summary: "Fixed GigaSMART module drag-and-drop validation on the canvas to evaluate multi-engine capacity and allow uncombinable single-GSOP operations across multiple installed SMT cards on GigaVUE-HC3/HC1.",
+  },
+  {
     version: "1.0.579",
     date: "2026-08-23",
     summary: "Aligned GigaSMART single-operation (GSOP) combinations 1:1 with Gigamon's official matrix, added multi-engine support allowing uncombinable operations when 2+ GigaSMART engines are installed, and added actionable prompts guiding users to add SMT-HC3-C08/C05 or SMT-HC1-S engines when single-operation constraints are exceeded.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.561",
     date: "2026-08-23",
     summary: "Added interactive zoom controls (step in/out, presets from 75% to 200%, Ctrl+Scroll wheel zoom) and one-click per-chassis front-panel modal inspection in the 42U Rack Elevation View.",
-  },
-  {
-    version: "1.0.560",
-    date: "2026-08-23",
-    summary: "Extended physical front-panel photographic visualization and real-time cage-level optic occupancy overlays to GigaVUE-HCT, TA-series chassis (TA25E, TA200, TA200E, TA400, TA400E), and PRT-HC1-G12 across canvas nodes, summary modals, rack elevation view, and solution reports.",
   },
 ];
