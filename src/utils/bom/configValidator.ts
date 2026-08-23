@@ -1,7 +1,7 @@
 import { type Edge } from '@xyflow/react';
 import { type CustomNode, type HardwareNodeData } from '../../store/types';
 import { NODE_TYPES } from '../../constants/nodeTypes';
-import { areActionsCompatible } from '../../constants/gigaSmartRules';
+import { areActionsCompatible, getAvailableEngines } from '../../constants/gigaSmartRules';
 import { resolveOpticSku } from './skuUtils';
 import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { getBoardPortCapacity, getChassisBasePortCapacity, getOpticFiberType, isBreakoutPanelModel } from '../hardwareUtils';
@@ -243,16 +243,26 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
     }
 
     const apps = (chassis.data?.gigaSmartApps as { actionType: string }[]) || [];
+    const installedBoardList = Object.values(installedBoards);
+    const engines = getAvailableEngines(model, installedBoardList);
+    const engineCount = engines.length;
+
     if (apps.length >= 2) {
       for (let i = 0; i < apps.length; i++) {
         for (let j = i + 1; j < apps.length; j++) {
-          const comp = areActionsCompatible(apps[i].actionType, apps[j].actionType);
+          const comp = areActionsCompatible(
+            apps[i].actionType,
+            apps[j].actionType,
+            engineCount,
+            model,
+            installedBoardList,
+          );
           if (!comp.compatible) {
             errors.push({
               type: 'gigasmart_combination_unsupported',
               nodeId: chassis.id,
               nodeLabel: String(chassis.data?.model || 'Chassis'),
-              message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") GigaSMART configuration error: ${comp.reason || ''}`,
+              message: `Chassis "${chassis.data?.model || 'Chassis'}" (labelled: "${chassis.data?.label || ''}"): ${comp.reason || ''}`,
             });
           }
         }

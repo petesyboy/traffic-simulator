@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CustomNode } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, GigaSmartNodeData } from '../../../store/types';
+import { areActionsCompatible, getAvailableEngines } from '../../../constants/gigaSmartRules';
 
 interface GigaSmartAppsPanelProps {
   selectedNode: CustomNode;
@@ -42,11 +43,38 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
     updateNodeData(selectedNode.id, { gigaSmartApps: newApps });
   };
 
+  const model = String(hwData.model || '').trim();
+  const installedBoards = Object.values(hwData.installedBoards || {});
+  const engines = getAvailableEngines(model, installedBoards);
+  const engineCount = engines.length;
+
+  let incompatibilityPrompt: string | null = null;
+  if (gigaSmartApps.length >= 2 && engineCount < 2) {
+    for (let i = 0; i < gigaSmartApps.length; i++) {
+      for (let j = i + 1; j < gigaSmartApps.length; j++) {
+        const actionA = (gigaSmartApps[i] as Record<string, unknown>).actionType as string || '';
+        const actionB = (gigaSmartApps[j] as Record<string, unknown>).actionType as string || '';
+        const comp = areActionsCompatible(actionA, actionB, engineCount, model, installedBoards);
+        if (!comp.compatible) {
+          incompatibilityPrompt = comp.reason || null;
+          break;
+        }
+      }
+      if (incompatibilityPrompt) break;
+    }
+  }
+
   return (
     <div className="panel-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <h3 className="text-base font-semibold m-0">🧠 GigaSMART Pipeline</h3>
       </div>
+
+      {incompatibilityPrompt && (
+        <div style={{ marginBottom: '12px', padding: '8px 10px', background: 'rgba(255, 171, 0, 0.1)', border: '1px solid rgba(255, 171, 0, 0.35)', borderRadius: '4px', color: '#ffb300', fontSize: '11px', lineHeight: '1.4' }}>
+          ⚠️ <strong>Single-Operation Combination:</strong> {incompatibilityPrompt}
+        </div>
+      )}
 
       {/* App Cards */}
       {gigaSmartApps.map((app, idx) => {

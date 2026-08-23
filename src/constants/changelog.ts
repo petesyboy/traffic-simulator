@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.579",
+    date: "2026-08-23",
+    summary: "Aligned GigaSMART single-operation (GSOP) combinations 1:1 with Gigamon's official matrix, added multi-engine support allowing uncombinable operations when 2+ GigaSMART engines are installed, and added actionable prompts guiding users to add SMT-HC3-C08/C05 or SMT-HC1-S engines when single-operation constraints are exceeded.",
+  },
+  {
     version: "1.0.578",
     date: "2026-08-23",
     summary: "Fixed GigaSMART function counting in summary statistics across hosted apps and GTP correlation, and resolved tool site assignment dynamically from connected hardware to eliminate confusing 'Global' placeholders.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.560",
     date: "2026-08-23",
     summary: "Extended physical front-panel photographic visualization and real-time cage-level optic occupancy overlays to GigaVUE-HCT, TA-series chassis (TA25E, TA200, TA200E, TA400, TA400E), and PRT-HC1-G12 across canvas nodes, summary modals, rack elevation view, and solution reports.",
-  },
-  {
-    version: "1.0.559",
-    date: "2026-08-21",
-    summary: "Updated primary and SE advanced documentation (README.md and README_advanced.md) with comprehensive guides covering recent features including one-click link problem resolution, multi-site architecture, breakout panel tray modelling, optic multipack optimisations, physical deployment specifications in PDF reports, and Tidy Layout auto-arrangement.",
   },
 ];

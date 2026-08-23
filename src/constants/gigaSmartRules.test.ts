@@ -2,22 +2,45 @@ import { describe, it, expect } from 'vitest';
 import { areActionsCompatible } from './gigaSmartRules';
 
 describe('areActionsCompatible', () => {
-  // Regression: per Gigamon's KB, GTPMAX and FlowVUE are separate feature
-  // entitlements that can both be licensed on the same Gen3 GigaSMART card -
-  // GTP flow sampling (0-100%) and GTP whitelisting specifically require
-  // both to be enabled together. The matrix used to refuse this combination
-  // outright.
-  it.each([
-    'GTP Flow Filtering',
-    'GTP Whitelisting',
-    'GTP Flow Sampling',
-  ])('allows IP FlowVUE to combine with %s', (gtpAction) => {
-    expect(areActionsCompatible('IP FlowVUE', gtpAction)).toEqual({ compatible: true });
-    expect(areActionsCompatible(gtpAction, 'IP FlowVUE')).toEqual({ compatible: true });
+  it('refuses single-engine incompatible combinations with an actionable prompt to add a GigaSMART engine', () => {
+    const resultHC3 = areActionsCompatible(
+      'Application Metadata Intelligence',
+      'Masking',
+      1,
+      'GigaVUE-HC3',
+      [],
+    );
+    expect(resultHC3.compatible).toBe(false);
+    expect(resultHC3.reason).toContain('SMT-HC3-C08 or SMT-HC3-C05');
+
+    const resultHC1 = areActionsCompatible(
+      'GTP Flow Filtering',
+      'Header Stripping',
+      1,
+      'GigaVUE-HC1',
+      [],
+    );
+    expect(resultHC1.compatible).toBe(false);
+    expect(resultHC1.reason).toContain('SMT-HC1-S');
   });
 
-  it('still refuses genuinely incompatible combinations (e.g. AMI with Masking)', () => {
-    const result = areActionsCompatible('Application Metadata Intelligence', 'Masking');
-    expect(result.compatible).toBe(false);
+  it('allows previously incompatible operations to run when 2 or more GigaSMART engines are installed', () => {
+    const result = areActionsCompatible(
+      'GTP Flow Filtering',
+      'Header Stripping',
+      2,
+      'GigaVUE-HC3',
+      ['SMT-HC3-C08', 'SMT-HC3-C05'],
+    );
+    expect(result.compatible).toBe(true);
+    expect(result.multiEngine).toBe(true);
+  });
+
+  it('correctly validates supported combinations within a single GSOP according to the official matrix', () => {
+    expect(areActionsCompatible('Masking', 'De-Dup').compatible).toBe(true);
+    expect(areActionsCompatible('De-Dup', 'Packet Slicing').compatible).toBe(true);
+    expect(areActionsCompatible('Load Balancing (Stateful)', 'GTP Flow Filtering').compatible).toBe(true);
+    expect(areActionsCompatible('IP FlowVUE', 'Advanced Flow Slicing').compatible).toBe(true);
   });
 });
+

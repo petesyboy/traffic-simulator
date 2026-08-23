@@ -270,7 +270,7 @@ export function getCanonicalGsopName(actionType: string): string | null {
   }
 }
 
-// Maps each canonical GSOP name to a list of other canonical names it is compatible with
+// Maps each canonical GSOP name to a list of other canonical names it is compatible with in a single GSOP
 export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   'Masking': [
     'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 'A SF', 'AFI (ASF)', 
@@ -295,19 +295,18 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
     'Tunnel Encap', 'Tunnel Decap'
   ],
   'APF': [
-    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'A SF', 
-    'FlowVUE', 'Strip Headers', 'Add Headers', 'Slicing', 'Advanced Flow Slicing', 
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'FlowVUE', 
+    'Strip Headers', 'Add Headers', 'Slicing', 'Advanced Flow Slicing', 
     'Tunnel Encap'
   ],
   'A SF': [
-    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'AMI', 'FlowVUE', 'Strip Headers', 'Add Headers', 'NetFlow 2nd level', 
-    'Slicing', 'Advanced Flow Slicing', 'Tunnel Encap'
+    'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'FlowVUE', 
+    'Strip Headers', 'Add Headers', 'NetFlow 2nd level', 'Slicing', 
+    'Advanced Flow Slicing', 'Tunnel Encap'
   ],
   'AFI (ASF)': [
-    'Masking', 'De-Dup', 'Load Balance', 'AMI', 'FlowVUE', 'Strip Headers', 
-    'Add Headers', 'NetFlow 2nd level', 'Slicing', 'Advanced Flow Slicing', 
-    'Tunnel Encap'
+    'Masking', 'De-Dup', 'Load Balance', 'AMI', 'NetFlow 2nd level', 
+    'Slicing', 'Advanced Flow Slicing'
   ],
   'AMI': [
     'De-Dup', 'A SF', 'AFI (ASF)'
@@ -315,28 +314,25 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   'FlowVUE': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF',
     'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing',
-    // Per Gigamon KB: GTPMAX and FlowVUE are separate feature entitlements
-    // that can both be licensed on the same Gen3 GigaSMART card - GTP flow
-    // sampling (0-100%) and GTP whitelisting specifically require both.
-    'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling'
+    'Advanced Flow Slicing'
   ],
   'GTP Flow Filter': [
-    'Load Balance', 'GTP Whitelist', 'Slicing', 'FlowVUE'
+    'Load Balance', 'GTP Whitelist', 'Slicing'
   ],
   'GTP Whitelist': [
-    'Load Balance', 'GTP Flow Filter', 'Slicing', 'FlowVUE'
+    'Load Balance', 'GTP Flow Filter', 'Slicing'
   ],
   'GTP Flow Sampling': [
-    'Load Balance', 'Slicing', 'FlowVUE'
+    'Load Balance', 'Slicing'
   ],
   'Strip Headers': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'A SF', 'AFI (ASF)', 'FlowVUE', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'A SF', 'FlowVUE', 'Add Headers', 'Remove H/T', 'Slicing', 
     'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
   ],
   'Add Headers': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'A SF', 'AFI (ASF)', 'FlowVUE', 'Strip Headers', 'Remove H/T', 'Slicing', 
+    'A SF', 'FlowVUE', 'Strip Headers', 'Remove H/T', 'Slicing', 
     'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
   ],
   'Remove H/T': [
@@ -358,7 +354,7 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   ],
   'Advanced Flow Slicing': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'A SF', 'AFI (ASF)', 'Strip Headers', 'Add Headers', 'Remove H/T', 
+    'A SF', 'AFI (ASF)', 'FlowVUE', 'Strip Headers', 'Add Headers', 'Remove H/T', 
     'Slicing', 'Tunnel Encap', 'Tunnel Decap'
   ],
   'SSL Decrypt': [
@@ -368,8 +364,8 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   'ICAP': [],
   'Tunnel Encap': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
-    'A SF', 'AFI (ASF)', 'Strip Headers', 'Add Headers', 'Remove H/T', 
-    'Slicing', 'Advanced Flow Slicing'
+    'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'Advanced Flow Slicing'
   ],
   'Tunnel Decap': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 
@@ -379,11 +375,60 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
 };
 
 /**
- * Validates if two GigaSMART action types can be combined together.
+ * Returns the number of physical GigaSMART engines available on a chassis.
  */
-export function areActionsCompatible(actionA: string, actionB: string): { compatible: boolean; reason?: string } {
+export function getGigaSmartEngineCount(chassisModel: string, modules: string[]): number {
+  return getAvailableEngines(chassisModel, modules).length;
+}
+
+/**
+ * Generates an actionable prompt when an incompatible operation pair is requested
+ * on a single engine, advising which GigaSMART module/blade to add.
+ */
+export function getGigaSmartEnginePrompt(
+  chassisModel: string,
+  _installedModules: string[],
+  actionA: string,
+  actionB: string,
+): string {
+  const model = chassisModel.toLowerCase();
+  const nameA = getCanonicalGsopName(actionA) || actionA;
+  const nameB = getCanonicalGsopName(actionB) || actionB;
+
+  if (model.includes('hc3')) {
+    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC3, please install an additional GigaSMART card (e.g. SMT-HC3-C08 or SMT-HC3-C05) into an available module slot.`;
+  }
+  if (model.includes('hc1-plus') || model.includes('hc1 plus')) {
+    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC1-Plus, please add a front GigaSMART engine module (SMT-HC1-S).`;
+  }
+  if (model.includes('hc1')) {
+    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC1, please install an additional GigaSMART engine module (SMT-HC1-S) into the expansion bay.`;
+  }
+  if (model.includes('hc2')) {
+    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC2, please install an additional GigaSMART module (SMT-HC0-R25 or SMT-HC0-X16).`;
+  }
+  return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). An additional GigaSMART engine or multi-pass map is required.`;
+}
+
+/**
+ * Validates if two GigaSMART action types can be combined together.
+ * If engineCount >= 2, multi-engine distribution permits the combination.
+ */
+export function areActionsCompatible(
+  actionA: string,
+  actionB: string,
+  engineCount = 1,
+  chassisModel = '',
+  installedModules: string[] = [],
+): { compatible: boolean; reason?: string; multiEngine?: boolean } {
   if (actionA === actionB) {
     return { compatible: true };
+  }
+
+  // If the chassis has multiple physical GigaSMART engines installed,
+  // operations that cannot share a single GSOP can be distributed across engines!
+  if (engineCount >= 2) {
+    return { compatible: true, multiEngine: true };
   }
 
   const nameA = getCanonicalGsopName(actionA);
@@ -400,9 +445,12 @@ export function areActionsCompatible(actionA: string, actionB: string): { compat
   const isCompatible = listA.includes(nameB) || listB.includes(nameA);
 
   if (!isCompatible) {
+    const reason = chassisModel
+      ? getGigaSmartEnginePrompt(chassisModel, installedModules, actionA, actionB)
+      : `GigaSMART operation '${nameA}' cannot be combined with '${nameB}' in a single GSOP.`;
     return {
       compatible: false,
-      reason: `GigaSMART operation '${nameA}' cannot be combined with '${nameB}'.`
+      reason,
     };
   }
 
