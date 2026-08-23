@@ -56,10 +56,22 @@ export function detectDiagramSplitting(
         }
       });
 
-      // 2. Downstream/upstream nodes closely connected to this site's nodes
+      // 2. Downstream/upstream nodes without an explicit conflicting site
       edges.forEach((e) => {
-        if (siteNodeIds.has(e.source)) siteNodeIds.add(e.target);
-        if (siteNodeIds.has(e.target)) siteNodeIds.add(e.source);
+        const srcNode = visibleNodes.find((n) => n.id === e.source);
+        const tgtNode = visibleNodes.find((n) => n.id === e.target);
+        if (siteNodeIds.has(e.source) && tgtNode) {
+          const tgtSite = (tgtNode.data?.site as string || '').trim();
+          if (!tgtSite || tgtSite === siteName) {
+            siteNodeIds.add(e.target);
+          }
+        }
+        if (siteNodeIds.has(e.target) && srcNode) {
+          const srcSite = (srcNode.data?.site as string || '').trim();
+          if (!srcSite || srcSite === siteName) {
+            siteNodeIds.add(e.source);
+          }
+        }
       });
 
       partitions.push({
@@ -81,21 +93,44 @@ export function detectDiagramSplitting(
   };
 }
 
-export async function captureTopologyDiagramPng(): Promise<string> {
+export async function captureTopologyDiagramPng(
+  allowedNodeIds?: Set<string>,
+  allowedEdgeIds?: Set<string>,
+): Promise<string> {
   const element = document.querySelector('.react-flow') as HTMLElement | null;
   if (!element) throw new Error('Canvas not found — switch to Canvas View before capturing a diagram.');
 
   return toPng(element, {
     backgroundColor: '#121212',
     cacheBust: true,
-    filter: (node) => {
+    filter: (domNode) => {
       if (
-        node.classList?.contains('react-flow__controls') ||
-        node.classList?.contains('react-flow__panel') ||
-        node.classList?.contains('config-panel-toggle')
+        domNode.classList?.contains('react-flow__controls') ||
+        domNode.classList?.contains('react-flow__panel') ||
+        domNode.classList?.contains('config-panel-toggle')
       ) {
         return false;
       }
+
+      if (allowedNodeIds) {
+        // Filter out nodes from other sites/partitions
+        if (domNode.classList?.contains('react-flow__node')) {
+          const id = domNode.getAttribute('data-id');
+          if (id && !allowedNodeIds.has(id)) {
+            return false;
+          }
+        }
+        // Filter out edges not connecting within this partition
+        if (domNode.classList?.contains('react-flow__edge')) {
+          const edgeId =
+            domNode.getAttribute('data-id') ||
+            domNode.getAttribute('data-testid')?.replace(/^rf__edge-/, '');
+          if (edgeId && allowedEdgeIds && !allowedEdgeIds.has(edgeId)) {
+            return false;
+          }
+        }
+      }
+
       return true;
     },
   });
@@ -147,6 +182,7 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
 
   const originalView = useStore.getState().activeView;
   const originalExportDiagramMode = useStore.getState().exportDiagramMode;
+  const edges = useStore.getState().edges;
 
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
@@ -157,10 +193,17 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
     fitViewTrigger: s.fitViewTrigger + 1,
   }));
 
+  const allowedNodeIds = new Set(nodeIds);
+  const allowedEdgeIds = new Set(
+    edges
+      .filter((e) => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target))
+      .map((e) => e.id),
+  );
+
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   try {
-    return await captureTopologyDiagramPng();
+    return await captureTopologyDiagramPng(allowedNodeIds, allowedEdgeIds);
   } finally {
     useStore.setState((s) => ({
       fitViewNodeIds: null,

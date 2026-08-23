@@ -61,7 +61,7 @@ const CanvasArea: React.FC = () => {
       if (fitViewNodeIds && fitViewNodeIds.length > 0) {
         fitView({
           nodes: fitViewNodeIds.map((id) => ({ id })),
-          padding: 0.15,
+          padding: 0.05,
           duration: 200,
         });
       } else {

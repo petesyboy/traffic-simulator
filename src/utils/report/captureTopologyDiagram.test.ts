@@ -62,4 +62,32 @@ describe('detectDiagramSplitting', () => {
     expect(betaPartition?.nodeIds).toContain('n-beta-1');
     expect(betaPartition?.nodeIds).toContain('tool-beta');
   });
+
+  it('does not leak nodes with conflicting sites when connected across sites', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'n-alpha',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Alpha TA25', site: 'Site Alpha' },
+      } as CustomNode,
+      {
+        id: 'n-beta',
+        type: 'hardwareNode',
+        position: { x: 200, y: 0 },
+        data: { label: 'Beta HC3', site: 'Site Beta' },
+      } as CustomNode,
+    ];
+
+    const edges: Edge[] = [
+      { id: 'inter-site-link', source: 'n-alpha', target: 'n-beta' },
+    ];
+
+    const result = detectDiagramSplitting(nodes, edges);
+    const alphaPartition = result.partitions.find((p) => p.siteName === 'Site Alpha');
+    const betaPartition = result.partitions.find((p) => p.siteName === 'Site Beta');
+
+    expect(alphaPartition?.nodeIds).toEqual(['n-alpha']);
+    expect(betaPartition?.nodeIds).toEqual(['n-beta']);
+  });
 });
