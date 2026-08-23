@@ -132,15 +132,15 @@
   color: var(--text-secondary);
   border-right: 1px solid var(--border-color);
   border-left: 1px solid var(--border-color);
-  background-color: #121212;
+  background-color: var(--bg-tertiary);
   cursor: default;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
 .tab.monitoring-session.active {
-  background-color: #1a1a1a;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   border-bottom: 2px solid var(--color-blue);
 }
 
@@ -155,22 +155,22 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--bg-tertiary);
   padding: 4px 7px;
   border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   transition: background-color var(--transition-normal);
 }
 
 .control-group:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
 }
 
 .control-group-label {
   font-size: 9px;
   text-transform: uppercase;
-  color: #666;
+  color: var(--text-muted);
   margin-right: 4px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -181,7 +181,7 @@
   align-items: center;
   gap: 4px;
   margin-left: 3px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid var(--border-color);
   padding-left: 7px;
 }
 
@@ -191,7 +191,7 @@
   font-size: 11px;
   font-weight: 600;
   border-radius: 5px;
-  background-color: #222222;
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   white-space: nowrap;
@@ -203,8 +203,8 @@
 }
 
 .header-btn:hover {
-  background-color: #333333;
-  border-color: #444;
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
 }
 
 .header-btn.icon-only {
@@ -219,7 +219,7 @@
 }
 
 .header-btn:disabled:hover {
-  background-color: #222222;
+  background-color: var(--bg-surface);
   border-color: var(--border-color);
 }
 
@@ -247,9 +247,9 @@
 }
 
 .sim-speed-select {
-  background-color: #121212;
-  border: 1px solid #333;
-  color: #ccc;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-size: 10px;
   font-weight: 600;
   padding: 3px 6px;
@@ -345,7 +345,7 @@
 /* Sub-Header Row */
 .header-sub {
   height: 38px;
-  background-color: #1e1e1e;
+  background-color: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -367,7 +367,7 @@
 }
 
 .session-name-label {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .header-stats-indicator {
@@ -382,7 +382,7 @@
 /* Segmented Stage Navigation buttons (Top Right) */
 .stage-selector {
   display: flex;
-  background-color: #121212;
+  background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   overflow: hidden;
@@ -407,12 +407,12 @@
 
 .stage-btn:hover {
   color: var(--text-secondary);
-  background-color: rgba(255,255,255,0.02);
+  background-color: var(--bg-hover);
 }
 
 .stage-btn.active {
-  color: #ffffff;
-  background-color: #1a1a1a;
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
 }
 
 
@@ -467,18 +467,18 @@
 }
 
 .session-item:hover {
-  background-color: rgba(255,255,255,0.02);
+  background-color: var(--bg-hover);
 }
 
 .session-item.active {
-  background-color: #2a2a2a;
-  border-color: #3e3e3e;
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
 }
 
 .session-name {
   font-weight: 600;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .session-status {
@@ -545,7 +545,7 @@
 }
 
 .tree-section {
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .tree-header {
@@ -559,14 +559,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: rgba(0,0,0,0.15);
+  background-color: var(--bg-secondary);
   border-left: 3px solid transparent;
   transition: all 0.2s ease;
 }
 
 .tree-header:hover {
-  background-color: rgba(255,255,255,0.02);
-  color: white;
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
   border-left-color: rgba(255, 152, 0, 0.4);
 }
 
@@ -588,13 +588,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background-color: #121212;
+  background-color: var(--bg-secondary);
 }
 
 .tree-draggable {
   padding: 6px 10px;
-  background-color: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: 3px;
   font-size: 12px;
   color: var(--text-primary);
@@ -607,8 +607,8 @@
 }
 
 .tree-draggable:hover {
-  border-color: #3a3a3a;
-  background-color: #222222;
+  border-color: var(--border-hover);
+  background-color: var(--bg-hover);
 }
 
 .tree-draggable .info-badge {
@@ -616,7 +616,7 @@
   right: 10px;
   width: 12px;
   height: 12px;
-  background-color: #2a2a2a;
+  background-color: var(--bg-tertiary);
   color: var(--color-blue);
   border-radius: 50%;
   font-size: 9px;
@@ -637,35 +637,39 @@
 .canvas-wrapper {
   flex: 1;
   position: relative;
-  background-color: #121212;
+  background-color: var(--canvas-bg, var(--bg-primary));
+}
+
+.react-flow {
+  background-color: var(--canvas-bg, var(--bg-primary));
 }
 
 .react-flow__background {
-  background-color: #121212;
+  background-color: var(--canvas-bg, var(--bg-primary));
 }
 
 /* Dot Grid Override */
 .react-flow__background-pattern.dots {
-  fill: #222222 !important;
+  fill: var(--canvas-grid, #222222) !important;
 }
 
 .react-flow__controls {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+  box-shadow: var(--shadow-md, 0 2px 8px rgba(0,0,0,0.5)) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: 3px;
   overflow: hidden;
-  background-color: #1a1a1a !important;
+  background-color: var(--bg-tertiary) !important;
 }
 
 .react-flow__controls-button {
-  background-color: #1a1a1a !important;
+  background-color: var(--bg-tertiary) !important;
   border-bottom: 1px solid var(--border-color) !important;
-  fill: #888888 !important;
+  fill: var(--text-secondary) !important;
 }
 
 .react-flow__controls-button:hover {
-  background-color: #222222 !important;
-  fill: white !important;
+  background-color: var(--bg-hover) !important;
+  fill: var(--text-primary) !important;
 }
 
 /* React Flow Connection Edges (Dashed blue lines) */
@@ -925,7 +929,7 @@
   width: 10px !important;
   height: 10px !important;
   background-color: var(--accent-cyan) !important;
-  border: 2px solid #121212 !important;
+  border: 2px solid var(--canvas-bg, #121212) !important;
   border-radius: 50% !important;
   box-shadow: 0 0 4px rgba(0, 229, 255, 0.6) !important;
   top: 50%;
@@ -955,7 +959,7 @@
 /* 5. Config Panel Styles (Matches dark slate palette) */
 .config-panel {
   width: 320px;
-  background-color: #161616;
+  background-color: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   z-index: 5;
   display: flex;
@@ -968,7 +972,7 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #ffffff;
+  color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 8px;
 }
@@ -1000,7 +1004,7 @@
 .form-group input, .form-group select, .form-group textarea {
   width: 100%;
   padding: 6px 10px;
-  background-color: #1a1a1a;
+  background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   color: var(--text-primary);
@@ -1011,12 +1015,12 @@
 
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   outline: none;
-  border-color: #4a4a4a;
+  border-color: var(--border-hover);
 }
 
 /* Condition Builder Cards */
 .condition-card {
-  background-color: #1a1a1a;
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   padding: 8px;
@@ -1034,7 +1038,7 @@
 
 /* Metrics Badges */
 .metric-badge {
-  background-color: rgba(255,255,255,0.01);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   padding: 5px 8px;
@@ -1059,7 +1063,7 @@
 
 /* 6. Traffic Generator Bottom Tray (Matches screenshot styling) */
 .bottom-drawer {
-  background-color: #161616;
+  background-color: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
   padding: 12px 16px;
   max-height: 220px;
@@ -1153,16 +1157,16 @@
 
 /* React Flow Edge Labels */
 .react-flow__edge-text {
-  fill: #00e5ff !important;
+  fill: var(--accent-cyan) !important;
   font-size: 9px !important;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-weight: bold !important;
 }
 
 .react-flow__edge-textbg {
-  fill: #121212 !important;
+  fill: var(--node-bg, #121212) !important;
   fill-opacity: 0.95 !important;
-  stroke: #2a2a2a !important;
+  stroke: var(--border-color, #2a2a2a) !important;
   stroke-width: 1px !important;
   rx: 3px !important;
   ry: 3px !important;
@@ -1170,8 +1174,8 @@
 
 /* Custom Group Node Bounding Box */
 .custom-group-node {
-  background-color: rgba(0, 229, 255, 0.02);
-  border: 2px dashed rgba(0, 229, 255, 0.2);
+  background-color: var(--accent-cyan-bg);
+  border: 2px dashed var(--accent-cyan-border);
   border-radius: 6px;
   box-sizing: border-box;
   width: 100%;
@@ -1180,8 +1184,8 @@
 }
 
 .custom-group-node.selected {
-  border-color: #00e5ff;
-  background-color: rgba(0, 229, 255, 0.06);
+  border-color: var(--accent-cyan);
+  background-color: var(--accent-cyan-hover);
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
 }
 
@@ -1193,7 +1197,7 @@
   transform: translateY(-50%);
   width: 20px;
   height: 48px;
-  background-color: #161616;
+  background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-right: none;
   border-radius: 6px 0 0 6px;
@@ -1208,8 +1212,8 @@
 }
 
 .config-panel-toggle:hover {
-  background-color: #202020;
-  color: #ffffff;
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* Toast notification fade-in animation (used by Header SaveToast and App.tsx toast) */
@@ -1228,7 +1232,7 @@
 .kbd-hint {
   font-size: 10px;
   color: var(--text-muted);
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 3px;
   padding: 1px 5px;
@@ -1237,12 +1241,12 @@
 
 /* Premium Configuration Panel Cards & Layout */
 .config-card {
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 14px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1277,12 +1281,12 @@
 .config-panel input[type="text"],
 .config-panel input[type="number"],
 .config-panel select {
-  background-color: #121212 !important;
-  border: 1px solid #2d2d2d !important;
+  background-color: var(--bg-input) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 4px !important;
   padding: 8px 10px !important;
   font-size: 11px !important;
-  color: #e0e0e0 !important;
+  color: var(--text-primary) !important;
   transition: all 0.2s ease !important;
 }
 
@@ -1291,7 +1295,7 @@
 .config-panel select:focus {
   border-color: #ff9800 !important;
   box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1) !important;
-  background-color: #161616 !important;
+  background-color: var(--bg-surface) !important;
 }
 
 .config-section-divider {
@@ -1337,13 +1341,13 @@
   bottom: 135%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #161616;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   text-align: left;
   padding: 10px 14px;
   border-radius: 6px;
-  border: 1px solid #3c3c3c;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
   font-size: 10px;
   font-family: var(--font-family);
   font-weight: 500;
@@ -1748,8 +1752,10 @@
 }
 
 .modal-card {
-  background-color: #1c1c1e;
-  border: 1px solid #333;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 24px;
+  box-shadow: var(--shadow-lg);
 }

@@ -65,6 +65,11 @@ function App() {
   const snapToGrid          = useStore((s) => s.snapToGrid);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const activeView          = useStore((s) => s.activeView);
+  const theme               = useStore((s) => s.theme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const [modalMode, setModalMode] = useState<'save' | 'load' | null>(null);
   const [saveToast, setSaveToast] = useState('');

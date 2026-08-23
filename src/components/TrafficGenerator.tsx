@@ -292,7 +292,7 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.name}
                         onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', width: '170px', borderBottom: '1px solid transparent' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px', width: '170px', borderBottom: '1px solid transparent' }}
                         onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
                         onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                       />
@@ -301,7 +301,7 @@ const TrafficGenerator: React.FC = () => {
                       <select
                         value={stream.sourceNodeId}
                         onChange={(e) => handleFieldChange(stream.id, 'sourceNodeId', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '250px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '250px' }}
                       >
                         {inputPorts.map((port) => (
                           <option key={port.id} value={port.id}>
@@ -315,14 +315,14 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.vlan}
                         onChange={(e) => handleFieldChange(stream.id, 'vlan', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '55px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '55px' }}
                       />
                     </td>
                     <td style={{ padding: '4px 2px', width: '75px' }}>
                       <select
                         value={stream.protocol}
                         onChange={(e) => handleFieldChange(stream.id, 'protocol', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '65px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '65px' }}
                       >
                         <option value="tcp">TCP</option>
                         <option value="udp">UDP</option>
@@ -334,7 +334,7 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.ipSrc}
                         onChange={(e) => handleFieldChange(stream.id, 'ipSrc', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
                       />
                     </td>
                     <td style={{ padding: '4px 2px', width: '120px' }}>
@@ -342,7 +342,7 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.ipDst}
                         onChange={(e) => handleFieldChange(stream.id, 'ipDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
                       />
                     </td>
                     <td style={{ padding: '4px 2px', width: '70px' }}>
@@ -350,7 +350,7 @@ const TrafficGenerator: React.FC = () => {
                         type="text"
                         value={stream.portDst}
                         onChange={(e) => handleFieldChange(stream.id, 'portDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '60px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '60px' }}
                       />
                     </td>
                     <td style={{ padding: '4px 2px', width: '100px' }}>
@@ -358,7 +358,7 @@ const TrafficGenerator: React.FC = () => {
                         <select
                            value={stream.bandwidth}
                            onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
-                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: '#fff', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
+                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
                         >
                            {(() => {
                              const presets = advancedMode ? ADVANCED_BANDWIDTH_PRESETS : STANDARD_BANDWIDTH_PRESETS;

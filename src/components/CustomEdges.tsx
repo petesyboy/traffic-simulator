@@ -59,7 +59,7 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
         d={edgePath}
         className="inner-double-edge-mask"
         style={{
-          stroke: '#121212', // matches canvas background
+          stroke: 'var(--canvas-bg, #121212)', // matches canvas background
           strokeWidth: 2,
         }}
         fill="none"
@@ -75,11 +75,11 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: (labelBgStyle as SvgLabelStyle)?.fill || '#121212',
-              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || '#2a2a2a'}`,
+              background: (labelBgStyle as SvgLabelStyle)?.fill || 'var(--node-bg, #121212)',
+              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || 'var(--border-color, #2a2a2a)'}`,
               padding: '2px 6px',
               borderRadius: '4px',
-              color: (labelStyle as SvgLabelStyle)?.fill || '#fff',
+              color: (labelStyle as SvgLabelStyle)?.fill || 'var(--text-primary, #fff)',
               fontSize: (labelStyle as SvgLabelStyle)?.fontSize || '9px',
               fontWeight: (labelStyle as SvgLabelStyle)?.fontWeight || 'bold',
               fontFamily: (labelStyle as SvgLabelStyle)?.fontFamily || 'system-ui, -apple-system, sans-serif',
@@ -195,11 +195,11 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: (labelBgStyle as SvgLabelStyle)?.fill || '#121212',
-              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || '#2a2a2a'}`,
+              background: (labelBgStyle as SvgLabelStyle)?.fill || 'var(--node-bg, #121212)',
+              border: `1px solid ${(labelBgStyle as SvgLabelStyle)?.stroke || 'var(--border-color, #2a2a2a)'}`,
               padding: '2px 6px',
               borderRadius: '4px',
-              color: (labelStyle as SvgLabelStyle)?.fill || '#fff',
+              color: (labelStyle as SvgLabelStyle)?.fill || 'var(--text-primary, #fff)',
               fontSize: (labelStyle as SvgLabelStyle)?.fontSize || '9px',
               fontWeight: (labelStyle as SvgLabelStyle)?.fontWeight || 'bold',
               fontFamily: (labelStyle as SvgLabelStyle)?.fontFamily || 'system-ui, -apple-system, sans-serif',

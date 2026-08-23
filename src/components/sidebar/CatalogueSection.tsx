@@ -65,7 +65,7 @@ export interface CatalogueSectionProps {
 const headerStyle: React.CSSProperties = {
   padding: '8px 12px 6px 12px',
   fontSize: '10px',
-  color: '#999',
+  color: 'var(--text-secondary)',
   fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: '0.5px',

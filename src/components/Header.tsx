@@ -247,10 +247,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                     }}
                     placeholder="Untitled Project"
                     style={{
-                      background: '#121212',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--color-blue)',
                       borderRadius: '3px',
-                      color: '#fff',
+                      color: 'var(--text-primary)',
                       font: 'inherit',
                       padding: '0 4px',
                       width: '180px',

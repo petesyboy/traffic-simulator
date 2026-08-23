@@ -106,14 +106,14 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
             </FormGroup>
 
             {/* Visual Packet Anatomy Diagram */}
-            <div style={{ marginTop: '12px', padding: '12px', background: '#121212', borderRadius: '6px', border: '1px solid #282828' }}>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border-default)' }}>
               <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00e5ff', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>📦 Packet Anatomy Transformation</span>
                 <span style={{ color: '#81c784' }}>~{activeInfo.percent}% Offload</span>
               </div>
 
               {/* Before Stripping */}
-              <div style={{ fontSize: '10px', color: '#888', marginBottom: '3px' }}>Ingress (Encapsulated):</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px' }}>Ingress (Encapsulated):</div>
               <div style={{ display: 'flex', gap: '2px', height: '22px', fontSize: '9px', marginBottom: '10px', textAlign: 'center', lineHeight: '22px' }}>
                 <div style={{ flex: 1.5, background: 'rgba(239, 83, 80, 0.25)', border: '1px dashed #ef5350', color: '#ef9a9a', borderRadius: '3px 0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   [{protocol}]
@@ -124,13 +124,13 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
                 <div style={{ flex: 1.2, background: '#1e3a5f', border: '1px solid #007cff', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   L4
                 </div>
-                <div style={{ flex: 3.5, background: '#222', border: '1px solid #444', color: '#aaa', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ flex: 3.5, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   Payload
                 </div>
               </div>
 
               {/* After Stripping */}
-              <div style={{ fontSize: '10px', color: '#888', marginBottom: '3px' }}>Egress to Tools (Normalised):</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px' }}>Egress to Tools (Normalised):</div>
               <div style={{ display: 'flex', gap: '2px', height: '22px', fontSize: '9px', textAlign: 'center', lineHeight: '22px' }}>
                 <div style={{ flex: 1.5, background: '#1e3a5f', border: '1px solid #25b34b', color: '#a5d6a7', borderRadius: '3px 0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   Standard IP
@@ -138,7 +138,7 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
                 <div style={{ flex: 1.2, background: '#1e3a5f', border: '1px solid #25b34b', color: '#a5d6a7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   TCP/UDP
                 </div>
-                <div style={{ flex: 4.5, background: '#222', border: '1px solid #444', color: '#aaa', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ flex: 4.5, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   Original Payload
                 </div>
               </div>
@@ -164,7 +164,7 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
         return (
           <>
             {/* Correlation State Visualiser */}
-            <div style={{ padding: '12px', background: '#121212', borderRadius: '6px', border: '1px solid #282828', marginBottom: '14px' }}>
+            <div style={{ padding: '12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border-default)', marginBottom: '14px' }}>
               <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00e5ff', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>📶 GTP Correlation Architecture</span>
                 <span style={{ fontSize: '9.5px', color: '#81c784', background: 'rgba(76,175,80,0.15)', padding: '2px 6px', borderRadius: '3px' }}>Stateful</span>

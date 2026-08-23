@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.585",
+    date: "2026-08-23",
+    summary: "Fixed Light Theme styling across canvas background, header toolbars, sidebars, traffic drawer, and configuration panels for full high-contrast visibility.",
+  },
+  {
     version: "1.0.584",
     date: "2026-08-23",
     summary: "Added Light Theme and Dark Theme system with localStorage persistence, instant header toggle, document-ready white canvas screenshots, and crisp high-contrast node, edge, and UI tokens.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.566",
     date: "2026-08-23",
     summary: "Fixed multi-RU chassis vertical positioning in 42U Rack Elevation View (preventing HC3 bottom truncation) and mapped all TAP module stencils to authentic orange LC connector faceplates.",
-  },
-  {
-    version: "1.0.565",
-    date: "2026-08-23",
-    summary: "Added Auto-Deploy to 42U Rack Elevation View using datacenter weight/hierarchy standards (heaviest chassis at bottom, TAP trays/modules at top) and added debounced working session autosave and slot tracking.",
   },
 ];

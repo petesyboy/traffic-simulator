@@ -248,7 +248,7 @@ const Sidebar: React.FC = () => {
           <span style={{ color: '#555', fontSize: '10px' }}>◄ ►</span>
         </div>
 
-        <div style={{ padding: '10px 12px', borderBottom: '1px solid #333', flexShrink: 0 }}>
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           <input
             type="text"
             placeholder="Search elements..."
@@ -258,9 +258,9 @@ const Sidebar: React.FC = () => {
               width: '100%',
               padding: '6px 10px',
               borderRadius: '6px',
-              border: '1px solid #444',
-              background: '#1a1a1a',
-              color: '#fff',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-input)',
+              color: 'var(--text-primary)',
               fontSize: '11px',
               outline: 'none',
               boxSizing: 'border-box',
@@ -287,9 +287,9 @@ const Sidebar: React.FC = () => {
                   style={{
                     alignSelf: 'flex-end',
                     background: 'transparent',
-                    border: '1px solid #444',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '3px',
-                    color: '#999',
+                    color: 'var(--text-secondary)',
                     fontSize: '9px',
                     padding: '3px 6px',
                     cursor: 'pointer',
@@ -742,17 +742,17 @@ const Sidebar: React.FC = () => {
                 })()}
 
                 {/* Add Custom Tool Section */}
-                <div style={{ padding: '12px 12px 6px 12px', borderTop: '1px solid #2d2d2d', marginTop: '10px' }}>
+                <div style={{ padding: '12px 12px 6px 12px', borderTop: '1px solid var(--border-color)', marginTop: '10px' }}>
                   {!showAddTool ? (
                     <button
                       onClick={() => setShowAddTool(true)}
                       style={{
                         width: '100%',
                         padding: '6px',
-                        background: '#2b2b2b',
-                        border: '1px dashed #555',
+                        background: 'var(--bg-surface)',
+                        border: '1px dashed var(--border-strong)',
                         borderRadius: '4px',
-                        color: '#ddd',
+                        color: 'var(--text-primary)',
                         fontSize: '11px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -766,8 +766,8 @@ const Sidebar: React.FC = () => {
                   ) : (
                     <div
                       style={{
-                        background: '#1c1c1c',
-                        border: '1px solid #333',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-default)',
                         borderRadius: '4px',
                         padding: '10px',
                         display: 'flex',
@@ -777,7 +777,7 @@ const Sidebar: React.FC = () => {
                     >
                       <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#ff9800' }}>Create Custom Tool</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '9px', color: '#888' }}>Tool Name</label>
+                        <label style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>Tool Name</label>
                         <input
                           type="text"
                           placeholder="e.g. My Custom Tool"
@@ -785,26 +785,26 @@ const Sidebar: React.FC = () => {
                           onChange={(e) => setNewToolName(e.target.value)}
                           style={{
                             padding: '4px 6px',
-                            background: '#121212',
-                            border: '1px solid #444',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '3px',
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                             fontSize: '11px',
                             outline: 'none',
                           }}
                         />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '9px', color: '#888' }}>Input Data Format</label>
+                        <label style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>Input Data Format</label>
                         <select
                           value={newToolFormat}
                           onChange={(e) => setNewToolFormat(e.target.value as 'packets' | 'AMI' | 'objects')}
                           style={{
                             padding: '4px 6px',
-                            background: '#121212',
-                            border: '1px solid #444',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '3px',
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                             fontSize: '11px',
                             outline: 'none',
                           }}
@@ -816,7 +816,7 @@ const Sidebar: React.FC = () => {
                       </div>
                       {newToolFormat === 'packets' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <label style={{ fontSize: '9px', color: '#888' }}>Ingest Rate Limit (Mbps)</label>
+                          <label style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>Ingest Rate Limit (Mbps)</label>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -825,10 +825,10 @@ const Sidebar: React.FC = () => {
                             onChange={(e) => setNewToolIngestLimit(e.target.value)}
                             style={{
                               padding: '4px 6px',
-                              background: '#121212',
-                              border: '1px solid #444',
+                              background: 'var(--bg-input)',
+                              border: '1px solid var(--border-color)',
                               borderRadius: '3px',
-                              color: '#fff',
+                              color: 'var(--text-primary)',
                               fontSize: '11px',
                               outline: 'none',
                             }}
@@ -878,10 +878,10 @@ const Sidebar: React.FC = () => {
                           style={{
                             flex: 1,
                             padding: '5px',
-                            background: '#444',
-                            border: 'none',
+                            background: 'var(--bg-hover)',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '3px',
-                            color: '#ccc',
+                            color: 'var(--text-primary)',
                             fontSize: '10px',
                             cursor: 'pointer',
                           }}

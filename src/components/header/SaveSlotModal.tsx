@@ -255,10 +255,10 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                   style={{
                     flex: 1,
                     padding: '7px 10px',
-                    background: '#121212',
-                    border: '1px solid #333',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontSize: '12px',
                   }}
                 />
