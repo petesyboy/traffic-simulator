@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.577",
+    "date": "2026-08-23",
+    "summary": "Added non-destructive auto-spacing for Export Diagram Mode captures so that node description boxes never overlap or obscure icons below them, and restored original user canvas positions after capture."
+  },
+  {
     "version": "1.0.576",
     "date": "2026-08-23",
     "summary": "Isolated per-site diagram captures by filtering out non-partition nodes and external edges in html-to-image to prevent overlapping graphics between sites, tightened viewport padding to zoom in closely, and prevented cross-site edge leakage."

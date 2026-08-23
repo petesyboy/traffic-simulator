@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.577",
+    date: "2026-08-23",
+    summary: "Added non-destructive auto-spacing for Export Diagram Mode captures so that node description boxes never overlap or obscure icons below them, and restored original user canvas positions after capture.",
+  },
+  {
     version: "1.0.576",
     date: "2026-08-23",
     summary: "Isolated per-site diagram captures by filtering out non-partition nodes and external edges in html-to-image to prevent overlapping graphics between sites, tightened viewport padding to zoom in closely, and prevented cross-site edge leakage.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.558",
     date: "2026-08-21",
     summary: "Cleaned up redundant legacy build artefacts and old versioned single-file HTML distributions from the repository root.",
-  },
-  {
-    version: "1.0.557",
-    date: "2026-08-21",
-    summary: "Retained historical knowledge base for SKUs removed or omitted from subsequent price lists, automatically flagging them as Discontinued / Unavailable, and alert users during configuration validation.",
   },
 ];

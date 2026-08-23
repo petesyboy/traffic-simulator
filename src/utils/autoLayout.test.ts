@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Edge } from '@xyflow/react';
 import type { CustomNode } from '../store/types';
-import { computeTidyLayout } from './autoLayout';
+import { computeTidyLayout, autoSpaceNodesForExport } from './autoLayout';
 
 const node = (id: string, x: number, y: number, overrides: Partial<CustomNode> = {}): CustomNode =>
   ({
@@ -103,3 +103,25 @@ describe('computeTidyLayout', () => {
     });
   });
 });
+
+describe('autoSpaceNodesForExport', () => {
+  it('automatically spaces vertically stacked nodes so descriptions never overlap', () => {
+    const ta25_1 = node('ta25_1', 300, 100, {
+      type: 'hardwareNode',
+      data: { label: 'TA25 #1', model: 'GigaVUE-TA25E' } as unknown as CustomNode['data'],
+    });
+    const ta25_2 = node('ta25_2', 300, 180, {
+      type: 'hardwareNode',
+      data: { label: 'TA25 #2', model: 'GigaVUE-TA25E' } as unknown as CustomNode['data'],
+    });
+
+    const result = autoSpaceNodesForExport([ta25_1, ta25_2]);
+    const pos1 = result.find((n) => n.id === 'ta25_1')!.position;
+    const pos2 = result.find((n) => n.id === 'ta25_2')!.position;
+
+    expect(pos1.y).toBe(100);
+    // TA25E has height ~290px with description + 30px gap, so pos2.y should be >= 420px
+    expect(pos2.y).toBeGreaterThanOrEqual(420);
+  });
+});
+

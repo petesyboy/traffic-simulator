@@ -9,6 +9,7 @@ import { toPng } from 'html-to-image';
 import type { CustomNode } from '../../store/types';
 import type { Edge } from '@xyflow/react';
 import { isAutoTrayModel } from '../trayModels';
+import { autoSpaceNodesForExport } from '../autoLayout';
 
 export interface SiteDiagramPartition {
   siteName: string;
@@ -149,13 +150,21 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
 
   const originalView = useStore.getState().activeView;
   const originalExportDiagramMode = useStore.getState().exportDiagramMode;
+  const originalNodes = useStore.getState().nodes;
 
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
   }
   // Ensure Export Diagram Ready Mode is turned on so descriptions and value propositions are included
   useStore.getState().setExportDiagramMode(true);
-  useStore.setState((s) => ({ fitViewNodeIds: null, fitViewTrigger: s.fitViewTrigger + 1 }));
+
+  // Auto-space nodes vertically in columns to eliminate any description box overlaps
+  const spacedNodes = autoSpaceNodesForExport(originalNodes);
+  useStore.setState((s) => ({
+    nodes: spacedNodes,
+    fitViewNodeIds: null,
+    fitViewTrigger: s.fitViewTrigger + 1,
+  }));
 
   // Wait for the view switch to mount CanvasArea, its own 100ms fitView timer,
   // and the fitView pan/zoom transition before capturing. A fixed delay is used
@@ -167,6 +176,7 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
   try {
     return await captureTopologyDiagramPng();
   } finally {
+    useStore.setState({ nodes: originalNodes });
     if (originalView !== 'canvas') {
       useStore.getState().setActiveView(originalView);
     }
@@ -182,13 +192,18 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
 
   const originalView = useStore.getState().activeView;
   const originalExportDiagramMode = useStore.getState().exportDiagramMode;
+  const originalNodes = useStore.getState().nodes;
   const edges = useStore.getState().edges;
 
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
   }
   useStore.getState().setExportDiagramMode(true);
+
+  // Auto-space nodes vertically in columns to eliminate any description box overlaps
+  const spacedNodes = autoSpaceNodesForExport(originalNodes);
   useStore.setState((s) => ({
+    nodes: spacedNodes,
     fitViewNodeIds: nodeIds,
     fitViewTrigger: s.fitViewTrigger + 1,
   }));
@@ -206,6 +221,7 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
     return await captureTopologyDiagramPng(allowedNodeIds, allowedEdgeIds);
   } finally {
     useStore.setState((s) => ({
+      nodes: originalNodes,
       fitViewNodeIds: null,
       fitViewTrigger: s.fitViewTrigger + 1,
     }));
