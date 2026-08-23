@@ -21,6 +21,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
 
   const [selectedSite, setSelectedSite] = useState<string>('');
   const [zoom, setZoom] = useState<number>(1);
+  const [hideLabels, setHideLabels] = useState<boolean>(false);
   const [inspectingNode, setInspectingNode] = useState<CustomNode | null>(null);
 
   const handleZoomIn = () => setZoom((z) => Math.min(2.5, Number((z + 0.25).toFixed(2))));
@@ -246,6 +247,29 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
           <span style={{ fontSize: '10px', color: '#666', marginLeft: '4px' }}>
             (Ctrl + Scroll)
           </span>
+          <div style={{ width: '1px', height: '14px', background: '#444', margin: '0 4px' }} />
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '11px',
+              color: hideLabels ? '#00e5ff' : '#aaa',
+              cursor: 'pointer',
+              userSelect: 'none',
+              marginLeft: '4px',
+              fontWeight: hideLabels ? 'bold' : 'normal',
+            }}
+            title="Toggle to hide equipment labels across all chassis and TAP trays in the rack"
+          >
+            <input
+              type="checkbox"
+              checked={hideLabels}
+              onChange={(e) => setHideLabels(e.target.checked)}
+              style={{ cursor: 'pointer', accentColor: '#00e5ff' }}
+            />
+            <span>Hide Labels</span>
+          </label>
         </div>
       </div>
 
@@ -402,7 +426,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                                 borderRight: '1px solid #0d1117', boxSizing: 'border-box',
                               }}
                             >
-                              {rowHeight >= 18 ? bayNode.data?.model : ''}
+                              {rowHeight >= 18 && !hideLabels ? bayNode.data?.model : ''}
                             </div>
                           );
                         }
@@ -419,7 +443,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                               textShadow: resolvedTrayImage ? '0 0 3px #000' : undefined,
                             }}
                           >
-                            {rowHeight >= 18 ? bay : ''}
+                            {rowHeight >= 18 && !hideLabels ? bay : ''}
                           </div>
                         );
                       })}
@@ -480,11 +504,13 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                         <img src={resolvedImage} alt={model} style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }} />
                       )
                     ) : (
-                      <div style={{ padding: '0 10px', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {model} - {occupyingNode.data?.label}
-                      </div>
+                      !hideLabels ? (
+                        <div style={{ padding: '0 10px', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {model} - {occupyingNode.data?.label}
+                        </div>
+                      ) : null
                     )}
-                    {resolvedImage && (
+                    {!hideLabels && resolvedImage && (
                       <div style={{
                         position: 'absolute', left: 0, right: 0, bottom: 0, padding: '1px 6px',
                         background: 'rgba(0,0,0,0.6)', fontSize: '9px', fontWeight: 'bold',

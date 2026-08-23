@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.562",
+    date: "2026-08-23",
+    summary: "Added a 'Hide Labels' toggle checkbox to the 42U Rack Elevation View toolbar, enabling clean, unobstructed front-panel and TAP tray visualization.",
+  },
+  {
     version: "1.0.561",
     date: "2026-08-23",
     summary: "Added interactive zoom controls (step in/out, presets from 75% to 200%, Ctrl+Scroll wheel zoom) and one-click per-chassis front-panel modal inspection in the 42U Rack Elevation View.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.541",
     date: "2026-08-19",
     summary: "Ship v1.0.541: fix HC3/HC1-Plus Slot 1 optic-marker positioning",
-  },
-  {
-    version: "1.0.540",
-    date: "2026-08-19",
-    summary: "Ship v1.0.540: Tidy Layout auto-arrange button",
   },
 ];

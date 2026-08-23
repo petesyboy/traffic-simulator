@@ -21,6 +21,7 @@ describe('RackElevationView', () => {
     expect(html).toContain('150%');
     expect(html).toContain('200%');
     expect(html).toContain('(Ctrl + Scroll)');
+    expect(html).toContain('Hide Labels');
   });
 
   it('renders racked hardware with front panel, inspect button, and rack metrics', () => {
