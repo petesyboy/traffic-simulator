@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.575",
+    date: "2026-08-23",
+    summary: "Streamlined tool group summaries to state total deployed count across sites (e.g. 20 instances deployed across 2 sites: 10 at Site A, 10 at Site B), eliminated redundant repetitive label and value proposition strings, and grouped upstream origin TAP feeds.",
+  },
+  {
     version: "1.0.574",
     date: "2026-08-23",
     summary: "Consolidated optical TAP modules and TAP trays into unified single summaries in the report, clearly displayed site and unit labels next to all HC and TA front panel graphics, and prevented stat blocks and diagrams from breaking across pages.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.556",
     date: "2026-08-21",
     summary: "Unified SKU data layer into a single source of truth backed by src/data/skus.json, updated skuService and skuOverrides to maintain automatic previous backups with rollback capabilities, and synced SKU lookup pipelines.",
-  },
-  {
-    version: "1.0.555",
-    date: "2026-08-21",
-    summary: "Implemented Vitest unit test suite with coverage, isolated pure math engine (calculator.ts), build-time reference CSV catalog ingestion pipeline (scripts/parse-skus.js), typed SKU service data layer (skuService.ts), and CI/CD test automation.",
   },
 ];

@@ -156,13 +156,14 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
         label: `Ericsson Probe ${i + 1}`,
         toolName: 'Ericsson Probe',
         configType: 'Packet Tool',
+        site: i < 3 ? 'Site A' : 'Site B',
       },
     })) as CustomNode[];
 
     const doc = buildReportDocDefinition({ ...baseInput, nodes: probeNodes, edges: [] });
     const allText = collectTexts(doc.content).join(' ');
 
-    expect(allText).toContain('Ericsson Probe (5 instances deployed: Ericsson Probe 1, Ericsson Probe 2, Ericsson Probe 3, Ericsson Probe 4, Ericsson Probe 5)');
+    expect(allText).toContain('Ericsson Probe (5 instances deployed across 2 sites: 3 at Site A, 2 at Site B)');
     // Description should appear once, not 5 times
     const occurrences = (allText.match(/Monitors and analyses the traffic it receives/g) || []).length;
     expect(occurrences).toBe(1);

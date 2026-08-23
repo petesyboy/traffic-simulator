@@ -398,35 +398,55 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     toolGroups.forEach((group) => {
       if (group.length === 1) {
         const n = group[0];
-        const data = n.data as ToolNodeData;
         const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
-        content.push(
-          detailStack(
-            detail.headline,
-            detail,
-            getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
-          ),
-        );
+        content.push(detailStack(detail.headline, detail));
       } else {
         const first = group[0];
         const data = first.data as ToolNodeData;
         const toolName = data.toolName || data.label || 'Custom Tool';
-        const labelsList = group.map((n) => n.data?.label || n.id).join(', ');
-        const headline = `${toolName} (${group.length} instances deployed: ${labelsList})`;
+
+        // Clean per-site breakdown or unique labels
+        const siteCounts = new Map<string, number>();
+        group.forEach((n) => {
+          const s = (n.data?.site as string || '').trim() || 'Global';
+          siteCounts.set(s, (siteCounts.get(s) || 0) + 1);
+        });
+
+        let headline: string;
+        if (siteCounts.size > 1) {
+          const siteBreakdown = Array.from(siteCounts.entries())
+            .map(([site, count]) => `${count} at ${site}`)
+            .join(', ');
+          headline = `${toolName} (${group.length} instances deployed across ${siteCounts.size} sites: ${siteBreakdown})`;
+        } else {
+          const singleSite = siteCounts.keys().next().value;
+          const siteClause = singleSite && singleSite !== 'Global' ? ` at ${singleSite}` : '';
+          headline = `${toolName} (${group.length} instances deployed${siteClause})`;
+        }
 
         const bullets: string[] = [
           describeToolPurpose(data.toolName),
           describeToolOverloadRisk(data.toolName, data.ingestLimitMbps),
         ];
 
-        // Gather all origins across the instances
-        const allOrigins = new Set<string>();
+        // Gather and group all origins across the instances cleanly
+        const originCountMap = new Map<string, number>();
         group.forEach((gn) => {
           const origins = traceToTerminalInputs(gn.id, nodes, edges);
-          origins.forEach((o) => allOrigins.add(o.data?.label || o.id));
+          origins.forEach((o) => {
+            const odata = o.data as Record<string, unknown>;
+            const omodel = String(odata.model || odata.configType || odata.label || 'Traffic Source');
+            const site = odata.site ? ` (${odata.site})` : '';
+            const key = `${omodel}${site}`;
+            originCountMap.set(key, (originCountMap.get(key) || 0) + 1);
+          });
         });
-        if (allOrigins.size > 0) {
-          bullets.push(`Traffic originates from: ${Array.from(allOrigins).join(', ')}`);
+
+        if (originCountMap.size > 0) {
+          const originSummary = Array.from(originCountMap.entries())
+            .map(([name, count]) => (count > 1 ? `${count} × ${name}` : name))
+            .join(', ');
+          bullets.push(`Traffic originates from: ${originSummary}`);
         }
 
         // Gather aggregate live metrics if running
@@ -437,13 +457,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           }
         }
 
-        content.push(
-          detailStack(
-            headline,
-            { headline, bullets },
-            getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
-          ),
-        );
+        content.push(detailStack(headline, { headline, bullets }));
       }
     });
   }
