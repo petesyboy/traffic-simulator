@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.568",
+    date: "2026-08-23",
+    summary: "Added a dedicated Left RU Number Rail displaying permanent 1-42 slot numbers on the rack exterior regardless of hardware occupancy, and refined fitted SFP cage overlays with crisp 1px borders and enhanced background clarity.",
+  },
+  {
     version: "1.0.567",
     date: "2026-08-23",
     summary: "Fixed ChassisFrontPanel height scaling in Rack Elevation View (fillContainer) ensuring full 3U HC3 chassis with all 4 module bays and ports is fully visible without clipping.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.549",
     date: "2026-08-20",
     summary: "Added interactive Link Details side panel when selecting any link on the canvas, showing source and target appliances, fitted transceiver SKUs, link speed, physical media, traffic purpose, and live simulation throughput.",
-  },
-  {
-    version: "1.0.548",
-    date: "2026-08-20",
-    summary: "Enabled multi-link connections between hardware nodes and tools on canvas with parallel curved routing, allowing multiple parallel physical links between the same appliances.",
   },
 ];

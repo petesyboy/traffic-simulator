@@ -132,17 +132,18 @@ export const ChassisFrontPanel: React.FC<ChassisFrontPanelProps> = ({
             // keeps working under red-green colour vision deficiency (protanopia/
             // deuteranopia), where green markers can wash out against this chassis
             // orange, and the glyph means "fitted" doesn't rely on colour at all.
-            background: 'rgba(0, 40, 90, 0.6)',
-            border: '2px solid #29b6f6',
-            borderRadius: '2px',
+            background: 'rgba(0, 70, 140, 0.3)',
+            border: '1px solid #29b6f6',
+            borderRadius: '1px',
             boxSizing: 'border-box',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             pointerEvents: 'auto',
+            boxShadow: '0 0 2px rgba(41, 182, 246, 0.5)',
           }}
         >
-          <svg viewBox="0 0 24 24" style={{ width: '65%', height: '65%' }} fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" style={{ width: '60%', height: '60%', opacity: 0.9 }} fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="4 12 10 18 20 6" />
           </svg>
         </div>

@@ -355,7 +355,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
         >
           <div
             style={{
-              width: `${420 * zoom}px`,
+              width: `${460 * zoom}px`,
               minHeight: `${1060 * zoom}px`,
               display: 'flex',
               justifyContent: 'center',
@@ -365,21 +365,62 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
           >
             <div
               style={{
-                width: '420px',
+                display: 'flex',
+                alignItems: 'stretch',
                 transform: `scale(${zoom})`,
                 transformOrigin: 'top center',
                 transition: 'transform 0.1s ease-out',
-                background: '#111',
-                border: '10px solid #2d2d2d',
-                borderTop: '20px solid #2d2d2d',
-                borderBottom: '20px solid #2d2d2d',
-                borderRadius: '4px',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
               }}
             >
+              {/* Left RU Rail Numbers (1-42) */}
+              <div
+                style={{
+                  width: '32px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  paddingTop: '20px',
+                  paddingBottom: '20px',
+                  boxSizing: 'border-box',
+                  marginRight: '6px',
+                  userSelect: 'none',
+                }}
+              >
+                {rackUnits.map(u => (
+                  <div
+                    key={`rail-u-${u}`}
+                    style={{
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '6px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      color: '#888',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {u}
+                  </div>
+                ))}
+              </div>
+
+              {/* 42U Cabinet */}
+              <div
+                style={{
+                  width: '420px',
+                  background: '#111',
+                  border: '10px solid #2d2d2d',
+                  borderTop: '20px solid #2d2d2d',
+                  borderBottom: '20px solid #2d2d2d',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+                }}
+              >
             {rackUnits.map(u => {
               const occupyingNode = rackedNodes.find(n => {
                 const startU = Number(n.data?.rackU);
@@ -432,7 +473,6 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
                         />
                       )}
-                      <div style={{ position: 'absolute', left: '-25px', color: '#666', fontSize: '10px' }}>{u}</div>
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(e, occupyingNode.id)}
@@ -552,7 +592,6 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                       overflow: 'hidden',
                     }}
                   >
-                    <div style={{ position: 'absolute', left: '-25px', color: '#666', fontSize: '10px' }}>{u}</div>
                     {resolvedImage ? (
                       hasFrontPanel ? (
                         <div style={{ width: '100%', height: '100%' }}>
@@ -635,15 +674,14 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                     transition: 'background 0.2s',
                     boxSizing: 'border-box'
                   }}
-                >
-                  <div style={{ position: 'absolute', left: '-25px', color: '#666', fontSize: '10px' }}>{u}</div>
-                </div>
+                />
               );
             })}
           </div>
         </div>
       </div>
     </div>
+  </div>
       {inspectingNode && (
         <ChassisSummaryModal
           model={String(inspectingNode.data?.model || '')}

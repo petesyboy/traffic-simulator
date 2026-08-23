@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.568",
+    "date": "2026-08-23",
+    "summary": "Added a dedicated Left RU Number Rail displaying permanent 1-42 slot numbers on the rack exterior regardless of hardware occupancy, and refined fitted SFP cage overlays with crisp 1px borders and enhanced background clarity."
+  },
+  {
     "version": "1.0.567",
     "date": "2026-08-23",
     "summary": "Fixed ChassisFrontPanel height scaling in Rack Elevation View (fillContainer) ensuring full 3U HC3 chassis with all 4 module bays and ports is fully visible without clipping."
