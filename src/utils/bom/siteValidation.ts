@@ -56,13 +56,17 @@ function getNodeDisplayName(node: CustomNode): string {
  * AND at least one piece of equipment is left unassigned/untagged.
  */
 export function detectMixedSiteAssignment(nodes: CustomNode[]): MixedSiteAssignmentResult {
-  // Filter for site-assignable physical equipment/kit nodes, ignoring auto-generated tray nodes
+  // Filter for site-assignable physical equipment/kit nodes, ignoring auto-generated tray nodes and customer tools/probes
   const equipmentNodes = nodes.filter((n) => {
     if (n.type === NODE_TYPES.HARDWARE) {
       const model = String(n.data?.model || '');
       return !isAutoTrayModel(model);
     }
-    return n.type === NODE_TYPES.INPUT || n.type === NODE_TYPES.TOOL;
+    if (n.type === NODE_TYPES.INPUT) {
+      return true;
+    }
+    // Exclude custom tools, packet tools, and third-party probes (NODE_TYPES.TOOL) as they are external and not part of the Gigamon BOM
+    return false;
   });
 
   const taggedNodes: SiteTaggedNodeInfo[] = [];

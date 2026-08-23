@@ -105,7 +105,7 @@ describe('detectMixedSiteAssignment', () => {
     expect(result.untaggedNodes).toHaveLength(0);
   });
 
-  it('detects mixed tagging across hardware, input, and tool nodes', () => {
+  it('detects mixed tagging across hardware and input nodes', () => {
     const nodes: CustomNode[] = [
       {
         id: 'in-1',
@@ -134,5 +134,41 @@ describe('detectMixedSiteAssignment', () => {
     expect(result.taggedNodes[0].label).toBe('DC WAN Tap');
     expect(result.untaggedNodes).toHaveLength(1);
     expect(result.untaggedNodes[0].label).toBe('Aggregation Chassis');
+  });
+
+  it('ignores untagged custom tools, packet tools, and third-party probes (e.g. Ericsson probes)', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'hw-1',
+        type: NODE_TYPES.HARDWARE,
+        position: { x: 0, y: 0 },
+        data: { model: 'GigaVUE-HC3', label: 'Primary HC3', site: 'Site A' } as HardwareNodeData,
+      },
+      {
+        id: 'hw-2',
+        type: NODE_TYPES.HARDWARE,
+        position: { x: 100, y: 0 },
+        data: { model: 'GigaVUE-TA25E', label: 'Leaf TA25E', site: 'Site B' } as HardwareNodeData,
+      },
+      {
+        id: 'probe-1',
+        type: NODE_TYPES.TOOL,
+        position: { x: 200, y: 0 },
+        data: { label: 'Ericsson Probe 1', configType: 'Packet Tool' } as unknown as CustomNode['data'], // untagged probe
+      },
+      {
+        id: 'probe-2',
+        type: NODE_TYPES.TOOL,
+        position: { x: 200, y: 100 },
+        data: { label: 'Ericsson Probe 2', configType: 'Packet Tool' } as unknown as CustomNode['data'], // untagged probe
+      },
+    ];
+
+    const result = detectMixedSiteAssignment(nodes);
+    // All physical Gigamon hardware is tagged (Site A, Site B) - untagged probes must not trigger warning
+    expect(result.hasMixedSites).toBe(false);
+    expect(result.untaggedNodes).toHaveLength(0);
+    expect(result.taggedNodes).toHaveLength(2);
+    expect(result.taggedSites).toEqual(['Site A', 'Site B']);
   });
 });

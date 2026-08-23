@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.571",
+    "date": "2026-08-23",
+    "summary": "Excluded tool nodes, packet tools, and third-party probes (such as Ericsson probes) from physical site assignment validation checks."
+  },
+  {
     "version": "1.0.570",
     "date": "2026-08-23",
     "summary": "Excluded custom tools, packet tools, and third-party monitoring probes (such as Ericsson probes) from the rackable hardware inventory and unracked equipment warnings."
