@@ -47,7 +47,7 @@
     {
       "model": "TAP-M100T",
       "sku": "TAP-M100T",
-      "ru": 0.5,
+      "ru": 1,
       "type": "chassis",
       "max_modules": 3,
       "max_links": 18,
@@ -56,7 +56,7 @@
     {
       "model": "TAP-M200T",
       "sku": "TAP-M200T",
-      "ru": 1,
+      "ru": 2,
       "type": "chassis",
       "max_modules": 6,
       "max_links": 36,

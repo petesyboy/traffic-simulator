@@ -145,6 +145,37 @@ export const getTrayBayCount = (model: string, sku?: string): number => {
   return tray?.max_modules || 0;
 };
 
+export interface TrayLayout {
+  rows: number;
+  cols: number;
+  grid: number[][];
+}
+
+/**
+ * Returns physical bay grid layout for a TAP tray:
+ * - TAP-M200T (2U): 2 rows of 3 bays (Top row: 1, 2, 3; Bottom row: 4, 5, 6)
+ * - TAP-M100T (1U): 1 row of 3 bays (1, 2, 3)
+ * - TAP-M202ULT (1U): 1 row of 2 bays (1, 2)
+ */
+export const getTrayLayout = (model: string, sku?: string): TrayLayout => {
+  const bays = getTrayBayCount(model, sku);
+  if (bays === 6 || model.includes('M200') || (sku && sku.includes('M200'))) {
+    return {
+      rows: 2,
+      cols: 3,
+      grid: [
+        [1, 2, 3],
+        [4, 5, 6],
+      ],
+    };
+  }
+  return {
+    rows: 1,
+    cols: bays || 3,
+    grid: [Array.from({ length: bays || 3 }, (_, i) => i + 1)],
+  };
+};
+
 /** True for a physical tap-module "stick" (TAP-M251T, TAP-M253T, ...) - the only
  *  kind of node that belongs in a tray bay, as opposed to a tray itself, an active
  *  G-TAP appliance, or unrelated hardware dragged onto a bay by mistake. */

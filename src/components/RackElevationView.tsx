@@ -3,7 +3,7 @@ import { useStore } from '../store/store';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
-import { getModuleSlotPositions, getTrayBayCount, isTapModule } from '../utils/hardwareUtils';
+import { getModuleSlotPositions, getTrayBayCount, getTrayLayout, isTapModule } from '../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
 import { ChassisSummaryModal } from './nodes/ChassisSummaryModal';
@@ -376,10 +376,13 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                 const ru = getDeviceRU(model, sku);
                 const rowHeight = ru * 24;
                 const bays = getTrayBayCount(model, sku);
+                const trayLayout = getTrayLayout(model, sku);
 
                 if (bays > 0) {
                   const nested = rackableNodes.filter(n => n.data?.trayId === occupyingNode.id);
                   const resolvedTrayImage = resolveHardwareIcon(occupyingNode.data?.image as string | undefined);
+                  const rowUnitHeight = rowHeight / trayLayout.rows;
+
                   return (
                     <div
                       key={u}
@@ -410,62 +413,76 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                           background: resolvedTrayImage ? 'transparent' : '#444',
                         }}
                       />
-                      {Array.from({ length: bays }, (_, i) => i + 1).map(bay => {
-                        const bayNode = nested.find(n => n.data?.traySlot === bay);
-                        if (bayNode) {
-                          const resolvedBayImage = resolveHardwareIcon(
-                            (bayNode.data?.image as string | undefined) || (bayNode.data?.model as string | undefined)
-                          );
-                          return (
-                            <div
-                              key={bay}
-                              onClick={() => updateNodeData(bayNode.id, { trayId: undefined, traySlot: undefined })}
-                              title={`Bay ${bay}: ${bayNode.data?.model} - ${bayNode.data?.label} (click to remove)`}
-                              style={{
-                                flex: 1, color: '#fff', cursor: 'pointer', position: 'relative', zIndex: 1,
-                                background: resolvedBayImage ? '#0a0a0a' : (resolvedTrayImage ? 'rgba(0,124,255,0.55)' : '#007cff'),
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '8px', fontWeight: 'bold', overflow: 'hidden', whiteSpace: 'nowrap',
-                                borderRight: '1px solid #0d1117', boxSizing: 'border-box',
-                              }}
-                            >
-                              {resolvedBayImage && (
-                                <img
-                                  src={resolvedBayImage}
-                                  alt={String(bayNode.data?.model || '')}
-                                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
-                                />
-                              )}
-                              {rowHeight >= 18 && !hideLabels && (
-                                <span style={{
-                                  position: 'relative', zIndex: 2,
-                                  background: resolvedBayImage ? 'rgba(0,0,0,0.65)' : 'transparent',
-                                  padding: '1px 3px', borderRadius: '2px',
-                                  textShadow: '0 0 3px #000',
-                                }}>
-                                  {bayNode.data?.model}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-                        return (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', zIndex: 1 }}>
+                        {trayLayout.grid.map((rowBays, rowIdx) => (
                           <div
-                            key={bay}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleBayDrop(e, occupyingNode.id, bay)}
-                            title={`Bay ${bay} - drop a tap module or breakout panel here`}
+                            key={rowIdx}
                             style={{
-                              flex: 1, border: '1px dashed #555', boxSizing: 'border-box', position: 'relative', zIndex: 1,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '7px', color: resolvedTrayImage ? '#fff' : '#666',
-                              textShadow: resolvedTrayImage ? '0 0 3px #000' : undefined,
+                              flex: 1,
+                              display: 'flex',
+                              width: '100%',
+                              borderBottom: rowIdx < trayLayout.rows - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none',
                             }}
                           >
-                            {rowHeight >= 18 && !hideLabels ? bay : ''}
+                            {rowBays.map((bay) => {
+                              const bayNode = nested.find(n => n.data?.traySlot === bay);
+                              if (bayNode) {
+                                const resolvedBayImage = resolveHardwareIcon(
+                                  (bayNode.data?.image as string | undefined) || (bayNode.data?.model as string | undefined)
+                                );
+                                return (
+                                  <div
+                                    key={bay}
+                                    onClick={() => updateNodeData(bayNode.id, { trayId: undefined, traySlot: undefined })}
+                                    title={`Bay ${bay}: ${bayNode.data?.model} - ${bayNode.data?.label} (click to remove)`}
+                                    style={{
+                                      flex: 1, color: '#fff', cursor: 'pointer', position: 'relative',
+                                      background: resolvedBayImage ? '#0a0a0a' : (resolvedTrayImage ? 'rgba(0,124,255,0.55)' : '#007cff'),
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      fontSize: '8px', fontWeight: 'bold', overflow: 'hidden', whiteSpace: 'nowrap',
+                                      borderRight: '1px solid #0d1117', boxSizing: 'border-box',
+                                    }}
+                                  >
+                                    {resolvedBayImage && (
+                                      <img
+                                        src={resolvedBayImage}
+                                        alt={String(bayNode.data?.model || '')}
+                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+                                      />
+                                    )}
+                                    {rowUnitHeight >= 16 && !hideLabels && (
+                                      <span style={{
+                                        position: 'relative', zIndex: 2,
+                                        background: resolvedBayImage ? 'rgba(0,0,0,0.65)' : 'transparent',
+                                        padding: '1px 3px', borderRadius: '2px',
+                                        textShadow: '0 0 3px #000',
+                                      }}>
+                                        {bayNode.data?.model}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div
+                                  key={bay}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleBayDrop(e, occupyingNode.id, bay)}
+                                  title={`Bay ${bay} - drop a tap module or breakout panel here`}
+                                  style={{
+                                    flex: 1, border: '1px dashed #555', boxSizing: 'border-box', position: 'relative',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '7px', color: resolvedTrayImage ? '#fff' : '#666',
+                                    textShadow: resolvedTrayImage ? '0 0 3px #000' : undefined,
+                                  }}
+                                >
+                                  {rowUnitHeight >= 16 && !hideLabels ? bay : ''}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                       <button
                         onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
                         style={{

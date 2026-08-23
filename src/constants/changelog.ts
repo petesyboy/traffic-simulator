@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.564",
+    date: "2026-08-23",
+    summary: "Updated TAP-M200T 2U modular tray layout to render accurately as 3 across in the top row and 3 across in the bottom row (2x3 grid).",
+  },
+  {
     version: "1.0.563",
     date: "2026-08-23",
     summary: "Integrated authentic Gigamon G-TAP stencil graphics from ms-vs-gigamon-g-tap-stencils.vss across canvas nodes, TAP configuration panels, and rack elevation tray bays (M-Series TAPs, ULT/TAA variants, breakout panels, and active TAPs).",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.543",
     date: "2026-08-20",
     summary: "Ship v1.0.543: project-wide optic pack optimization + surplus notes",
-  },
-  {
-    version: "1.0.542",
-    date: "2026-08-19",
-    summary: "Ship v1.0.542: optic multipack BOM optimization",
   },
 ];

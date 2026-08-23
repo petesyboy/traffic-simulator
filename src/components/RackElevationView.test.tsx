@@ -51,4 +51,57 @@ describe('RackElevationView', () => {
     expect(html).toContain('Inspect chassis details and front panel');
     expect(html).toContain('Remove from Rack');
   });
+
+  it('renders TAP-M200T 2U tray with 2 rows of 3 bays and slotted TAP modules', () => {
+    const trayNode: CustomNode = {
+      id: 'tray-node',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Main TAP Tray',
+        model: 'TAP-M200T',
+        sku: 'TAP-M200T',
+        site: 'Primary DC',
+        rackId: 'rack_Primary DC',
+        rackU: 10,
+        image: 'TAP-M200T.png',
+      } as unknown as CustomNode['data'],
+    };
+
+    const moduleTop: CustomNode = {
+      id: 'mod-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Bay 1 Module',
+        model: 'TAP-M253T',
+        sku: 'TAP-M253T',
+        site: 'Primary DC',
+        trayId: 'tray-node',
+        traySlot: 1,
+      } as unknown as CustomNode['data'],
+    };
+
+    const moduleBottom: CustomNode = {
+      id: 'mod-5',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Bay 5 Module',
+        model: 'PNL-M341T',
+        sku: 'PNL-M341T',
+        site: 'Primary DC',
+        trayId: 'tray-node',
+        traySlot: 5,
+      } as unknown as CustomNode['data'],
+    };
+
+    const html = renderToStaticMarkup(<RackElevationView nodes={[trayNode, moduleTop, moduleBottom]} />);
+
+    expect(html).toContain('TAP-M253T');
+    expect(html).toContain('PNL-M341T');
+    expect(html).toContain('Bay 1: TAP-M253T - Bay 1 Module (click to remove)');
+    expect(html).toContain('Bay 5: PNL-M341T - Bay 5 Module (click to remove)');
+    expect(html).toContain('Remove tray from rack');
+  });
 });
