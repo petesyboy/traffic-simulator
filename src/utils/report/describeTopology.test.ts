@@ -224,18 +224,18 @@ describe('describeHostedGigaSmartAppDetail', () => {
       { label: 'Dedup Engine', actionType: ACTION_TYPES.DEDUPLICATION } as GigaSmartNodeData,
       'HC1-Core',
     );
-    expect(detail.headline).toBe('Dedup Engine — Deduplication');
+    expect(detail.headline).toBe('Dedup Engine (Deduplication)');
     expect(detail.bullets).toContain('Action: Drop');
     expect(detail.bullets).toContain('Running on: HC1-Core');
     expect(detail.bullets.length).toBe(3);
   });
 
-  it('falls back to the action type as the headline when the app has no label', () => {
+  it('falls back cleanly to the action type without duplication when the label matches or is absent', () => {
     const detail = describeHostedGigaSmartAppDetail(
       { actionType: ACTION_TYPES.DEDUPLICATION } as GigaSmartNodeData,
       'HC1-Core',
     );
-    expect(detail.headline).toBe('Deduplication — Deduplication');
+    expect(detail.headline).toBe('Deduplication');
   });
 });
 

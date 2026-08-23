@@ -416,8 +416,14 @@ export function describeProcessingNodeDetail(
  * text didn't).
  */
 export function describeHostedGigaSmartAppDetail(app: GigaSmartNodeData, hostLabel: string): NodeDetail {
+  const label = (app.label || '').trim();
+  const action = (app.actionType || '').trim();
+  const headline = (!label || label.toLowerCase() === action.toLowerCase())
+    ? (action || label || 'GigaSMART')
+    : `${label} (${action})`;
+
   return {
-    headline: `${app.label || app.actionType} — ${app.actionType}`,
+    headline,
     bullets: [describeGigaSmartAction(app), describeGigaSmartFunction(app.actionType), `Running on: ${hostLabel}`],
   };
 }

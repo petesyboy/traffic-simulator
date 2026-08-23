@@ -21,7 +21,7 @@ import type {
   HardwareNodeData,
   NodeMetrics,
 } from '../../store/types';
-import { NODE_TYPES } from '../../constants/nodeTypes';
+import { NODE_TYPES, ACTION_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateBom, validateConfiguration, getSkus } from '../../utils/bomEngine';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../bom/physicalItems';
@@ -32,9 +32,11 @@ import {
   describeProcessingNodeDetail,
   describeToolNodeDetail,
   describeHostedGigaSmartAppDetail,
+  describeGigaSmartAction,
   resolveNodeSite,
   type NodeDetail,
 } from './describeTopology';
+import { describeGigaSmartFunction } from './gigaSmartDescriptions';
 import { describeAggregatedTapPhysicalLink } from './describeTapLink';
 import { describeChassisPurpose } from './chassisDescriptions';
 import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
@@ -256,7 +258,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           [
             {
               stack: [
-                { text: '⚠ Configuration Attention Required', style: 'warningTitle' },
+                { text: 'Configuration Attention Required', style: 'warningTitle' },
                 {
                   text: 'The current configuration has unresolved items. The Bill of Materials in this report may be incomplete or invalid until these are addressed:',
                   style: 'body',
@@ -308,43 +310,143 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     });
   }
 
-  const gigaSmartNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASMART);
   const gigaStreamNodes = nodes.filter((n) => n.type === NODE_TYPES.GIGASTREAM);
-  // GigaSMART functions can also run as an app hosted directly on a chassis's
-  // onboard engine (HC1/HC3 etc.) or a GSA tool appliance, rather than as
-  // their own canvas node — gather those alongside the standalone nodes so
-  // e.g. deduplication configured on an HC1 gets described too.
-  const hostedGigaSmartApps: { app: GigaSmartNodeData; hostLabel: string }[] = [];
+  
+  // Gather and consolidate all GigaSMART functions (standalone nodes, hosted apps, GTP modes)
+  interface GigaSmartEntry {
+    actionType: string;
+    label?: string;
+    appData?: GigaSmartNodeData;
+    hostNode: CustomNode;
+    hostLabel: string;
+    site?: string;
+    isStandaloneNode?: boolean;
+  }
+
+  const gigaSmartEntries: GigaSmartEntry[] = [];
+
+  nodes.filter((n) => n.type === NODE_TYPES.GIGASMART).forEach((n) => {
+    const data = n.data as GigaSmartNodeData;
+    const actionType = data.actionType || ACTION_TYPES.DEDUPLICATION;
+    const site = resolveNodeSite(n, nodes, edges);
+    const sitePrefix = site ? `${site} · ` : '';
+    const hostLabel = `${sitePrefix}${data.label || n.id}`;
+    gigaSmartEntries.push({
+      actionType,
+      label: data.label,
+      appData: data,
+      hostNode: n,
+      hostLabel,
+      site,
+      isStandaloneNode: true,
+    });
+  });
+
   nodes.forEach((n) => {
     const rawApps = (n.data as Record<string, unknown>)?.gigaSmartApps;
     const site = resolveNodeSite(n, nodes, edges);
-    const sitePrefix = site ? `${site} · ` : '';
-    const hostLabel = `${sitePrefix}${n.data?.label || (n.data as HardwareNodeData)?.model || n.id}`;
+    const nodeLabel = String(n.data?.label || (n.data as HardwareNodeData)?.model || n.id);
+    const hostLabel = site ? `${site} · ${nodeLabel}` : nodeLabel;
 
     if (Array.isArray(rawApps)) {
-      rawApps.forEach((app: GigaSmartNodeData) => hostedGigaSmartApps.push({ app, hostLabel }));
+      rawApps.forEach((app: GigaSmartNodeData) => {
+        const actionType = app.actionType || ACTION_TYPES.DEDUPLICATION;
+        gigaSmartEntries.push({
+          actionType,
+          label: app.label,
+          appData: app,
+          hostNode: n,
+          hostLabel,
+          site,
+          isStandaloneNode: false,
+        });
+      });
+    }
+
+    const hwData = n.data as HardwareNodeData;
+    if (hwData?.gtpCorrelationMode && hwData.gtpCorrelationMode !== 'none') {
+      const alreadyHasGtp = Array.isArray(rawApps) && rawApps.some((a) => a.actionType?.toLowerCase().includes('gtp'));
+      if (!alreadyHasGtp) {
+        gigaSmartEntries.push({
+          actionType: 'GTP Correlation',
+          label: 'GTP Correlation',
+          appData: { actionType: 'GTP Correlation' } as GigaSmartNodeData,
+          hostNode: n,
+          hostLabel,
+          site,
+          isStandaloneNode: false,
+        });
+      }
     }
   });
-  if (gigaSmartNodes.length > 0 || hostedGigaSmartApps.length > 0) {
+
+  if (gigaSmartEntries.length > 0) {
     content.push({ text: 'GigaSMART Processing', style: 'subHeading' });
-    gigaSmartNodes.forEach((n) => {
-      const data = n.data as GigaSmartNodeData;
-      const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
-      content.push(
-        detailStack(
-          `${data.label} — ${data.actionType}`,
-          detail,
-          getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, data.actionType),
-        ),
-      );
+
+    const gigaSmartGroups = new Map<string, GigaSmartEntry[]>();
+    gigaSmartEntries.forEach((entry) => {
+      const key = entry.actionType;
+      if (!gigaSmartGroups.has(key)) gigaSmartGroups.set(key, []);
+      gigaSmartGroups.get(key)!.push(entry);
     });
-    hostedGigaSmartApps.forEach(({ app, hostLabel }) => {
-      const detail = describeHostedGigaSmartAppDetail(app, hostLabel);
-      content.push(
-        detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, app.actionType)),
-      );
+
+    gigaSmartGroups.forEach((group, actionType) => {
+      if (group.length === 1) {
+        const entry = group[0];
+        if (entry.isStandaloneNode) {
+          const detail = describeProcessingNodeDetail(entry.hostNode, nodes, edges, liveMetrics);
+          const headline = entry.label || entry.actionType;
+          content.push(
+            detailStack(headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, entry.actionType)),
+          );
+        } else {
+          const detail = describeHostedGigaSmartAppDetail(
+            entry.appData || ({ actionType: entry.actionType } as GigaSmartNodeData),
+            entry.hostLabel,
+          );
+          content.push(
+            detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, entry.actionType)),
+          );
+        }
+      } else {
+        const siteCounts = new Map<string, number>();
+        group.forEach((e) => {
+          if (e.site) siteCounts.set(e.site, (siteCounts.get(e.site) || 0) + 1);
+        });
+
+        let headline: string;
+        if (siteCounts.size > 1) {
+          const siteBreakdown = Array.from(siteCounts.entries())
+            .map(([site, count]) => `${count} at ${site}`)
+            .join(', ');
+          headline = `${actionType} (${group.length} instances deployed across ${siteCounts.size} sites: ${siteBreakdown})`;
+        } else if (siteCounts.size === 1) {
+          const [singleSite, count] = Array.from(siteCounts.entries())[0];
+          const siteClause = count === group.length ? ` at ${singleSite}` : ` (${count} at ${singleSite})`;
+          headline = `${actionType} (${group.length} instances deployed${siteClause})`;
+        } else {
+          headline = `${actionType} (${group.length} instances deployed)`;
+        }
+
+        const sampleApp = group[0].appData || ({ actionType } as GigaSmartNodeData);
+        const uniqueHosts = Array.from(new Set(group.map((e) => e.hostLabel))).join(', ');
+        const bullets: string[] = [
+          describeGigaSmartAction(sampleApp),
+          describeGigaSmartFunction(actionType),
+          `Running on: ${uniqueHosts}`,
+        ];
+
+        content.push(
+          detailStack(
+            headline,
+            { headline, bullets },
+            getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, actionType),
+          ),
+        );
+      }
     });
   }
+
   if (gigaStreamNodes.length > 0) {
     gigaStreamNodes.forEach((n) => {
       const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
@@ -363,7 +465,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             {
               stack: [
                 {
-                  text: '⚠ Important Notice: Tool Ingest Capacities & Vendor Verification',
+                  text: 'Important Notice: Tool Ingest Capacities & Vendor Verification',
                   style: 'warningTitle',
                   fontSize: 9.5,
                   bold: true,

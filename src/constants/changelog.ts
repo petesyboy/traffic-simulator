@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.581",
+    date: "2026-08-23",
+    summary: "Consolidated GigaSMART function descriptions across sites in the Solution Overview narrative report, cleaned repetitive title labels, and fixed broken warning glyph boxes in PDF callouts.",
+  },
+  {
     version: "1.0.580",
     date: "2026-08-23",
     summary: "Fixed GigaSMART module drag-and-drop validation on the canvas to evaluate multi-engine capacity and allow uncombinable single-GSOP operations across multiple installed SMT cards on GigaVUE-HC3/HC1.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.562",
     date: "2026-08-23",
     summary: "Added a 'Hide Labels' toggle checkbox to the 42U Rack Elevation View toolbar, enabling clean, unobstructed front-panel and TAP tray visualization.",
-  },
-  {
-    version: "1.0.561",
-    date: "2026-08-23",
-    summary: "Added interactive zoom controls (step in/out, presets from 75% to 200%, Ctrl+Scroll wheel zoom) and one-click per-chassis front-panel modal inspection in the 42U Rack Elevation View.",
   },
 ];
