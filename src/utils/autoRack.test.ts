@@ -105,6 +105,47 @@ describe('autoRack', () => {
       expect(dc2Node?.data?.rackId).toBeUndefined();
       expect(dc2Node?.data?.rackU).toBeUndefined();
     });
+
+    it('ignores custom tools, packet tools, and third-party probes (e.g. Ericsson probes)', () => {
+      const nodes: CustomNode[] = [
+        makeHwNode('dc1-hc1', 'GigaVUE-HC1', 'GVS-HC101', 'DC1'),
+        {
+          id: 'probe-1',
+          type: 'toolNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'Ericsson Probe 1',
+            configType: 'Packet Tool',
+            toolName: 'Ericsson Probe',
+            site: 'DC1',
+          } as unknown as CustomNode['data'],
+        },
+        {
+          id: 'probe-2',
+          type: 'toolNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'Customer Tool',
+            configType: 'Storage Tool',
+            site: 'DC1',
+          } as unknown as CustomNode['data'],
+        },
+      ];
+
+      const deployed = autoDeployRack(nodes, 'DC1');
+
+      const hc1Node = deployed.find(n => n.id === 'dc1-hc1');
+      const probe1 = deployed.find(n => n.id === 'probe-1');
+      const probe2 = deployed.find(n => n.id === 'probe-2');
+
+      expect(hc1Node?.data?.rackId).toBe('rack_DC1');
+      expect(hc1Node?.data?.rackU).toBe(1);
+
+      expect(probe1?.data?.rackId).toBeUndefined();
+      expect(probe1?.data?.rackU).toBeUndefined();
+      expect(probe2?.data?.rackId).toBeUndefined();
+      expect(probe2?.data?.rackU).toBeUndefined();
+    });
   });
 
   describe('clearRackDeploy', () => {

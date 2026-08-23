@@ -19,7 +19,7 @@
  */
 
 import type { CustomNode } from '../store/types';
-import { getDeviceRU, getTrayBayCount, isTapModule, isBreakoutPanelModel } from './hardwareUtils';
+import { getDeviceRU, getTrayBayCount, isTapModule, isBreakoutPanelModel, isRackableGigamonEquipment } from './hardwareUtils';
 import { syncTapTrays, isAutoTrayModel } from './traySync';
 
 /** Weight / Hierarchy ranking: lower number = placed lower in the rack (bottom tier). */
@@ -127,9 +127,9 @@ export function autoDeployRack(nodes: CustomNode[], siteName: string): CustomNod
   }
 
   // 3. Collect all rackable equipment for this site (chassis + trays + active TAPs)
-  // (Exclude nested modules, since they live inside tray bays)
+  // (Exclude nested modules, since they live inside tray bays; exclude third-party tools/probes)
   const rackableEquipment = currentNodes.filter(n => {
-    if (n.type !== 'hardwareNode') return false;
+    if (!isRackableGigamonEquipment(n)) return false;
     if (!isNodeForSite(n)) return false;
     const model = String(n.data?.model || '');
     const sku = n.data?.sku as string | undefined;

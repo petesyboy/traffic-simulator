@@ -106,4 +106,23 @@ describe('RackElevationView', () => {
     expect(html).toContain('Bay 5: PNL-M341T - Bay 5 Module (click to remove)');
     expect(html).toContain('Remove tray from rack');
   });
+
+  it('excludes custom tools and probes (e.g. Ericsson probes) from Unracked Hardware', () => {
+    const probeNode: CustomNode = {
+      id: 'ericsson-probe-1',
+      type: 'toolNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Ericsson Probe 1',
+        toolName: 'Ericsson Probe',
+        configType: 'Packet Tool',
+        site: 'Primary DC',
+      } as unknown as CustomNode['data'],
+    };
+
+    const html = renderToStaticMarkup(<RackElevationView nodes={[probeNode]} />);
+
+    expect(html).not.toContain('Ericsson Probe 1');
+    expect(html).toContain('All site hardware is racked.');
+  });
 });

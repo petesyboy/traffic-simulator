@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
-import { getDeviceRU, getModuleSlotPositions, getTrayBayCount, getTrayLayout, isTapModule } from '../utils/hardwareUtils';
+import { getDeviceRU, getModuleSlotPositions, getTrayBayCount, getTrayLayout, isRackableGigamonEquipment, isTapModule } from '../utils/hardwareUtils';
 import { autoDeployRack, clearRackDeploy } from '../utils/autoRack';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
@@ -42,8 +42,8 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
     }
   };
 
-  // Filter hardware nodes that represent rack-mountable chassis
-  const allHardwareNodes = nodes.filter(n => n.type === 'hardwareNode' || n.data?.configType === 'TAP Device');
+  // Filter only authentic Gigamon BOM hardware (exclude custom tools, packet tools, Ericsson probes, etc.)
+  const allHardwareNodes = nodes.filter(isRackableGigamonEquipment);
 
   // Extract unique sites from all hardware/TAP nodes
   const uniqueSites = Array.from(

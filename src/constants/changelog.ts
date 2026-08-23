@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.570",
+    date: "2026-08-23",
+    summary: "Excluded custom tools, packet tools, and third-party monitoring probes (such as Ericsson probes) from the rackable hardware inventory and unracked equipment warnings.",
+  },
+  {
     version: "1.0.569",
     date: "2026-08-23",
     summary: "Updated TAP-M200T tray height to 1 RU and TAP-M100T to 0.5 RU across catalogue, heuristics, and 42U Rack Elevation View.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.551",
     date: "2026-08-20",
     summary: "Enhanced the Link Resolution Engine to intelligently upgrade lower-speed transceivers to match higher-speed peers (e.g. upgrading 1G to 10G/25G instead of downgrading) and cleanly replace mismatched optics in the chassis inventory and port map.",
-  },
-  {
-    version: "1.0.550",
-    date: "2026-08-20",
-    summary: "Added one-click 'Resolve Connection Problem' diagnostic feature to the Link Detail panel, automatically detecting missing, mismatched, or unassigned link transceivers and fitting matching TAA-compliant optics with one click.",
   },
 ];

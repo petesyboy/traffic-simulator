@@ -16,8 +16,9 @@ import {
   getMaxChassisCapacityBySpeed,
   getGigaSmartEngineCount,
   getDeviceRU,
+  isRackableGigamonEquipment,
 } from './hardwareUtils';
-import type { HardwareNodeData } from '../store/types';
+import type { CustomNode, HardwareNodeData } from '../store/types';
 
 describe('hardwareUtils', () => {
   describe('getCageCapacityBreakdown', () => {
@@ -656,6 +657,36 @@ describe('hardwareUtils', () => {
       expect(getDeviceRU('GigaVUE-HC1-Plus')).toBe(1);
       expect(getDeviceRU('GigaVUE-HCT')).toBe(1);
       expect(getDeviceRU('GigaVUE-TA200')).toBe(1);
+    });
+  });
+
+  describe('isRackableGigamonEquipment', () => {
+    it('returns true for Gigamon chassis, trays, and TAP modules', () => {
+      const hc3 = { id: '1', type: 'hardwareNode', position: { x: 0, y: 0 }, data: { model: 'GigaVUE-HC3', sku: 'GVS-HC301' } } as unknown as CustomNode;
+      const tray = { id: '2', type: 'hardwareNode', position: { x: 0, y: 0 }, data: { model: 'TAP-M200T', sku: 'TAP-M200T' } } as unknown as CustomNode;
+      const tapMod = { id: '3', type: 'hardwareNode', position: { x: 0, y: 0 }, data: { model: 'TAP-M253T', sku: 'TAP-M253T' } } as unknown as CustomNode;
+
+      expect(isRackableGigamonEquipment(hc3)).toBe(true);
+      expect(isRackableGigamonEquipment(tray)).toBe(true);
+      expect(isRackableGigamonEquipment(tapMod)).toBe(true);
+    });
+
+    it('returns false for custom tools, packet tools, and probes (e.g. Ericsson probes)', () => {
+      const probe = {
+        id: '4',
+        type: 'toolNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Ericsson Probe', toolName: 'Ericsson Probe', configType: 'Packet Tool' },
+      } as unknown as CustomNode;
+      const customStorage = {
+        id: '5',
+        type: 'toolNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Custom Storage', configType: 'Storage Tool' },
+      } as unknown as CustomNode;
+
+      expect(isRackableGigamonEquipment(probe)).toBe(false);
+      expect(isRackableGigamonEquipment(customStorage)).toBe(false);
     });
   });
 });

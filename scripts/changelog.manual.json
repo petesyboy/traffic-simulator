@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.570",
+    "date": "2026-08-23",
+    "summary": "Excluded custom tools, packet tools, and third-party monitoring probes (such as Ericsson probes) from the rackable hardware inventory and unracked equipment warnings."
+  },
+  {
     "version": "1.0.569",
     "date": "2026-08-23",
     "summary": "Updated TAP-M200T tray height to 1 RU and TAP-M100T to 0.5 RU across catalogue, heuristics, and 42U Rack Elevation View."

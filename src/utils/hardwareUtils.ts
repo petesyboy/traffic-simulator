@@ -2,7 +2,7 @@
  * Hardware utility functions extracted from HardwareNodePanel.
  * Provides optic speed detection, board port capacity, and chassis base port capacity.
  */
-import type { HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
+import type { CustomNode, HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getSupportedBoards } from './opticValidation';
 
@@ -212,6 +212,48 @@ export const isTapModule = (model: string, sku?: string): boolean => {
  */
 export const isBreakoutPanelModel = (model: string): boolean =>
   model.startsWith('PNL-M341') || model.startsWith('PNL-M343');
+
+/**
+ * Determines whether a node is a valid Gigamon rack-mountable chassis, tray,
+ * or TAP device belonging to the Gigamon Bill of Materials.
+ * Custom tools, packet tools, third-party probes (e.g. Ericsson, Dynatrace, Wireshark),
+ * and non-BOM equipment are explicitly excluded from the rack and unracked warnings.
+ */
+export const isRackableGigamonEquipment = (node: CustomNode): boolean => {
+  if (!node) return false;
+  if (node.type === 'toolNode' || node.type === 'inputNode' || node.type === 'mapNode' || node.type === 'gigasmartNode') {
+    return false;
+  }
+  const configType = String(node.data?.configType || '');
+  if (
+    configType === 'Packet Tool' ||
+    configType === 'Metadata Tool' ||
+    configType === 'Storage Tool' ||
+    configType.includes('Tool') ||
+    configType.includes('Probe')
+  ) {
+    return false;
+  }
+
+  const model = String(node.data?.model || node.data?.toolName || '');
+  const sku = node.data?.sku as string | undefined;
+
+  const inCatalogue = [...hardwareCatalogue.taps, ...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series]
+    .some(c => (sku && c.sku === sku) || c.model === model);
+
+  if (inCatalogue) return true;
+
+  // Recognized Gigamon hardware model families
+  const isRecognizedGigamonFamily =
+    model.startsWith('GigaVUE-') ||
+    model.startsWith('GVS-') ||
+    model.startsWith('TAP-') ||
+    model.startsWith('G-TAP') ||
+    model.startsWith('PNL-') ||
+    Boolean(sku && (sku.startsWith('GVS-') || sku.startsWith('TAP-') || sku.startsWith('PNL-') || sku.startsWith('TA-') || sku.startsWith('HC')));
+
+  return Boolean(isRecognizedGigamonFamily && (node.type === 'hardwareNode' || configType === 'TAP Device' || configType === 'Chassis'));
+};
 
 /**
  * Returns the catalogue icon path for a board/module SKU (e.g. "PRT-HC1-Q04X08"),
