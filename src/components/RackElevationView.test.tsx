@@ -54,7 +54,7 @@ describe('RackElevationView', () => {
     expect(html).toContain('Remove from Rack');
   });
 
-  it('renders TAP-M200T 2U tray with 2 rows of 3 bays and slotted TAP modules', () => {
+  it('renders TAP-M200T 1U tray with 2 rows of 3 bays and slotted TAP modules', () => {
     const trayNode: CustomNode = {
       id: 'tray-node',
       type: 'hardwareNode',

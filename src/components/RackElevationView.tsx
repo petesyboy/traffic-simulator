@@ -121,7 +121,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
       const model = String(dragged?.data?.model || '');
       const sku = dragged?.data?.sku as string | undefined;
       const ru = getDeviceRU(model, sku);
-      const targetStartU = Math.max(1, uPosition - ru + 1);
+      const targetStartU = ru >= 1 ? Math.max(1, uPosition - ru + 1) : uPosition;
       updateNodeData(nodeId, { rackId, rackU: targetStartU, trayId: undefined, traySlot: undefined });
     }
   };
@@ -425,13 +425,14 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
               const occupyingNode = rackedNodes.find(n => {
                 const startU = Number(n.data?.rackU);
                 const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
-                const topU = startU + ru - 1;
+                const topU = ru >= 1 ? startU + ru - 1 : startU;
                 return topU === u;
               });
 
               const isCovered = rackedNodes.some(n => {
                 const startU = Number(n.data?.rackU);
                 const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
+                if (ru <= 1) return false;
                 const topU = startU + ru - 1;
                 return u >= startU && u < topU;
               });

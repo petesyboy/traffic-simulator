@@ -15,6 +15,7 @@ import {
   getBoardSpeedSubCap,
   getMaxChassisCapacityBySpeed,
   getGigaSmartEngineCount,
+  getDeviceRU,
 } from './hardwareUtils';
 import type { HardwareNodeData } from '../store/types';
 
@@ -634,6 +635,27 @@ describe('hardwareUtils', () => {
 
     it('ignores non-SMT boards', () => {
       expect(getGigaSmartEngineCount('GigaVUE-HC3', baseHwData({ 1: 'PRT-HC3-C16', 2: 'PRT-HC3-X24' }))).toBe(0);
+    });
+  });
+
+  describe('getDeviceRU', () => {
+    it('returns 1 RU for TAP-M200T', () => {
+      expect(getDeviceRU('TAP-M200T')).toBe(1);
+      expect(getDeviceRU('TAP-M200T', 'TAP-M200T')).toBe(1);
+    });
+
+    it('returns 0.5 RU for TAP-M100T', () => {
+      expect(getDeviceRU('TAP-M100T')).toBe(0.5);
+      expect(getDeviceRU('TAP-M100T', 'TAP-M100T')).toBe(0.5);
+    });
+
+    it('returns correct RU for chassis models', () => {
+      expect(getDeviceRU('GigaVUE-HC3')).toBe(3);
+      expect(getDeviceRU('GigaVUE-HC2')).toBe(2);
+      expect(getDeviceRU('GigaVUE-HC1')).toBe(1);
+      expect(getDeviceRU('GigaVUE-HC1-Plus')).toBe(1);
+      expect(getDeviceRU('GigaVUE-HCT')).toBe(1);
+      expect(getDeviceRU('GigaVUE-TA200')).toBe(1);
     });
   });
 });

@@ -189,7 +189,8 @@ export const getDeviceRU = (model: string, sku?: string): number => {
   if (model.includes('HC2')) return 2;
   if (model.includes('HC1') || model.includes('HCT')) return 1;
   if (model.includes('TA25') || model.includes('TA100') || model.includes('TA200') || model.includes('TA400')) return 1;
-  if (model.includes('M200')) return 2;
+  if (model.includes('M200')) return 1;
+  if (model.includes('M100')) return 0.5;
   if (model.includes('TAP')) return 1;
   return 1;
 };

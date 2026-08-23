@@ -1,4 +1,0 @@
-File:   index.html
-Size:   6011050 bytes
-MD5:    e558630a78f1f7b323873b5708e7b93e
-SHA256: 46ccff790e10bce23284bf9bc86cb0f7104b1b8b74bd0daf681528a1ba43ecdc
