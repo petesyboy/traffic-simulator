@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.566",
+    date: "2026-08-23",
+    summary: "Fixed multi-RU chassis vertical positioning in 42U Rack Elevation View (preventing HC3 bottom truncation) and mapped all TAP module stencils to authentic orange LC connector faceplates.",
+  },
+  {
     version: "1.0.565",
     date: "2026-08-23",
     summary: "Added Auto-Deploy to 42U Rack Elevation View using datacenter weight/hierarchy standards (heaviest chassis at bottom, TAP trays/modules at top) and added debounced working session autosave and slot tracking.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.546",
     date: "2026-08-20",
     summary: "Add Header Stripping and GTP Call Correlation interactive visualisations and simulation",
-  },
-  {
-    version: "1.0.544",
-    date: "2026-08-20",
-    summary: "Ship v1.0.544: consolidate standalone single-line BOM devices",
   },
 ];

@@ -117,7 +117,12 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
     e.preventDefault();
     const nodeId = e.dataTransfer.getData('nodeId');
     if (nodeId) {
-      updateNodeData(nodeId, { rackId, rackU: uPosition, trayId: undefined, traySlot: undefined });
+      const dragged = nodes.find(n => n.id === nodeId);
+      const model = String(dragged?.data?.model || '');
+      const sku = dragged?.data?.sku as string | undefined;
+      const ru = getDeviceRU(model, sku);
+      const targetStartU = Math.max(1, uPosition - ru + 1);
+      updateNodeData(nodeId, { rackId, rackU: targetStartU, trayId: undefined, traySlot: undefined });
     }
   };
 
@@ -376,15 +381,21 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
               }}
             >
             {rackUnits.map(u => {
-              const occupyingNode = rackedNodes.find(n => n.data?.rackU === u);
+              const occupyingNode = rackedNodes.find(n => {
+                const startU = Number(n.data?.rackU);
+                const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
+                const topU = startU + ru - 1;
+                return topU === u;
+              });
 
               const isCovered = rackedNodes.some(n => {
                 const startU = Number(n.data?.rackU);
                 const ru = getDeviceRU(String(n.data?.model || ''), n.data?.sku as string | undefined);
-                return u >= startU && u < startU + ru;
+                const topU = startU + ru - 1;
+                return u >= startU && u < topU;
               });
 
-              if (isCovered && !occupyingNode) {
+              if (isCovered) {
                 return null;
               }
 

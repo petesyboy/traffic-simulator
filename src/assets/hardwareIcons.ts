@@ -8,10 +8,56 @@ for (const path in modules) {
   iconsByFilename[filename] = modules[path].default;
 }
 
+const TAP_MODEL_ALIASES: Record<string, string> = {
+  'TAP-M251': 'TAP-252.png',
+  'TAP-M251T': 'TAP-252.png',
+  'TAP-M251LT': 'TAP-252.png',
+  'TAP-M251ULT': 'TAP-252.png',
+  'TAP-M252': 'TAP-252.png',
+  'TAP-M252T': 'TAP-252.png',
+  'TAP-M252LT': 'TAP-252.png',
+  'TAP-M253': 'TAP-253.png',
+  'TAP-M253T': 'TAP-253.png',
+  'TAP-M253LT': 'TAP-253.png',
+  'TAP-M253ULT': 'TAP-253.png',
+  'TAP-M261': 'TAP-252.png',
+  'TAP-M261T': 'TAP-252.png',
+  'TAP-M261LT': 'TAP-252.png',
+  'TAP-M262': 'TAP-252.png',
+  'TAP-M262T': 'TAP-252.png',
+  'TAP-M262LT': 'TAP-252.png',
+  'TAP-M263': 'TAP-253.png',
+  'TAP-M263T': 'TAP-253.png',
+  'TAP-M263LT': 'TAP-253.png',
+  'TAP-M271': 'TAP-272.png',
+  'TAP-M271T': 'TAP-272.png',
+  'TAP-M271LT': 'TAP-272.png',
+  'TAP-M271ULT': 'TAP-272.png',
+  'TAP-M272': 'TAP-272.png',
+  'TAP-M272T': 'TAP-272.png',
+  'TAP-M272LT': 'TAP-272.png',
+  'TAP-M273': 'TAP-273.png',
+  'TAP-M273T': 'TAP-273.png',
+  'TAP-M273LT': 'TAP-273.png',
+  'TAP-M273ULT': 'TAP-273.png',
+  'TAP-M506': 'TAP-506.png',
+  'TAP-M506T': 'TAP-506.png',
+  'PNL-M341': 'PNL-M341.png',
+  'PNL-M341T': 'PNL-M341.png',
+  'PNL-M343': 'PNL-M343.png',
+  'PNL-M343T': 'PNL-M343.png',
+};
+
 export function resolveHardwareIcon(imagePathOrModel?: string): string | undefined {
   if (!imagePathOrModel) return undefined;
   const raw = imagePathOrModel.trim();
   const filename = raw.split('/').pop() as string;
+  const modelKey = filename.replace(/\.png$/i, '').toUpperCase();
+
+  // Alias lookup for TAP modules to orange faceplate stencil
+  if (TAP_MODEL_ALIASES[modelKey] && iconsByFilename[TAP_MODEL_ALIASES[modelKey]]) {
+    return iconsByFilename[TAP_MODEL_ALIASES[modelKey]];
+  }
 
   // Direct match
   if (iconsByFilename[filename]) return iconsByFilename[filename];
