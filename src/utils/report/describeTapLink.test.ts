@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeTapPhysicalLink } from './describeTapLink';
+import { describeTapPhysicalLink, describeAggregatedTapPhysicalLink } from './describeTapLink';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import type { CustomNode } from '../../store/types';
 import type { Edge } from '@xyflow/react';
@@ -98,5 +98,31 @@ describe('describeTapPhysicalLink', () => {
     const nodes: CustomNode[] = [node('in1', NODE_TYPES.INPUT, { label: 'Bare Tap', configType: 'TAP' })];
     const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
     expect(bullets).toEqual(['Fibre: Multimode']);
+  });
+});
+
+describe('describeAggregatedTapPhysicalLink', () => {
+  it('consolidates multiple identical TAP modules into an aggregate summary', () => {
+    const tapNodes: CustomNode[] = [
+      node('tap1', NODE_TYPES.HARDWARE, { label: 'TAP-M273T #1', model: 'TAP-M273T', sku: 'TAP-M273T', tappedLinksCount: 6 }),
+      node('tap2', NODE_TYPES.HARDWARE, { label: 'TAP-M273T #2', model: 'TAP-M273T', sku: 'TAP-M273T', tappedLinksCount: 6 }),
+    ];
+    const chassisNode = node('chassis1', NODE_TYPES.HARDWARE, {
+      label: 'TA25E Leaf',
+      model: 'GigaVUE-TA25E',
+      site: 'Site Alpha',
+      optics: [{ board: 'Base', optic: 'SFP-533T', qty: 12 }],
+    });
+
+    const edges = [
+      edge('e1', 'tap1', 'chassis1'),
+      edge('e2', 'tap2', 'chassis1'),
+    ];
+
+    const bullets = describeAggregatedTapPhysicalLink(tapNodes, [...tapNodes, chassisNode], edges);
+    expect(bullets[0]).toBe('Fibre: Singlemode');
+    expect(bullets[1]).toContain('12 monitored links across 2 modules (6 links per module)');
+    expect(bullets[2]).toContain('Connects into: Site Alpha · TA25E Leaf');
+    expect(bullets[3]).toContain('SFP-533T ×12');
   });
 });

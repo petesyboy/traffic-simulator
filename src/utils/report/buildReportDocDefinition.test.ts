@@ -248,5 +248,63 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(stringified).toContain('data:image/png;base64,site-a-diagram');
     expect(stringified).toContain('data:image/png;base64,site-b-diagram');
   });
+
+  it('deduplicates optical TAP modules and consolidates TAP trays into a single mention', () => {
+    const tapNodes: CustomNode[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `tap-${i + 1}`,
+      type: 'hardwareNode',
+      position: { x: 0, y: i * 50 },
+      data: {
+        label: `TAP-M273T #${i + 1}`,
+        model: 'TAP-M273T',
+        sku: 'TAP-M273T',
+        tappedLinksCount: 6,
+        site: i < 4 ? 'Site A' : 'Site B',
+      },
+    })) as CustomNode[];
+
+    const trayNodes: CustomNode[] = [
+      {
+        id: 'tray-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Tray 1', model: 'TAP-M200T', sku: 'TAP-M200T', site: 'Site A' },
+      } as CustomNode,
+      {
+        id: 'tray-2',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Tray 2', model: 'TAP-M100T', sku: 'TAP-M100T', site: 'Site A' },
+      } as CustomNode,
+      {
+        id: 'tray-3',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Tray 3', model: 'TAP-M200T', sku: 'TAP-M200T', site: 'Site B' },
+      } as CustomNode,
+      {
+        id: 'tray-4',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'Tray 4', model: 'TAP-M100T', sku: 'TAP-M100T', site: 'Site B' },
+      } as CustomNode,
+    ];
+
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [...tapNodes, ...trayNodes],
+      edges: [],
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    // TAP modules should be grouped
+    expect(allText).toContain('TAP-M273T (TAP-M273T) (8 modules deployed)');
+    expect(allText).toContain('48 monitored links across 8 modules (6 links per module)');
+
+    // Trays should be mentioned once
+    expect(allText).toContain('G-TAP Modular Mounting Trays');
+    expect(allText).toContain('2 × TAP-M200T (1RU, 6-slot chassis tray)');
+    expect(allText).toContain('2 × TAP-M100T (0.5RU, 3-slot chassis tray)');
+  });
 });
 

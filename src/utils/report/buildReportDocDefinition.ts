@@ -34,7 +34,7 @@ import {
   describeHostedGigaSmartAppDetail,
   type NodeDetail,
 } from './describeTopology';
-import { describeTapPhysicalLink } from './describeTapLink';
+import { describeAggregatedTapPhysicalLink } from './describeTapLink';
 import { describeChassisPurpose } from './chassisDescriptions';
 import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
 import { traceToTerminalInputs } from './graphTrace';
@@ -167,37 +167,44 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     });
   }
   content.push({
-    columns: [
-      statBlock('Traffic Sources', stats.inputCounts.total),
-      statBlock('TAPs', stats.inputCounts.tap),
-      statBlock('SPAN Sessions', stats.inputCounts.span),
-      statBlock('Traffic Maps', stats.mapNodeCount),
-      statBlock('Filters', stats.filterNodeCount),
+    stack: [
+      {
+        columns: [
+          statBlock('Traffic Sources', stats.inputCounts.total),
+          statBlock('TAPs', stats.inputCounts.tap),
+          statBlock('SPAN Sessions', stats.inputCounts.span),
+          statBlock('Traffic Maps', stats.mapNodeCount),
+          statBlock('Filters', stats.filterNodeCount),
+        ],
+        columnGap: 12,
+        margin: [0, 0, 0, 8],
+      },
+      {
+        columns: [
+          statBlock('GigaSMART Functions', Object.keys(stats.gigaSmartActionCounts).length),
+          statBlock('Destinations / Tools', stats.toolCount),
+          statBlock(
+            'Chassis / Hardware Units',
+            Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0),
+          ),
+          statBlock('Traffic Streams', stats.trafficStreamCount),
+        ],
+        columnGap: 12,
+        margin: [0, 0, 0, 8],
+      },
+      ...(Object.keys(stats.chassisCounts).length > 0
+        ? [
+            { text: 'Hardware Platforms', style: 'subHeading', margin: [0, 6, 0, 4] as [number, number, number, number] },
+            {
+              ul: Object.entries(stats.chassisCounts).map(([model, count]) => `${model} × ${count}`),
+              style: 'body',
+            },
+          ]
+        : []),
     ],
-    columnGap: 12,
-    margin: [0, 0, 0, 10],
+    unbreakable: true,
+    margin: [0, 4, 0, 0],
   });
-  content.push({
-    columns: [
-      statBlock('GigaSMART Functions', Object.keys(stats.gigaSmartActionCounts).length),
-      statBlock('Destinations / Tools', stats.toolCount),
-      statBlock(
-        'Chassis / Hardware Units',
-        Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0),
-      ),
-      statBlock('Traffic Streams', stats.trafficStreamCount),
-    ],
-    columnGap: 12,
-    margin: [0, 0, 0, 4],
-  });
-
-  if (Object.keys(stats.chassisCounts).length > 0) {
-    content.push({ text: 'Hardware Platforms', style: 'subHeading' });
-    content.push({
-      ul: Object.entries(stats.chassisCounts).map(([model, count]) => `${model} × ${count}`),
-      style: 'body',
-    });
-  }
 
   // ── Topology diagram ──
   content.push({ text: 'Topology Diagram', style: 'sectionHeading', pageBreak: 'before' });
@@ -213,19 +220,25 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
     Object.entries(siteDiagrams).forEach(([siteName, siteDiagramUrl]) => {
       content.push({
-        text: `Site Architecture Breakdown — ${siteName}`,
-        style: 'subHeading',
-        margin: [0, 10, 0, 4],
-      });
-      content.push({
-        text: `High-resolution focused diagram for ${siteName}, ensuring legible port allocations, TAP feeds, and tool configurations.`,
-        style: 'muted',
-        margin: [0, 0, 0, 8],
-      });
-      content.push({
-        image: siteDiagramUrl,
-        width: 500,
-        margin: [0, 0, 0, 14],
+        stack: [
+          {
+            text: `Site Architecture Breakdown — ${siteName}`,
+            style: 'subHeading',
+            margin: [0, 8, 0, 4],
+          },
+          {
+            text: `High-resolution focused diagram for ${siteName}, ensuring legible port allocations, TAP feeds, and tool configurations.`,
+            style: 'muted',
+            margin: [0, 0, 0, 8],
+          },
+          {
+            image: siteDiagramUrl,
+            width: 500,
+            margin: [0, 0, 0, 10],
+          },
+        ],
+        unbreakable: true,
+        margin: [0, 6, 0, 8],
       });
     });
   }
@@ -440,29 +453,37 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({ text: 'Hardware', style: 'subHeading' });
     const plainLines: string[] = [];
 
-    // Separate TAPs/trays and active chassis
-    const traysAndTaps = hardwareNodes.filter(
-      (n) => isAutoTrayModel(String(n.data?.model || '')) || String(n.data?.model || '').toUpperCase().includes('TAP')
+    // 1. Group & Deduplicate Optical TAP Modules
+    const tapModules = hardwareNodes.filter(
+      (n) => !isAutoTrayModel(String(n.data?.model || '')) && String(n.data?.model || '').toUpperCase().includes('TAP'),
     );
-    const activeChassis = hardwareNodes.filter(
-      (n) => !isAutoTrayModel(String(n.data?.model || '')) && !String(n.data?.model || '').toUpperCase().includes('TAP')
-    );
-
-    // Render TAPs / Trays
-    traysAndTaps.forEach((n) => {
+    const tapGroups = new Map<string, CustomNode[]>();
+    tapModules.forEach((n) => {
       const data = n.data as HardwareNodeData;
       const model = String(data.model || '');
-      const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
-
-      if (isAutoTrayModel(model)) {
-        plainLines.push(headline);
-        return;
-      }
-      const bullets = describeTapPhysicalLink(n, nodes, edges);
-      content.push(detailStack(headline, { headline, bullets }));
+      const key = `${model}|${data.sku || ''}`;
+      if (!tapGroups.has(key)) tapGroups.set(key, []);
+      tapGroups.get(key)!.push(n);
     });
 
-    // Group active chassis by model
+    tapGroups.forEach((group) => {
+      const first = group[0];
+      const data = first.data as HardwareNodeData;
+      const model = String(data.model || '');
+      const bullets = describeAggregatedTapPhysicalLink(group, nodes, edges);
+      if (group.length === 1) {
+        const headline = `${data.label} — ${model}${data.sku ? ` (${data.sku})` : ''}`;
+        content.push(detailStack(headline, { headline, bullets }));
+      } else {
+        const headline = `${model}${data.sku ? ` (${data.sku})` : ''} (${group.length} modules deployed)`;
+        content.push(detailStack(headline, { headline, bullets }));
+      }
+    });
+
+    // 2. Group & Deduplicate Active Chassis (HC and TA units)
+    const activeChassis = hardwareNodes.filter(
+      (n) => !isAutoTrayModel(String(n.data?.model || '')) && !String(n.data?.model || '').toUpperCase().includes('TAP'),
+    );
     const chassisGroups = new Map<string, CustomNode[]>();
     activeChassis.forEach((n) => {
       const data = n.data as HardwareNodeData;
@@ -478,46 +499,89 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       const model = String(data.model || '');
       const purpose = describeChassisPurpose(model);
 
-      if (group.length === 1) {
-        const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
-        if (purpose) {
-          content.push(detailStack(headline, { headline, bullets: [purpose] }));
-          const frontPanelImage = chassisFrontPanelImages?.[first.id];
+      const labelsWithSites = group
+        .map((n) => {
+          const ndata = n.data as HardwareNodeData;
+          const sitePrefix = ndata.site ? `${ndata.site} · ` : '';
+          return `${sitePrefix}${ndata.label || ndata.model}`;
+        })
+        .join(', ');
+
+      const headline =
+        group.length === 1
+          ? `${first.data?.site ? `${first.data.site} · ` : ''}${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`
+          : `${data.model}${data.sku ? ` (${data.sku})` : ''} (${group.length} units deployed: ${labelsWithSites})`;
+
+      if (purpose) {
+        content.push(detailStack(headline, { headline, bullets: [purpose] }));
+        group.forEach((cn) => {
+          const frontPanelImage = chassisFrontPanelImages?.[cn.id];
           if (frontPanelImage) {
+            const cdata = cn.data as HardwareNodeData;
+            const sitePrefix = cdata.site ? `${cdata.site} · ` : '';
+            const unitLabel = `${sitePrefix}${cdata.label || cdata.model}${cdata.sku ? ` (${cdata.sku})` : ''}`;
+            content.push({
+              text: unitLabel,
+              style: 'body',
+              bold: true,
+              color: REPORT_COLOURS.navy,
+              margin: [0, 6, 0, 2],
+            });
             content.push({
               image: frontPanelImage,
               width: 380,
-              margin: [0, -6, 0, 10],
+              margin: [0, 0, 0, 10],
             });
           }
-        } else {
-          plainLines.push(headline);
-        }
+        });
       } else {
-        const labelsList = group.map((n) => n.data?.label || n.id).join(', ');
-        const headline = `${data.model}${data.sku ? ` (${data.sku})` : ''} (${group.length} units deployed: ${labelsList})`;
-        if (purpose) {
-          content.push(detailStack(headline, { headline, bullets: [purpose] }));
-          group.forEach((cn) => {
-            const frontPanelImage = chassisFrontPanelImages?.[cn.id];
-            if (frontPanelImage) {
-              content.push({
-                text: `${cn.data?.label || cn.id}:`,
-                style: 'muted',
-                margin: [0, 2, 0, 2],
-              });
-              content.push({
-                image: frontPanelImage,
-                width: 380,
-                margin: [0, -4, 0, 10],
-              });
-            }
-          });
-        } else {
-          plainLines.push(headline);
-        }
+        plainLines.push(headline);
       }
     });
+
+    // 3. Consolidated TAP Mounting Trays (Mentioned once)
+    const trays = hardwareNodes.filter((n) => isAutoTrayModel(String(n.data?.model || '')));
+    if (trays.length > 0) {
+      const traySummaryMap = new Map<string, { model: string; count: number; sites: Set<string>; desc: string }>();
+      trays.forEach((t) => {
+        const model = String(t.data?.model || '');
+        const site = (t.data?.site as string || '').trim();
+        if (!traySummaryMap.has(model)) {
+          const desc = model.includes('M200')
+            ? '1RU, 6-slot chassis tray'
+            : model.includes('M100')
+            ? '0.5RU, 3-slot chassis tray'
+            : 'mounting tray';
+          traySummaryMap.set(model, { model, count: 0, sites: new Set(), desc });
+        }
+        const item = traySummaryMap.get(model)!;
+        item.count += 1;
+        if (site) item.sites.add(site);
+      });
+
+      const trayBullets: string[] = [];
+      const allSites = new Set<string>();
+      traySummaryMap.forEach(({ model, count, sites, desc }) => {
+        sites.forEach((s) => allSites.add(s));
+        trayBullets.push(`${count} × ${model} (${desc})`);
+      });
+
+      const siteText =
+        allSites.size > 1
+          ? `deployed across all physical sites (${Array.from(allSites).join(', ')})`
+          : allSites.size === 1
+          ? `deployed at ${Array.from(allSites)[0]}`
+          : 'deployed';
+
+      content.push(
+        detailStack('G-TAP Modular Mounting Trays', {
+          headline: 'G-TAP Modular Mounting Trays',
+          bullets: [
+            `Passive rack-mount chassis trays ${siteText} to house optical TAP modules and breakout panels: ${trayBullets.join(', ')}.`,
+          ],
+        }),
+      );
+    }
 
     if (plainLines.length > 0) content.push({ ul: plainLines, style: 'body' });
   }
