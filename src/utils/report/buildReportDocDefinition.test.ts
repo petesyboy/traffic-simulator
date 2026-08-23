@@ -146,5 +146,86 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('simulation baseline assumptions and estimates only');
     expect(allText).toContain('consult the respective tool, probe, or sensor manufacturer directly');
   });
+
+  it('deduplicates multiple identical tool nodes into a single consolidated description', () => {
+    const probeNodes: CustomNode[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `probe-${i + 1}`,
+      type: 'toolNode',
+      position: { x: 0, y: i * 50 },
+      data: {
+        label: `Ericsson Probe ${i + 1}`,
+        toolName: 'Ericsson Probe',
+        configType: 'Packet Tool',
+      },
+    })) as CustomNode[];
+
+    const doc = buildReportDocDefinition({ ...baseInput, nodes: probeNodes, edges: [] });
+    const allText = collectTexts(doc.content).join(' ');
+
+    expect(allText).toContain('Ericsson Probe (5 instances deployed: Ericsson Probe 1, Ericsson Probe 2, Ericsson Probe 3, Ericsson Probe 4, Ericsson Probe 5)');
+    // Description should appear once, not 5 times
+    const occurrences = (allText.match(/Monitors and analyses the traffic it receives/g) || []).length;
+    expect(occurrences).toBe(1);
+  });
+
+  it('deduplicates multiple identical chassis into a single consolidated description', () => {
+    const ta25Nodes: CustomNode[] = [
+      {
+        id: 'ta25-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'Leaf TA25E #1',
+          model: 'GigaVUE-TA25E',
+          sku: 'GVS-TA2501',
+        },
+      } as CustomNode,
+      {
+        id: 'ta25-2',
+        type: 'hardwareNode',
+        position: { x: 100, y: 0 },
+        data: {
+          label: 'Leaf TA25E #2',
+          model: 'GigaVUE-TA25E',
+          sku: 'GVS-TA2501',
+        },
+      } as CustomNode,
+    ];
+
+    const doc = buildReportDocDefinition({ ...baseInput, nodes: ta25Nodes, edges: [] });
+    const allText = collectTexts(doc.content).join(' ');
+
+    expect(allText).toContain('GigaVUE-TA25E (GVS-TA2501) (2 units deployed: Leaf TA25E #1, Leaf TA25E #2)');
+    // Chassis description should appear once
+    const occurrences = (allText.match(/a 1RU, high-density 25GbE traffic aggregation node/g) || []).length;
+    expect(occurrences).toBe(1);
+  });
+
+  it('embeds siteRackImages in Appendix B', () => {
+    const node: CustomNode = {
+      id: 'hw-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'DC1 TA25',
+        model: 'GigaVUE-TA25',
+        sku: 'GVS-TA2501',
+        site: 'DC1',
+      },
+    } as CustomNode;
+
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [node],
+      edges: [],
+      siteRackImages: {
+        DC1: 'data:image/png;base64,fake-rack-image',
+      },
+    });
+
+    // Verify document contains the rack image
+    const stringified = JSON.stringify(doc.content);
+    expect(stringified).toContain('data:image/png;base64,fake-rack-image');
+  });
 });
 

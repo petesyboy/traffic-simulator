@@ -39,9 +39,13 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
   const { useStore } = await import('../../store/store');
 
   const originalView = useStore.getState().activeView;
+  const originalExportDiagramMode = useStore.getState().exportDiagramMode;
+
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
   }
+  // Ensure Export Diagram Ready Mode is turned on so descriptions and value propositions are included
+  useStore.getState().setExportDiagramMode(true);
   useStore.setState((s) => ({ fitViewTrigger: s.fitViewTrigger + 1 }));
 
   // Wait for the view switch to mount CanvasArea, its own 100ms fitView timer,
@@ -57,5 +61,6 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
     if (originalView !== 'canvas') {
       useStore.getState().setActiveView(originalView);
     }
+    useStore.getState().setExportDiagramMode(originalExportDiagramMode);
   }
 }

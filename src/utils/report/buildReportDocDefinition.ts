@@ -36,6 +36,9 @@ import {
 } from './describeTopology';
 import { describeTapPhysicalLink } from './describeTapLink';
 import { describeChassisPurpose } from './chassisDescriptions';
+import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
+import { traceToTerminalInputs } from './graphTrace';
+import { formatBandwidth } from '../format';
 import { isAutoTrayModel } from '../trayModels';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
 import { markdownToPdfmakeContent } from './markdownToPdfmake';
@@ -57,6 +60,8 @@ export interface ReportInput {
   isRunning: boolean;
   /** Composited front-panel PNGs (base photo + installed-module faceplates), keyed by hardware node id. Only chassis with a calibrated catalogue photo have an entry. */
   chassisFrontPanelImages?: Record<string, string>;
+  /** 42U Rack Elevation diagrams, keyed by physical site name. Embedded in Appendix B alongside physical specs. */
+  siteRackImages?: Record<string, string>;
   /** User-authored executive summary (what's being deployed and why, in the customer's context). Replaces the generic intro paragraph when provided. */
   execSummaryText?: string;
 }
@@ -338,16 +343,65 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       margin: [0, 4, 0, 10],
     });
 
+    // Group identical tool nodes by toolName / configType
+    const toolGroups = new Map<string, CustomNode[]>();
     toolNodes.forEach((n) => {
       const data = n.data as ToolNodeData;
-      const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
-      content.push(
-        detailStack(
-          detail.headline,
-          detail,
-          getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
-        ),
-      );
+      const key = `${data.toolName || data.configType || 'Tool'}|${data.ingestLimitMbps || ''}`;
+      if (!toolGroups.has(key)) toolGroups.set(key, []);
+      toolGroups.get(key)!.push(n);
+    });
+
+    toolGroups.forEach((group) => {
+      if (group.length === 1) {
+        const n = group[0];
+        const data = n.data as ToolNodeData;
+        const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
+        content.push(
+          detailStack(
+            detail.headline,
+            detail,
+            getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
+          ),
+        );
+      } else {
+        const first = group[0];
+        const data = first.data as ToolNodeData;
+        const toolName = data.toolName || data.label || 'Custom Tool';
+        const labelsList = group.map((n) => n.data?.label || n.id).join(', ');
+        const headline = `${toolName} (${group.length} instances deployed: ${labelsList})`;
+
+        const bullets: string[] = [
+          describeToolPurpose(data.toolName),
+          describeToolOverloadRisk(data.toolName, data.ingestLimitMbps),
+        ];
+
+        // Gather all origins across the instances
+        const allOrigins = new Set<string>();
+        group.forEach((gn) => {
+          const origins = traceToTerminalInputs(gn.id, nodes, edges);
+          origins.forEach((o) => allOrigins.add(o.data?.label || o.id));
+        });
+        if (allOrigins.size > 0) {
+          bullets.push(`Traffic originates from: ${Array.from(allOrigins).join(', ')}`);
+        }
+
+        // Gather aggregate live metrics if running
+        if (liveMetrics) {
+          const totalRx = group.reduce((sum, gn) => sum + (liveMetrics[gn.id]?.rxMbps || 0), 0);
+          if (totalRx > 0) {
+            bullets.push(`Total aggregate traffic receiving: ${formatBandwidth(totalRx)} across ${group.length} instances`);
+          }
+        }
+
+        content.push(
+          detailStack(
+            headline,
+            { headline, bullets },
+            getNodeValueProposition(NODE_TYPES.TOOL, data.expectedType, undefined, data.toolName),
+          ),
+        );
+      }
     });
   }
 
@@ -355,40 +409,86 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   if (hardwareNodes.length > 0) {
     content.push({ text: 'Hardware', style: 'subHeading' });
     const plainLines: string[] = [];
-    hardwareNodes.forEach((n) => {
+
+    // Separate TAPs/trays and active chassis
+    const traysAndTaps = hardwareNodes.filter(
+      (n) => isAutoTrayModel(String(n.data?.model || '')) || String(n.data?.model || '').toUpperCase().includes('TAP')
+    );
+    const activeChassis = hardwareNodes.filter(
+      (n) => !isAutoTrayModel(String(n.data?.model || '')) && !String(n.data?.model || '').toUpperCase().includes('TAP')
+    );
+
+    // Render TAPs / Trays
+    traysAndTaps.forEach((n) => {
       const data = n.data as HardwareNodeData;
       const model = String(data.model || '');
       const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
 
       if (isAutoTrayModel(model)) {
-        // TAP-M100T/M200T/M202ULT are passive mounting trays, not fibre-terminating
-        // appliances — they have no fibre type of their own, so they get the plain
-        // one-liner rather than being run through the TAP physical-link detail.
         plainLines.push(headline);
         return;
       }
+      const bullets = describeTapPhysicalLink(n, nodes, edges);
+      content.push(detailStack(headline, { headline, bullets }));
+    });
 
-      if (model.toUpperCase().includes('TAP')) {
-        const bullets = describeTapPhysicalLink(n, nodes, edges);
-        content.push(detailStack(headline, { headline, bullets }));
-        return;
-      }
+    // Group active chassis by model
+    const chassisGroups = new Map<string, CustomNode[]>();
+    activeChassis.forEach((n) => {
+      const data = n.data as HardwareNodeData;
+      const model = String(data.model || '');
+      const key = `${model}|${data.sku || ''}`;
+      if (!chassisGroups.has(key)) chassisGroups.set(key, []);
+      chassisGroups.get(key)!.push(n);
+    });
 
+    chassisGroups.forEach((group) => {
+      const first = group[0];
+      const data = first.data as HardwareNodeData;
+      const model = String(data.model || '');
       const purpose = describeChassisPurpose(model);
-      if (purpose) {
-        content.push(detailStack(headline, { headline, bullets: [purpose] }));
-        const frontPanelImage = chassisFrontPanelImages?.[n.id];
-        if (frontPanelImage) {
-          content.push({
-            image: frontPanelImage,
-            width: 380,
-            margin: [0, -6, 0, 10],
-          });
+
+      if (group.length === 1) {
+        const headline = `${data.label} — ${data.model}${data.sku ? ` (${data.sku})` : ''}`;
+        if (purpose) {
+          content.push(detailStack(headline, { headline, bullets: [purpose] }));
+          const frontPanelImage = chassisFrontPanelImages?.[first.id];
+          if (frontPanelImage) {
+            content.push({
+              image: frontPanelImage,
+              width: 380,
+              margin: [0, -6, 0, 10],
+            });
+          }
+        } else {
+          plainLines.push(headline);
         }
       } else {
-        plainLines.push(headline);
+        const labelsList = group.map((n) => n.data?.label || n.id).join(', ');
+        const headline = `${data.model}${data.sku ? ` (${data.sku})` : ''} (${group.length} units deployed: ${labelsList})`;
+        if (purpose) {
+          content.push(detailStack(headline, { headline, bullets: [purpose] }));
+          group.forEach((cn) => {
+            const frontPanelImage = chassisFrontPanelImages?.[cn.id];
+            if (frontPanelImage) {
+              content.push({
+                text: `${cn.data?.label || cn.id}:`,
+                style: 'muted',
+                margin: [0, 2, 0, 2],
+              });
+              content.push({
+                image: frontPanelImage,
+                width: 380,
+                margin: [0, -4, 0, 10],
+              });
+            }
+          });
+        } else {
+          plainLines.push(headline);
+        }
       }
     });
+
     if (plainLines.length > 0) content.push({ ul: plainLines, style: 'body' });
   }
 
@@ -572,6 +672,16 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
           margin: [0, 6, 0, 4],
         });
         content.push(renderPhysicalTable(siteItems));
+
+        const rackImage = input.siteRackImages?.[siteKey];
+        if (rackImage) {
+          content.push({
+            image: rackImage,
+            width: 150,
+            alignment: 'center',
+            margin: [0, 4, 0, 12],
+          });
+        }
       });
 
       content.push({ text: 'Master Aggregate Deployment (All Sites Combined)', style: 'subHeading', margin: [0, 15, 0, 8] });
@@ -580,6 +690,17 @@ function renderPhysicalTable(items: PhysicalItem[]): Content {
     } else {
       content.push({ text: 'Hardware Deployment Specifications', style: 'subHeading', margin: [0, 5, 0, 8] });
       content.push(renderPhysicalTable(physicalItems));
+
+      const singleSiteKey = siteKeys[0] || 'Global / Unassigned';
+      const rackImage = input.siteRackImages?.[singleSiteKey] || Object.values(input.siteRackImages || {})[0];
+      if (rackImage) {
+        content.push({
+          image: rackImage,
+          width: 160,
+          alignment: 'center',
+          margin: [0, 6, 0, 12],
+        });
+      }
     }
 
     content.push({

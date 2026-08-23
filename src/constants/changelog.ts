@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.572",
+    date: "2026-08-23",
+    summary: "Tidied PDF report by deduplicating identical chassis and tool descriptions with deployed instance counts, auto-deploying 42U rack layouts with embedded elevation diagrams in Appendix B physical report, and automatically enabling diagram-ready descriptions for topology capture.",
+  },
+  {
     version: "1.0.571",
     date: "2026-08-23",
     summary: "Excluded tool nodes, packet tools, and third-party probes (such as Ericsson probes) from physical site assignment validation checks.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.553",
     date: "2026-08-21",
     summary: "Added an advisory notice and vendor verification disclaimer to the solution report and tool descriptions for tool/sensor ingest ratings, clarifying that rated capacities (e.g. 5 Gbps, 10 Gbps) are baseline simulation estimates and advising customers to confirm exact sustained and peak limits with the tool manufacturer.",
-  },
-  {
-    version: "1.0.552",
-    date: "2026-08-21",
-    summary: "Added comprehensive Physical Rack & Deployment specifications to the solution report (Appendix B), rendering both a side-by-side per-site breakdown and a master aggregated deployment table with full RU, dimension, weight, power, heat dissipation, and airflow metrics.",
   },
 ];

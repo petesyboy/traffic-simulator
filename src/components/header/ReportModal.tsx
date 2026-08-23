@@ -13,9 +13,11 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { captureTopologyDiagramForReport } from '../../utils/report/captureTopologyDiagram';
 import { captureChassisFrontPanelPng } from '../../utils/report/captureChassisFrontPanel';
+import { captureRackElevationPng } from '../../utils/report/captureRackElevation';
 import { buildReportDocDefinition } from '../../utils/report/buildReportDocDefinition';
+import { autoDeployRack } from '../../utils/autoRack';
 import { NODE_TYPES } from '../../constants/nodeTypes';
-import { getModuleSlotPositions, getChassisImagePath } from '../../utils/hardwareUtils';
+import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
@@ -75,18 +77,37 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [step, setStep] = useState<'idle' | 'capturing' | 'building' | 'done'>('idle');
   const [execSummaryText, setExecSummaryText] = useState('');
 
+  const storeSetNodes = useStore((s) => s.setNodes);
+
   const handleGenerate = async () => {
     setBusy(true);
     setError(null);
     setStep('capturing');
     try {
+      // 1. Auto-deploy hardware to racks for each site before generating report
+      const uniqueSites = Array.from(
+        new Set(
+          nodes
+            .filter(isRackableGigamonEquipment)
+            .map((n) => (n.data?.site as string || '').trim())
+            .filter(Boolean)
+        )
+      );
+      if (uniqueSites.length === 0) uniqueSites.push('Global / Unassigned');
+
+      let currentNodes = [...nodes];
+      for (const site of uniqueSites) {
+        currentNodes = autoDeployRack(currentNodes, site);
+      }
+      storeSetNodes(currentNodes);
+
       const [diagramDataUrl, logoDataUrl] = await Promise.all([
         captureTopologyDiagramForReport(),
         fetchAsDataUrl(gigamonLogo).catch(() => undefined),
       ]);
 
       const chassisFrontPanelImages: Record<string, string> = {};
-      const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
+      const hardwareNodes = currentNodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
       await Promise.all(
         hardwareNodes.map(async (n) => {
           const data = n.data as HardwareNodeData;
@@ -100,9 +121,18 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         }),
       );
 
+      // Capture 42U rack elevation diagrams for each site
+      const siteRackImages: Record<string, string> = {};
+      await Promise.all(
+        uniqueSites.map(async (site) => {
+          const png = await captureRackElevationPng(currentNodes, site).catch(() => undefined);
+          if (png) siteRackImages[site] = png;
+        }),
+      );
+
       setStep('building');
       const docDefinition = buildReportDocDefinition({
-        nodes,
+        nodes: currentNodes,
         edges,
         trafficStreams,
         projectName: currentScenarioName || 'Untitled Project',
@@ -116,6 +146,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         nodeMetrics,
         isRunning,
         chassisFrontPanelImages,
+        siteRackImages,
         execSummaryText: execSummaryText.trim() || undefined,
       });
 
