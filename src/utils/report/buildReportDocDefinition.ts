@@ -32,6 +32,7 @@ import {
   describeProcessingNodeDetail,
   describeToolNodeDetail,
   describeHostedGigaSmartAppDetail,
+  resolveNodeSite,
   type NodeDetail,
 } from './describeTopology';
 import { describeAggregatedTapPhysicalLink } from './describeTapLink';
@@ -181,7 +182,10 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       },
       {
         columns: [
-          statBlock('GigaSMART Functions', Object.keys(stats.gigaSmartActionCounts).length),
+          statBlock(
+            'GigaSMART Functions',
+            Object.values(stats.gigaSmartActionCounts).reduce((a, b) => a + b, 0),
+          ),
           statBlock('Destinations / Tools', stats.toolCount),
           statBlock(
             'Chassis / Hardware Units',
@@ -312,12 +316,13 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   // e.g. deduplication configured on an HC1 gets described too.
   const hostedGigaSmartApps: { app: GigaSmartNodeData; hostLabel: string }[] = [];
   nodes.forEach((n) => {
-    if (n.type === NODE_TYPES.HARDWARE) {
-      const hwData = n.data as HardwareNodeData;
-      (hwData.gigaSmartApps || []).forEach((app) => hostedGigaSmartApps.push({ app, hostLabel: hwData.label }));
-    } else if (n.type === NODE_TYPES.TOOL) {
-      const toolData = n.data as ToolNodeData;
-      (toolData.gigaSmartApps || []).forEach((app) => hostedGigaSmartApps.push({ app, hostLabel: toolData.label }));
+    const rawApps = (n.data as Record<string, unknown>)?.gigaSmartApps;
+    const site = resolveNodeSite(n, nodes, edges);
+    const sitePrefix = site ? `${site} · ` : '';
+    const hostLabel = `${sitePrefix}${n.data?.label || (n.data as HardwareNodeData)?.model || n.id}`;
+
+    if (Array.isArray(rawApps)) {
+      rawApps.forEach((app: GigaSmartNodeData) => hostedGigaSmartApps.push({ app, hostLabel }));
     }
   });
   if (gigaSmartNodes.length > 0 || hostedGigaSmartApps.length > 0) {
@@ -408,8 +413,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         // Clean per-site breakdown or unique labels
         const siteCounts = new Map<string, number>();
         group.forEach((n) => {
-          const s = (n.data?.site as string || '').trim() || 'Global';
-          siteCounts.set(s, (siteCounts.get(s) || 0) + 1);
+          const s = resolveNodeSite(n, nodes, edges);
+          if (s) siteCounts.set(s, (siteCounts.get(s) || 0) + 1);
         });
 
         let headline: string;
@@ -418,10 +423,12 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             .map(([site, count]) => `${count} at ${site}`)
             .join(', ');
           headline = `${toolName} (${group.length} instances deployed across ${siteCounts.size} sites: ${siteBreakdown})`;
-        } else {
-          const singleSite = siteCounts.keys().next().value;
-          const siteClause = singleSite && singleSite !== 'Global' ? ` at ${singleSite}` : '';
+        } else if (siteCounts.size === 1) {
+          const [singleSite, count] = Array.from(siteCounts.entries())[0];
+          const siteClause = count === group.length ? ` at ${singleSite}` : ` (${count} at ${singleSite})`;
           headline = `${toolName} (${group.length} instances deployed${siteClause})`;
+        } else {
+          headline = `${toolName} (${group.length} instances deployed)`;
         }
 
         const bullets: string[] = [
@@ -436,7 +443,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           origins.forEach((o) => {
             const odata = o.data as Record<string, unknown>;
             const omodel = String(odata.model || odata.configType || odata.label || 'Traffic Source');
-            const site = odata.site ? ` (${odata.site})` : '';
+            const originSite = resolveNodeSite(o, nodes, edges);
+            const site = originSite ? ` (${originSite})` : '';
             const key = `${omodel}${site}`;
             originCountMap.set(key, (originCountMap.get(key) || 0) + 1);
           });

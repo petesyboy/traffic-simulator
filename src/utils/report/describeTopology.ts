@@ -54,10 +54,49 @@ export interface TopologyStats {
   totalBandwidthLabel: string;
 }
 
-const bumpAction = (counts: Record<string, number>, actionType: string | undefined) => {
-  if (!actionType) return;
-  counts[actionType] = (counts[actionType] || 0) + 1;
+const bumpAction = (counts: Record<string, number>, action: unknown) => {
+  if (!action) return;
+  const str = String(action).trim();
+  if (!str) return;
+  counts[str] = (counts[str] || 0) + 1;
 };
+
+export function resolveNodeSite(
+  node: CustomNode,
+  nodes: CustomNode[],
+  edges: Edge[],
+): string | undefined {
+  const direct = (node.data?.site as string || '').trim();
+  if (direct) return direct;
+
+  // Search connected neighbours for a site tag
+  const visited = new Set<string>([node.id]);
+  const queue = [node.id];
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const adjacent = edges.filter((e) => e.source === currentId || e.target === currentId);
+    for (const e of adjacent) {
+      const neighborId = e.source === currentId ? e.target : e.source;
+      if (!visited.has(neighborId)) {
+        visited.add(neighborId);
+        const neighbor = nodes.find((n) => n.id === neighborId);
+        if (neighbor) {
+          const s = (neighbor.data?.site as string || '').trim();
+          if (s) return s;
+          queue.push(neighborId);
+        }
+      }
+    }
+  }
+
+  // If there is only one physical site globally across the canvas, inherit it
+  const allExplicitSites = Array.from(
+    new Set(nodes.map((n) => (n.data?.site as string || '').trim()).filter(Boolean)),
+  );
+  if (allExplicitSites.length === 1) return allExplicitSites[0];
+
+  return undefined;
+}
 
 export function buildTopologyStats(
   nodes: CustomNode[],
@@ -72,6 +111,19 @@ export function buildTopologyStats(
   let toolCount = 0;
 
   for (const node of nodes) {
+    // Inspect any GigaSMART apps array attached to the node
+    const rawApps = (node.data as Record<string, unknown>)?.gigaSmartApps;
+    if (Array.isArray(rawApps)) {
+      rawApps.forEach((app: Record<string, unknown>) => {
+        const action =
+          app.actionType ||
+          app.label ||
+          app.configType ||
+          (app.gtpMode ? `GTP ${app.gtpMode}` : undefined);
+        bumpAction(gigaSmartActionCounts, action);
+      });
+    }
+
     if (node.type === NODE_TYPES.INPUT) {
       const configType = String((node.data as InputNodeData).configType || '');
       inputCounts.total += 1;
@@ -87,15 +139,19 @@ export function buildTopologyStats(
       filterNodeCount += 1;
     } else if (node.type === NODE_TYPES.TOOL) {
       toolCount += 1;
-      const toolData = node.data as ToolNodeData;
-      (toolData.gigaSmartApps || []).forEach((app) => bumpAction(gigaSmartActionCounts, app.actionType));
     } else if (node.type === NODE_TYPES.GIGASMART) {
-      bumpAction(gigaSmartActionCounts, (node.data as GigaSmartNodeData).actionType);
+      const gsData = node.data as Record<string, unknown>;
+      const action =
+        gsData.actionType ||
+        gsData.label ||
+        gsData.configType ||
+        (gsData.gtpMode ? `GTP ${gsData.gtpMode}` : undefined) ||
+        'GigaSMART';
+      bumpAction(gigaSmartActionCounts, action);
     } else if (node.type === NODE_TYPES.HARDWARE) {
       const hwData = node.data as HardwareNodeData;
       const model = String(hwData.model || '').trim();
       if (model) chassisCounts[model] = (chassisCounts[model] || 0) + 1;
-      (hwData.gigaSmartApps || []).forEach((app) => bumpAction(gigaSmartActionCounts, app.actionType));
 
       // A TAP can also be modelled as its own hardwareNode wired to a chassis
       // (rather than a logical inputNode) — without this, physical TAP units
@@ -110,6 +166,14 @@ export function buildTopologyStats(
       // it counts as a map in its own right (confirmed with the user: a TA25
       // and an HC1 each count as a map alongside any explicit Map node).
       if (isTaHcChassis(model)) mapNodeCount += 1;
+    } else {
+      // Check direct actionType on other node types if present
+      const directAction =
+        (node.data as Record<string, unknown>)?.actionType ||
+        (node.data as Record<string, unknown>)?.gtpMode;
+      if (directAction && !Array.isArray(rawApps)) {
+        bumpAction(gigaSmartActionCounts, directAction);
+      }
     }
   }
 

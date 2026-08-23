@@ -12,6 +12,7 @@ import {
   describeToolNodeDetail,
   describeHostedGigaSmartAppDetail,
   summarizeMapInclusionExclusion,
+  resolveNodeSite,
 } from './describeTopology';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import type {
@@ -461,3 +462,47 @@ describe('describeToolNodeDetail', () => {
     expect(detail.bullets.some((b) => b.startsWith('Rated for up to 2.00 Gbps'))).toBe(true);
   });
 });
+
+describe('GigaSMART Function Counting and Site Resolution', () => {
+  it('counts GTP correlation and other GigaSMART functions on hardware and tool nodes', () => {
+    const nodes: CustomNode[] = [
+      node('hc3_site_a', NODE_TYPES.HARDWARE, {
+        label: 'HC3 Site A',
+        model: 'GigaVUE-HC3',
+        site: 'Site A',
+        gigaSmartApps: [
+          { actionType: 'GTP Flow Filtering', label: 'GTP Correlation' },
+          { actionType: 'Deduplication' },
+        ],
+      }),
+      node('hc3_site_b', NODE_TYPES.HARDWARE, {
+        label: 'HC3 Site B',
+        model: 'GigaVUE-HC3',
+        site: 'Site B',
+        gigaSmartApps: [
+          { actionType: 'GTP Flow Filtering', label: 'GTP Correlation' },
+        ],
+      }),
+    ];
+
+    const stats = buildTopologyStats(nodes, [], []);
+    const totalFunctions = Object.values(stats.gigaSmartActionCounts).reduce((a, b) => a + b, 0);
+    expect(totalFunctions).toBe(3);
+    expect(stats.gigaSmartActionCounts['GTP Flow Filtering']).toBe(2);
+    expect(stats.gigaSmartActionCounts['Deduplication']).toBe(1);
+  });
+
+  it('resolves site from upstream connected nodes when node has no direct site tag', () => {
+    const nodes: CustomNode[] = [
+      node('hc3_a', NODE_TYPES.HARDWARE, { label: 'HC3', model: 'GigaVUE-HC3', site: 'Site A' }),
+      node('probe1', NODE_TYPES.TOOL, { label: 'Ericsson Probe', toolName: 'Ericsson Probe' }),
+    ];
+    const edges: Edge[] = [
+      { id: 'e1', source: 'hc3_a', target: 'probe1' },
+    ];
+
+    const site = resolveNodeSite(nodes[1], nodes, edges);
+    expect(site).toBe('Site A');
+  });
+});
+

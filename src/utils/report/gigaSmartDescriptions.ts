@@ -139,13 +139,22 @@ export const GIGASMART_ACTION_DESCRIPTIONS: Record<string, string> = {
 
   [ACTION_TYPES.HEADER_ADDITION]:
     'Inserts custom header fields (e.g. site or link identifiers) into forwarded packets, giving downstream tools extra origin context carried in-band with the traffic itself rather than needing a separate metadata channel.',
+
+  'GTP Correlation':
+    "Correlates GTP-C signalling with GTP-U user tunnels, statefully tracking mobile subscriber sessions across tool ports. This ensures every monitoring tool sees complete, consistent subscriber sessions rather than partial views.",
+
+  'GTP-C / GTP-U Correlation':
+    "Correlates GTP-C signalling with GTP-U user tunnels, statefully tracking mobile subscriber sessions across tool ports. This ensures every monitoring tool sees complete, consistent subscriber sessions rather than partial views.",
 };
 
 /** Fallback for any action type not yet catalogued above. */
 export function describeGigaSmartFunction(actionType: string | undefined): string {
   if (!actionType) return 'Applies GigaSMART processing to optimise, protect, or scale downstream monitoring tools.';
-  return (
-    GIGASMART_ACTION_DESCRIPTIONS[actionType] ||
-    `Applies the "${actionType}" GigaSMART function to optimise, protect, or scale downstream monitoring tools.`
-  );
+  if (GIGASMART_ACTION_DESCRIPTIONS[actionType]) {
+    return GIGASMART_ACTION_DESCRIPTIONS[actionType];
+  }
+  if (actionType.toLowerCase().includes('gtp')) {
+    return GIGASMART_ACTION_DESCRIPTIONS[ACTION_TYPES.GTP_FLOW_FILTERING];
+  }
+  return `Applies the "${actionType}" GigaSMART function to optimise, protect, or scale downstream monitoring tools.`;
 }
