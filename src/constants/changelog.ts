@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.589",
+    date: "2026-08-23",
+    summary: "Fixed TAP modules not appearing inside tray bays in rack elevation diagrams — getChassisImagePath() was only searching TA/HC series, so TAP module icons were not resolved. Added model-name fallback so resolveHardwareIcon() correctly matches TAP_MODEL_ALIASES for TAP-M251T, TAP-M273T, etc.",
+  },
+  {
     version: "1.0.588",
     date: "2026-08-23",
     summary: "Rendered full composited add-in cards (GigaSMART, PRT modules, and TAP bays) inside rack elevation diagrams, and relocated device labels and descriptions to side callout cards with leader lines to keep physical equipment faceplates completely unobscured.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.570",
     date: "2026-08-23",
     summary: "Excluded custom tools, packet tools, and third-party monitoring probes (such as Ericsson probes) from the rackable hardware inventory and unracked equipment warnings.",
-  },
-  {
-    version: "1.0.569",
-    date: "2026-08-23",
-    summary: "Updated TAP-M200T tray height to 1 RU and TAP-M100T to 0.5 RU across catalogue, heuristics, and 42U Rack Elevation View.",
   },
 ];

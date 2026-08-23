@@ -214,21 +214,24 @@ export async function captureRackElevationPng(
     }),
   );
 
-  // Preload slotted module images for TAP trays
+  // Preload slotted module images for TAP trays.
+  // TAP module nodes use data.image (set from catalogue on creation) or the model name.
+  // getChassisImagePath() only searches ta_series/hc_series, not the taps catalogue,
+  // so we must fall back to the model name so resolveHardwareIcon can match via TAP_MODEL_ALIASES.
   const slottedModules = siteHardware.filter((n) => n.data?.trayId);
   const trayModuleImgMap = new Map<string, HTMLImageElement>();
   await Promise.all(
     slottedModules.map(async (m) => {
       const data = m.data as HardwareNodeData;
       const model = String(data.model || '');
-      const rawPath = data.image || getChassisImagePath(model, data.sku);
+      const rawPath = data.image || getChassisImagePath(model, data.sku) || model;
       const iconPath = resolveHardwareIcon(rawPath);
       if (iconPath && !trayModuleImgMap.has(iconPath)) {
         try {
           const img = await loadImage(iconPath);
           trayModuleImgMap.set(iconPath, img);
         } catch {
-          // Ignore
+          // Ignore — bay will show placeholder text
         }
       }
     }),
@@ -320,7 +323,7 @@ export async function captureRackElevationPng(
 
           if (mod) {
             const modModel = String(mod.data?.model || '');
-            const modIcon = resolveHardwareIcon(mod.data?.image || getChassisImagePath(modModel, mod.data?.sku));
+            const modIcon = resolveHardwareIcon(mod.data?.image || getChassisImagePath(modModel, mod.data?.sku) || modModel);
             const img = modIcon ? trayModuleImgMap.get(modIcon) : undefined;
             if (img) {
               ctx.drawImage(img, bayX + 1, bayY + 1, colWidth - 4, rowHeight - 4);
