@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.561",
+    date: "2026-08-23",
+    summary: "Added interactive zoom controls (step in/out, presets from 75% to 200%, Ctrl+Scroll wheel zoom) and one-click per-chassis front-panel modal inspection in the 42U Rack Elevation View.",
+  },
+  {
     version: "1.0.560",
     date: "2026-08-23",
     summary: "Extended physical front-panel photographic visualization and real-time cage-level optic occupancy overlays to GigaVUE-HCT, TA-series chassis (TA25E, TA200, TA200E, TA400, TA400E), and PRT-HC1-G12 across canvas nodes, summary modals, rack elevation view, and solution reports.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.540",
     date: "2026-08-19",
     summary: "Ship v1.0.540: Tidy Layout auto-arrange button",
-  },
-  {
-    version: "1.0.539",
-    date: "2026-08-19",
-    summary: "Ship v1.0.539: Markdown support in the report executive summary",
   },
 ];

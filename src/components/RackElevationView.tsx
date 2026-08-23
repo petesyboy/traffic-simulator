@@ -1,17 +1,42 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
-import type { HardwareNodeData } from '../store/types';
+import type { CustomNode, HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
 import { getModuleSlotPositions, getTrayBayCount, isTapModule } from '../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
+import { ChassisSummaryModal } from './nodes/ChassisSummaryModal';
 
-const RackElevationView: React.FC = () => {
-  const nodes = useStore((state) => state.nodes);
-  const updateNodeData = useStore((state) => state.updateNodeData);
+export interface RackElevationViewProps {
+  nodes?: CustomNode[];
+  updateNodeData?: (nodeId: string, data: Record<string, unknown>) => void;
+}
+
+const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
+  const storeNodes = useStore((state) => state.nodes);
+  const storeUpdateNodeData = useStore((state) => state.updateNodeData);
+  const nodes = props.nodes ?? storeNodes;
+  const updateNodeData = props.updateNodeData ?? storeUpdateNodeData;
 
   const [selectedSite, setSelectedSite] = useState<string>('');
+  const [zoom, setZoom] = useState<number>(1);
+  const [inspectingNode, setInspectingNode] = useState<CustomNode | null>(null);
+
+  const handleZoomIn = () => setZoom((z) => Math.min(2.5, Number((z + 0.25).toFixed(2))));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))));
+  const handleZoomReset = () => setZoom(1);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        setZoom((z) => Math.min(2.5, Number((z + 0.1).toFixed(2))));
+      } else {
+        setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))));
+      }
+    }
+  };
 
   // Filter hardware nodes that represent rack-mountable chassis
   const allHardwareNodes = nodes.filter(n => n.type === 'hardwareNode' || n.data?.configType === 'TAP Device');
@@ -133,39 +158,102 @@ const RackElevationView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e1e1e', color: '#fff', padding: '20px', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e1e1e', color: '#fff', padding: '16px', boxSizing: 'border-box', overflow: 'hidden' }}>
       
-      {/* SITE SELECTOR HEADER */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', background: '#252526', padding: '12px 16px', borderRadius: '8px', border: '1px solid #333' }}>
-        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff9800' }}>📍 Select Site:</span>
-        <select
-          value={activeSite}
-          onChange={(e) => setSelectedSite(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            background: '#121212',
-            border: '1px solid #444',
-            borderRadius: '4px',
-            color: '#e0e0e0',
-            fontSize: '12px',
-            outline: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          {uniqueSites.map(site => (
-            <option key={site} value={site}>{site}</option>
+      {/* HEADER: SITE SELECTOR + ZOOM CONTROLS */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px', background: '#252526', padding: '10px 16px', borderRadius: '8px', border: '1px solid #333', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff9800' }}>📍 Select Site:</span>
+          <select
+            value={activeSite}
+            onChange={(e) => setSelectedSite(e.target.value)}
+            style={{
+              padding: '6px 12px',
+              background: '#121212',
+              border: '1px solid #444',
+              borderRadius: '4px',
+              color: '#e0e0e0',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {uniqueSites.map(site => (
+              <option key={site} value={site}>{site}</option>
+            ))}
+          </select>
+          <span style={{ fontSize: '11px', color: '#aaa' }}>
+            Site: <strong style={{ color: '#00e5ff' }}>{activeSite}</strong>
+          </span>
+        </div>
+
+        {/* ZOOM CONTROLS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#181818', padding: '4px 10px', borderRadius: '6px', border: '1px solid #3a3a3a' }}>
+          <span style={{ fontSize: '12px', color: '#aaa', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+            🔍 Zoom:
+          </span>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleZoomOut}
+            disabled={zoom <= 0.5}
+            title="Zoom Out (Step -25%)"
+            style={{ padding: '2px 8px', fontSize: '13px', minWidth: '26px', color: zoom <= 0.5 ? '#555' : '#fff' }}
+          >
+            −
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleZoomReset}
+            title="Reset Zoom to 100%"
+            style={{
+              padding: '2px 8px',
+              fontSize: '12px',
+              fontWeight: zoom === 1 ? 'bold' : 'normal',
+              color: zoom === 1 ? '#00e5ff' : '#ccc',
+              minWidth: '50px',
+              textAlign: 'center',
+            }}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleZoomIn}
+            disabled={zoom >= 2.5}
+            title="Zoom In (Step +25%)"
+            style={{ padding: '2px 8px', fontSize: '13px', minWidth: '26px', color: zoom >= 2.5 ? '#555' : '#fff' }}
+          >
+            +
+          </button>
+          <div style={{ width: '1px', height: '14px', background: '#444', margin: '0 4px' }} />
+          {[0.75, 1, 1.5, 2].map((preset) => (
+            <button
+              key={preset}
+              className="btn btn-ghost btn-sm"
+              onClick={() => setZoom(preset)}
+              style={{
+                padding: '2px 6px',
+                fontSize: '11px',
+                color: zoom === preset ? '#00e5ff' : '#888',
+                fontWeight: zoom === preset ? 'bold' : 'normal',
+                background: zoom === preset ? 'rgba(0,229,255,0.12)' : 'transparent',
+                borderRadius: '3px',
+              }}
+            >
+              {Math.round(preset * 100)}%
+            </button>
           ))}
-        </select>
-        <span style={{ fontSize: '11px', color: '#aaa', marginLeft: 'auto' }}>
-          Showing hardware for site: <strong style={{ color: '#00e5ff' }}>{activeSite}</strong>
-        </span>
+          <span style={{ fontSize: '10px', color: '#666', marginLeft: '4px' }}>
+            (Ctrl + Scroll)
+          </span>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flex: 1, gap: '20px', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', flex: 1, gap: '20px', overflow: 'hidden' }}>
         {/* ── UNRACKED ASSETS PANEL ── */}
-        <div style={{ width: '300px', background: '#252526', border: '1px solid #333', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', borderBottom: '1px solid #444', paddingBottom: '8px' }}>Unracked Hardware</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ width: '280px', flexShrink: 0, background: '#252526', border: '1px solid #333', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontSize: '16px', borderBottom: '1px solid #444', paddingBottom: '8px' }}>Unracked Hardware</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1 }}>
             {unrackedNodes.length === 0 ? (
               <div style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>All site hardware is racked.</div>
             ) : (
@@ -174,10 +262,10 @@ const RackElevationView: React.FC = () => {
                   key={node.id} 
                   draggable 
                   onDragStart={(e) => handleDragStart(e, node.id)}
-                  style={{ background: '#333', padding: '12px', borderRadius: '4px', cursor: 'grab', border: '1px solid #444' }}
+                  style={{ background: '#333', padding: '10px 12px', borderRadius: '4px', cursor: 'grab', border: '1px solid #444' }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{node.data?.label || node.data?.model}</div>
-                  <div style={{ fontSize: '12px', color: '#aaa' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>{node.data?.label || node.data?.model}</div>
+                  <div style={{ fontSize: '11px', color: '#aaa' }}>
                     {isTapModule(String(node.data?.model || ''), node.data?.sku as string | undefined)
                       ? 'Tap/breakout module - drop into a tray bay'
                       : `${getDeviceRU(String(node.data?.model || ''), node.data?.sku as string | undefined)} RU`}
@@ -188,24 +276,63 @@ const RackElevationView: React.FC = () => {
           </div>
 
           {/* METRICS DASHBOARD */}
-          <div style={{ marginTop: '20px', background: '#111', padding: '16px', borderRadius: '8px', border: '1px solid #333' }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#ffb74d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ marginTop: '16px', background: '#111', padding: '14px', borderRadius: '8px', border: '1px solid #333' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#ffb74d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {activeSite} Metrics
             </h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
               <span style={{ color: '#888' }}>Weight</span>
               <span style={{ fontWeight: 'bold' }}>{totalWeight} lbs</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
               <span style={{ color: '#888' }}>Heat Dissipation</span>
               <span style={{ fontWeight: 'bold' }}>{totalBtu.toLocaleString()} BTU/hr</span>
             </div>
           </div>
         </div>
 
-        {/* ── 42U RACK VISUALIZATION ── */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '400px', background: '#111', border: '10px solid #2d2d2d', borderTop: '20px solid #2d2d2d', borderBottom: '20px solid #2d2d2d', borderRadius: '4px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        {/* ── 42U RACK VISUALIZATION VIEWPORT ── */}
+        <div
+          onWheel={handleWheel}
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            padding: '20px',
+            background: '#161616',
+            borderRadius: '8px',
+            border: '1px solid #2d2d2d',
+          }}
+        >
+          <div
+            style={{
+              width: `${420 * zoom}px`,
+              minHeight: `${1060 * zoom}px`,
+              display: 'flex',
+              justifyContent: 'center',
+              flexShrink: 0,
+              paddingBottom: '20px',
+            }}
+          >
+            <div
+              style={{
+                width: '420px',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.1s ease-out',
+                background: '#111',
+                border: '10px solid #2d2d2d',
+                borderTop: '20px solid #2d2d2d',
+                borderBottom: '20px solid #2d2d2d',
+                borderRadius: '4px',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+              }}
+            >
             {rackUnits.map(u => {
               const occupyingNode = rackedNodes.find(n => n.data?.rackU === u);
 
@@ -367,8 +494,32 @@ const RackElevationView: React.FC = () => {
                       </div>
                     )}
                     <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInspectingNode(occupyingNode as CustomNode);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '22px',
+                        background: 'rgba(0,0,0,0.7)',
+                        border: '1px solid #555',
+                        borderRadius: '3px',
+                        color: '#00e5ff',
+                        cursor: 'pointer',
+                        fontSize: '9px',
+                        padding: '1px 4px',
+                        lineHeight: 1,
+                        zIndex: 2,
+                        textShadow: '0 0 2px #000',
+                      }}
+                      title="Inspect chassis details and front panel"
+                    >
+                      🔍
+                    </button>
+                    <button
                       onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
-                      style={{ position: 'absolute', top: '1px', right: '4px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px', textShadow: '0 0 3px #000' }}
+                      style={{ position: 'absolute', top: '1px', right: '4px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px', textShadow: '0 0 3px #000', zIndex: 2 }}
                       title="Remove from Rack"
                     >
                       ✕
@@ -400,6 +551,17 @@ const RackElevationView: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
+      {inspectingNode && (
+        <ChassisSummaryModal
+          model={String(inspectingNode.data?.model || '')}
+          sku={String(inspectingNode.data?.sku || '')}
+          displaySku={String(inspectingNode.data?.sku || inspectingNode.data?.model || '')}
+          label={String(inspectingNode.data?.label || inspectingNode.data?.model || '')}
+          hwData={(inspectingNode.data || {}) as HardwareNodeData}
+          onClose={() => setInspectingNode(null)}
+        />
+      )}
     </div>
   );
 };
