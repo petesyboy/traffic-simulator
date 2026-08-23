@@ -11,7 +11,8 @@ describe('areActionsCompatible', () => {
       [],
     );
     expect(resultHC3.compatible).toBe(false);
-    expect(resultHC3.reason).toContain('SMT-HC3-C08 or SMT-HC3-C05');
+    expect(resultHC3.reason).toContain('SMT-HC3-C08');
+    expect(resultHC3.reason).not.toContain('SMT-HC3-C05');
 
     const resultHC1 = areActionsCompatible(
       'GTP Flow Filtering',

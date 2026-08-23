@@ -431,7 +431,7 @@ export function getGigaSmartEnginePrompt(
   const nameB = getCanonicalGsopName(actionB) || actionB;
 
   if (model.includes('hc3')) {
-    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC3, please install an additional GigaSMART card (e.g. SMT-HC3-C08 or SMT-HC3-C05) into an available module slot.`;
+    return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC3, please install an additional GigaSMART card (SMT-HC3-C08) into an available module slot.`;
   }
   if (model.includes('hc1-plus') || model.includes('hc1 plus')) {
     return `'${nameA}' and '${nameB}' cannot be combined in a single GigaSMART operation (GSOP). To run both operations on this GigaVUE-HC1-Plus, please add a front GigaSMART engine module (SMT-HC1-S).`;
