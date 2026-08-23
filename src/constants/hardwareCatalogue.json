@@ -68,7 +68,8 @@
       "ru": 1,
       "type": "chassis",
       "max_modules": 2,
-      "max_links": 8
+      "max_links": 8,
+      "image": "./hardware-icons/TAP-M202ULT.png"
     },
     {
       "model": "TAP-M251ULT",
@@ -77,7 +78,8 @@
       "split_ratio": "50/50",
       "fiber_type": "Multimode",
       "ports": 4,
-      "max_links": 4
+      "max_links": 4,
+      "image": "./hardware-icons/TAP-M251ULT.png"
     },
     {
       "model": "TAP-M253ULT",
@@ -86,7 +88,8 @@
       "split_ratio": "50/50",
       "fiber_type": "Singlemode",
       "ports": 2,
-      "max_links": 2
+      "max_links": 2,
+      "image": "./hardware-icons/TAP-M253ULT.png"
     },
     {
       "model": "TAP-M251T",
@@ -94,7 +97,8 @@
       "type": "module",
       "max_links": 6,
       "base_ports": 24,
-      "licensed_ports": 24
+      "licensed_ports": 24,
+      "image": "./hardware-icons/TAP-M251T.png"
     },
     {
       "model": "TAP-M253T",
@@ -102,61 +106,71 @@
       "type": "module",
       "max_links": 6,
       "base_ports": 24,
-      "licensed_ports": 24
+      "licensed_ports": 24,
+      "image": "./hardware-icons/TAP-M253T.png"
     },
     {
       "model": "TAP-M271T",
       "sku": "TAP-M271T",
       "type": "module",
-      "max_links": 6
+      "max_links": 6,
+      "image": "./hardware-icons/TAP-M271T.png"
     },
     {
       "model": "TAP-M273T",
       "sku": "TAP-M273T",
       "type": "module",
-      "max_links": 6
+      "max_links": 6,
+      "image": "./hardware-icons/TAP-M273T.png"
     },
     {
       "model": "TAP-M451T",
       "sku": "TAP-M451T",
       "type": "module",
-      "max_links": 3
+      "max_links": 3,
+      "image": "./hardware-icons/TAP-M451T.png"
     },
     {
       "model": "TAP-M453T",
       "sku": "TAP-M453T",
       "type": "module",
-      "max_links": 3
+      "max_links": 3,
+      "image": "./hardware-icons/TAP-M453T.png"
     },
     {
       "model": "TAP-M471T",
       "sku": "TAP-M471T",
       "type": "module",
-      "max_links": 3
+      "max_links": 3,
+      "image": "./hardware-icons/TAP-M471T.png"
     },
     {
       "model": "TAP-M473T",
       "sku": "TAP-M473T",
       "type": "module",
-      "max_links": 3
+      "max_links": 3,
+      "image": "./hardware-icons/TAP-M473T.png"
     },
     {
       "model": "TAP-M506T",
       "sku": "TAP-M506T",
       "type": "module",
-      "max_links": 4
+      "max_links": 4,
+      "image": "./hardware-icons/TAP-M506T.png"
     },
     {
       "model": "PNL-M341T",
       "sku": "PNL-M341T",
       "type": "module",
-      "fiber_type": "Multimode"
+      "fiber_type": "Multimode",
+      "image": "./hardware-icons/PNL-M341T.png"
     },
     {
       "model": "PNL-M343T",
       "sku": "PNL-M343T",
       "type": "module",
-      "fiber_type": "Singlemode"
+      "fiber_type": "Singlemode",
+      "image": "./hardware-icons/PNL-M343T.png"
     }
   ],
   "ta_series": [

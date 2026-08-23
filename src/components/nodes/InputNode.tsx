@@ -14,6 +14,7 @@ import {
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { useGlowClass } from './nodeStyles';
+import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
@@ -45,6 +46,10 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const glowClass = useGlowClass(id);
 
+  const tapImage = (configType.startsWith(CONFIG_TYPES.TAP) || data.model)
+    ? resolveHardwareIcon((data.image as string | undefined) || (data.model as string | undefined) || (data.sku as string | undefined))
+    : undefined;
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
@@ -65,6 +70,11 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         </div>
         <div className="node-type-label" style={{ display: 'block' }}>{nodeTypeLabel}</div>
+        {tapImage && (
+          <div style={{ marginTop: '6px', borderRadius: '3px', overflow: 'hidden', border: '1px solid #333', background: '#080808', maxHeight: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' }}>
+            <img src={tapImage} alt={String(data.model || 'TAP')} style={{ maxWidth: '100%', maxHeight: '38px', objectFit: 'contain' }} />
+          </div>
+        )}
         {advancedMode && (
           <div className="node-meta" style={{ fontSize: '9px', opacity: 0.8, display: 'flex', justifyContent: 'space-between' }}>
             <span>Type: {configType}</span>

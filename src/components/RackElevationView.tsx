@@ -413,6 +413,9 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                       {Array.from({ length: bays }, (_, i) => i + 1).map(bay => {
                         const bayNode = nested.find(n => n.data?.traySlot === bay);
                         if (bayNode) {
+                          const resolvedBayImage = resolveHardwareIcon(
+                            (bayNode.data?.image as string | undefined) || (bayNode.data?.model as string | undefined)
+                          );
                           return (
                             <div
                               key={bay}
@@ -420,13 +423,29 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                               title={`Bay ${bay}: ${bayNode.data?.model} - ${bayNode.data?.label} (click to remove)`}
                               style={{
                                 flex: 1, color: '#fff', cursor: 'pointer', position: 'relative', zIndex: 1,
-                                background: resolvedTrayImage ? 'rgba(0,124,255,0.55)' : '#007cff',
+                                background: resolvedBayImage ? '#0a0a0a' : (resolvedTrayImage ? 'rgba(0,124,255,0.55)' : '#007cff'),
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontSize: '8px', fontWeight: 'bold', overflow: 'hidden', whiteSpace: 'nowrap',
                                 borderRight: '1px solid #0d1117', boxSizing: 'border-box',
                               }}
                             >
-                              {rowHeight >= 18 && !hideLabels ? bayNode.data?.model : ''}
+                              {resolvedBayImage && (
+                                <img
+                                  src={resolvedBayImage}
+                                  alt={String(bayNode.data?.model || '')}
+                                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+                                />
+                              )}
+                              {rowHeight >= 18 && !hideLabels && (
+                                <span style={{
+                                  position: 'relative', zIndex: 2,
+                                  background: resolvedBayImage ? 'rgba(0,0,0,0.65)' : 'transparent',
+                                  padding: '1px 3px', borderRadius: '2px',
+                                  textShadow: '0 0 3px #000',
+                                }}>
+                                  {bayNode.data?.model}
+                                </span>
+                              )}
                             </div>
                           );
                         }

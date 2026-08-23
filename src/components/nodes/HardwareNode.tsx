@@ -234,6 +234,11 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                 />
               </div>
             )}
+            {showBoardDetails && !showFrontPanel && Boolean(image) && (
+              <div style={{ marginTop: '6px', maxWidth: '220px', border: '1px solid #2a2a2a', borderRadius: '3px', overflow: 'hidden', background: '#0a0a0a' }}>
+                <img src={image} alt={model} style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '50px', objectFit: 'contain' }} />
+              </div>
+            )}
             {showBoardDetails && <ChassisFaceplate ports={chassisPorts} occupancy={portOccupancy} flashPortIds={flashPortIds} />}
             {!showBoardDetails && chassisPorts.length > 0 && (
               <div style={{ marginTop: '4px', fontSize: '8px', color: '#777', fontStyle: 'italic' }}>

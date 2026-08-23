@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.563",
+    date: "2026-08-23",
+    summary: "Integrated authentic Gigamon G-TAP stencil graphics from ms-vs-gigamon-g-tap-stencils.vss across canvas nodes, TAP configuration panels, and rack elevation tray bays (M-Series TAPs, ULT/TAA variants, breakout panels, and active TAPs).",
+  },
+  {
     version: "1.0.562",
     date: "2026-08-23",
     summary: "Added a 'Hide Labels' toggle checkbox to the 42U Rack Elevation View toolbar, enabling clean, unobstructed front-panel and TAP tray visualization.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.542",
     date: "2026-08-19",
     summary: "Ship v1.0.542: optic multipack BOM optimization",
-  },
-  {
-    version: "1.0.541",
-    date: "2026-08-19",
-    summary: "Ship v1.0.541: fix HC3/HC1-Plus Slot 1 optic-marker positioning",
   },
 ];

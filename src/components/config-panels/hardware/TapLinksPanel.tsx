@@ -21,6 +21,7 @@ const TERMINATION_CLASS_LABEL: Record<TapTerminationClass, string> = {
 };
 import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../../../utils/hardwareUtils';
 import { getMergedSkus } from '../../../utils/skuOverrides';
+import { resolveHardwareIcon } from '../../../assets/hardwareIcons';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
 
 interface TapLinksPanelProps {
@@ -237,9 +238,21 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     });
   };
 
+  const tapImage = resolveHardwareIcon(
+    (selectedNode.data?.image as string | undefined) ||
+    tapSku ||
+    tapModel
+  );
+
   return (
     <div className="panel-section border-t border-orange-500/20 pt-4 mt-4">
       <h3>🔗 TAP Settings</h3>
+
+      {tapImage && (
+        <div style={{ marginBottom: '12px', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', padding: '6px', display: 'flex', justifyContent: 'center' }}>
+          <img src={tapImage} alt={tapModel} style={{ maxWidth: '100%', maxHeight: '55px', objectFit: 'contain' }} />
+        </div>
+      )}
       
       {/* Existing Allocations List */}
       <div className="flex-col gap-2 mb-3">
