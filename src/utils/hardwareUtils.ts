@@ -176,6 +176,24 @@ export const getTrayLayout = (model: string, sku?: string): TrayLayout => {
   };
 };
 
+/**
+ * Rack height (RU) for a device - prefers catalogue's `ru` field, with fallback heuristics.
+ */
+export const getDeviceRU = (model: string, sku?: string): number => {
+  if (!model) return 1;
+  const catalogueEntry = [...hardwareCatalogue.taps, ...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series]
+    .find((c: { model: string; sku: string; ru?: number }) => (sku && c.sku === sku) || c.model === model) as
+    { ru?: number } | undefined;
+  if (catalogueEntry?.ru !== undefined) return catalogueEntry.ru;
+  if (model.includes('HC3')) return 3;
+  if (model.includes('HC2')) return 2;
+  if (model.includes('HC1') || model.includes('HCT')) return 1;
+  if (model.includes('TA25') || model.includes('TA100') || model.includes('TA200') || model.includes('TA400')) return 1;
+  if (model.includes('M200')) return 2;
+  if (model.includes('TAP')) return 1;
+  return 1;
+};
+
 /** True for a physical tap-module "stick" (TAP-M251T, TAP-M253T, ...) - the only
  *  kind of node that belongs in a tray bay, as opposed to a tray itself, an active
  *  G-TAP appliance, or unrelated hardware dragged onto a bay by mistake. */

@@ -37,6 +37,7 @@ export interface GraphSlice {
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
+  setNodes: (nodes: CustomNode[]) => void;
   setEdges: (edges: Edge[]) => void;
   setDraggedNodeType: (type: string | null) => void;
   addNode: (node: CustomNode) => void;
@@ -243,6 +244,11 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   setEdges: (edges) => {
     const syncedNodes = syncOpticsOnTapConnection(syncSplunkLabels(get().nodes, edges), edges);
     set({ edges: syncPortAssignments(syncedNodes, edges), nodes: syncedNodes });
+  },
+  setNodes: (nodes) => {
+    get().pushHistory();
+    const syncedNodes = syncOpticsOnTapConnection(syncSplunkLabels(nodes, get().edges), get().edges);
+    set({ nodes: syncTapTrays(syncedNodes) });
   },
   setDraggedNodeType: (type) => set({ draggedNodeType: type }),
   addNode: (node) => { get().pushHistory(); set({ nodes: syncTapTrays([...get().nodes, node]) }); },

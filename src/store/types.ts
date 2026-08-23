@@ -383,6 +383,7 @@ export interface RFState {
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  setNodes: (nodes: CustomNode[]) => void;
   setEdges: (edges: Edge[]) => void;
   setDraggedNodeType: (type: string | null) => void;
   addNode: (node: CustomNode) => void;

@@ -61,6 +61,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
       },
     };
     localStorage.setItem(`${SLOT_PREFIX}${name}`, JSON.stringify(flow));
+    localStorage.setItem('fm-simulator-last-slot', name);
     setSlots(getSavedSlots());
     setCurrentScenarioName(name);
     onSaved(name);
@@ -93,6 +94,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
     downloadAnchor.remove();
     URL.revokeObjectURL(url);
     setCurrentScenarioName(name);
+    localStorage.setItem('fm-simulator-last-slot', name);
     onSaved(name);
     onClose();
   };
@@ -110,6 +112,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
           restoreState(n, e_list, t || [], s_obj);
           const scenarioName = file.name.replace(/\.json$/i, '');
           setCurrentScenarioName(scenarioName);
+          localStorage.setItem('fm-simulator-last-slot', scenarioName);
           onLoaded();
           onClose();
         } else {
@@ -131,6 +134,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
       if (n && e) {
         restoreState(n, e, t, s_obj);
         setCurrentScenarioName(name);
+        localStorage.setItem('fm-simulator-last-slot', name);
         onLoaded();
       }
     } catch (err) {
@@ -142,12 +146,16 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
   const handleLoadPreset = (preset: (typeof PRESET_SCENARIOS)[number]) => {
     restoreState(preset.nodes, preset.edges, preset.trafficStreams);
     setCurrentScenarioName(preset.name);
+    localStorage.setItem('fm-simulator-last-slot', preset.name);
     onLoaded();
     onClose();
   };
 
   const handleDelete = (name: string) => {
     localStorage.removeItem(`${SLOT_PREFIX}${name}`);
+    if (localStorage.getItem('fm-simulator-last-slot') === name) {
+      localStorage.removeItem('fm-simulator-last-slot');
+    }
     setSlots(getSavedSlots());
   };
 

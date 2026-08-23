@@ -176,17 +176,63 @@ function App() {
   // ── Auto-restore on first mount ──────────────────────────────────────────
 
   useEffect(() => {
-    // Support old single-slot saves ('fm-simulator-default-file') for backward compat
-    const savedState = localStorage.getItem('fm-simulator-default-file');
+    // Check autosave, last slot, or legacy default save
+    const savedState = localStorage.getItem('fm-simulator-autosave') || localStorage.getItem('fm-simulator-default-file');
     if (savedState) {
       try {
-        const { nodes: n, edges: e, trafficStreams: t } = JSON.parse(savedState);
-        if (n && e) restoreState(n, e, t);
+        const { nodes: n, edges: e, trafficStreams: t, settings: s_obj } = JSON.parse(savedState);
+        if (n && e) {
+          restoreState(n, e, t || [], s_obj);
+          const lastSlot = localStorage.getItem('fm-simulator-last-slot');
+          if (lastSlot) setCurrentScenarioName(lastSlot);
+        }
       } catch (error) {
         console.error('Failed to parse the saved canvas state:', error);
       }
     }
-  }, [restoreState]);
+  }, [restoreState, setCurrentScenarioName]);
+
+  // ── Auto-save working state on changes (debounced) ───────────────────────
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nodes.length > 0) {
+        const flow = {
+          nodes,
+          edges,
+          trafficStreams,
+          settings: {
+            advancedMode,
+            projectLicenseMode,
+            defaultTermDuration,
+            projectRegion,
+            disableDcWarnings,
+            panelTextScale,
+            showGrid,
+            snapToGrid,
+          },
+        };
+        try {
+          localStorage.setItem('fm-simulator-autosave', JSON.stringify(flow));
+        } catch {
+          // Ignore quota errors in restricted environments
+        }
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [
+    nodes,
+    edges,
+    trafficStreams,
+    advancedMode,
+    projectLicenseMode,
+    defaultTermDuration,
+    projectRegion,
+    disableDcWarnings,
+    panelTextScale,
+    showGrid,
+    snapToGrid,
+  ]);
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
 

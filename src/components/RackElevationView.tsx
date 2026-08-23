@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import type { CustomNode, HardwareNodeData } from '../store/types';
-import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
-import { getModuleSlotPositions, getTrayBayCount, getTrayLayout, isTapModule } from '../utils/hardwareUtils';
+import { getDeviceRU, getModuleSlotPositions, getTrayBayCount, getTrayLayout, isTapModule } from '../utils/hardwareUtils';
+import { autoDeployRack, clearRackDeploy } from '../utils/autoRack';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
 import { ChassisSummaryModal } from './nodes/ChassisSummaryModal';
@@ -11,13 +11,16 @@ import { ChassisSummaryModal } from './nodes/ChassisSummaryModal';
 export interface RackElevationViewProps {
   nodes?: CustomNode[];
   updateNodeData?: (nodeId: string, data: Record<string, unknown>) => void;
+  setNodes?: (nodes: CustomNode[]) => void;
 }
 
 const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
   const storeNodes = useStore((state) => state.nodes);
   const storeUpdateNodeData = useStore((state) => state.updateNodeData);
+  const storeSetNodes = useStore((state) => state.setNodes);
   const nodes = props.nodes ?? storeNodes;
   const updateNodeData = props.updateNodeData ?? storeUpdateNodeData;
+  const setNodes = props.setNodes ?? storeSetNodes;
 
   const [selectedSite, setSelectedSite] = useState<string>('');
   const [zoom, setZoom] = useState<number>(1);
@@ -70,24 +73,6 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
   });
 
   const rackId = activeSite === 'Global / Unassigned' ? 'rack_global' : `rack_${activeSite}`;
-
-  // Rack height (RU) for a device - prefers the catalogue's own `ru` field (this is
-  // what makes a TAP-M100T correctly take 0.5U and a TAP-M200T 1U instead of both
-  // falling into the old blanket "any TAP = 1U" guess) and falls back to the old
-  // model-name heuristics for entries that don't carry one.
-  const getDeviceRU = (model: string, sku?: string): number => {
-    if (!model) return 1;
-    const catalogueEntry = [...hardwareCatalogue.taps, ...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series]
-      .find((c: { model: string; sku: string; ru?: number }) => (sku && c.sku === sku) || c.model === model) as
-      { ru?: number } | undefined;
-    if (catalogueEntry?.ru !== undefined) return catalogueEntry.ru;
-    if (model.includes('HC3')) return 3;
-    if (model.includes('HC1')) return 1;
-    if (model.includes('HCT')) return 1;
-    if (model.includes('TA25E') || model.includes('TA200') || model.includes('TA400')) return 1;
-    if (model.includes('TAP')) return 1; // Assuming M-series fits in 1U trays
-    return 1;
-  };
 
   const rackedNodes = rackableNodes.filter(n => n.data?.rackId === rackId && typeof n.data?.rackU === 'number');
 
@@ -270,6 +255,39 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
             />
             <span>Hide Labels</span>
           </label>
+          <div style={{ width: '1px', height: '14px', background: '#444', margin: '0 6px' }} />
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setNodes(autoDeployRack(nodes, activeSite))}
+            title="Automatically populate TAP trays and rack all equipment for this site using industry-standard weight hierarchy (heaviest chassis at bottom, TAPs at top)"
+            style={{
+              padding: '3px 10px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              background: '#0070f3',
+              borderColor: '#0070f3',
+              color: '#fff',
+              borderRadius: '4px',
+            }}
+          >
+            ⚡ Auto-Deploy
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setNodes(clearRackDeploy(nodes, activeSite))}
+            title="Unrack all equipment and clear tray bay assignments for this site"
+            style={{
+              padding: '3px 8px',
+              fontSize: '11px',
+              color: '#f87171',
+              borderRadius: '4px',
+            }}
+          >
+            ✕ Clear Rack
+          </button>
         </div>
       </div>
 
