@@ -61,13 +61,14 @@ const CanvasArea: React.FC = () => {
       if (fitViewNodeIds && fitViewNodeIds.length > 0) {
         fitView({
           nodes: fitViewNodeIds.map((id) => ({ id })),
-          padding: 0.05,
-          duration: 200,
+          padding: 0.08,
+          maxZoom: 3.5,
+          duration: 0,
         });
       } else {
-        fitView({ padding: 0.1 });
+        fitView({ padding: 0.08, maxZoom: 2.0, duration: 0 });
       }
-    }, 100);
+    }, 50);
     return () => clearTimeout(timer);
   }, [fitViewTrigger, fitViewNodeIds, fitView]);
 

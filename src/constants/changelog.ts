@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.582",
+    date: "2026-08-23",
+    summary: "Fixed site diagram screenshot framing in PDF reports by enabling high-zoom (maxZoom: 3.5), removing animation delays, iteratively expanding complete multi-hop site partitions, and rendering at 2x pixel density to eliminate empty black space.",
+  },
+  {
     version: "1.0.581",
     date: "2026-08-23",
     summary: "Consolidated GigaSMART function descriptions across sites in the Solution Overview narrative report, cleaned repetitive title labels, and fixed broken warning glyph boxes in PDF callouts.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.563",
     date: "2026-08-23",
     summary: "Integrated authentic Gigamon G-TAP stencil graphics from ms-vs-gigamon-g-tap-stencils.vss across canvas nodes, TAP configuration panels, and rack elevation tray bays (M-Series TAPs, ULT/TAA variants, breakout panels, and active TAPs).",
-  },
-  {
-    version: "1.0.562",
-    date: "2026-08-23",
-    summary: "Added a 'Hide Labels' toggle checkbox to the 42U Rack Elevation View toolbar, enabling clean, unobstructed front-panel and TAP tray visualization.",
   },
 ];

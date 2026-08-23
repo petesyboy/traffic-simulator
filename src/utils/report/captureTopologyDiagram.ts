@@ -57,23 +57,29 @@ export function detectDiagramSplitting(
         }
       });
 
-      // 2. Downstream/upstream nodes without an explicit conflicting site
-      edges.forEach((e) => {
-        const srcNode = visibleNodes.find((n) => n.id === e.source);
-        const tgtNode = visibleNodes.find((n) => n.id === e.target);
-        if (siteNodeIds.has(e.source) && tgtNode) {
-          const tgtSite = (tgtNode.data?.site as string || '').trim();
-          if (!tgtSite || tgtSite === siteName) {
-            siteNodeIds.add(e.target);
+      // 2. Iteratively expand downstream/upstream nodes belonging to this site
+      let expanded = true;
+      while (expanded) {
+        expanded = false;
+        edges.forEach((e) => {
+          const srcNode = visibleNodes.find((n) => n.id === e.source);
+          const tgtNode = visibleNodes.find((n) => n.id === e.target);
+          if (siteNodeIds.has(e.source) && tgtNode && !siteNodeIds.has(e.target)) {
+            const tgtSite = (tgtNode.data?.site as string || '').trim();
+            if (!tgtSite || tgtSite === siteName) {
+              siteNodeIds.add(e.target);
+              expanded = true;
+            }
           }
-        }
-        if (siteNodeIds.has(e.target) && srcNode) {
-          const srcSite = (srcNode.data?.site as string || '').trim();
-          if (!srcSite || srcSite === siteName) {
-            siteNodeIds.add(e.source);
+          if (siteNodeIds.has(e.target) && srcNode && !siteNodeIds.has(e.source)) {
+            const srcSite = (srcNode.data?.site as string || '').trim();
+            if (!srcSite || srcSite === siteName) {
+              siteNodeIds.add(e.source);
+              expanded = true;
+            }
           }
-        }
-      });
+        });
+      }
 
       partitions.push({
         siteName,
@@ -104,6 +110,7 @@ export async function captureTopologyDiagramPng(
   return toPng(element, {
     backgroundColor: '#121212',
     cacheBust: true,
+    pixelRatio: 2,
     filter: (domNode) => {
       if (
         domNode.classList?.contains('react-flow__controls') ||
@@ -215,7 +222,7 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
       .map((e) => e.id),
   );
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 600));
 
   try {
     return await captureTopologyDiagramPng(allowedNodeIds, allowedEdgeIds);
