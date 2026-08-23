@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.588",
+    date: "2026-08-23",
+    summary: "Rendered full composited add-in cards (GigaSMART, PRT modules, and TAP bays) inside rack elevation diagrams, and relocated device labels and descriptions to side callout cards with leader lines to keep physical equipment faceplates completely unobscured.",
+  },
+  {
     version: "1.0.587",
     date: "2026-08-23",
     summary: "Consolidated hardware platform descriptions in the Solution Report to display a single representative front-panel photograph per chassis/node model, with all deployed instances, sites, and labels detailed in the text.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.569",
     date: "2026-08-23",
     summary: "Updated TAP-M200T tray height to 1 RU and TAP-M100T to 0.5 RU across catalogue, heuristics, and 42U Rack Elevation View.",
-  },
-  {
-    version: "1.0.568",
-    date: "2026-08-23",
-    summary: "Added a dedicated Left RU Number Rail displaying permanent 1-42 slot numbers on the rack exterior regardless of hardware occupancy, and refined fitted SFP cage overlays with crisp 1px borders and enhanced background clarity.",
   },
 ];

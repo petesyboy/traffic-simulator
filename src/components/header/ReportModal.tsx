@@ -129,7 +129,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       const siteRackImages: Record<string, string> = {};
       await Promise.all(
         uniqueSites.map(async (site) => {
-          const png = await captureRackElevationPng(currentNodes, site).catch(() => undefined);
+          const png = await captureRackElevationPng(currentNodes, site, chassisFrontPanelImages).catch(() => undefined);
           if (png) siteRackImages[site] = png;
         }),
       );

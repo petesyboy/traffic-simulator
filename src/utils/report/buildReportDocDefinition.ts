@@ -1266,9 +1266,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         if (rackImage) {
           content.push({
             image: rackImage,
-            width: 220,
+            width: 420,
             alignment: 'center',
-            margin: [0, 4, 0, 12],
+            margin: [0, 6, 0, 14],
           });
         }
       });
@@ -1285,9 +1285,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       if (rackImage) {
         content.push({
           image: rackImage,
-          width: 220,
+          width: 420,
           alignment: 'center',
-          margin: [0, 6, 0, 12],
+          margin: [0, 6, 0, 14],
         });
       }
     }
