@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.593",
+    date: "2026-08-24",
+    summary: "Deduplicated Signal Path Schematics in PDF reports: when multiple deployment sites share identical architectures (e.g. Site A and Site B), renders a single consolidated representative schematic strip under the overview diagram instead of duplicating identical SVGs under each site sub-diagram. Preserves separate per-site schematics whenever site configurations differ.",
+  },
+  {
     version: "1.0.592",
     date: "2026-08-24",
     summary: "Fixed TAP link capacity resolution: getTapNodeLinks() now queries the merged SKU catalogue description and multi-link model heuristics (e.g. 6 links for TAP-M251T/M253T/M271T/M273T), accurately producing 96 monitored links and 192 optical feeds for 16 six-link TAP modules. Added automatic Scope Considerations warning notice plate conversion in executive summary.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.574",
     date: "2026-08-23",
     summary: "Consolidated optical TAP modules and TAP trays into unified single summaries in the report, clearly displayed site and unit labels next to all HC and TA front panel graphics, and prevented stat blocks and diagrams from breaking across pages.",
-  },
-  {
-    version: "1.0.573",
-    date: "2026-08-23",
-    summary: "Added diagram legibility detection and multi-site diagram splitting to automatically generate focused, high-resolution per-site architecture diagrams in addition to the global end-to-end overview in the PDF report.",
   },
 ];

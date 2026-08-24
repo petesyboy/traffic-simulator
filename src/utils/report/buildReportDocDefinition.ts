@@ -689,7 +689,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   content.push({ text: '§02 · NETWORK VISIBILITY FABRIC', style: 'sectionKicker', pageBreak: 'before' });
   content.push({ text: 'Topology Diagram', style: 'sectionHeading' });
 
-  if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
+  const hasMultipleSites = !!(siteDiagrams && Object.keys(siteDiagrams).length > 1);
+
+  if (hasMultipleSites) {
     content.push({
       text: 'End-to-End Multi-Site Architecture Overview',
       style: 'subHeading',
@@ -705,9 +707,99 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   content.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
 
-  if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
-    Object.entries(siteDiagrams).forEach(([siteName, siteDiagramUrl]) => {
-      // Caption and image kept together; natural flow means no 500px blank gaps
+  // Helper to calculate schematic metrics for any site subset
+  const getSiteSchematicMetrics = (_siteName: string, siteNodes: CustomNode[]) => {
+    const siteTapNodes = siteNodes.filter(
+      (n) =>
+        (n.type === NODE_TYPES.INPUT && String(n.data?.configType || '').toUpperCase().includes('TAP')) ||
+        (n.type === NODE_TYPES.HARDWARE && String(n.data?.model || '').toUpperCase().includes('TAP') && !isAutoTrayModel(String(n.data?.model || ''))),
+    );
+    const siteTapUnitCount = siteTapNodes.length;
+    const siteTapLinkCount = siteTapNodes.reduce((sum, n) => sum + getTapNodeLinks(n), 0);
+    const siteTapFeedCount = siteTapLinkCount * 2;
+
+    const siteSpanNodes = siteNodes.filter(
+      (n) => n.type === NODE_TYPES.INPUT && !String(n.data?.configType || '').toUpperCase().includes('TAP'),
+    );
+    const siteSpanCount = siteSpanNodes.length;
+    const siteTotalFeedCount = siteTapFeedCount + siteSpanCount;
+    const siteTotalLinkCount = siteTapLinkCount + siteSpanCount;
+
+    const siteAggCount = siteNodes.filter(
+      (n) =>
+        n.type === NODE_TYPES.HARDWARE &&
+        !isAutoTrayModel(String(n.data?.model || '')) &&
+        !String(n.data?.model || '').toUpperCase().includes('TAP') &&
+        !String(n.data?.model || '').toUpperCase().includes('HC') &&
+        !String(n.data?.model || '').toUpperCase().includes('HCT'),
+    ).length;
+
+    const siteHcCount = siteNodes.filter(
+      (n) =>
+        n.type === NODE_TYPES.HARDWARE &&
+        (String(n.data?.model || '').toUpperCase().includes('HC') || String(n.data?.model || '').toUpperCase().includes('HCT')) &&
+        !isAutoTrayModel(String(n.data?.model || '')),
+    ).length;
+
+    const siteToolCount = siteNodes.filter((n) => n.type === NODE_TYPES.TOOL).length;
+    const siteGsOps = siteNodes.filter((n) => n.type === NODE_TYPES.GIGASMART).length;
+
+    return {
+      tapUnitCount: siteTapUnitCount || stats.tapUnitCount,
+      totalLinkCount: siteTotalLinkCount || stats.monitoredLinkCount,
+      totalFeedCount: siteTotalFeedCount || stats.totalFeedCount,
+      aggCount: siteAggCount,
+      hcCount: siteHcCount,
+      toolCount: siteToolCount || stats.toolCount,
+      gsOps: siteGsOps,
+    };
+  };
+
+  if (hasMultipleSites) {
+    const siteEntries = Object.entries(siteDiagrams!);
+    const siteMetricsList = siteEntries.map(([siteName]) => {
+      const siteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === siteName.trim());
+      return {
+        siteName,
+        metrics: getSiteSchematicMetrics(siteName, siteNodes),
+      };
+    });
+
+    // Check if all sites have identical metrics/structure
+    const firstMetrics = siteMetricsList[0].metrics;
+    const allSitesIdentical =
+      siteMetricsList.length > 1 &&
+      siteMetricsList.every(
+        (entry) =>
+          entry.metrics.tapUnitCount === firstMetrics.tapUnitCount &&
+          entry.metrics.totalLinkCount === firstMetrics.totalLinkCount &&
+          entry.metrics.totalFeedCount === firstMetrics.totalFeedCount &&
+          entry.metrics.aggCount === firstMetrics.aggCount &&
+          entry.metrics.hcCount === firstMetrics.hcCount &&
+          entry.metrics.toolCount === firstMetrics.toolCount &&
+          entry.metrics.gsOps === firstMetrics.gsOps,
+      );
+
+    if (allSitesIdentical) {
+      // Single representative schematic under the overview diagram
+      const siteNamesJoined = siteMetricsList.map((s) => s.siteName).join(' · ');
+      content.push({
+        svg: buildSiteSchematicSvg(
+          firstMetrics.tapUnitCount,
+          firstMetrics.totalLinkCount,
+          firstMetrics.totalFeedCount,
+          firstMetrics.aggCount,
+          firstMetrics.hcCount,
+          firstMetrics.toolCount,
+          firstMetrics.gsOps,
+          `REPRESENTATIVE SITE ARCHITECTURE (${siteNamesJoined})`,
+        ),
+        width: 515,
+        margin: [0, 0, 0, 14],
+      });
+    }
+
+    siteEntries.forEach(([siteName, siteDiagramUrl], index) => {
       content.push({
         text: `Site Architecture Breakdown — ${siteName}`,
         style: 'subHeading',
@@ -724,58 +816,44 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         margin: [0, 0, 0, 6],
       } as Content);
 
-      // Compute per-site counts for the schematic strip
-      const siteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === siteName.trim());
+      // Only push per-site schematics if the sites actually differ in architecture
+      if (!allSitesIdentical) {
+        const m = siteMetricsList[index].metrics;
+        content.push({
+          svg: buildSiteSchematicSvg(
+            m.tapUnitCount,
+            m.totalLinkCount,
+            m.totalFeedCount,
+            m.aggCount,
+            m.hcCount,
+            m.toolCount,
+            m.gsOps,
+            siteName,
+          ),
+          width: 515,
+          margin: [0, 0, 0, 14],
+        });
+      }
+    });
+  } else {
+    // Single site deployment: single schematic below the main diagram
+    const singleSiteName = uniqueSites[0] || 'FABRIC';
+    const singleSiteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === singleSiteName.trim());
+    const m = getSiteSchematicMetrics(singleSiteName, singleSiteNodes.length > 0 ? singleSiteNodes : nodes);
 
-      const siteTapNodes = siteNodes.filter(
-        (n) =>
-          (n.type === NODE_TYPES.INPUT && String(n.data?.configType || '').toUpperCase().includes('TAP')) ||
-          (n.type === NODE_TYPES.HARDWARE && String(n.data?.model || '').toUpperCase().includes('TAP') && !isAutoTrayModel(String(n.data?.model || ''))),
-      );
-      const siteTapUnitCount = siteTapNodes.length;
-      const siteTapLinkCount = siteTapNodes.reduce((sum, n) => sum + getTapNodeLinks(n), 0);
-      const siteTapFeedCount = siteTapLinkCount * 2;
-
-      const siteSpanNodes = siteNodes.filter(
-        (n) => n.type === NODE_TYPES.INPUT && !String(n.data?.configType || '').toUpperCase().includes('TAP'),
-      );
-      const siteSpanCount = siteSpanNodes.length;
-      const siteTotalFeedCount = siteTapFeedCount + siteSpanCount;
-      const siteTotalLinkCount = siteTapLinkCount + siteSpanCount;
-
-      const siteAggCount = siteNodes.filter(
-        (n) =>
-          n.type === NODE_TYPES.HARDWARE &&
-          !isAutoTrayModel(String(n.data?.model || '')) &&
-          !String(n.data?.model || '').toUpperCase().includes('TAP') &&
-          !String(n.data?.model || '').toUpperCase().includes('HC') &&
-          !String(n.data?.model || '').toUpperCase().includes('HCT'),
-      ).length;
-
-      const siteHcCount = siteNodes.filter(
-        (n) =>
-          n.type === NODE_TYPES.HARDWARE &&
-          (String(n.data?.model || '').toUpperCase().includes('HC') || String(n.data?.model || '').toUpperCase().includes('HCT')) &&
-          !isAutoTrayModel(String(n.data?.model || '')),
-      ).length;
-
-      const siteToolCount = siteNodes.filter((n) => n.type === NODE_TYPES.TOOL).length;
-      const siteGsOps = siteNodes.filter((n) => n.type === NODE_TYPES.GIGASMART).length;
-
-      content.push({
-        svg: buildSiteSchematicSvg(
-          siteTapUnitCount || stats.tapUnitCount,
-          siteTotalLinkCount || stats.monitoredLinkCount,
-          siteTotalFeedCount || stats.totalFeedCount,
-          siteAggCount,
-          siteHcCount,
-          siteToolCount || stats.toolCount,
-          siteGsOps,
-          siteName,
-        ),
-        width: 515,
-        margin: [0, 0, 0, 14],
-      });
+    content.push({
+      svg: buildSiteSchematicSvg(
+        m.tapUnitCount,
+        m.totalLinkCount,
+        m.totalFeedCount,
+        m.aggCount,
+        m.hcCount,
+        m.toolCount,
+        m.gsOps,
+        singleSiteName,
+      ),
+      width: 515,
+      margin: [0, 0, 0, 14],
     });
   }
 
