@@ -113,7 +113,7 @@ export async function captureTopologyDiagramPng(
   return toPng(element, {
     backgroundColor: bgColor,
     cacheBust: true,
-    pixelRatio: 2,
+    pixelRatio: 3,
     filter: (domNode) => {
       if (
         domNode.classList?.contains('react-flow__controls') ||

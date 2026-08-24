@@ -462,6 +462,28 @@ function drawSideCallout(
   // Text content
   const textX = annoLeft + 8;
   const isMultiLine = cardHeight >= 36;
+  const maxTextWidth = annoWidth - 12;
+
+  /** Splits text at comma boundaries to fit within maxWidth, returning up to maxLines lines. */
+  function wrapAtCommas(text: string, font: string, maxW: number, maxLines: number): string[] {
+    ctx.font = font;
+    if (ctx.measureText(text).width <= maxW) return [text];
+    const parts = text.split(',').map((s) => s.trim());
+    const lines: string[] = [];
+    let current = '';
+    for (const part of parts) {
+      const candidate = current ? `${current}, ${part}` : part;
+      if (ctx.measureText(candidate).width > maxW && current) {
+        lines.push(current);
+        current = part;
+        if (lines.length >= maxLines - 1) { current += (parts.slice(parts.indexOf(part) + 1).length ? ', …' : ''); break; }
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.slice(0, maxLines);
+  }
 
   if (isMultiLine) {
     // Line 1: Appliance Model & RU
@@ -476,12 +498,15 @@ function drawSideCallout(
     const subTrunc = subtitle.length > 34 ? subtitle.slice(0, 32) + '…' : subtitle;
     ctx.fillText(subTrunc, textX, cardY + 23);
 
-    // Line 3: Fitted Cards / Summary
+    // Lines 3+: Fitted Cards / Summary — word-wrapped at commas
     if (cardHeight >= 46 && details) {
       ctx.font = '8px sans-serif';
       ctx.fillStyle = REPORT_COLOURS.inkMuted;
-      const detTrunc = details.length > 40 ? details.slice(0, 38) + '…' : details;
-      ctx.fillText(detTrunc, textX, cardY + 34);
+      const maxDetailLines = Math.max(1, Math.floor((cardHeight - 38) / 11));
+      const detailLines = wrapAtCommas(details, '8px sans-serif', maxTextWidth, maxDetailLines);
+      detailLines.forEach((line, i) => {
+        ctx.fillText(line, textX, cardY + 34 + i * 11);
+      });
     }
   } else {
     // Compact 1-2 line layout for 1RU

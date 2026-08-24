@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.590",
+    date: "2026-08-24",
+    summary: "Report fix pack: (0) dontBreakRows on all tables preventing row splits across page breaks; (1) removed forced page break before §01 so exec summary/stat strip flow on same page as TOC, fixed per-site diagram blank-space gaps via keepWithNext; (2) bumped topology diagram pixelRatio 2→3 for sharper node text, added per-site SVG signal-path schematic strip; (3) replaced unrenderable Unicode glyphs in notice plates (ℹ→i, ✕→X) with Roboto-safe ASCII; (4) Fitted Cards annotation now word-wraps at commas on multi-RU callout cards.",
+  },
+  {
     version: "1.0.589",
     date: "2026-08-23",
     summary: "Fixed TAP modules not appearing inside tray bays in rack elevation diagrams — getChassisImagePath() was only searching TA/HC series, so TAP module icons were not resolved. Added model-name fallback so resolveHardwareIcon() correctly matches TAP_MODEL_ALIASES for TAP-M251T, TAP-M273T, etc.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.571",
     date: "2026-08-23",
     summary: "Excluded tool nodes, packet tools, and third-party probes (such as Ericsson probes) from physical site assignment validation checks.",
-  },
-  {
-    version: "1.0.570",
-    date: "2026-08-23",
-    summary: "Excluded custom tools, packet tools, and third-party monitoring probes (such as Ericsson probes) from the rackable hardware inventory and unracked equipment warnings.",
   },
 ];

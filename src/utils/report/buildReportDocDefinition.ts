@@ -177,7 +177,7 @@ export function buildNoticePlate(options: NoticePlateOptions): Content {
     critical: {
       color: REPORT_COLOURS.statusCritical,
       bg: REPORT_COLOURS.statusCriticalBg,
-      icon: '✕',
+      icon: 'X',
       style: 'noticeTitleCritical',
     },
     warning: {
@@ -189,7 +189,7 @@ export function buildNoticePlate(options: NoticePlateOptions): Content {
     info: {
       color: REPORT_COLOURS.statusInfo,
       bg: REPORT_COLOURS.statusInfoBg,
-      icon: 'ℹ',
+      icon: 'i',
       style: 'noticeTitleInfo',
     },
   }[severity];
@@ -307,6 +307,77 @@ function generateCoverSvg(): string {
     <!-- Bottom metadata divider hairline -->
     <line x1="40" y1="720" x2="555.28" y2="720" stroke="#2B3859" stroke-width="1" />
   </svg>`;
+}
+
+/**
+ * Builds a compact SVG signal-path schematic for a single deployment site.
+ * Shows the fan-in → process → fan-out shape:
+ *   [N × TAPs] ──▶ [Aggregation] ──▶ [HC / GigaSMART] ──▶ [M × Tools]
+ * Uses only Gigamon brand colours; no external assets required.
+ */
+function buildSiteSchematicSvg(
+  tapCount: number,
+  aggCount: number,
+  hcCount: number,
+  toolCount: number,
+  gigaSmartOps: number,
+  siteName: string,
+): string {
+  const W = 515;
+  const H = 80;
+  const accent = '#E1592A';
+  const navy = '#16213D';
+  const muted = '#64748B';
+  const lineC = '#94A3B8';
+
+  // Node box positions (centre x)
+  const x1 = 48;   // TAPs
+  const x2 = 165;  // Aggregation
+  const x3 = 295;  // HC / GigaSMART
+  const x4 = 430;  // Tools
+  const cy = 38;
+  const bw = 84;
+  const bh = 28;
+  const r = 4;
+
+  const box = (cx: number, fill: string, label: string, sub: string) => `
+    <rect x="${cx - bw / 2}" y="${cy - bh / 2}" width="${bw}" height="${bh}" rx="${r}" fill="${fill}" />
+    <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-family="sans-serif" font-size="8.5" font-weight="bold" fill="#fff">${label}</text>
+    <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="rgba(255,255,255,0.7)">${sub}</text>`;
+
+  const arrow = (x1a: number, x2a: number) => {
+    const gx1 = x1a + bw / 2;
+    const gx2 = x2a - bw / 2;
+    const mx = (gx1 + gx2) / 2;
+    return `<path d="M${gx1} ${cy} L${mx} ${cy} L${gx2} ${cy}" stroke="${lineC}" stroke-width="1.5" fill="none" marker-end="url(#arrowOrange)" />`;
+  };
+
+  const gsLabel = gigaSmartOps > 0 ? `${gigaSmartOps} Op${gigaSmartOps !== 1 ? 's' : ''}` : 'Aggregation';
+
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrowOrange" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="${lineC}" />
+    </marker>
+  </defs>
+
+  <!-- Site label -->
+  <text x="4" y="14" font-family="sans-serif" font-size="8" font-weight="bold" fill="${muted}" letter-spacing="0.5">${siteName.toUpperCase()} · SIGNAL PATH SCHEMATIC</text>
+
+  ${box(x1, navy, `${tapCount} TAP${tapCount !== 1 ? 's' : ''}`, 'Optical Capture')}
+  ${arrow(x1, x2)}
+  ${box(x2, navy, `${aggCount} Aggr.`, 'Aggregation')}
+  ${arrow(x2, x3)}
+  ${box(x3, accent, `${hcCount} HC`, gsLabel)}
+  ${arrow(x3, x4)}
+  ${box(x4, navy, `${toolCount} Tool${toolCount !== 1 ? 's' : ''}`, 'Destinations')}
+
+  <!-- Counts row -->
+  <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${tapCount} feeds</text>
+  <text x="${x2}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${aggCount} unit${aggCount !== 1 ? 's' : ''}</text>
+  <text x="${x3}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${accent}">${hcCount} engine${hcCount !== 1 ? 's' : ''}</text>
+  <text x="${x4}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${toolCount} dest.</text>
+</svg>`;
 }
 
 export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitions {
@@ -450,6 +521,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   content.push({
     table: {
       widths: [40, 180, '*'],
+      dontBreakRows: true,
       body: tocItems.map((item) => [
         { text: item.num, style: 'mono', color: REPORT_COLOURS.accent },
         { text: item.title, style: 'body', bold: true },
@@ -469,7 +541,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   // ═══════════════════════════════════════════════════════════════
   // §01 EXECUTIVE SUMMARY & STAT TILES GRID
   // ═══════════════════════════════════════════════════════════════
-  content.push({ text: '§01 · STRATEGY & METRICS', style: 'sectionKicker', pageBreak: 'before' });
+  content.push({ text: '§01 · STRATEGY & METRICS', style: 'sectionKicker' });
   content.push({ text: 'Executive Summary', style: 'sectionHeading' });
 
   if (execSummaryText) {
@@ -490,6 +562,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   content.push({
     table: {
       widths: ['25%', '25%', '25%', '25%'],
+      dontBreakRows: true,
       body: [
         [
           buildStatTile({
@@ -588,26 +661,44 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   if (siteDiagrams && Object.keys(siteDiagrams).length > 1) {
     Object.entries(siteDiagrams).forEach(([siteName, siteDiagramUrl]) => {
+      // Caption and image kept together; natural flow means no 500px blank gaps
       content.push({
-        stack: [
-          {
-            text: `Site Architecture Breakdown — ${siteName}`,
-            style: 'subHeading',
-            margin: [0, 10, 0, 4],
-          },
-          {
-            text: `Focused topology diagram for ${siteName}, illustrating local TAP allocations, aggregation chassis ports, and tool feeds.`,
-            style: 'bodySecondary',
-            margin: [0, 0, 0, 8],
-          },
-          {
-            image: siteDiagramUrl,
-            width: 515,
-            margin: [0, 0, 0, 10],
-          },
-        ],
-        unbreakable: true,
-        margin: [0, 6, 0, 8],
+        text: `Site Architecture Breakdown — ${siteName}`,
+        style: 'subHeading',
+        margin: [0, 14, 0, 4],
+      } as Content);
+      content.push({
+        text: `Focused topology diagram for ${siteName}, illustrating local TAP allocations, aggregation chassis ports, and tool feeds.`,
+        style: 'bodySecondary',
+        margin: [0, 0, 0, 6],
+      } as Content);
+      content.push({
+        image: siteDiagramUrl,
+        width: 515,
+        margin: [0, 0, 0, 6],
+      } as Content);
+
+      // Compute per-site counts for the schematic strip
+      const siteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === siteName.trim());
+      const siteTapCount = siteNodes.filter((n) => n.type === NODE_TYPES.INPUT).length;
+      const siteAggCount = siteNodes.filter((n) => n.type === NODE_TYPES.HARDWARE &&
+        (String(n.data?.model || '').includes('TA') || String(n.data?.model || '').includes('TAP'))).length;
+      const siteHcCount = siteNodes.filter((n) => n.type === NODE_TYPES.HARDWARE &&
+        (String(n.data?.model || '').includes('HC') || String(n.data?.model || '').includes('HCT'))).length;
+      const siteToolCount = siteNodes.filter((n) => n.type === NODE_TYPES.TOOL).length;
+      const siteGsOps = siteNodes.filter((n) => n.type === NODE_TYPES.GIGASMART).length;
+
+      content.push({
+        svg: buildSiteSchematicSvg(
+          siteTapCount || stats.inputCounts.total,
+          siteAggCount,
+          siteHcCount,
+          siteToolCount || stats.toolCount,
+          siteGsOps,
+          siteName,
+        ),
+        width: 515,
+        margin: [0, 0, 0, 14],
       });
     });
   }
@@ -1041,6 +1132,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({
       table: {
         headerRows: 1,
+        dontBreakRows: true,
         widths: ['auto', 'auto', '*', 'auto', 'auto'],
         body: [
           [
@@ -1137,6 +1229,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     return {
       table: {
         headerRows: 1,
+        dontBreakRows: true,
         widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
         body: [
           physicalTableHeader,
@@ -1200,6 +1293,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     content.push({
       table: {
         widths: ['25%', '25%', '25%', '25%'],
+        dontBreakRows: true,
         body: [
           [
             buildStatTile({
