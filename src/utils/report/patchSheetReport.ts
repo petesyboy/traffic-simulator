@@ -307,7 +307,7 @@ export function buildPatchSheetReportDocDefinition(input: ReportInput): TDocumen
     content,
     styles: patchSheetStyleDictionary,
     defaultStyle: {
-      font: 'Courier',
+      font: 'Roboto',
       color: '#101010',
       fontSize: 8.5,
     },

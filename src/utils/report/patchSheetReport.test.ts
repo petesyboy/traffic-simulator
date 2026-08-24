@@ -65,6 +65,6 @@ describe('buildPatchSheetReportDocDefinition', () => {
     expect(allText).toContain('WORK ORDER REV');
     expect(allText).toContain('SECTION 01: COMMISSIONING & PHYSICAL MOUNTING CHECKLIST');
     expect(allText).toContain('INSTALLATION TECHNICIAN SIGN-OFF');
-    expect(doc.defaultStyle?.font).toBe('Courier');
+    expect(doc.defaultStyle?.font).toBe('Roboto');
   });
 });

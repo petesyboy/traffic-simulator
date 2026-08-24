@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.596",
+    date: "2026-08-24",
+    summary: "Fixed font registration in Patch Sheet report: replaced unbundled 'Courier' font reference with browser VFS-registered 'Roboto' default font and uppercase monospace styling, resolving runtime missing font error when generating Patch Sheet PDFs.",
+  },
+  {
     version: "1.0.595",
     date: "2026-08-24",
     summary: "Implemented the Fabric report suite expansion, introducing three new specialized report formats alongside Signal Path in the Report Generator: (1) Uplink for budget holders and executive sponsors featuring milestone progression charts and outcome reframes; (2) Patch Sheet for install and commissioning technicians featuring monospace work-order document control and concrete field checklists; (3) Crossover for architectural decision-makers featuring side-by-side trade-off comparisons with verdict takeaways.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.577",
     date: "2026-08-23",
     summary: "Added non-destructive auto-spacing for Export Diagram Mode captures so that node description boxes never overlap or obscure icons below them, and restored original user canvas positions after capture.",
-  },
-  {
-    version: "1.0.576",
-    date: "2026-08-23",
-    summary: "Isolated per-site diagram captures by filtering out non-partition nodes and external edges in html-to-image to prevent overlapping graphics between sites, tightened viewport padding to zoom in closely, and prevented cross-site edge leakage.",
   },
 ];
