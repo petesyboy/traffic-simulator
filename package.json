@@ -1,7 +1,7 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.599",
+    "version": "1.0.600",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -29,7 +29,7 @@
         "react-dom": "^19.2.6",
         "uuid": "^14.0.0",
         "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
-        "zustand": "^4.5.2"
+        "zustand": "^5.0.15"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
