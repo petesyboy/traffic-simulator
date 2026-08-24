@@ -31,6 +31,8 @@ import { describeGigaSmartFunction } from './gigaSmartDescriptions';
 import { describeToolPurpose, describeToolOverloadRisk } from './toolDescriptions';
 import { isAutoTrayModel } from '../trayModels';
 import { isTaHcChassis } from './chassisDescriptions';
+import { getMergedSkus } from '../skuOverrides';
+import { getTapLinkCapacity } from '../hardwareUtils';
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
@@ -71,8 +73,8 @@ const bumpAction = (counts: Record<string, number>, action: unknown) => {
 
 /**
  * Determines how many physical network links a TAP node monitors.
- * Evaluates explicit allocations, scalar tappedLinksCount, catalogue descriptions,
- * or module model characteristics (e.g. 273/453 multi-link models).
+ * Evaluates explicit allocations, scalar tappedLinksCount, merged SKU catalogue descriptions,
+ * or module model characteristics.
  */
 export function getTapNodeLinks(node: CustomNode): number {
   const data = node.data as (InputNodeData & HardwareNodeData) | undefined;
@@ -89,19 +91,44 @@ export function getTapNodeLinks(node: CustomNode): number {
     return data.tappedLinksCount;
   }
 
-  // 3. Catalogue description ("taps 6 links")
-  if (data.description) {
-    const match = String(data.description).match(/taps (\d+) links?/i);
-    if (match && match[1]) {
-      const parsed = parseInt(match[1], 10);
-      if (parsed > 0) return parsed;
-    }
+  // 3. Look up description from node data or merged SKU catalogue
+  const sku = String(data.sku || '').trim();
+  const model = String(data.model || '').trim();
+  const mergedSkus = getMergedSkus();
+  const description = String(data.description || mergedSkus[sku] || mergedSkus[model] || '');
+  if (description) {
+    const cap = getTapLinkCapacity(description);
+    if (cap > 0) return cap;
   }
 
-  // 4. Multi-link model heuristic (e.g. TAP-M273T, TAP-M453 are 6-link modules)
-  const model = String(data.model || data.sku || '');
-  if (model.includes('273') || model.includes('453')) {
+  // 4. Multi-link model heuristic fallbacks
+  const target = (sku || model).toUpperCase();
+  if (
+    target.includes('273') ||
+    target.includes('253') ||
+    target.includes('251') ||
+    target.includes('271') ||
+    target.includes('M273') ||
+    target.includes('M253') ||
+    target.includes('M251') ||
+    target.includes('M271')
+  ) {
     return 6;
+  }
+  if (
+    target.includes('453') ||
+    target.includes('451') ||
+    target.includes('471') ||
+    target.includes('473') ||
+    target.includes('M453') ||
+    target.includes('M451') ||
+    target.includes('M471') ||
+    target.includes('M473')
+  ) {
+    return 3;
+  }
+  if (target.includes('506') || target.includes('M506') || target.includes('202') || target.includes('M202')) {
+    return 4;
   }
 
   return 1;

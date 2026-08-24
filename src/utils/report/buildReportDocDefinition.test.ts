@@ -365,5 +365,44 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('not required · pure aggregation');
     expect(allText).toContain('static architecture');
   });
+
+  it('converts Scope considerations in executive summary into a styled warning notice plate', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      execSummaryText: `Project Overview\n\nScope considerations\n• The BOM contains one HC3 per site; HA should be confirmed.\n• Interface types and quantities should be validated.\n\nNext steps for deployment.`,
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('Scope Considerations & Key Assumptions');
+    expect(allText).toContain('The BOM contains one HC3 per site; HA should be confirmed.');
+    expect(allText).toContain('Next steps for deployment.');
+  });
+
+  it('calculates 96 monitored links and 192 optical feeds for 16 six-link TAP modules', () => {
+    const tapNodes: CustomNode[] = Array.from({ length: 16 }, (_, i) => ({
+      id: `tap-${i + 1}`,
+      type: 'hardwareNode',
+      position: { x: 0, y: i * 50 },
+      data: {
+        label: `TAP-M273T #${i + 1}`,
+        model: 'TAP-M273T',
+        sku: 'TAP-M273T',
+      },
+    } as CustomNode));
+
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: tapNodes,
+      edges: [],
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('96 Links (192 Feeds)');
+    expect(allText).toContain('INGRESS FEEDS 192');
+    expect(allText).toContain('MONITORED LINKS 96');
+    expect(allText).toContain('OPTICAL TAPS 16');
+  });
 });
 

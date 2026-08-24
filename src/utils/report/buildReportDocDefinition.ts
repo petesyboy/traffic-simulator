@@ -551,8 +551,47 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   content.push({ text: '§01 · STRATEGY & METRICS', style: 'sectionKicker' });
   content.push({ text: 'Executive Summary', style: 'sectionHeading' });
 
+  /** Helper to render executive summary markdown with automatic Scope Considerations notice plate conversion. */
+  function renderExecSummaryContent(text: string): Content[] {
+    const scopeRegex = /(?:^|\n)(?:#+\s*)?Scope\s+considerations?:?\s*\n((?:[ \t]*[-*•]\s*[^\n]+\n?)+)/i;
+    const match = text.match(scopeRegex);
+    if (!match) {
+      return markdownToPdfmakeContent(text);
+    }
+
+    const fullBlock = match[0];
+    const bulletsText = match[1];
+    const bullets = bulletsText
+      .split('\n')
+      .map((line) => line.replace(/^[ \t]*[-*•]\s*/, '').trim())
+      .filter(Boolean);
+
+    const startIndex = match.index ?? 0;
+    const beforeText = text.slice(0, startIndex).trim();
+    const afterText = text.slice(startIndex + fullBlock.length).trim();
+
+    const result: Content[] = [];
+    if (beforeText) {
+      result.push(...markdownToPdfmakeContent(beforeText));
+    }
+
+    result.push(
+      buildNoticePlate({
+        severity: 'warning',
+        title: 'Scope Considerations & Key Assumptions',
+        bullets,
+      }),
+    );
+
+    if (afterText) {
+      result.push(...markdownToPdfmakeContent(afterText));
+    }
+
+    return result;
+  }
+
   if (execSummaryText) {
-    content.push(...markdownToPdfmakeContent(execSummaryText));
+    content.push(...renderExecSummaryContent(execSummaryText));
   } else {
     content.push({
       text:

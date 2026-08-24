@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.592",
+    date: "2026-08-24",
+    summary: "Fixed TAP link capacity resolution: getTapNodeLinks() now queries the merged SKU catalogue description and multi-link model heuristics (e.g. 6 links for TAP-M251T/M253T/M271T/M273T), accurately producing 96 monitored links and 192 optical feeds for 16 six-link TAP modules. Added automatic Scope Considerations warning notice plate conversion in executive summary.",
+  },
+  {
     version: "1.0.591",
     date: "2026-08-24",
     summary: "Corrected monitored link, optical feed, and TAP counts across the PDF report: accurately calculates physical TAP units, total network links tapped, and bidirectional optical feeds (2 feeds per tapped link). Updated cover page stat, §01 stat tiles grid, §02 per-site schematic strips, and §03 TAP hardware descriptions to report both link and optical feed counts.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.573",
     date: "2026-08-23",
     summary: "Added diagram legibility detection and multi-site diagram splitting to automatically generate focused, high-resolution per-site architecture diagrams in addition to the global end-to-end overview in the PDF report.",
-  },
-  {
-    version: "1.0.572",
-    date: "2026-08-23",
-    summary: "Tidied PDF report by deduplicating identical chassis and tool descriptions with deployed instance counts, auto-deploying 42U rack layouts with embedded elevation diagrams in Appendix B physical report, and automatically enabling diagram-ready descriptions for topology capture.",
   },
 ];
