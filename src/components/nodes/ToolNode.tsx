@@ -171,7 +171,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {/* Traffic mismatch warning badge — shown by SimulationEngine when
             the stream type or format doesn't match what this tool expects */}
-        {isRunning && status === 'warning' && statusMessage && (
+        {isRunning && status === 'warning' && statusMessage && !id.startsWith('mission-') && (
           <div className="node-warning-badge" style={{
             marginTop: '6px',
             padding: '4px 6px',
@@ -189,7 +189,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         {isRunning && !isFederatedSearch && (
           <div className="node-metrics" style={{ marginTop: '8px' }}>
             <span>Rx: {formatBandwidth(metrics?.rxMbps)}</span>
-            {isPacketTool && (
+            {isPacketTool && !id.startsWith('mission-') && (
               <span style={{ color: '#888', display: 'block', fontSize: '9px', marginTop: '2px' }}>
                 Ingest Limit: {formatBandwidth((data.ingestLimitMbps as number) || getDefaultIngestLimitMbps(toolName))}
               </span>

@@ -1,7 +1,7 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.606",
+    "version": "1.0.607",
     "type": "module",
     "scripts": {
         "dev": "vite",

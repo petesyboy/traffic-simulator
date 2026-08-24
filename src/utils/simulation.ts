@@ -462,8 +462,9 @@ export const calculateSimulationStep = (
         }
         // Flag when the tool's configured (or vendor-default) ingest ceiling is exceeded —
         // takes priority over the blind-spot note below since a dropped/overloaded ingest
-        // engine is the more actionable problem.
-        if (isPacketTool && packetBandwidth > 0 && !mismatchMsg) {
+        // engine is the more actionable problem. Excluded for Mission Demo presentation nodes.
+        const isMissionNode = node.id.startsWith('mission-') || Boolean(node.className?.includes('mission-demo-node'));
+        if (isPacketTool && packetBandwidth > 0 && !mismatchMsg && !isMissionNode) {
           const rawLimit = data.ingestLimitMbps as number | undefined;
           const ingestLimit = (typeof rawLimit === 'number' && rawLimit > 0) ? rawLimit : getDefaultIngestLimitMbps(data.toolName as string | undefined);
           if (packetBandwidth > ingestLimit) {
@@ -474,7 +475,7 @@ export const calculateSimulationStep = (
         // Quantify the post-decryption blind spot: not all encrypted traffic reaching a
         // packet tool has necessarily skipped SSL Decrypt (some streams may bypass it),
         // so report what fraction of what actually arrived is still opaque.
-        if (encryptedPacketBandwidth > 0 && !mismatchMsg) {
+        if (encryptedPacketBandwidth > 0 && !mismatchMsg && !isMissionNode) {
           const blindSpotPercent = packetBandwidth > 0 ? Math.round((encryptedPacketBandwidth / packetBandwidth) * 100) : 100;
           mismatchMsg = `⚠️ Blind Spot: ${blindSpotPercent}% of Traffic Still Encrypted`;
         }
