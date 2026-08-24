@@ -54,7 +54,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
 
           <div style={{ padding: '12px 16px', background: 'rgba(0, 124, 255, 0.03)', borderRadius: '6px', border: '1px solid rgba(0, 124, 255, 0.15)', borderLeft: '4px solid var(--color-input)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Total Ingest Traffic</div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', fontFamily: 'monospace' }}>{formatBandwidth(totalIngest)}</div>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #ffffff)', fontFamily: 'monospace' }}>{formatBandwidth(totalIngest)}</div>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{formatPackets(totalIngest * 250)} packet rate</div>
           </div>
 

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.608",
+    date: "2026-08-24",
+    summary: "Stagger network nodes and add multi-directional handles to prevent node and edge occlusion",
+  },
+  {
     version: "1.0.607",
     date: "2026-08-24",
     summary: "Suppress ingest overload warnings on mission demo tool nodes",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.584",
     date: "2026-08-23",
     summary: "Added Light Theme and Dark Theme system with localStorage persistence, instant header toggle, document-ready white canvas screenshots, and crisp high-contrast node, edge, and UI tokens.",
-  },
-  {
-    version: "1.0.583",
-    date: "2026-08-23",
-    summary: "Removed references to end-of-sale/end-of-life SMT-HC3-C05 cards from GigaSMART chassis expansion recommendations, prompting exclusively for SMT-HC3-C08 on GigaVUE-HC3.",
   },
 ];
