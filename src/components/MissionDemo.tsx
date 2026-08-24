@@ -13,22 +13,22 @@ import { useStore } from '../store/store';
 import { useReactFlow } from '@xyflow/react';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
 
-// Network Hierarchy Topology (Spanning Left Column x: 30 to 760)
+// Network Hierarchy Topology (Spanning Left Column with generous spacing)
 const INFRA_NODES = [
-  { id: 'r1', label: 'Router R1', configType: 'Router', x: 230, y: 180 },
-  { id: 'r2', label: 'Router R2', configType: 'Router', x: 410, y: 180 },
-  { id: 'coresw1', label: 'Core SW1', configType: 'Switch', x: 230, y: 320 },
-  { id: 'coresw2', label: 'Core SW2', configType: 'Switch', x: 410, y: 320 },
-  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch', x: 230, y: 460 },
-  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch', x: 410, y: 460 },
-  { id: 'acc1', label: 'Access 1', configType: 'Switch', x: 30, y: 600 },
-  { id: 'acc2', label: 'Access 2', configType: 'Switch', x: 135, y: 600 },
-  { id: 'acc3', label: 'Access 3', configType: 'Switch', x: 240, y: 600 },
-  { id: 'acc4', label: 'Access 4', configType: 'Switch', x: 345, y: 600 },
-  { id: 'acc5', label: 'Access 5', configType: 'Switch', x: 450, y: 600 },
-  { id: 'acc6', label: 'Access 6', configType: 'Switch', x: 555, y: 600 },
-  { id: 'acc7', label: 'Access 7', configType: 'Switch', x: 660, y: 600 },
-  { id: 'acc8', label: 'Access 8', configType: 'Switch', x: 765, y: 600 },
+  { id: 'r1', label: 'Router R1', configType: 'Router', x: 240, y: 310 },
+  { id: 'r2', label: 'Router R2', configType: 'Router', x: 560, y: 310 },
+  { id: 'coresw1', label: 'Core SW1', configType: 'Switch', x: 240, y: 440 },
+  { id: 'coresw2', label: 'Core SW2', configType: 'Switch', x: 560, y: 440 },
+  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch', x: 240, y: 570 },
+  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch', x: 560, y: 570 },
+  { id: 'acc1', label: 'Access 1', configType: 'Switch', x: -240, y: 700 },
+  { id: 'acc2', label: 'Access 2', configType: 'Switch', x: -40, y: 700 },
+  { id: 'acc3', label: 'Access 3', configType: 'Switch', x: 160, y: 700 },
+  { id: 'acc4', label: 'Access 4', configType: 'Switch', x: 360, y: 700 },
+  { id: 'acc5', label: 'Access 5', configType: 'Switch', x: 560, y: 700 },
+  { id: 'acc6', label: 'Access 6', configType: 'Switch', x: 760, y: 700 },
+  { id: 'acc7', label: 'Access 7', configType: 'Switch', x: 960, y: 700 },
+  { id: 'acc8', label: 'Access 8', configType: 'Switch', x: 1160, y: 700 },
 ];
 
 // Internal Network Backbone Interconnects (Cloud <-> Routers <-> Core <-> Dist <-> Access)
@@ -55,23 +55,23 @@ const NETWORK_BACKBONE_LINKS: Array<[string, string, string?, string?]> = [
 
 // Right Column: Full 12-Tool Stack matching the presentation slide
 const TOOL_NODES = [
-  { id: 'fso', label: 'FSO', category: 'Cloud Observability', toolName: 'Dynatrace', y: 40 },
-  { id: 'cdr', label: 'CDR', category: 'Cloud Detection', toolName: 'CrowdStrike', y: 100 },
-  { id: 'fw', label: 'FIREWALL', category: 'Inline Security', toolName: 'Palo Alto Networks', y: 160 },
-  { id: 'dlp', label: 'DLP', category: 'Data Protection', toolName: 'Symantec DLP', y: 220 },
-  { id: 'waf', label: 'WAF', category: 'App Security', toolName: 'F5 WAF', y: 280 },
-  { id: 'ndr', label: 'NDR', category: 'Network Detection', toolName: 'Darktrace', y: 340 },
-  { id: 'apm', label: 'APM', category: 'Performance', toolName: 'AppDynamics', y: 400 },
-  { id: 'grc', label: 'GRC', category: 'Compliance', toolName: 'ServiceNow GRC', y: 460 },
-  { id: 'apisec', label: 'API SEC', category: 'API Protection', toolName: 'Noname Security', y: 520 },
-  { id: 'npm', label: 'NPM', category: 'Network Performance', toolName: 'Riverbed NPM', y: 580 },
-  { id: 'ueba', label: 'UEBA', category: 'User Analytics', toolName: 'Exabeam UEBA', y: 640 },
-  { id: 'siem', label: 'SIEM', category: 'Security Information', toolName: 'Splunk', y: 700 },
+  { id: 'fso', label: 'FSO', category: 'Cloud Observability', toolName: 'Dynatrace', y: 150 },
+  { id: 'cdr', label: 'CDR', category: 'Cloud Detection', toolName: 'CrowdStrike', y: 204 },
+  { id: 'fw', label: 'FIREWALL', category: 'Inline Security', toolName: 'Palo Alto Networks', y: 258 },
+  { id: 'dlp', label: 'DLP', category: 'Data Protection', toolName: 'Symantec DLP', y: 312 },
+  { id: 'waf', label: 'WAF', category: 'App Security', toolName: 'F5 WAF', y: 366 },
+  { id: 'ndr', label: 'NDR', category: 'Network Detection', toolName: 'Darktrace', y: 420 },
+  { id: 'apm', label: 'APM', category: 'Performance', toolName: 'AppDynamics', y: 474 },
+  { id: 'grc', label: 'GRC', category: 'Compliance', toolName: 'ServiceNow GRC', y: 528 },
+  { id: 'apisec', label: 'API SEC', category: 'API Protection', toolName: 'Noname Security', y: 582 },
+  { id: 'npm', label: 'NPM', category: 'Network Performance', toolName: 'Riverbed NPM', y: 636 },
+  { id: 'ueba', label: 'UEBA', category: 'User Analytics', toolName: 'Exabeam UEBA', y: 690 },
+  { id: 'siem', label: 'SIEM', category: 'Security Information', toolName: 'Splunk', y: 744 },
 ];
 
-const TOOL_X = 1380;
-const PIPELINE_X = 930;
-const PIPELINE_Y = 40;
+const TOOL_X = 1920;
+const PIPELINE_X = 1440;
+const PIPELINE_Y = 150;
 
 // Multi-coloured chaotic pairs for "Organization A (Chaos & Blind Spots)"
 const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: boolean }> = [
@@ -101,8 +101,8 @@ const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: bo
 ];
 
 // Clean Organization B convergence and divergence mapping
-const CONVERGE_TRUNK_X = PIPELINE_X - 60;
-const DIVERGE_TRUNK_X = PIPELINE_X + 320 + 60;
+const CONVERGE_TRUNK_X = PIPELINE_X - 80;
+const DIVERGE_TRUNK_X = PIPELINE_X + 320 + 80;
 
 // High-bandwidth traffic streams representing the hybrid enterprise estate
 const MISSION_TRAFFIC_STREAMS = [
@@ -192,7 +192,7 @@ export const MissionDemo: React.FC = () => {
         addNode({
           id: 'mission-cloud',
           type: 'missionCloudNode',
-          position: { x: 230, y: 30 },
+          position: { x: 300, y: 150 },
           className: 'mission-demo-node',
           data: { label: 'Hybrid Cloud Estate (AWS / Azure / VPC)', configType: 'Cloud' }
         });
@@ -427,8 +427,8 @@ export const MissionDemo: React.FC = () => {
         try {
           fitView(
             fitTargets
-              ? { duration: 800, padding: 0.25, nodes: fitTargets, maxZoom: 1.5 }
-              : { duration: 800, padding: 0.1 }
+              ? { duration: 800, padding: 0.35, nodes: fitTargets, maxZoom: 1.1 }
+              : { duration: 800, padding: 0.35, maxZoom: 0.85, minZoom: 0.2 }
           );
         } catch (e) {
           console.warn('fitView failed', e);
@@ -456,19 +456,19 @@ export const MissionDemo: React.FC = () => {
       className="mission-control-hud"
       style={{
         position: 'fixed',
-        top: '80px',
+        top: '55px',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'rgba(15, 23, 42, 0.96)',
         backdropFilter: 'blur(12px)',
         border: '2px solid #ff9800',
         borderRadius: '14px',
-        padding: '14px 24px',
+        padding: '12px 20px',
         zIndex: 1000,
         boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 152, 0, 0.35)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
+        gap: '10px',
         color: '#fff',
         fontFamily: 'Inter, system-ui, sans-serif',
         minWidth: '850px',
