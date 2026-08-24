@@ -192,9 +192,36 @@ const CanvasArea: React.FC = () => {
     // edge's port assignments (portLinks), which would otherwise be wiped on
     // every render. className merges rather than overwrites, so a caller-set
     // class (e.g. Mission Demo's entry-fade animation) survives alongside the
-    // status class computed here instead of being silently discarded.
     const className = [edge.className, statusClassName].filter(Boolean).join(' ');
-    return { ...edge, className, type: edge.type || 'default', data: { ...edge.data, parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: theme === 'light' ? '#ffffff' : '#121212', fillOpacity: 0.95, stroke: theme === 'light' ? '#cbd5e1' : '#2a2a2a', strokeWidth: 1 } };
+    const labelFill = (isEncrypted || isMixed)
+      ? '#ea580c'
+      : (isDecrypted
+        ? '#2563eb'
+        : (isMetadata
+          ? '#ea580c'
+          : (theme === 'light' ? '#0369a1' : '#00e5ff')));
+
+    return {
+      ...edge,
+      className,
+      type: edge.type || 'default',
+      data: { ...edge.data, parallelIndex, totalParallel },
+      animated: hoveredEdgeId === edge.id ? true : animated,
+      label,
+      style,
+      labelStyle: {
+        fill: labelFill,
+        fontSize: '9px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontWeight: 'bold',
+      },
+      labelBgStyle: {
+        fill: theme === 'light' ? '#ffffff' : '#121212',
+        fillOpacity: 0.95,
+        stroke: theme === 'light' ? '#94a3b8' : '#2a2a2a',
+        strokeWidth: 1,
+      },
+    };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {

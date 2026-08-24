@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.609",
+    date: "2026-08-24",
+    summary: "Ensure Total Ingest Traffic value uses theme variable for high contrast in light theme",
+  },
+  {
     version: "1.0.608",
     date: "2026-08-24",
     summary: "Stagger network nodes and add multi-directional handles to prevent node and edge occlusion",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.585",
     date: "2026-08-23",
     summary: "Fixed Light Theme styling across canvas background, header toolbars, sidebars, traffic drawer, and configuration panels for full high-contrast visibility.",
-  },
-  {
-    version: "1.0.584",
-    date: "2026-08-23",
-    summary: "Added Light Theme and Dark Theme system with localStorage persistence, instant header toggle, document-ready white canvas screenshots, and crisp high-contrast node, edge, and UI tokens.",
   },
 ];
