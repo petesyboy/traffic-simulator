@@ -12,7 +12,7 @@ import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import type { GigaSmartNodeData } from '../store/types';
-import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode } from './nodes';
+import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode } from './nodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
@@ -22,7 +22,7 @@ import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { GroupingBanner } from './canvas/GroupingBanner';
 import { EdgeBanner } from './canvas/EdgeBanner';
 
-import { ParallelEdge } from './CustomEdges';
+import { ParallelEdge, MissionBusEdge, MissionChaosEdge, MissionBackboneEdge } from './CustomEdges';
 
 const nodeTypes = {
   [NODE_TYPES.INPUT]:      InputNode,
@@ -33,10 +33,15 @@ const nodeTypes = {
   [NODE_TYPES.GIGASMART]:  GigaSmartNode,
   [NODE_TYPES.GROUP]:      GroupNode,
   [NODE_TYPES.HARDWARE]:   HardwareNode,
+  missionPipelineNode:     MissionPipelineNode,
+  missionCloudNode:        MissionCloudNode,
 };
 
 const edgeTypes = {
   default: ParallelEdge,
+  missionBusEdge: MissionBusEdge,
+  missionChaosEdge: MissionChaosEdge,
+  missionBackboneEdge: MissionBackboneEdge,
 };
 
 const CanvasArea: React.FC = () => {
@@ -91,7 +96,7 @@ const CanvasArea: React.FC = () => {
 
     const isMetadata = isMetadataEdge(edge, nodes, edges);
 
-    let className = '';
+    let statusClassName = '';
     let animated = false;
     
     const encryptedMbps = (edgeEncryptedMbps || {})[edge.id] || 0;
@@ -99,12 +104,12 @@ const CanvasArea: React.FC = () => {
     const isMixed = isEncrypted && isDecrypted && encryptedMbps > 0 && (totalMbps - encryptedMbps) > 0.5;
 
     if (isRunning) {
-      if (isBlocked) className = 'blocked-flow';
+      if (isBlocked) statusClassName = 'blocked-flow';
       else if (isActive) {
-        if (isMixed) className = 'active-flow mixed-flow';
-        else if (isEncrypted) className = 'active-flow encrypted-flow';
-        else if (isDecrypted) className = 'active-flow decrypted-flow';
-        else className = isMetadata ? 'metadata-flow' : 'active-flow';
+        if (isMixed) statusClassName = 'active-flow mixed-flow';
+        else if (isEncrypted) statusClassName = 'active-flow encrypted-flow';
+        else if (isDecrypted) statusClassName = 'active-flow decrypted-flow';
+        else statusClassName = isMetadata ? 'metadata-flow' : 'active-flow';
         animated = true;
       }
     }
@@ -135,10 +140,10 @@ const CanvasArea: React.FC = () => {
     const tgtTool = (targetNode?.data?.toolName as string) || '';
 
     if (srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) {
-      className = isMetadata ? 'reverse-metadata-flow' : 'reverse-flow';
+      statusClassName = isMetadata ? 'reverse-metadata-flow' : 'reverse-flow';
       animated = true;
     } else if ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk') {
-      className = isMetadata ? 'metadata-flow' : 'active-flow';
+      statusClassName = isMetadata ? 'metadata-flow' : 'active-flow';
       animated = true;
     }
     
@@ -159,7 +164,8 @@ const CanvasArea: React.FC = () => {
       }
     }
 
-    let stroke = '#007cff';
+    const isMissionBusEdge = edge.type === 'missionBusEdge';
+    let stroke = isMissionBusEdge ? '#ff9800' : '#007cff';
     if (isRunning) {
       if (isActive) {
         if (isMixed) stroke = '#FF8C00';
@@ -170,7 +176,11 @@ const CanvasArea: React.FC = () => {
     }
     if ((srcTool === 'Splunk' && (tgtConfig === 'Objects' || tgtConfig === 'Storage Tool')) || ((srcConfig === 'Objects' || srcConfig === 'Storage Tool') && tgtTool === 'Splunk')) stroke = isMetadata ? '#ff9800' : '#00e5ff';
 
-    let style: React.CSSProperties = { stroke, strokeWidth: hoveredEdgeId === edge.id ? '4px' : '1.5px', strokeDasharray: '4, 3' };
+    let style: React.CSSProperties = {
+      stroke,
+      strokeWidth: hoveredEdgeId === edge.id ? '4px' : '1.5px',
+      strokeDasharray: isMissionBusEdge ? 'none' : '4, 3',
+    };
     if (isRunning && bps !== undefined && bps > 0) style.animationDuration = calculateAnimationDuration(bps);
 
     if (hoveredEdgeId === edge.id) {
@@ -180,8 +190,11 @@ const CanvasArea: React.FC = () => {
     
     // Spread the stored data through rather than replacing it - it carries the
     // edge's port assignments (portLinks), which would otherwise be wiped on
-    // every render.
-    return { ...edge, className, type: 'default', data: { ...edge.data, parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: theme === 'light' ? '#ffffff' : '#121212', fillOpacity: 0.95, stroke: theme === 'light' ? '#cbd5e1' : '#2a2a2a', strokeWidth: 1 } };
+    // every render. className merges rather than overwrites, so a caller-set
+    // class (e.g. Mission Demo's entry-fade animation) survives alongside the
+    // status class computed here instead of being silently discarded.
+    const className = [edge.className, statusClassName].filter(Boolean).join(' ');
+    return { ...edge, className, type: edge.type || 'default', data: { ...edge.data, parallelIndex, totalParallel }, animated: hoveredEdgeId === edge.id ? true : animated, label, style, labelStyle: { fill: (isEncrypted || isMixed) ? '#FF8C00' : (isDecrypted ? '#448AFF' : (isMetadata ? '#ff9800' : '#00e5ff')), fontSize: '9px', fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 'bold' }, labelBgStyle: { fill: theme === 'light' ? '#ffffff' : '#121212', fillOpacity: 0.95, stroke: theme === 'light' ? '#cbd5e1' : '#2a2a2a', strokeWidth: 1 } };
   });
 
   const onDragOver = useCallback((event: React.DragEvent) => {

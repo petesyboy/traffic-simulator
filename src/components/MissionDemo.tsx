@@ -1,74 +1,139 @@
-import React, { useEffect, useRef, useState } from 'react';
+/**
+ * MissionDemo.tsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Interactive "Deep Observability Eliminates Blind Spots" presentation demo.
+ * Recreates the Organization A (Chaos & Blind Spots) -> Organization B (Gigamon
+ * Deep Observability Pipeline) architectural showcase with true hierarchical
+ * topology, cloud workloads, chaotic multi-coloured spaghetti wiring, sleek
+ * metallic pipeline cylinder, and interactive presenter HUD playback controls.
+ */
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useStore } from '../store/store';
 import { useReactFlow } from '@xyflow/react';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
 
-// Left column: routers, core/dist switches, and 8 access switches - the
-// "infrastructure" side of the before/after story. Rendered as inputNode so
-// each gets a single 'out' source handle, matching how they're always the
-// origin of an edge in both the messy and clean topologies.
+// Network Hierarchy Topology (Spanning Left Column x: 30 to 760)
 const INFRA_NODES = [
-  { id: 'r1', label: 'Router R1', configType: 'Router' },
-  { id: 'r2', label: 'Router R2', configType: 'Router' },
-  { id: 'coresw1', label: 'Core SW1', configType: 'Switch' },
-  { id: 'coresw2', label: 'Core SW2', configType: 'Switch' },
-  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch' },
-  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch' },
-  { id: 'acc1', label: 'Access1', configType: 'Switch' },
-  { id: 'acc2', label: 'Access2', configType: 'Switch' },
-  { id: 'acc3', label: 'Access3', configType: 'Switch' },
-  { id: 'acc4', label: 'Access4', configType: 'Switch' },
-  { id: 'acc5', label: 'Access5', configType: 'Switch' },
-  { id: 'acc6', label: 'Access6', configType: 'Switch' },
-  { id: 'acc7', label: 'Access7', configType: 'Switch' },
-  { id: 'acc8', label: 'Access8', configType: 'Switch' },
-].map((n, i) => ({ ...n, y: 40 + i * 100 }));
-
-// Right column: the 10 point security/monitoring tools every infra node is
-// wired to directly in the "before" state.
-const TOOL_NODES = [
-  { id: 'fw', label: 'Firewall' },
-  { id: 'dlp', label: 'DLP' },
-  { id: 'waf', label: 'WAF' },
-  { id: 'ndr', label: 'NDR' },
-  { id: 'apm', label: 'APM' },
-  { id: 'grc', label: 'GRC' },
-  { id: 'apisec', label: 'API SEC' },
-  { id: 'npm', label: 'NPM' },
-  { id: 'ueba', label: 'UEBA' },
-  { id: 'siem', label: 'SIEM' },
-].map((n, i) => ({ ...n, y: 40 + i * 130 }));
-
-// Deliberately non-sequential pairings so lines cross visually in the
-// "before" state - every infra node and every tool appears at least once.
-const MESSY_PAIRS: Array<[string, string]> = [
-  ['r1', 'siem'], ['r1', 'fw'], ['r2', 'ndr'], ['r2', 'waf'],
-  ['coresw1', 'dlp'], ['coresw1', 'apm'], ['coresw2', 'grc'], ['coresw2', 'siem'],
-  ['distsw1', 'apisec'], ['distsw1', 'npm'], ['distsw2', 'ueba'], ['distsw2', 'fw'],
-  ['acc1', 'waf'], ['acc1', 'siem'], ['acc2', 'dlp'], ['acc2', 'npm'],
-  ['acc3', 'ndr'], ['acc3', 'ueba'], ['acc4', 'apm'], ['acc4', 'fw'],
-  ['acc5', 'grc'], ['acc5', 'apisec'], ['acc6', 'waf'], ['acc6', 'dlp'],
-  ['acc7', 'siem'], ['acc7', 'ndr'], ['acc8', 'apm'], ['acc8', 'grc'],
+  { id: 'r1', label: 'Router R1', configType: 'Router', x: 230, y: 180 },
+  { id: 'r2', label: 'Router R2', configType: 'Router', x: 410, y: 180 },
+  { id: 'coresw1', label: 'Core SW1', configType: 'Switch', x: 230, y: 320 },
+  { id: 'coresw2', label: 'Core SW2', configType: 'Switch', x: 410, y: 320 },
+  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch', x: 230, y: 460 },
+  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch', x: 410, y: 460 },
+  { id: 'acc1', label: 'Access 1', configType: 'Switch', x: 30, y: 600 },
+  { id: 'acc2', label: 'Access 2', configType: 'Switch', x: 135, y: 600 },
+  { id: 'acc3', label: 'Access 3', configType: 'Switch', x: 240, y: 600 },
+  { id: 'acc4', label: 'Access 4', configType: 'Switch', x: 345, y: 600 },
+  { id: 'acc5', label: 'Access 5', configType: 'Switch', x: 450, y: 600 },
+  { id: 'acc6', label: 'Access 6', configType: 'Switch', x: 555, y: 600 },
+  { id: 'acc7', label: 'Access 7', configType: 'Switch', x: 660, y: 600 },
+  { id: 'acc8', label: 'Access 8', configType: 'Switch', x: 765, y: 600 },
 ];
 
-const INFRA_X = 80;
-const TOOL_X = 1700;
-const PIPELINE_X = 880;
-const PIPELINE_Y = 690;
+// Internal Network Backbone Interconnects (Cloud <-> Routers <-> Core <-> Dist <-> Access)
+const NETWORK_BACKBONE_LINKS: Array<[string, string, string?, string?]> = [
+  ['mission-cloud', 'mission-r1', 'out-down', 'in'],
+  ['mission-cloud', 'mission-r2', 'out-down', 'in'],
+  ['mission-r1', 'mission-coresw1', 'out', 'in'],
+  ['mission-r1', 'mission-coresw2', 'out', 'in'],
+  ['mission-r2', 'mission-coresw1', 'out', 'in'],
+  ['mission-r2', 'mission-coresw2', 'out', 'in'],
+  ['mission-coresw1', 'mission-distsw1', 'out', 'in'],
+  ['mission-coresw1', 'mission-distsw2', 'out', 'in'],
+  ['mission-coresw2', 'mission-distsw1', 'out', 'in'],
+  ['mission-coresw2', 'mission-distsw2', 'out', 'in'],
+  ['mission-distsw1', 'mission-acc1', 'out', 'in'],
+  ['mission-distsw1', 'mission-acc2', 'out', 'in'],
+  ['mission-distsw1', 'mission-acc3', 'out', 'in'],
+  ['mission-distsw1', 'mission-acc4', 'out', 'in'],
+  ['mission-distsw2', 'mission-acc5', 'out', 'in'],
+  ['mission-distsw2', 'mission-acc6', 'out', 'in'],
+  ['mission-distsw2', 'mission-acc7', 'out', 'in'],
+  ['mission-distsw2', 'mission-acc8', 'out', 'in'],
+];
 
-// Split into readable-sized groups for the zoomed-in "here's what these are"
-// reveal - fitting all 14 infra nodes (or all 10 tools) into frame at once
-// zooms out too far for labels/icons to read, so pan through smaller chunks.
-const INFRA_GROUP_A = INFRA_NODES.slice(0, 7); // Routers + Core/Dist switches
-const INFRA_GROUP_B = INFRA_NODES.slice(7); // Access1-8
-const TOOL_GROUP_A = TOOL_NODES.slice(0, 5);
-const TOOL_GROUP_B = TOOL_NODES.slice(5);
+// Right Column: Full 12-Tool Stack matching the presentation slide
+const TOOL_NODES = [
+  { id: 'fso', label: 'FSO', category: 'Cloud Observability', toolName: 'Dynatrace', y: 40 },
+  { id: 'cdr', label: 'CDR', category: 'Cloud Detection', toolName: 'CrowdStrike', y: 100 },
+  { id: 'fw', label: 'FIREWALL', category: 'Inline Security', toolName: 'Palo Alto Networks', y: 160 },
+  { id: 'dlp', label: 'DLP', category: 'Data Protection', toolName: 'Symantec DLP', y: 220 },
+  { id: 'waf', label: 'WAF', category: 'App Security', toolName: 'F5 WAF', y: 280 },
+  { id: 'ndr', label: 'NDR', category: 'Network Detection', toolName: 'Darktrace', y: 340 },
+  { id: 'apm', label: 'APM', category: 'Performance', toolName: 'AppDynamics', y: 400 },
+  { id: 'grc', label: 'GRC', category: 'Compliance', toolName: 'ServiceNow GRC', y: 460 },
+  { id: 'apisec', label: 'API SEC', category: 'API Protection', toolName: 'Noname Security', y: 520 },
+  { id: 'npm', label: 'NPM', category: 'Network Performance', toolName: 'Riverbed NPM', y: 580 },
+  { id: 'ueba', label: 'UEBA', category: 'User Analytics', toolName: 'Exabeam UEBA', y: 640 },
+  { id: 'siem', label: 'SIEM', category: 'Security Information', toolName: 'Splunk', y: 700 },
+];
 
-const toFitTargets = (nodes: Array<{ id: string }>, prefix: string) =>
-  nodes.map((n) => ({ id: `${prefix}${n.id}` }));
+const TOOL_X = 1380;
+const PIPELINE_X = 930;
+const PIPELINE_Y = 40;
+
+// Multi-coloured chaotic pairs for "Organization A (Chaos & Blind Spots)"
+const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: boolean }> = [
+  { from: 'mission-cloud', to: 'mission-tool-fso', color: '#38bdf8', showTap: true },
+  { from: 'mission-cloud', to: 'mission-tool-cdr', color: '#a855f7', showTap: true },
+  { from: 'mission-r1', to: 'mission-tool-fw', color: '#3b82f6', showTap: true },
+  { from: 'mission-r1', to: 'mission-tool-siem', color: '#eab308' },
+  { from: 'mission-r2', to: 'mission-tool-ndr', color: '#a855f7', showTap: true },
+  { from: 'mission-r2', to: 'mission-tool-waf', color: '#10b981' },
+  { from: 'mission-coresw1', to: 'mission-tool-dlp', color: '#f97316', showTap: true },
+  { from: 'mission-coresw1', to: 'mission-tool-apm', color: '#06b6d4' },
+  { from: 'mission-coresw2', to: 'mission-tool-grc', color: '#ec4899', showTap: true },
+  { from: 'mission-coresw2', to: 'mission-tool-siem', color: '#eab308' },
+  { from: 'mission-distsw1', to: 'mission-tool-apisec', color: '#8b5cf6', showTap: true },
+  { from: 'mission-distsw1', to: 'mission-tool-npm', color: '#14b8a6' },
+  { from: 'mission-distsw2', to: 'mission-tool-ueba', color: '#84cc16', showTap: true },
+  { from: 'mission-distsw2', to: 'mission-tool-fw', color: '#3b82f6' },
+  { from: 'mission-acc1', to: 'mission-tool-waf', color: '#10b981', showTap: true },
+  { from: 'mission-acc1', to: 'mission-tool-siem', color: '#eab308' },
+  { from: 'mission-acc2', to: 'mission-tool-dlp', color: '#f97316' },
+  { from: 'mission-acc3', to: 'mission-tool-ndr', color: '#a855f7', showTap: true },
+  { from: 'mission-acc4', to: 'mission-tool-apm', color: '#06b6d4' },
+  { from: 'mission-acc5', to: 'mission-tool-grc', color: '#ec4899', showTap: true },
+  { from: 'mission-acc6', to: 'mission-tool-apisec', color: '#8b5cf6' },
+  { from: 'mission-acc7', to: 'mission-tool-npm', color: '#14b8a6', showTap: true },
+  { from: 'mission-acc8', to: 'mission-tool-ueba', color: '#84cc16' },
+];
+
+// Clean Organization B convergence and divergence mapping
+const CONVERGE_TRUNK_X = PIPELINE_X - 60;
+const DIVERGE_TRUNK_X = PIPELINE_X + 320 + 60;
+
+// High-bandwidth traffic streams representing the hybrid enterprise estate
+const MISSION_TRAFFIC_STREAMS = [
+  { nodeId: 'cloud', label: 'Cloud VPC & Microservices', vlan: '100', ipSrc: '172.16.1.5', portSrc: '443', portDst: '443', protocol: 'tcp' as const, bandwidth: 18000 },
+  { nodeId: 'r1', label: 'Router R1 - Core Uplink', vlan: '110', ipSrc: '10.10.1.1', portSrc: '49152', portDst: '443', protocol: 'tcp' as const, bandwidth: 14000 },
+  { nodeId: 'r2', label: 'Router R2 - Redundant Uplink', vlan: '111', ipSrc: '10.10.2.1', portSrc: '49153', portDst: '443', protocol: 'tcp' as const, bandwidth: 12000 },
+  { nodeId: 'coresw1', label: 'Core SW1 - Datacentre Fabric', vlan: '120', ipSrc: '10.11.1.1', portSrc: '50100', portDst: '443', protocol: 'tcp' as const, bandwidth: 9000 },
+  { nodeId: 'coresw2', label: 'Core SW2 - Datacentre Fabric', vlan: '121', ipSrc: '10.11.2.1', portSrc: '50101', portDst: '443', protocol: 'tcp' as const, bandwidth: 8500 },
+  { nodeId: 'distsw1', label: 'Dist SW1 - Campus Aggregate', vlan: '130', ipSrc: '10.12.1.1', portSrc: '50200', portDst: '443', protocol: 'tcp' as const, bandwidth: 5500 },
+  { nodeId: 'distsw2', label: 'Dist SW2 - Campus Aggregate', vlan: '131', ipSrc: '10.12.2.1', portSrc: '50201', portDst: '443', protocol: 'tcp' as const, bandwidth: 5000 },
+  { nodeId: 'acc1', label: 'Access 1 - Finance & ERP', vlan: '201', ipSrc: '10.20.1.50', portSrc: '51000', portDst: '443', protocol: 'tcp' as const, bandwidth: 4500 },
+  { nodeId: 'acc2', label: 'Access 2 - Engineering Workstations', vlan: '202', ipSrc: '10.20.2.50', portSrc: '51001', portDst: '8080', protocol: 'tcp' as const, bandwidth: 3800 },
+  { nodeId: 'acc3', label: 'Access 3 - Branch Office VPN', vlan: '203', ipSrc: '10.20.3.50', portSrc: '51002', portDst: '500', protocol: 'udp' as const, bandwidth: 3200 },
+  { nodeId: 'acc4', label: 'Access 4 - Wireless AP Aggregate', vlan: '204', ipSrc: '10.20.4.50', portSrc: '51003', portDst: '443', protocol: 'tcp' as const, bandwidth: 4000 },
+  { nodeId: 'acc5', label: 'Access 5 - IoT & Building Controls', vlan: '205', ipSrc: '10.20.5.50', portSrc: '51004', portDst: '1883', protocol: 'tcp' as const, bandwidth: 2100 },
+  { nodeId: 'acc6', label: 'Access 6 - HR & Internal Portals', vlan: '206', ipSrc: '10.20.6.50', portSrc: '51005', portDst: '443', protocol: 'tcp' as const, bandwidth: 2500 },
+  { nodeId: 'acc7', label: 'Access 7 - VoIP & Media Streams', vlan: '207', ipSrc: '10.20.7.50', portSrc: '51006', portDst: '5060', protocol: 'udp' as const, bandwidth: 3400 },
+  { nodeId: 'acc8', label: 'Access 8 - Guest & DMZ', vlan: '208', ipSrc: '10.20.8.50', portSrc: '51007', portDst: '443', protocol: 'tcp' as const, bandwidth: 2800 },
+];
+
+const STEP_DEFINITIONS = [
+  { step: 1, name: '1. Topology', label: 'Hybrid Network Topology', duration: 4 },
+  { step: 2, name: '2. Org A (Chaos)', label: 'Organization A: Chaos & Blind Spots', duration: 6 },
+  { step: 3, name: '3. Pipeline', label: 'Gigamon Deep Observability Pipeline', duration: 5 },
+  { step: 4, name: '4. Org B (Solution)', label: 'Organization B: Unified Pipeline', duration: 5 },
+  { step: 5, name: '5. Live ROI', label: 'Live Traffic Optimization & ROI', duration: 25 },
+];
 
 export const MissionDemo: React.FC = () => {
   const isDemoActive = useStore((s) => s.isMissionDemoActive);
+  const currentStep = useStore((s) => s.missionDemoStep);
   const demoStatus = useStore((s) => s.missionDemoStatus);
   const setDemoActive = useStore((s) => s.setMissionDemoActive);
   const setDemoStep = useStore((s) => s.setMissionDemoStep);
@@ -80,326 +145,538 @@ export const MissionDemo: React.FC = () => {
   const addTrafficStream = useStore((s) => s.addTrafficStream);
   const toggleSimulation = useStore((s) => s.toggleSimulation);
   const setAdvancedMode = useStore((s) => s.setAdvancedMode);
+  const collapseTrafficGenerator = useStore((s) => s.collapseTrafficGenerator);
 
   const { fitView } = useReactFlow();
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rafRef = useRef<number | null>(null);
 
-  const stopDemo = () => {
+  const stopDemo = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    const wasRunning = useStore.getState().isRunning;
-    if (wasRunning) toggleSimulation();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (useStore.getState().isRunning) toggleSimulation();
     setDemoActive(false);
     setDemoStep(0);
     setDemoStatus('');
-  };
+    setIsPaused(false);
+  }, [setDemoActive, setDemoStatus, setDemoStep, toggleSimulation]);
 
-  useEffect(() => {
-    if (!isDemoActive) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-      return;
+  // Step runner logic
+  const executeStep = useCallback((step: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    setDemoStep(step);
+    const stepDef = STEP_DEFINITIONS.find((d) => d.step === step);
+    const stepDuration = stepDef ? stepDef.duration : 5;
+    setCountdown(stepDuration);
+
+    let fitTargets: Array<{ id: string }> | undefined;
+
+    switch (step) {
+      case 0:
+      case 1: {
+        setDemoStatus('Enterprise Hybrid Infrastructure: Cloud VPCs, Core Datacentre, Distribution and Access switches.');
+        if (useStore.getState().isRunning) toggleSimulation();
+        clearCanvas();
+        setAdvancedMode(false);
+        collapseTrafficGenerator();
+
+        // 1. Add Cloud Workloads Node
+        addNode({
+          id: 'mission-cloud',
+          type: 'missionCloudNode',
+          position: { x: 230, y: 30 },
+          className: 'mission-demo-node',
+          data: { label: 'Hybrid Cloud Estate (AWS / Azure / VPC)', configType: 'Cloud' }
+        });
+
+        // 2. Add Network Switches & Routers
+        INFRA_NODES.forEach((n) => {
+          addNode({
+            id: `mission-${n.id}`,
+            type: 'inputNode',
+            position: { x: n.x, y: n.y },
+            className: 'mission-demo-node',
+            data: { label: n.label, configType: n.configType }
+          });
+        });
+
+        // 3. Add Internal Backbone Mesh Links
+        setEdges(
+          NETWORK_BACKBONE_LINKS.map(([src, tgt, srcH, tgtH], idx) => ({
+            id: `mission-bb-${idx + 1}`,
+            source: src,
+            target: tgt,
+            sourceHandle: srcH || 'out',
+            targetHandle: tgtH || 'in',
+            type: 'missionBackboneEdge',
+            className: 'mission-demo-edge',
+          }))
+        );
+
+        fitTargets = undefined; // Fit full canvas
+        break;
+      }
+
+      case 2: {
+        setDemoStatus('Organization A (Chaos & Blind Spots): Unmanaged point-to-point SPAN/TAP connections create tool sprawl, blind spots, and high TCO.');
+        // Add 12 Destination Tools
+        TOOL_NODES.forEach((t) => {
+          addNode({
+            id: `mission-tool-${t.id}`,
+            type: 'toolNode',
+            position: { x: TOOL_X, y: t.y },
+            className: 'mission-demo-node',
+            data: { label: t.label, toolName: t.toolName, configType: CONFIG_TYPES.PACKET_TOOL, ingestLimitMbps: 100000 }
+          });
+        });
+
+        // Build backbone links + chaotic multi-coloured edges
+        const backboneEdges = NETWORK_BACKBONE_LINKS.map(([src, tgt, srcH, tgtH], idx) => ({
+          id: `mission-bb-${idx + 1}`,
+          source: src,
+          target: tgt,
+          sourceHandle: srcH || 'out',
+          targetHandle: tgtH || 'in',
+          type: 'missionBackboneEdge',
+          className: 'mission-demo-edge',
+        }));
+
+        const chaosEdges = CHAOS_PAIRS.map((pair, idx) => ({
+          id: `mission-chaos-${idx + 1}`,
+          source: pair.from,
+          sourceHandle: 'out',
+          target: pair.to,
+          targetHandle: 'in',
+          type: 'missionChaosEdge',
+          className: 'mission-demo-edge mission-chaos-active',
+          data: { color: pair.color, showTapBox: pair.showTap, curvature: 0.28 }
+        }));
+
+        setEdges([...backboneEdges, ...chaosEdges]);
+        fitTargets = undefined;
+        break;
+      }
+
+      case 3: {
+        setDemoStatus('Transformation: The Gigamon Deep Observability Pipeline centralises traffic intelligence, filtering, and de-duplication.');
+        // Remove chaos edges, retain backbone
+        const backboneEdges = NETWORK_BACKBONE_LINKS.map(([src, tgt, srcH, tgtH], idx) => ({
+          id: `mission-bb-${idx + 1}`,
+          source: src,
+          target: tgt,
+          sourceHandle: srcH || 'out',
+          targetHandle: tgtH || 'in',
+          type: 'missionBackboneEdge',
+          className: 'mission-demo-edge',
+        }));
+        setEdges(backboneEdges);
+
+        // Add the iconic metallic Gigamon Pipeline Centerpiece
+        addNode({
+          id: 'mission-pipeline',
+          type: 'missionPipelineNode',
+          position: { x: PIPELINE_X, y: PIPELINE_Y },
+          className: 'mission-demo-node',
+          data: {
+            label: 'Gigamon Deep Observability Pipeline',
+            model: 'HC1-Plus',
+            hideModelLabel: true,
+            configType: 'Chassis',
+            installedBoards: { 'Slot 1': 'HC1-Plus Base' },
+            optics: [{ board: 'Base', optic: 'SFP-532T', qty: 24 }],
+            conditions: [{ field: 'vlan', value: '999', action: 'drop' }],
+            gigaSmartApps: [
+              { id: 'mission-dedup', label: 'Packet De-duplication', actionType: 'Deduplication', dedupRate: 28 },
+              { id: 'mission-appmeta', label: 'Application Metadata', actionType: 'Application Metadata' },
+              { id: 'mission-ssl', label: 'SSL/TLS Decryption', actionType: 'SSL Decryption' }
+            ]
+          }
+        });
+
+        fitTargets = [{ id: 'mission-pipeline' }];
+        break;
+      }
+
+      case 4: {
+        setDemoStatus('Organization B (Unified Observability): Clean corporate orange bus taps converge from all tiers into the Gigamon Pipeline, feeding tools with zero noise.');
+        const backboneEdges = NETWORK_BACKBONE_LINKS.map(([src, tgt, srcH, tgtH], idx) => ({
+          id: `mission-bb-${idx + 1}`,
+          source: src,
+          target: tgt,
+          sourceHandle: srcH || 'out',
+          targetHandle: tgtH || 'in',
+          type: 'missionBackboneEdge',
+          className: 'mission-demo-edge',
+        }));
+
+        // Convergence bus edges (Cloud + Infra -> Pipeline)
+        const cloudConverge = [{
+          id: 'mission-bus-cloud',
+          source: 'mission-cloud',
+          sourceHandle: 'out',
+          target: 'mission-pipeline',
+          targetHandle: 'in-cloud',
+          type: 'missionBusEdge',
+          className: 'mission-demo-edge',
+          data: { trunkX: CONVERGE_TRUNK_X, dotAtSource: true, color: '#ff9800' }
+        }];
+
+        const infraConverge = INFRA_NODES.map((n, idx) => ({
+          id: `mission-bus-infra-${idx + 1}`,
+          source: `mission-${n.id}`,
+          sourceHandle: 'out',
+          target: 'mission-pipeline',
+          targetHandle: 'in',
+          type: 'missionBusEdge',
+          className: 'mission-demo-edge',
+          data: { trunkX: CONVERGE_TRUNK_X, dotAtSource: true, color: '#ff9800' }
+        }));
+
+        // Divergence bus edges (Pipeline -> Tool Stack)
+        const toolDiverge = TOOL_NODES.map((t, idx) => ({
+          id: `mission-bus-tool-${idx + 1}`,
+          source: 'mission-pipeline',
+          sourceHandle: 'out',
+          target: `mission-tool-${t.id}`,
+          targetHandle: 'in',
+          type: 'missionBusEdge',
+          className: 'mission-demo-edge',
+          data: { trunkX: DIVERGE_TRUNK_X, dotAtSource: false, color: '#ff9800' }
+        }));
+
+        setEdges([...backboneEdges, ...cloudConverge, ...infraConverge, ...toolDiverge]);
+        fitTargets = undefined;
+        break;
+      }
+
+      case 5: {
+        setDemoStatus('Live Traffic Simulation: Full traffic flow active — GigaSMART drops VLAN 999 broadcast clutter and de-duplicates traffic by ~30%, saving massive tool licensing costs.');
+        
+        // Inject Traffic Streams across Hybrid Estate
+        MISSION_TRAFFIC_STREAMS.forEach((s, idx) => {
+          const gbps = (s.bandwidth / 1000).toFixed(1).replace(/\.0$/, '');
+          addTrafficStream({
+            id: `mission-ts-${idx + 1}`,
+            name: `${s.label} (${gbps} Gbps)`,
+            sourceNodeId: s.nodeId === 'cloud' ? 'mission-cloud' : `mission-${s.nodeId}`,
+            vlan: s.vlan,
+            ipSrc: s.ipSrc,
+            ipDst: '10.10.99.1',
+            portSrc: s.portSrc,
+            portDst: s.portDst,
+            protocol: s.protocol,
+            bandwidth: s.bandwidth,
+            active: true,
+            drift: 1,
+            lastDriftUpdate: 0
+          });
+        });
+
+        // Add VLAN 999 legacy broadcast noise stream (filtered by Gigamon Pipeline)
+        addTrafficStream({
+          id: `mission-ts-${MISSION_TRAFFIC_STREAMS.length + 1}`,
+          name: 'Dist SW1 - Legacy Broadcast Noise, VLAN 999 (6.0 Gbps)',
+          sourceNodeId: 'mission-distsw1',
+          vlan: '999',
+          ipSrc: '10.30.1.1',
+          ipDst: '255.255.255.255',
+          portSrc: '17500',
+          portDst: '17500',
+          protocol: 'udp',
+          bandwidth: 6000,
+          active: true,
+          drift: 1,
+          lastDriftUpdate: 0
+        });
+
+        if (!useStore.getState().isRunning) toggleSimulation();
+        fitTargets = undefined;
+        break;
+      }
+
+      default:
+        executeStep(1);
+        return;
     }
 
-    const runStep = (step: number) => {
-      setDemoStep(step);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      setCountdown(0);
-
-      // Set by a case below to scope this step's post-switch fitView to a
-      // subset of nodes (for a zoomed-in, readable reveal) instead of the
-      // whole canvas. Left undefined = fit everything currently on canvas.
-      let fitTargets: Array<{ id: string }> | undefined;
-
-      switch (step) {
-        case 0:
-          setDemoStatus('Initializing Mission Demo... Cleaning canvas...');
-          if (useStore.getState().isRunning) toggleSimulation();
-          clearCanvas();
-          setAdvancedMode(false);
-          timerRef.current = setTimeout(() => runStep(1), 2000);
-          break;
-
-        case 1:
-          setDemoStatus('The Challenge: Complexity - Routers & Core/Dist switches, each needing their own tool feeds...');
-          INFRA_NODES.forEach((n) => {
-            addNode({
-              id: `mission-${n.id}`,
-              type: 'inputNode',
-              position: { x: INFRA_X, y: n.y },
-              data: { label: n.label, configType: n.configType }
-            });
-          });
-          fitTargets = toFitTargets(INFRA_GROUP_A, 'mission-');
-          timerRef.current = setTimeout(() => runStep(2), 3000);
-          break;
-
-        case 2:
-          setDemoStatus('...and 8 Access switches, every one wired directly into the tangle...');
-          fitTargets = toFitTargets(INFRA_GROUP_B, 'mission-');
-          timerRef.current = setTimeout(() => runStep(3), 3000);
-          break;
-
-        case 3:
-          setDemoStatus('...connecting directly to a fragmented toolchain: Firewall, DLP, WAF, NDR, APM...');
-          TOOL_NODES.forEach((t) => {
-            addNode({
-              id: `mission-tool-${t.id}`,
-              type: 'toolNode',
-              position: { x: TOOL_X, y: t.y },
-              // ingestLimitMbps set generously above what this demo ever delivers
-              // (each tool receives the full fanned-out stream, ~27 Gbps) - these
-              // are generic tool names with no vendor profile in toolIngestLimits.ts,
-              // which would otherwise default to a 10 Gbps ceiling and flag every
-              // tool as overloaded the instant the simulation starts.
-              data: { label: t.label, toolName: t.label, configType: CONFIG_TYPES.PACKET_TOOL, ingestLimitMbps: 100000 }
-            });
-          });
-          fitTargets = toFitTargets(TOOL_GROUP_A, 'mission-tool-');
-          timerRef.current = setTimeout(() => runStep(4), 3000);
-          break;
-
-        case 4:
-          setDemoStatus('...GRC, API SEC, NPM, UEBA, SIEM - ten separate point tools, ten separate feeds.');
-          fitTargets = toFitTargets(TOOL_GROUP_B, 'mission-tool-');
-          timerRef.current = setTimeout(() => runStep(5), 3000);
-          break;
-
-        case 5:
-          setDemoStatus('Before: Direct connections create Blind Spots, rising Cost, and Inflexibility.');
-          setEdges(
-            MESSY_PAIRS.map(([from, to], i) => ({
-              id: `mission-me${i + 1}`,
-              source: `mission-${from}`,
-              sourceHandle: 'out',
-              target: `mission-tool-${to}`,
-              targetHandle: 'in'
-            }))
-          );
-          timerRef.current = setTimeout(() => runStep(6), 5000);
-          break;
-
-        case 6:
-          setDemoStatus('Transforming: Introducing the Gigamon Deep Observability Pipeline...');
-          setEdges([]);
-          addNode({
-            id: 'mission-pipeline',
-            type: 'hardwareNode',
-            position: { x: PIPELINE_X, y: PIPELINE_Y },
-            // Explicit width/height so it reads as a substantial centrepiece
-            // rather than the compact default hardwareNode footprint.
-            width: 320,
-            height: 150,
-            data: {
-              label: 'Deep Observability Pipeline',
-              model: 'HC1-Plus', // Kept internally for capacity/port math - not shown (hideModelLabel)
-              hideModelLabel: true,
-              configType: 'Chassis',
-              installedBoards: { 'Slot 1': 'HC1-Plus Base' },
-              optics: [{ board: 'Base', optic: 'SFP-532', qty: 24 }],
-              // The visible payoff: drop the VLAN 999 noise stream outright,
-              // then deduplicate whatever's left - both run on the pipeline's
-              // own onboard engine, same as a real GigaVUE chassis, so
-              // "TRAFFIC VOLUME REDUCTION" on the dashboard actually moves.
-              conditions: [{ field: 'vlan', value: '999', action: 'drop' }],
-              gigaSmartApps: [
-                { id: 'mission-dedup', label: 'Packet Deduplication', actionType: 'Deduplication', dedupRate: 25 }
-              ]
-            }
-          });
-          fitTargets = [{ id: 'mission-pipeline' }];
-          timerRef.current = setTimeout(() => runStep(7), 3500);
-          break;
-
-        case 7: {
-          setDemoStatus('After: Filtering VLAN 999 noise and deduplicating traffic before it ever reaches a tool.');
-          const converge = INFRA_NODES.map((n, i) => ({
-            id: `mission-ce${i + 1}`,
-            source: `mission-${n.id}`,
-            sourceHandle: 'out',
-            target: 'mission-pipeline',
-            targetHandle: 'in'
-          }));
-          const diverge = TOOL_NODES.map((t, i) => ({
-            id: `mission-ce${INFRA_NODES.length + i + 1}`,
-            source: 'mission-pipeline',
-            sourceHandle: 'out',
-            target: `mission-tool-${t.id}`,
-            targetHandle: 'in'
-          }));
-          setEdges([...converge, ...diverge]);
-          timerRef.current = setTimeout(() => runStep(8), 3000);
-          break;
+    // Auto-advance countdown loop
+    let remaining = stepDuration;
+    countdownIntervalRef.current = setInterval(() => {
+      if (!isPaused) {
+        remaining -= 1;
+        setCountdown(remaining);
+        if (remaining <= 0) {
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          const nextStep = step >= 5 ? 1 : step + 1;
+          executeStep(nextStep);
         }
-
-        case 8: {
-          setDemoStatus('Launching traffic flow simulation across the unified pipeline...');
-          addTrafficStream({
-            id: 'mission-ts-1',
-            name: 'R1 - Aggregated Uplink Traffic (18.0 Gbps)',
-            sourceNodeId: 'mission-r1',
-            vlan: '100',
-            ipSrc: '10.10.1.1',
-            ipDst: '10.10.9.1',
-            portSrc: '49152',
-            portDst: '443',
-            protocol: 'tcp',
-            bandwidth: 18000,
-            active: true,
-            drift: 1,
-            lastDriftUpdate: 0
-          });
-          addTrafficStream({
-            id: 'mission-ts-2',
-            name: 'Access1 - Branch Traffic (9.0 Gbps)',
-            sourceNodeId: 'mission-acc1',
-            vlan: '200',
-            ipSrc: '10.20.1.50',
-            ipDst: '10.10.9.1',
-            portSrc: '51000',
-            portDst: '443',
-            protocol: 'tcp',
-            bandwidth: 9000,
-            active: true,
-            drift: 1,
-            lastDriftUpdate: 0
-          });
-          // Legacy broadcast/multicast noise on VLAN 999 - deliberately
-          // filtered out by the pipeline's conditions rule (case 6), so this
-          // stream is the visible "before" cost that disappears in the dashboard.
-          addTrafficStream({
-            id: 'mission-ts-3',
-            name: 'Dist SW1 - Legacy Broadcast Noise, VLAN 999 (6.0 Gbps)',
-            sourceNodeId: 'mission-distsw1',
-            vlan: '999',
-            ipSrc: '10.30.1.1',
-            ipDst: '255.255.255.255',
-            portSrc: '17500',
-            portDst: '17500',
-            protocol: 'udp',
-            bandwidth: 6000,
-            active: true,
-            drift: 1,
-            lastDriftUpdate: 0
-          });
-          if (!useStore.getState().isRunning) toggleSimulation();
-
-          let secondsLeft = 20;
-          setCountdown(secondsLeft);
-          countdownIntervalRef.current = setInterval(() => {
-            secondsLeft -= 1;
-            setCountdown(secondsLeft);
-            if (secondsLeft <= 0) {
-              clearInterval(countdownIntervalRef.current!);
-              runStep(0); // Loop back to start
-            }
-          }, 1000);
-          break;
-        }
-
-        default:
-          runStep(0);
       }
+    }, 1000);
 
-      // Smoothly pan & zoom - scoped to fitTargets for a readable close-up
-      // reveal when set, otherwise fit everything currently on canvas.
-      setTimeout(() => {
+    // Smooth Pan & Zoom fitView
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
         try {
           fitView(
             fitTargets
-              ? { duration: 800, padding: 0.3, nodes: fitTargets, maxZoom: 1.4 }
-              : { duration: 800, padding: 0.15 }
+              ? { duration: 800, padding: 0.25, nodes: fitTargets, maxZoom: 1.5 }
+              : { duration: 800, padding: 0.1 }
           );
         } catch (e) {
           console.warn('fitView failed', e);
         }
-      }, 80);
-    };
+      });
+    });
+  }, [addNode, addTrafficStream, clearCanvas, collapseTrafficGenerator, fitView, isPaused, setAdvancedMode, setDemoStatus, setDemoStep, setEdges, toggleSimulation]);
 
-    runStep(0);
-
+  // Initial trigger when demo starts
+  useEffect(() => {
+    if (isDemoActive) {
+      executeStep(1);
+    }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isDemoActive, addNode, addTrafficStream, clearCanvas, fitView, setAdvancedMode, setDemoStatus, setDemoStep, setEdges, toggleSimulation]);
+  }, [isDemoActive, executeStep]);
 
   if (!isDemoActive) return null;
 
   return (
     <div
+      className="mission-control-hud"
       style={{
         position: 'fixed',
-        top: '110px',
+        top: '80px',
         left: '50%',
         transform: 'translateX(-50%)',
-        background: 'rgba(18, 18, 18, 0.95)',
-        border: '2px solid #3b82f6',
-        borderRadius: '8px',
-        padding: '12px 24px',
+        background: 'rgba(15, 23, 42, 0.96)',
+        backdropFilter: 'blur(12px)',
+        border: '2px solid #ff9800',
+        borderRadius: '14px',
+        padding: '14px 24px',
         zIndex: 1000,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.4)',
+        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 152, 0, 0.35)',
         display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
+        flexDirection: 'column',
+        gap: '12px',
         color: '#fff',
-        fontFamily: 'system-ui, sans-serif',
-        minWidth: '600px',
-        maxWidth: '85vw',
-        justifyContent: 'space-between'
+        fontFamily: 'Inter, system-ui, sans-serif',
+        minWidth: '850px',
+        maxWidth: '92vw',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-        <div
-          style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            background: '#3b82f6',
-            boxShadow: '0 0 8px #3b82f6'
-          }}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-            MISSION DEMO ACTIVE
-          </span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#e0e0e0' }}>
-            {demoStatus}
-          </span>
+      {/* Top Header Row: Title, Step Pills, Playback Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+        {/* Title & Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#ff9800',
+              boxShadow: '0 0 10px #ff9800',
+              animation: 'pulse 2s infinite',
+            }}
+          />
+          <div>
+            <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#ff9800', fontWeight: 800, letterSpacing: '0.1em' }}>
+              MISSION DEMO • EXECUTIVE VALUE SHOWCASE
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc' }}>
+              Deep Observability Eliminates Blind Spots
+            </div>
+          </div>
+        </div>
+
+        {/* Step Navigation Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.4)', padding: '4px 6px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {STEP_DEFINITIONS.map((def) => {
+            const isCur = currentStep === def.step;
+            return (
+              <button
+                key={def.step}
+                onClick={() => executeStep(def.step)}
+                style={{
+                  background: isCur ? '#ea580c' : 'transparent',
+                  color: isCur ? '#fff' : '#94a3b8',
+                  border: 'none',
+                  borderRadius: '5px',
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  fontWeight: isCur ? 800 : 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isCur ? '0 2px 8px rgba(234, 88, 12, 0.4)' : 'none',
+                }}
+              >
+                {def.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Playback Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Previous Step */}
+          <button
+            onClick={() => executeStep(Math.max(1, currentStep - 1))}
+            disabled={currentStep <= 1}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: currentStep <= 1 ? '#475569' : '#e2e8f0',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              cursor: currentStep <= 1 ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold',
+            }}
+            title="Previous Step"
+          >
+            ⏪
+          </button>
+
+          {/* Pause / Play */}
+          <button
+            onClick={() => setIsPaused(!isPaused)}
+            style={{
+              background: isPaused ? '#10b981' : 'rgba(255,255,255,0.08)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+            title={isPaused ? 'Resume Auto-Play' : 'Pause Auto-Play'}
+          >
+            {isPaused ? '▶ Play' : '⏸ Pause'}
+          </button>
+
+          {/* Next Step */}
+          <button
+            onClick={() => executeStep(currentStep >= 5 ? 1 : currentStep + 1)}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: '#e2e8f0',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+            title="Next Step"
+          >
+            ⏩
+          </button>
+
+          {/* Restart */}
+          <button
+            onClick={() => executeStep(1)}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+            title="Restart Presentation"
+          >
+            🔄
+          </button>
+
+          {/* Stop / Exit */}
+          <button
+            onClick={stopDemo}
+            style={{
+              background: '#dc2626',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '12px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#b91c1c')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#dc2626')}
+          >
+            ⏹ Exit Demo
+          </button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {countdown > 0 && (
-          <div style={{ fontSize: '11px', color: '#a855f7', background: 'rgba(168, 85, 247, 0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.2)', fontWeight: 'bold' }}>
-            Loop restarts in {countdown}s
-          </div>
+      {/* Middle Row: Live Step Narrative & Timer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '8px 14px', borderRadius: '8px', borderLeft: '4px solid #ea580c' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: '#f1f5f9', lineHeight: 1.4 }}>
+          {demoStatus}
+        </span>
+        {!isPaused && countdown > 0 && (
+          <span style={{ fontSize: '11px', color: '#ff9800', fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '16px' }}>
+            Next in {countdown}s
+          </span>
         )}
-        <button
-          onClick={stopDemo}
-          style={{
-            background: '#ef5350',
-            color: '#fff',
-            border: 'none',
-            padding: '6px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            transition: 'background 0.2s',
-            boxShadow: '0 2px 5px rgba(239, 83, 80, 0.3)'
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#d32f2f')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#ef5350')}
-        >
-          ⏹ Stop Demo
-        </button>
+        {isPaused && (
+          <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '16px' }}>
+            ⏸ Paused
+          </span>
+        )}
+      </div>
+
+      {/* Bottom Value Takeaways Bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>🛡️</span>
+          <div>
+            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#38bdf8' }}>0 Blind Spots</div>
+            <div style={{ fontSize: '8.5px', color: '#94a3b8' }}>100% Pervasive Visibility</div>
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>📉</span>
+          <div>
+            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#4ade80' }}>35%+ Ingest Savings</div>
+            <div style={{ fontSize: '8.5px', color: '#94a3b8' }}>De-dup & Noise Filtering</div>
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>🔓</span>
+          <div>
+            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#a78bfa' }}>SSL/TLS Decryption</div>
+            <div style={{ fontSize: '8.5px', color: '#94a3b8' }}>Decrypt once, feed all tools</div>
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>☁️</span>
+          <div>
+            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#f59e0b' }}>Hybrid Cloud Unified</div>
+            <div style={{ fontSize: '8.5px', color: '#94a3b8' }}>AWS, Azure, Core & Edge</div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -6,3 +6,5 @@ export { GigaSmartNode } from './GigaSmartNode';
 export { GigaStreamNode } from './GigaStreamNode';
 export { GroupNode } from './GroupNode';
 export { HardwareNode } from './HardwareNode';
+export { MissionPipelineNode } from './MissionPipelineNode';
+export { MissionCloudNode } from './MissionCloudNode';

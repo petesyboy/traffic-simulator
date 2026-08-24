@@ -158,6 +158,17 @@ const TrafficGenerator: React.FC = () => {
     setIsCollapsed(!advancedMode);
   }
 
+  // Mission Demo starts with the canvas already in Standard mode, so the
+  // advancedMode-change check above never fires - without this, a drawer
+  // the user had manually expanded beforehand would stay expanded and crowd
+  // the canvas for the whole demo instead of starting minimized.
+  const trafficGenCollapseTrigger = useStore((state) => state.trafficGenCollapseTrigger);
+  const [prevCollapseTrigger, setPrevCollapseTrigger] = useState(trafficGenCollapseTrigger);
+  if (trafficGenCollapseTrigger !== prevCollapseTrigger) {
+    setPrevCollapseTrigger(trafficGenCollapseTrigger);
+    setIsCollapsed(true);
+  }
+
   return (
     <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
       {/* ── Drag handle ──────────────────────────────────────────────────────── */}

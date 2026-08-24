@@ -768,6 +768,79 @@
   animation: edge-flow-dash 1.0s linear infinite;
 }
 
+/* Mission Demo: nodes/edges are injected programmatically in bursts rather
+   than dragged in one at a time, so without an entry transition they just
+   pop into existence mid-pan and read as jerky. Scoped to the demo's own
+   className (not applied to normal canvas nodes/edges) so manual editing
+   elsewhere keeps its instant, no-animation feel. */
+@keyframes mission-node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Applied to the inner content div, not .react-flow__node itself — React
+   Flow drives that wrapper's own `transform: translate(...)` for canvas
+   positioning, and an animation on the same property would fight it. */
+.mission-demo-node > * {
+  animation: mission-node-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes mission-edge-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mission-demo-edge .react-flow__edge-path,
+.mission-demo-edge .react-flow__edge-interaction,
+.mission-demo-edge circle {
+  animation: mission-edge-enter 0.5s ease-out both;
+}
+
+/* Mission Demo Pipeline Pulse & Glow */
+@keyframes pipeline-cylinder-pulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(255, 152, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.25), 0 10px 40px rgba(0, 0, 0, 0.8);
+    border-color: #ff9800;
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(255, 152, 0, 0.7), inset 0 0 30px rgba(255, 255, 255, 0.45), 0 15px 50px rgba(0, 0, 0, 0.9);
+    border-color: #fb923c;
+  }
+}
+
+.mission-pipeline-node {
+  animation: pipeline-cylinder-pulse 4s ease-in-out infinite alternate;
+}
+
+/* Mission Demo Cloud Workload Glow */
+@keyframes cloud-node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.25), inset 0 0 15px rgba(56, 189, 248, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(56, 189, 248, 0.45), inset 0 0 22px rgba(56, 189, 248, 0.2);
+  }
+}
+
+.mission-cloud-node {
+  animation: cloud-node-pulse 3s ease-in-out infinite alternate;
+}
+
+/* Mission Demo Chaos Lines */
+.mission-chaos-active path {
+  animation: edge-flow-dash 1.2s linear infinite;
+}
+
 
 /* 4. Canvas Node Styles (Charcoal Boxes) */
 .custom-node {

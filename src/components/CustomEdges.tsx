@@ -96,6 +96,164 @@ export const DoubleEdge: React.FC<EdgeProps> = ({
   );
 };
 
+// Routes an edge as a fixed-column bus: a horizontal stub from the edge's own
+// endpoint out to a shared vertical trunk column (`data.trunkX`), then a
+// horizontal run into the other endpoint. Every edge that shares the same
+// trunkX (e.g. all "infra -> pipeline" edges in Mission Demo) therefore draws
+// its vertical segment on top of the others, reading as one shared backbone
+// with individual taps rather than a fan of point-to-point lines - the
+// before/after topology diagram style, not something a generic bezier/step
+// edge can reproduce since each edge only knows its own two endpoints.
+export const MissionBusEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style = {},
+  markerEnd,
+  className,
+  data
+}: EdgeProps & { className?: string; data?: { trunkX?: number; dotAtSource?: boolean; color?: string } }) => {
+  const trunkX = data?.trunkX ?? (sourceX + targetX) / 2;
+  const strokeColor = data?.color || '#ff9800';
+  // The tap dot sits where this edge's own row meets the shared trunk - at
+  // the source's height when the source is the varying endpoint (e.g. each
+  // infra node feeding into one fixed pipeline handle), or the target's
+  // height when it's the other way around (one fixed pipeline handle
+  // fanning out to each tool).
+  const dotY = data?.dotAtSource ? sourceY : targetY;
+  const edgePath = `M ${sourceX},${sourceY} L ${trunkX},${sourceY} L ${trunkX},${targetY} L ${targetX},${targetY}`;
+
+  return (
+    <>
+      <path
+        id={id}
+        className={`react-flow__edge-path ${className || ''}`}
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={{ ...style, stroke: strokeColor, strokeWidth: style.strokeWidth || 2 }}
+        fill="none"
+      />
+      {/* Invisible wide hit-area so the edge is easy to click without lining up on the thin visible stroke */}
+      <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={20} className="react-flow__edge-interaction" />
+      <circle cx={trunkX} cy={dotY} r={4} fill={strokeColor} stroke="var(--canvas-bg, #121212)" strokeWidth={1.5} />
+    </>
+  );
+};
+
+/**
+ * Multi-coloured chaotic bezier edge for "Organization A (Chaos & Blind Spots)"
+ * in the Mission Demo, illustrating tangled point-to-point SPAN/TAP connections.
+ */
+export const MissionChaosEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  className,
+  data
+}: EdgeProps & { className?: string; data?: { color?: string; curvature?: number; showTapBox?: boolean } }) => {
+  const color = data?.color || '#a855f7';
+  const curvature = data?.curvature ?? 0.25;
+
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    curvature,
+  });
+
+  return (
+    <>
+      <path
+        id={id}
+        className={`react-flow__edge-path ${className || ''}`}
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={{ ...style, stroke: color, strokeWidth: style.strokeWidth || 1.8, strokeDasharray: 'none' }}
+        fill="none"
+      />
+      <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={20} className="react-flow__edge-interaction" />
+
+      {/* Decorative Purple TAP 'T' box on the line if enabled */}
+      {data?.showTapBox && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${sourceX + (labelX - sourceX) * 0.35}px,${sourceY + (labelY - sourceY) * 0.35}px)`,
+              background: '#7e22ce',
+              border: '1px solid #c084fc',
+              borderRadius: '2px',
+              padding: '1px 3px',
+              color: '#ffffff',
+              fontSize: '8px',
+              fontWeight: 900,
+              fontFamily: 'monospace',
+              pointerEvents: 'none',
+              zIndex: 1000,
+              boxShadow: '0 0 6px rgba(168, 85, 247, 0.6)',
+              lineHeight: 1,
+            }}
+          >
+            T
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+};
+
+/**
+ * Subtle grey/slate backbone edge connecting internal network tiers
+ * (Cloud <-> Routers <-> Core <-> Dist <-> Access).
+ */
+export const MissionBackboneEdge: React.FC<EdgeProps> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+  className
+}: EdgeProps & { className?: string }) => {
+  const [edgePath] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    borderRadius: 8,
+  });
+
+  return (
+    <>
+      <path
+        id={id}
+        className={`react-flow__edge-path ${className || ''}`}
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={{ ...style, stroke: '#475569', strokeWidth: 1.5, strokeDasharray: '4, 4', opacity: 0.6 }}
+        fill="none"
+      />
+      <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={10} className="react-flow__edge-interaction" />
+    </>
+  );
+};
+
 export const ParallelEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,

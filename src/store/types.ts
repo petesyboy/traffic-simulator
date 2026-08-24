@@ -371,6 +371,9 @@ export interface RFState {
   isMissionDemoActive: boolean;
   missionDemoStep: number;
   missionDemoStatus: string;
+  /** Bumped to tell the Live Traffic Generator drawer to collapse itself,
+   *  regardless of its own locally-held open/closed state. */
+  trafficGenCollapseTrigger: number;
   skuCatalogueVersion: number;
 
   // Actions
@@ -383,6 +386,7 @@ export interface RFState {
   setMissionDemoActive: (active: boolean) => void;
   setMissionDemoStep: (step: number) => void;
   setMissionDemoStatus: (status: string) => void;
+  collapseTrafficGenerator: () => void;
   bumpSkuCatalogueVersion: () => void;
   onNodesChange: (changes: NodeChange<CustomNode>[]) => void;
   onEdgesChange: OnEdgesChange;

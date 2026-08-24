@@ -32,6 +32,9 @@ export interface UISlice {
   isMissionDemoActive: boolean;
   missionDemoStep: number;
   missionDemoStatus: string;
+  /** Bumped to tell the Live Traffic Generator drawer to collapse itself,
+   *  regardless of its own locally-held open/closed state. */
+  trafficGenCollapseTrigger: number;
   /** Bumped whenever the uploaded SKU price list override changes, so mounted
    *  components re-read getSkus()/getSkusMetadata() without a page reload. */
   skuCatalogueVersion: number;
@@ -47,6 +50,7 @@ export interface UISlice {
   setMissionDemoActive: (active: boolean) => void;
   setMissionDemoStep: (step: number) => void;
   setMissionDemoStatus: (status: string) => void;
+  collapseTrafficGenerator: () => void;
   bumpSkuCatalogueVersion: () => void;
 }
 
@@ -64,6 +68,7 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
     isMissionDemoActive: false,
     missionDemoStep: 0,
     missionDemoStatus: '',
+    trafficGenCollapseTrigger: 0,
     skuCatalogueVersion: 0,
 
     setActiveView: (view) => set({ activeView: view }),
@@ -92,6 +97,7 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
     setMissionDemoActive: (active) => set({ isMissionDemoActive: active }),
     setMissionDemoStep: (step) => set({ missionDemoStep: step }),
     setMissionDemoStatus: (status) => set({ missionDemoStatus: status }),
+    collapseTrafficGenerator: () => set({ trafficGenCollapseTrigger: get().trafficGenCollapseTrigger + 1 }),
     bumpSkuCatalogueVersion: () => set({ skuCatalogueVersion: get().skuCatalogueVersion + 1 }),
   };
 };
