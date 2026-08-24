@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.597",
+    date: "2026-08-24",
+    summary: "Streamlined Report Generator UI: focused format selector options exclusively on Signal Path (Technical Specification) and Uplink (Executive Brief), while preserving underlying template engines for future format activation.",
+  },
+  {
     version: "1.0.596",
     date: "2026-08-24",
     summary: "Fixed font registration in Patch Sheet report: replaced unbundled 'Courier' font reference with browser VFS-registered 'Roboto' default font and uppercase monospace styling, resolving runtime missing font error when generating Patch Sheet PDFs.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.578",
     date: "2026-08-23",
     summary: "Fixed GigaSMART function counting in summary statistics across hosted apps and GTP correlation, and resolved tool site assignment dynamically from connected hardware to eliminate confusing 'Global' placeholders.",
-  },
-  {
-    version: "1.0.577",
-    date: "2026-08-23",
-    summary: "Added non-destructive auto-spacing for Export Diagram Mode captures so that node description boxes never overlap or obscure icons below them, and restored original user canvas positions after capture.",
   },
 ];

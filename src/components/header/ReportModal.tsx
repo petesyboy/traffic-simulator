@@ -225,29 +225,15 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       id: 'signal-path',
       title: 'Signal Path',
       subtitle: 'Complete engineering spec, network topology, Bill of Materials, and rack elevations.',
-      tag: 'Architect / Lead',
+      tag: 'Technical Spec',
       color: '#16213D',
     },
     {
       id: 'uplink',
       title: 'Uplink',
       subtitle: 'Executive outcome brief, milestone progression, and business risk reframes.',
-      tag: 'Budget Holder / Exec',
+      tag: 'Executive Brief',
       color: '#0F2E33',
-    },
-    {
-      id: 'patch-sheet',
-      title: 'Patch Sheet',
-      subtitle: 'Monospace commissioning work order, field checklists, and port mapping matrix.',
-      tag: 'Install Technician',
-      color: '#101010',
-    },
-    {
-      id: 'crossover',
-      title: 'Crossover',
-      subtitle: 'Side-by-side trade-off comparison between architecture & deployment options.',
-      tag: 'Decision Maker',
-      color: '#2A6C8C',
     },
   ];
 

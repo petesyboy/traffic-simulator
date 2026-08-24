@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.597",
+    "date": "2026-08-24",
+    "summary": "Streamlined Report Generator UI: focused format selector options exclusively on Signal Path (Technical Specification) and Uplink (Executive Brief), while preserving underlying template engines for future format activation."
+  },
+  {
     "version": "1.0.596",
     "date": "2026-08-24",
     "summary": "Fixed font registration in Patch Sheet report: replaced unbundled 'Courier' font reference with browser VFS-registered 'Roboto' default font and uppercase monospace styling, resolving runtime missing font error when generating Patch Sheet PDFs."
