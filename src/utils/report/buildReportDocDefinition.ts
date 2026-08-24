@@ -34,6 +34,7 @@ import {
   describeHostedGigaSmartAppDetail,
   describeGigaSmartAction,
   resolveNodeSite,
+  getTapNodeLinks,
   type NodeDetail,
 } from './describeTopology';
 import { describeGigaSmartFunction } from './gigaSmartDescriptions';
@@ -316,7 +317,9 @@ function generateCoverSvg(): string {
  * Uses only Gigamon brand colours; no external assets required.
  */
 function buildSiteSchematicSvg(
-  tapCount: number,
+  tapUnitCount: number,
+  tapLinkCount: number,
+  tapFeedCount: number,
   aggCount: number,
   hcCount: number,
   toolCount: number,
@@ -353,6 +356,7 @@ function buildSiteSchematicSvg(
   };
 
   const gsLabel = gigaSmartOps > 0 ? `${gigaSmartOps} Op${gigaSmartOps !== 1 ? 's' : ''}` : 'Aggregation';
+  const tapSubLabel = tapFeedCount > tapLinkCount ? `${tapFeedCount} feeds (${tapLinkCount} links)` : `${tapFeedCount} feeds`;
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -364,7 +368,7 @@ function buildSiteSchematicSvg(
   <!-- Site label -->
   <text x="4" y="14" font-family="sans-serif" font-size="8" font-weight="bold" fill="${muted}" letter-spacing="0.5">${siteName.toUpperCase()} · SIGNAL PATH SCHEMATIC</text>
 
-  ${box(x1, navy, `${tapCount} TAP${tapCount !== 1 ? 's' : ''}`, 'Optical Capture')}
+  ${box(x1, navy, `${tapUnitCount} TAP${tapUnitCount !== 1 ? 's' : ''}`, 'Optical Capture')}
   ${arrow(x1, x2)}
   ${box(x2, navy, `${aggCount} Aggr.`, 'Aggregation')}
   ${arrow(x2, x3)}
@@ -373,7 +377,7 @@ function buildSiteSchematicSvg(
   ${box(x4, navy, `${toolCount} Tool${toolCount !== 1 ? 's' : ''}`, 'Destinations')}
 
   <!-- Counts row -->
-  <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${tapCount} feeds</text>
+  <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${tapSubLabel}</text>
   <text x="${x2}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${aggCount} unit${aggCount !== 1 ? 's' : ''}</text>
   <text x="${x3}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${accent}">${hcCount} engine${hcCount !== 1 ? 's' : ''}</text>
   <text x="${x4}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${toolCount} dest.</text>
@@ -429,7 +433,10 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   );
   const siteCountDisplay = uniqueSites.length > 0 ? uniqueSites.length : 1;
   const hardwareUnitCount = Object.values(stats.chassisCounts).reduce((a, b) => a + b, 0);
-  const monitoredLinkCount = stats.inputCounts.total;
+  const monitoredLinkText =
+    stats.totalFeedCount > stats.monitoredLinkCount
+      ? `${stats.monitoredLinkCount} Links (${stats.totalFeedCount} Feeds)`
+      : `${stats.monitoredLinkCount} Feeds`;
 
   const content: Content[] = [];
 
@@ -464,7 +471,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       {
         stack: [
           { text: 'MONITORED LINKS', style: 'coverStatLabel' },
-          { text: `${monitoredLinkCount} Feeds`, style: 'coverStatValue' },
+          { text: monitoredLinkText, style: 'coverStatValue' },
         ],
       },
       {
@@ -566,24 +573,24 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       body: [
         [
           buildStatTile({
-            label: 'Traffic Sources',
-            value: stats.inputCounts.total,
+            label: 'Ingress Feeds',
+            value: stats.totalFeedCount,
             zeroCaption: 'no ingress feeds mapped',
           }),
           buildStatTile({
+            label: 'Monitored Links',
+            value: stats.monitoredLinkCount,
+            zeroCaption: 'no monitored links',
+          }),
+          buildStatTile({
             label: 'Optical TAPs',
-            value: stats.inputCounts.tap,
+            value: stats.tapUnitCount,
             zeroCaption: 'SPAN / virtual feeds only',
           }),
           buildStatTile({
             label: 'SPAN Sessions',
             value: stats.inputCounts.span,
             zeroCaption: 'pure optical TAP design',
-          }),
-          buildStatTile({
-            label: 'Traffic Maps',
-            value: stats.mapNodeCount,
-            zeroCaption: 'direct pass-through',
           }),
         ],
         [
@@ -680,17 +687,47 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
       // Compute per-site counts for the schematic strip
       const siteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === siteName.trim());
-      const siteTapCount = siteNodes.filter((n) => n.type === NODE_TYPES.INPUT).length;
-      const siteAggCount = siteNodes.filter((n) => n.type === NODE_TYPES.HARDWARE &&
-        (String(n.data?.model || '').includes('TA') || String(n.data?.model || '').includes('TAP'))).length;
-      const siteHcCount = siteNodes.filter((n) => n.type === NODE_TYPES.HARDWARE &&
-        (String(n.data?.model || '').includes('HC') || String(n.data?.model || '').includes('HCT'))).length;
+
+      const siteTapNodes = siteNodes.filter(
+        (n) =>
+          (n.type === NODE_TYPES.INPUT && String(n.data?.configType || '').toUpperCase().includes('TAP')) ||
+          (n.type === NODE_TYPES.HARDWARE && String(n.data?.model || '').toUpperCase().includes('TAP') && !isAutoTrayModel(String(n.data?.model || ''))),
+      );
+      const siteTapUnitCount = siteTapNodes.length;
+      const siteTapLinkCount = siteTapNodes.reduce((sum, n) => sum + getTapNodeLinks(n), 0);
+      const siteTapFeedCount = siteTapLinkCount * 2;
+
+      const siteSpanNodes = siteNodes.filter(
+        (n) => n.type === NODE_TYPES.INPUT && !String(n.data?.configType || '').toUpperCase().includes('TAP'),
+      );
+      const siteSpanCount = siteSpanNodes.length;
+      const siteTotalFeedCount = siteTapFeedCount + siteSpanCount;
+      const siteTotalLinkCount = siteTapLinkCount + siteSpanCount;
+
+      const siteAggCount = siteNodes.filter(
+        (n) =>
+          n.type === NODE_TYPES.HARDWARE &&
+          !isAutoTrayModel(String(n.data?.model || '')) &&
+          !String(n.data?.model || '').toUpperCase().includes('TAP') &&
+          !String(n.data?.model || '').toUpperCase().includes('HC') &&
+          !String(n.data?.model || '').toUpperCase().includes('HCT'),
+      ).length;
+
+      const siteHcCount = siteNodes.filter(
+        (n) =>
+          n.type === NODE_TYPES.HARDWARE &&
+          (String(n.data?.model || '').toUpperCase().includes('HC') || String(n.data?.model || '').toUpperCase().includes('HCT')) &&
+          !isAutoTrayModel(String(n.data?.model || '')),
+      ).length;
+
       const siteToolCount = siteNodes.filter((n) => n.type === NODE_TYPES.TOOL).length;
       const siteGsOps = siteNodes.filter((n) => n.type === NODE_TYPES.GIGASMART).length;
 
       content.push({
         svg: buildSiteSchematicSvg(
-          siteTapCount || stats.inputCounts.total,
+          siteTapUnitCount || stats.tapUnitCount,
+          siteTotalLinkCount || stats.monitoredLinkCount,
+          siteTotalFeedCount || stats.totalFeedCount,
           siteAggCount,
           siteHcCount,
           siteToolCount || stats.toolCount,

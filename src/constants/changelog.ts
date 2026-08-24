@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.591",
+    date: "2026-08-24",
+    summary: "Corrected monitored link, optical feed, and TAP counts across the PDF report: accurately calculates physical TAP units, total network links tapped, and bidirectional optical feeds (2 feeds per tapped link). Updated cover page stat, §01 stat tiles grid, §02 per-site schematic strips, and §03 TAP hardware descriptions to report both link and optical feed counts.",
+  },
+  {
     version: "1.0.590",
     date: "2026-08-24",
     summary: "Report fix pack: (0) dontBreakRows on all tables preventing row splits across page breaks; (1) removed forced page break before §01 so exec summary/stat strip flow on same page as TOC, fixed per-site diagram blank-space gaps via keepWithNext; (2) bumped topology diagram pixelRatio 2→3 for sharper node text, added per-site SVG signal-path schematic strip; (3) replaced unrenderable Unicode glyphs in notice plates (ℹ→i, ✕→X) with Roboto-safe ASCII; (4) Fitted Cards annotation now word-wraps at commas on multi-RU callout cards.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.572",
     date: "2026-08-23",
     summary: "Tidied PDF report by deduplicating identical chassis and tool descriptions with deployed instance counts, auto-deploying 42U rack layouts with embedded elevation diagrams in Appendix B physical report, and automatically enabling diagram-ready descriptions for topology capture.",
-  },
-  {
-    version: "1.0.571",
-    date: "2026-08-23",
-    summary: "Excluded tool nodes, packet tools, and third-party probes (such as Ericsson probes) from physical site assignment validation checks.",
   },
 ];

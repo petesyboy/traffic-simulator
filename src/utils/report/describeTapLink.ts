@@ -23,6 +23,7 @@ import type { Edge } from '@xyflow/react';
 import type { CustomNode, InputNodeData, HardwareNodeData } from '../../store/types';
 import { NODE_TYPES, SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import { getUpstreamNodes, getDownstreamNodes } from './graphTrace';
+import { getTapNodeLinks } from './describeTopology';
 
 export function describeTapPhysicalLink(node: CustomNode, nodes: CustomNode[], edges: Edge[]): string[] {
   const bullets: string[] = [];
@@ -53,7 +54,8 @@ export function describeTapPhysicalLink(node: CustomNode, nodes: CustomNode[], e
     bullets.push(`Fibre: ${fiberMode}`);
   }
 
-  if (data.tappedLinksCount) bullets.push(`Tapped links: ${data.tappedLinksCount}`);
+  const linkCount = getTapNodeLinks(node);
+  bullets.push(`Tapped links: ${linkCount} monitored link${linkCount !== 1 ? 's' : ''} (${linkCount * 2} optical feeds)`);
 
   const neighbours = [...getUpstreamNodes(node.id, nodes, edges), ...getDownstreamNodes(node.id, nodes, edges)];
   const chassis = neighbours.find(
@@ -121,13 +123,11 @@ export function describeAggregatedTapPhysicalLink(
   // Calculate total tapped links across all modules in the group
   let totalLinks = 0;
   group.forEach((n) => {
-    const ndata = n.data as InputNodeData & HardwareNodeData;
-    const links = ndata.tappedLinksCount || (String(ndata.model || '').includes('273') ? 6 : 1);
-    totalLinks += links;
+    totalLinks += getTapNodeLinks(n);
   });
   const avgLinks = Math.round(totalLinks / group.length);
   bullets.push(
-    `Tapped links: ${totalLinks} monitored link${totalLinks !== 1 ? 's' : ''} across ${group.length} modules (${avgLinks} links per module)`,
+    `Tapped links: ${totalLinks} monitored link${totalLinks !== 1 ? 's' : ''} (${totalLinks * 2} optical feeds) across ${group.length} module${group.length !== 1 ? 's' : ''} (${avgLinks} link${avgLinks !== 1 ? 's' : ''} per module)`,
   );
 
   // Find all distinct chassis connected to the modules in this group

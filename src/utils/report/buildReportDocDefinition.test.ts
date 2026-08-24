@@ -330,7 +330,7 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     const allText = collectTexts(doc.content).join(' ');
     // TAP modules should be grouped
     expect(allText).toContain('TAP-M273T (TAP-M273T) (8 modules deployed)');
-    expect(allText).toContain('48 monitored links across 8 modules (6 links per module)');
+    expect(allText).toContain('48 monitored links (96 optical feeds) across 8 modules (6 links per module)');
 
     // Trays should be mentioned once
     expect(allText).toContain('G-TAP Modular Mounting Trays');

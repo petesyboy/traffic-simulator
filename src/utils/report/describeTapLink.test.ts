@@ -53,7 +53,7 @@ describe('describeTapPhysicalLink', () => {
       node('in1', NODE_TYPES.INPUT, { label: 'Core Tap 1', configType: 'TAP', tappedLinksCount: 3 }),
     ];
     const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
-    expect(bullets).toContain('Tapped links: 3');
+    expect(bullets).toContain('Tapped links: 3 monitored links (6 optical feeds)');
   });
 
   it('names the connected chassis and lists its installed optics, deduped by SKU', () => {
@@ -72,9 +72,13 @@ describe('describeTapPhysicalLink', () => {
     const edges = [edge('e1', 'in1', 'hw1')];
     const bullets = describeTapPhysicalLink(nodes[0], nodes, edges);
     expect(bullets).toContain('Connects into: HC1 Chassis (GigaVUE-HC1)');
-    const opticsBullet = bullets.find((b) => b.startsWith('Installed optics on HC1 Chassis:'));
-    expect(opticsBullet).toContain('SFP-532 ×2');
-    expect(opticsBullet).toContain('SFP-533 ×2');
+    expect(bullets).toContain('Installed optics on HC1 Chassis: SFP-532 ×2, SFP-533 ×2');
+  });
+
+  it('tolerates an isolated tap with no connected chassis', () => {
+    const nodes: CustomNode[] = [node('in1', NODE_TYPES.INPUT, { label: 'Isolated Tap', configType: 'TAP' })];
+    const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
+    expect(bullets).toEqual(['Fibre: Multimode', 'Tapped links: 1 monitored link (2 optical feeds)']);
   });
 
   it('classifies a paired TAP-model hardwareNode as singlemode from its SKU', () => {
@@ -92,12 +96,6 @@ describe('describeTapPhysicalLink', () => {
     const nodes: CustomNode[] = [node('hwtap1', NODE_TYPES.HARDWARE, { label: 'TAP Unit', model: 'TAP-M251T' })];
     const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
     expect(bullets[0]).toBe('Fibre: Multimode');
-  });
-
-  it('returns just the fibre-mode bullet with no crash when nothing else is configured', () => {
-    const nodes: CustomNode[] = [node('in1', NODE_TYPES.INPUT, { label: 'Bare Tap', configType: 'TAP' })];
-    const bullets = describeTapPhysicalLink(nodes[0], nodes, []);
-    expect(bullets).toEqual(['Fibre: Multimode']);
   });
 });
 
@@ -121,7 +119,7 @@ describe('describeAggregatedTapPhysicalLink', () => {
 
     const bullets = describeAggregatedTapPhysicalLink(tapNodes, [...tapNodes, chassisNode], edges);
     expect(bullets[0]).toBe('Fibre: Singlemode');
-    expect(bullets[1]).toContain('12 monitored links across 2 modules (6 links per module)');
+    expect(bullets[1]).toContain('12 monitored links (24 optical feeds) across 2 modules (6 links per module)');
     expect(bullets[2]).toContain('Connects into: Site Alpha · TA25E Leaf');
     expect(bullets[3]).toContain('SFP-533T ×12');
   });

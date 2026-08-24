@@ -43,7 +43,15 @@ export interface TopologyStats {
     vmware: number;
     other: number;
     total: number;
+    tapLinks?: number;
+    tapFeeds?: number;
   };
+  /** Total physical optical TAP modules / units deployed. */
+  tapUnitCount: number;
+  /** Total network links monitored across all TAP and SPAN sources. */
+  monitoredLinkCount: number;
+  /** Total ingress traffic feeds landing on the fabric (each tapped link produces 2 optical feeds: North and South). */
+  totalFeedCount: number;
   gigaSmartActionCounts: Record<string, number>;
   chassisCounts: Record<string, number>;
   mapNodeCount: number;
@@ -60,6 +68,44 @@ const bumpAction = (counts: Record<string, number>, action: unknown) => {
   if (!str) return;
   counts[str] = (counts[str] || 0) + 1;
 };
+
+/**
+ * Determines how many physical network links a TAP node monitors.
+ * Evaluates explicit allocations, scalar tappedLinksCount, catalogue descriptions,
+ * or module model characteristics (e.g. 273/453 multi-link models).
+ */
+export function getTapNodeLinks(node: CustomNode): number {
+  const data = node.data as (InputNodeData & HardwareNodeData) | undefined;
+  if (!data) return 1;
+
+  // 1. Array of explicit allocations
+  if (Array.isArray(data.tappedLinkAllocations) && data.tappedLinkAllocations.length > 0) {
+    const sum = data.tappedLinkAllocations.reduce((acc: number, a: { qty?: number }) => acc + (a.qty || 0), 0);
+    if (sum > 0) return sum;
+  }
+
+  // 2. Explicit scalar count
+  if (typeof data.tappedLinksCount === 'number' && data.tappedLinksCount > 0) {
+    return data.tappedLinksCount;
+  }
+
+  // 3. Catalogue description ("taps 6 links")
+  if (data.description) {
+    const match = String(data.description).match(/taps (\d+) links?/i);
+    if (match && match[1]) {
+      const parsed = parseInt(match[1], 10);
+      if (parsed > 0) return parsed;
+    }
+  }
+
+  // 4. Multi-link model heuristic (e.g. TAP-M273T, TAP-M453 are 6-link modules)
+  const model = String(data.model || data.sku || '');
+  if (model.includes('273') || model.includes('453')) {
+    return 6;
+  }
+
+  return 1;
+}
 
 export function resolveNodeSite(
   node: CustomNode,
@@ -103,12 +149,15 @@ export function buildTopologyStats(
   _edges: Edge[],
   trafficStreams: TrafficStream[],
 ): TopologyStats {
-  const inputCounts = { tap: 0, span: 0, erspan: 0, eastWest: 0, vmware: 0, other: 0, total: 0 };
+  const inputCounts = { tap: 0, span: 0, erspan: 0, eastWest: 0, vmware: 0, other: 0, total: 0, tapLinks: 0, tapFeeds: 0 };
   const gigaSmartActionCounts: Record<string, number> = {};
   const chassisCounts: Record<string, number> = {};
   let mapNodeCount = 0;
   let filterNodeCount = 0;
   let toolCount = 0;
+  let tapUnitCount = 0;
+  let tapLinksTotal = 0;
+  let spanFeedsTotal = 0;
 
   for (const node of nodes) {
     // Inspect any GigaSMART apps array attached to the node
@@ -127,12 +176,26 @@ export function buildTopologyStats(
     if (node.type === NODE_TYPES.INPUT) {
       const configType = String((node.data as InputNodeData).configType || '');
       inputCounts.total += 1;
-      if (configType.startsWith(CONFIG_TYPES.TAP)) inputCounts.tap += 1;
-      else if (configType.startsWith(CONFIG_TYPES.SPAN)) inputCounts.span += 1;
-      else if (configType.startsWith(CONFIG_TYPES.ERSPAN)) inputCounts.erspan += 1;
-      else if (configType.startsWith(CONFIG_TYPES.EAST_WEST)) inputCounts.eastWest += 1;
-      else if (configType.startsWith(CONFIG_TYPES.VMWARE)) inputCounts.vmware += 1;
-      else inputCounts.other += 1;
+      if (configType.startsWith(CONFIG_TYPES.TAP)) {
+        inputCounts.tap += 1;
+        tapUnitCount += 1;
+        tapLinksTotal += getTapNodeLinks(node);
+      } else if (configType.startsWith(CONFIG_TYPES.SPAN)) {
+        inputCounts.span += 1;
+        spanFeedsTotal += 1;
+      } else if (configType.startsWith(CONFIG_TYPES.ERSPAN)) {
+        inputCounts.erspan += 1;
+        spanFeedsTotal += 1;
+      } else if (configType.startsWith(CONFIG_TYPES.EAST_WEST)) {
+        inputCounts.eastWest += 1;
+        spanFeedsTotal += 1;
+      } else if (configType.startsWith(CONFIG_TYPES.VMWARE)) {
+        inputCounts.vmware += 1;
+        spanFeedsTotal += 1;
+      } else {
+        inputCounts.other += 1;
+        spanFeedsTotal += 1;
+      }
     } else if (node.type === NODE_TYPES.MAP) {
       mapNodeCount += 1;
     } else if (node.type === NODE_TYPES.FILTER) {
@@ -159,6 +222,8 @@ export function buildTopologyStats(
       if (model.toUpperCase().includes('TAP') && !isAutoTrayModel(model)) {
         inputCounts.tap += 1;
         inputCounts.total += 1;
+        tapUnitCount += 1;
+        tapLinksTotal += getTapNodeLinks(node);
       }
 
       // Every TA/HC chassis runs its own onboard flow map, whether or not the
@@ -177,10 +242,20 @@ export function buildTopologyStats(
     }
   }
 
+  const tapFeedsTotal = tapLinksTotal * 2;
+  inputCounts.tapLinks = tapLinksTotal;
+  inputCounts.tapFeeds = tapFeedsTotal;
+
+  const monitoredLinkCount = tapLinksTotal + spanFeedsTotal;
+  const totalFeedCount = tapFeedsTotal + spanFeedsTotal;
+
   const totalBandwidthMbps = trafficStreams.reduce((sum, s) => sum + (s.bandwidth || 0), 0);
 
   return {
     inputCounts,
+    tapUnitCount,
+    monitoredLinkCount,
+    totalFeedCount,
     gigaSmartActionCounts,
     chassisCounts,
     mapNodeCount,

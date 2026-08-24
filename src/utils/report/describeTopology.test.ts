@@ -53,7 +53,7 @@ const stream = (overrides: Partial<TrafficStream>): TrafficStream => ({
 describe('buildTopologyStats', () => {
   it('counts TAP and SPAN inputs via the .startsWith(CONFIG_TYPES.X) convention, not exact match', () => {
     const nodes: CustomNode[] = [
-      node('i1', NODE_TYPES.INPUT, { label: 'Tap 1', configType: CONFIG_TYPES.TAP }),
+      node('i1', NODE_TYPES.INPUT, { label: 'Tap 1', configType: CONFIG_TYPES.TAP, tappedLinksCount: 3 }),
       node('i2', NODE_TYPES.INPUT, { label: 'Tap 2 secondary', configType: `${CONFIG_TYPES.TAP} - Secondary` }),
       node('i3', NODE_TYPES.INPUT, { label: 'Span 1', configType: CONFIG_TYPES.SPAN }),
       node('i4', NODE_TYPES.INPUT, { label: 'Erspan 1', configType: CONFIG_TYPES.ERSPAN }),
@@ -63,17 +63,27 @@ describe('buildTopologyStats', () => {
     expect(stats.inputCounts.span).toBe(1);
     expect(stats.inputCounts.erspan).toBe(1);
     expect(stats.inputCounts.total).toBe(4);
+    expect(stats.tapUnitCount).toBe(2);
+    expect(stats.inputCounts.tapLinks).toBe(4); // 3 + 1
+    expect(stats.inputCounts.tapFeeds).toBe(8); // 4 * 2
+    expect(stats.monitoredLinkCount).toBe(6); // 4 tapped links + 2 span/erspan feeds
+    expect(stats.totalFeedCount).toBe(10); // 8 tap feeds + 2 span/erspan feeds
   });
 
   it('also counts a TAP modelled as its own hardwareNode wired to a chassis, but not a tap tray', () => {
     const nodes: CustomNode[] = [
-      node('h1', NODE_TYPES.HARDWARE, { label: 'TAP Unit', model: 'TAP-M251T' }),
+      node('h1', NODE_TYPES.HARDWARE, { label: 'TAP Unit', model: 'TAP-M273T', sku: 'TAP-M273T' }),
       node('h2', NODE_TYPES.HARDWARE, { label: 'Tap Tray', model: 'TAP-M100T' }),
       node('h3', NODE_TYPES.HARDWARE, { label: 'Chassis', model: 'GigaVUE-HC1' }),
     ];
     const stats = buildTopologyStats(nodes, [], []);
     expect(stats.inputCounts.tap).toBe(1);
     expect(stats.inputCounts.total).toBe(1);
+    expect(stats.tapUnitCount).toBe(1);
+    expect(stats.inputCounts.tapLinks).toBe(6); // 273 module has 6 links
+    expect(stats.inputCounts.tapFeeds).toBe(12); // 6 * 2 = 12 feeds
+    expect(stats.monitoredLinkCount).toBe(6);
+    expect(stats.totalFeedCount).toBe(12);
   });
 
   it('counts each TA/HC chassis as a map alongside any explicit Map node (each appliance runs its own onboard flow map)', () => {
