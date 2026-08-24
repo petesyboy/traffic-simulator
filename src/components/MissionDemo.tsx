@@ -100,9 +100,8 @@ const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: bo
   { from: 'mission-acc8', to: 'mission-tool-ueba', color: '#84cc16' },
 ];
 
-// Clean Organization B convergence and divergence mapping
+// Clean Organization B convergence trunk mapping
 const CONVERGE_TRUNK_X = PIPELINE_X - 80;
-const DIVERGE_TRUNK_X = PIPELINE_X + 320 + 80;
 
 // High-bandwidth traffic streams representing the hybrid enterprise estate
 const MISSION_TRAFFIC_STREAMS = [
@@ -340,16 +339,16 @@ export const MissionDemo: React.FC = () => {
           data: { trunkX: CONVERGE_TRUNK_X, dotAtSource: true, color: '#ff9800' }
         }));
 
-        // Divergence bus edges (Pipeline -> Tool Stack)
+        // Divergence direct parallel feeds from each pipeline output handle to its tool
         const toolDiverge = TOOL_NODES.map((t, idx) => ({
           id: `mission-bus-tool-${idx + 1}`,
           source: 'mission-pipeline',
-          sourceHandle: 'out',
+          sourceHandle: `out-${t.id}`,
           target: `mission-tool-${t.id}`,
           targetHandle: 'in',
-          type: 'missionBusEdge',
+          type: 'default',
           className: 'mission-demo-edge',
-          data: { trunkX: DIVERGE_TRUNK_X, dotAtSource: false, color: '#ff9800' }
+          style: { stroke: '#ff9800', strokeWidth: '2.5px' },
         }));
 
         setEdges([...backboneEdges, ...cloudConverge, ...infraConverge, ...toolDiverge]);

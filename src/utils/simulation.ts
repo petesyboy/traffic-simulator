@@ -40,6 +40,7 @@ const PROCESSORS: Record<string, NodeProcessor> = {
   gigaSmartNode: processGigaSmartNode,
   gigaStreamNode: processGigaStreamNode,
   hardwareNode: processHardwareNode,
+  missionPipelineNode: processHardwareNode,
 };
 
 // The GigaSMART Appliance (GSA) only returns processed packets to a GigaVUE

@@ -24,6 +24,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
 
     if (
       n.type === NODE_TYPES.INPUT ||
+      n.type === 'missionCloudNode' ||
       (n.type === NODE_TYPES.HARDWARE && typeof n.data?.model === 'string' && n.data.model.includes('TAP'))
     ) {
       totalIngest += metric.txMbps;

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.605",
+    date: "2026-08-24",
+    summary: "Expand layout spacing and adjust fitView zoom to prevent node overlap and HUD collision",
+  },
+  {
     version: "1.0.604",
     date: "2026-08-24",
     summary: "Revamp Mission Demo to showcase Deep Observability Pipeline presentation",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.581",
     date: "2026-08-23",
     summary: "Consolidated GigaSMART function descriptions across sites in the Solution Overview narrative report, cleaned repetitive title labels, and fixed broken warning glyph boxes in PDF callouts.",
-  },
-  {
-    version: "1.0.580",
-    date: "2026-08-23",
-    summary: "Fixed GigaSMART module drag-and-drop validation on the canvas to evaluate multi-engine capacity and allow uncombinable single-GSOP operations across multiple installed SMT cards on GigaVUE-HC3/HC1.",
   },
 ];
