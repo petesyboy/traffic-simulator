@@ -19,6 +19,9 @@ import {
 import { captureChassisFrontPanelPng } from '../../utils/report/captureChassisFrontPanel';
 import { captureRackElevationPng } from '../../utils/report/captureRackElevation';
 import { buildReportDocDefinition } from '../../utils/report/buildReportDocDefinition';
+import { buildUplinkReportDocDefinition } from '../../utils/report/uplinkReport';
+import { buildPatchSheetReportDocDefinition } from '../../utils/report/patchSheetReport';
+import { buildCrossoverReportDocDefinition } from '../../utils/report/crossoverReport';
 import { autoDeployRack } from '../../utils/autoRack';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
@@ -30,6 +33,8 @@ import gigamonLogo from '../../assets/gigamon-logo.png';
 export interface ReportModalProps {
   onClose: () => void;
 }
+
+type ReportFormatType = 'signal-path' | 'uplink' | 'patch-sheet' | 'crossover';
 
 interface PdfMakeStatic {
   createPdf: (documentDefinitions: TDocumentDefinitions) => TCreatedPdf;
@@ -79,6 +84,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'capturing' | 'building' | 'done'>('idle');
+  const [reportFormat, setReportFormat] = useState<ReportFormatType>('signal-path');
   const [execSummaryText, setExecSummaryText] = useState('');
 
   const storeSetNodes = useStore((s) => s.setNodes);
@@ -150,7 +156,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       }
 
       setStep('building');
-      const docDefinition = buildReportDocDefinition({
+      const reportInput = {
         nodes: currentNodes,
         edges,
         trafficStreams,
@@ -168,13 +174,36 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         siteRackImages,
         siteDiagrams,
         execSummaryText: execSummaryText.trim() || undefined,
-      });
+      };
+
+      let docDefinition: TDocumentDefinitions;
+      let filenamePrefix = 'SignalPath';
+
+      switch (reportFormat) {
+        case 'uplink':
+          docDefinition = buildUplinkReportDocDefinition(reportInput);
+          filenamePrefix = 'Uplink';
+          break;
+        case 'patch-sheet':
+          docDefinition = buildPatchSheetReportDocDefinition(reportInput);
+          filenamePrefix = 'PatchSheet';
+          break;
+        case 'crossover':
+          docDefinition = buildCrossoverReportDocDefinition(reportInput);
+          filenamePrefix = 'Crossover';
+          break;
+        case 'signal-path':
+        default:
+          docDefinition = buildReportDocDefinition(reportInput);
+          filenamePrefix = 'SignalPath';
+          break;
+      }
 
       const pdfMake = await loadPdfMake();
       const cleanName = currentScenarioName
-        ? currentScenarioName.toLowerCase().replace(/[^a-z0-9_-]/g, '_')
+        ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
         : 'solution_report';
-      await pdfMake.createPdf(docDefinition).download(`${cleanName}.pdf`);
+      await pdfMake.createPdf(docDefinition).download(`${filenamePrefix}_${cleanName}.pdf`);
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not generate the report.');
@@ -191,33 +220,115 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     done: 'Generate Report',
   }[step];
 
+  const formatOptions: { id: ReportFormatType; title: string; subtitle: string; tag: string; color: string }[] = [
+    {
+      id: 'signal-path',
+      title: 'Signal Path',
+      subtitle: 'Complete engineering spec, network topology, Bill of Materials, and rack elevations.',
+      tag: 'Architect / Lead',
+      color: '#16213D',
+    },
+    {
+      id: 'uplink',
+      title: 'Uplink',
+      subtitle: 'Executive outcome brief, milestone progression, and business risk reframes.',
+      tag: 'Budget Holder / Exec',
+      color: '#0F2E33',
+    },
+    {
+      id: 'patch-sheet',
+      title: 'Patch Sheet',
+      subtitle: 'Monospace commissioning work order, field checklists, and port mapping matrix.',
+      tag: 'Install Technician',
+      color: '#101010',
+    },
+    {
+      id: 'crossover',
+      title: 'Crossover',
+      subtitle: 'Side-by-side trade-off comparison between architecture & deployment options.',
+      tag: 'Decision Maker',
+      color: '#2A6C8C',
+    },
+  ];
+
   return (
     <div className="modal-overlay">
       <div
         className="modal-card"
-        style={{ width: '420px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+        style={{ width: '560px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
       >
-        <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>Generate Solution Report</h3>
-        <p className="text-muted" style={{ fontSize: '11px', margin: 0, lineHeight: 1.4 }}>
-          Produces a PDF describing the current topology in plain English — traffic sources, maps, filters, GigaSMART
-          processing, and destinations — with the topology diagram, Bill of Materials, and physical rack deployment appendices.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', color: '#ff9800', fontWeight: 'bold' }}>Generate Report Suite</h3>
+          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>FABRIC DESIGN SYSTEM</span>
+        </div>
 
+        {/* Format Selector Grid */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>
+            Select Report Format
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {formatOptions.map((fmt) => {
+              const selected = reportFormat === fmt.id;
+              return (
+                <button
+                  key={fmt.id}
+                  type="button"
+                  onClick={() => setReportFormat(fmt.id)}
+                  disabled={busy}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: selected ? `2px solid #E1592A` : '1px solid var(--color-border)',
+                    background: selected ? 'rgba(225, 89, 42, 0.08)' : 'var(--color-surface)',
+                    cursor: busy ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: selected ? '#E1592A' : 'var(--color-text)' }}>
+                      {fmt.title}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '8.5px',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        background: fmt.color,
+                        color: '#FFFFFF',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {fmt.tag}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.35 }}>
+                    {fmt.subtitle}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Executive Summary Markdown Box */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
           <label style={{ fontSize: '11px', fontWeight: 'bold' }} htmlFor="report-exec-summary">
-            Executive Summary (optional)
+            Executive Summary / Notes (optional)
           </label>
           <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
-            A short summary of what's being deployed and why, in the customer's own context. Left blank, the report
-            uses a generic summary paragraph instead. Supports basic Markdown: <strong>**bold**</strong>,{' '}
-            <em>*italic*</em>, <code>`code`</code>, <code># headings</code>, and <code>-</code>/<code>1.</code> lists.
+            Customer context and notes. Supports Markdown (<strong>**bold**</strong>, <em>*italic*</em>, <code>-</code> lists).
           </p>
           <textarea
             id="report-exec-summary"
             value={execSummaryText}
             onChange={(e) => setExecSummaryText(e.target.value)}
             disabled={busy}
-            rows={5}
+            rows={4}
             style={{
               fontSize: '11px',
               padding: 'var(--space-2)',
@@ -225,8 +336,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               fontFamily: 'inherit',
             }}
             placeholder={
-              'e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project.\n\n' +
-              '**Key outcomes:**\n- Full east/west visibility\n- Reduced tool load via deduplication'
+              'e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project.'
             }
           />
         </div>
@@ -238,7 +348,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         {error && <div style={{ fontSize: '11px', color: '#ff5252', lineHeight: 1.4 }}>{error}</div>}
         {step === 'done' && !error && <div style={{ fontSize: '11px', color: '#4caf50' }}>Report downloaded.</div>}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
           <button className="btn btn-ghost" onClick={onClose}>
             Close
           </button>
