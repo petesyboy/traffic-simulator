@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.607",
+    date: "2026-08-24",
+    summary: "Suppress ingest overload warnings on mission demo tool nodes",
+  },
+  {
     version: "1.0.606",
     date: "2026-08-24",
     summary: "Add individual dedicated tool links and enable active traffic reduction metrics in Mission Demo",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.583",
     date: "2026-08-23",
     summary: "Removed references to end-of-sale/end-of-life SMT-HC3-C05 cards from GigaSMART chassis expansion recommendations, prompting exclusively for SMT-HC3-C08 on GigaVUE-HC3.",
-  },
-  {
-    version: "1.0.582",
-    date: "2026-08-23",
-    summary: "Fixed site diagram screenshot framing in PDF reports by enabling high-zoom (maxZoom: 3.5), removing animation delays, iteratively expanding complete multi-hop site partitions, and rendering at 2x pixel density to eliminate empty black space.",
   },
 ];

@@ -22,7 +22,7 @@ const MissionPipelineNodeComponent: React.FC<NodeProps> = ({ id, selected }) => 
       className={`custom-node mission-pipeline-node ${selected ? 'selected-node' : ''}`}
       style={{
         width: '320px',
-        minHeight: '660px',
+        minHeight: '760px',
         borderRadius: '28px',
         background: 'linear-gradient(135deg, #2b303a 0%, #4a5568 25%, #cbd5e1 50%, #4a5568 75%, #1e2530 100%)',
         border: '3px solid #ff9800',
@@ -48,18 +48,18 @@ const MissionPipelineNodeComponent: React.FC<NodeProps> = ({ id, selected }) => 
       <Handle type="target" position={Position.Left} id="in" style={{ top: '50%', width: '12px', height: '12px', background: '#ff9800', border: '2px solid #fff' }} />
 
       {/* Multiple Source Handles distributed vertically on Right aligned with each tool */}
-      <Handle type="source" position={Position.Right} id="out-fso" style={{ top: '5.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-cdr" style={{ top: '13.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-fw" style={{ top: '21.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-fso" style={{ top: '3.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-cdr" style={{ top: '12%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-fw" style={{ top: '21%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
       <Handle type="source" position={Position.Right} id="out-dlp" style={{ top: '30%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-waf" style={{ top: '38%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-ndr" style={{ top: '46%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-apm" style={{ top: '54.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-grc" style={{ top: '62.5%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-apisec" style={{ top: '71%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-npm" style={{ top: '79%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-ueba" style={{ top: '87%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
-      <Handle type="source" position={Position.Right} id="out-siem" style={{ top: '95%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-waf" style={{ top: '39%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-ndr" style={{ top: '48%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-apm" style={{ top: '57%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-grc" style={{ top: '66%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-apisec" style={{ top: '75%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-npm" style={{ top: '84%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-ueba" style={{ top: '91%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
+      <Handle type="source" position={Position.Right} id="out-siem" style={{ top: '97%', width: '10px', height: '10px', background: '#ff9800', border: '2px solid #fff' }} />
       <Handle type="source" position={Position.Right} id="out" style={{ top: '50%', width: '12px', height: '12px', background: '#ff9800', border: '2px solid #fff' }} />
 
       {/* Top Cylinder 3D Ellipse Rim */}

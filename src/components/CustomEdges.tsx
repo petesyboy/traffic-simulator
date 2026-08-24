@@ -246,7 +246,7 @@ export const MissionBackboneEdge: React.FC<EdgeProps> = ({
         className={`react-flow__edge-path ${className || ''}`}
         d={edgePath}
         markerEnd={markerEnd}
-        style={{ ...style, stroke: '#475569', strokeWidth: 1.5, strokeDasharray: '4, 4', opacity: 0.6 }}
+        style={{ ...style, stroke: '#64748b', strokeWidth: 2, strokeDasharray: '4, 4', opacity: 0.85 }}
         fill="none"
       />
       <path d={edgePath} fill="none" strokeOpacity={0} strokeWidth={10} className="react-flow__edge-interaction" />

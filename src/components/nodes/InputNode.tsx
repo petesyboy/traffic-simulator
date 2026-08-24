@@ -92,6 +92,11 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             )}
           </div>
         )}
+
+        {/* Multi-directional handles for hierarchical topology routing */}
+        <Handle type="target" position={Position.Top} id="in-top" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
+        <Handle type="target" position={Position.Left} id="in" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
+        <Handle type="source" position={Position.Bottom} id="out-bottom" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
         <Handle type="source" position={Position.Right} id="out" />
       </div>
     </>

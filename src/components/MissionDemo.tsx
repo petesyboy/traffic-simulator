@@ -13,91 +13,91 @@ import { useStore } from '../store/store';
 import { useReactFlow } from '@xyflow/react';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
 
-// Network Hierarchy Topology (Spanning Left Column with generous spacing)
+// Network Hierarchy Topology (Staggered multi-tier structure for unblocked routing)
 const INFRA_NODES = [
-  { id: 'r1', label: 'Router R1', configType: 'Router', x: 240, y: 310 },
-  { id: 'r2', label: 'Router R2', configType: 'Router', x: 560, y: 310 },
-  { id: 'coresw1', label: 'Core SW1', configType: 'Switch', x: 240, y: 440 },
-  { id: 'coresw2', label: 'Core SW2', configType: 'Switch', x: 560, y: 440 },
-  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch', x: 240, y: 570 },
-  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch', x: 560, y: 570 },
-  { id: 'acc1', label: 'Access 1', configType: 'Switch', x: -240, y: 700 },
-  { id: 'acc2', label: 'Access 2', configType: 'Switch', x: -40, y: 700 },
-  { id: 'acc3', label: 'Access 3', configType: 'Switch', x: 160, y: 700 },
-  { id: 'acc4', label: 'Access 4', configType: 'Switch', x: 360, y: 700 },
-  { id: 'acc5', label: 'Access 5', configType: 'Switch', x: 560, y: 700 },
-  { id: 'acc6', label: 'Access 6', configType: 'Switch', x: 760, y: 700 },
-  { id: 'acc7', label: 'Access 7', configType: 'Switch', x: 960, y: 700 },
-  { id: 'acc8', label: 'Access 8', configType: 'Switch', x: 1160, y: 700 },
+  { id: 'r1', label: 'Router R1', configType: 'Router', x: 180, y: 300 },
+  { id: 'r2', label: 'Router R2', configType: 'Router', x: 580, y: 340 },
+  { id: 'coresw1', label: 'Core SW1', configType: 'Switch', x: 180, y: 450 },
+  { id: 'coresw2', label: 'Core SW2', configType: 'Switch', x: 580, y: 490 },
+  { id: 'distsw1', label: 'Dist SW1', configType: 'Switch', x: 180, y: 600 },
+  { id: 'distsw2', label: 'Dist SW2', configType: 'Switch', x: 580, y: 640 },
+  { id: 'acc1', label: 'Access 1', configType: 'Switch', x: 40, y: 780 },
+  { id: 'acc2', label: 'Access 2', configType: 'Switch', x: 240, y: 780 },
+  { id: 'acc3', label: 'Access 3', configType: 'Switch', x: 440, y: 780 },
+  { id: 'acc4', label: 'Access 4', configType: 'Switch', x: 640, y: 780 },
+  { id: 'acc5', label: 'Access 5', configType: 'Switch', x: 40, y: 900 },
+  { id: 'acc6', label: 'Access 6', configType: 'Switch', x: 240, y: 900 },
+  { id: 'acc7', label: 'Access 7', configType: 'Switch', x: 440, y: 900 },
+  { id: 'acc8', label: 'Access 8', configType: 'Switch', x: 640, y: 900 },
 ];
 
 // Internal Network Backbone Interconnects (Cloud <-> Routers <-> Core <-> Dist <-> Access)
 const NETWORK_BACKBONE_LINKS: Array<[string, string, string?, string?]> = [
-  ['mission-cloud', 'mission-r1', 'out-down', 'in'],
-  ['mission-cloud', 'mission-r2', 'out-down', 'in'],
-  ['mission-r1', 'mission-coresw1', 'out', 'in'],
-  ['mission-r1', 'mission-coresw2', 'out', 'in'],
-  ['mission-r2', 'mission-coresw1', 'out', 'in'],
-  ['mission-r2', 'mission-coresw2', 'out', 'in'],
-  ['mission-coresw1', 'mission-distsw1', 'out', 'in'],
-  ['mission-coresw1', 'mission-distsw2', 'out', 'in'],
-  ['mission-coresw2', 'mission-distsw1', 'out', 'in'],
-  ['mission-coresw2', 'mission-distsw2', 'out', 'in'],
-  ['mission-distsw1', 'mission-acc1', 'out', 'in'],
-  ['mission-distsw1', 'mission-acc2', 'out', 'in'],
-  ['mission-distsw1', 'mission-acc3', 'out', 'in'],
-  ['mission-distsw1', 'mission-acc4', 'out', 'in'],
-  ['mission-distsw2', 'mission-acc5', 'out', 'in'],
-  ['mission-distsw2', 'mission-acc6', 'out', 'in'],
-  ['mission-distsw2', 'mission-acc7', 'out', 'in'],
-  ['mission-distsw2', 'mission-acc8', 'out', 'in'],
+  ['mission-cloud', 'mission-r1', 'out-down', 'in-top'],
+  ['mission-cloud', 'mission-r2', 'out-down', 'in-top'],
+  ['mission-r1', 'mission-coresw1', 'out-bottom', 'in-top'],
+  ['mission-r1', 'mission-coresw2', 'out-bottom', 'in-top'],
+  ['mission-r2', 'mission-coresw1', 'out-bottom', 'in-top'],
+  ['mission-r2', 'mission-coresw2', 'out-bottom', 'in-top'],
+  ['mission-coresw1', 'mission-distsw1', 'out-bottom', 'in-top'],
+  ['mission-coresw1', 'mission-distsw2', 'out-bottom', 'in-top'],
+  ['mission-coresw2', 'mission-distsw1', 'out-bottom', 'in-top'],
+  ['mission-coresw2', 'mission-distsw2', 'out-bottom', 'in-top'],
+  ['mission-distsw1', 'mission-acc1', 'out-bottom', 'in-top'],
+  ['mission-distsw1', 'mission-acc2', 'out-bottom', 'in-top'],
+  ['mission-distsw1', 'mission-acc3', 'out-bottom', 'in-top'],
+  ['mission-distsw1', 'mission-acc4', 'out-bottom', 'in-top'],
+  ['mission-distsw2', 'mission-acc5', 'out-bottom', 'in-top'],
+  ['mission-distsw2', 'mission-acc6', 'out-bottom', 'in-top'],
+  ['mission-distsw2', 'mission-acc7', 'out-bottom', 'in-top'],
+  ['mission-distsw2', 'mission-acc8', 'out-bottom', 'in-top'],
 ];
 
 // Right Column: Full 12-Tool Stack matching the presentation slide
 const TOOL_NODES = [
   { id: 'fso', label: 'FSO', category: 'Cloud Observability', toolName: 'Dynatrace', y: 150 },
-  { id: 'cdr', label: 'CDR', category: 'Cloud Detection', toolName: 'CrowdStrike', y: 204 },
-  { id: 'fw', label: 'FIREWALL', category: 'Inline Security', toolName: 'Palo Alto Networks', y: 258 },
-  { id: 'dlp', label: 'DLP', category: 'Data Protection', toolName: 'Symantec DLP', y: 312 },
-  { id: 'waf', label: 'WAF', category: 'App Security', toolName: 'F5 WAF', y: 366 },
-  { id: 'ndr', label: 'NDR', category: 'Network Detection', toolName: 'Darktrace', y: 420 },
-  { id: 'apm', label: 'APM', category: 'Performance', toolName: 'AppDynamics', y: 474 },
-  { id: 'grc', label: 'GRC', category: 'Compliance', toolName: 'ServiceNow GRC', y: 528 },
-  { id: 'apisec', label: 'API SEC', category: 'API Protection', toolName: 'Noname Security', y: 582 },
-  { id: 'npm', label: 'NPM', category: 'Network Performance', toolName: 'Riverbed NPM', y: 636 },
-  { id: 'ueba', label: 'UEBA', category: 'User Analytics', toolName: 'Exabeam UEBA', y: 690 },
-  { id: 'siem', label: 'SIEM', category: 'Security Information', toolName: 'Splunk', y: 744 },
+  { id: 'cdr', label: 'CDR', category: 'Cloud Detection', toolName: 'CrowdStrike', y: 215 },
+  { id: 'fw', label: 'FIREWALL', category: 'Inline Security', toolName: 'Palo Alto Networks', y: 280 },
+  { id: 'dlp', label: 'DLP', category: 'Data Protection', toolName: 'Symantec DLP', y: 345 },
+  { id: 'waf', label: 'WAF', category: 'App Security', toolName: 'F5 WAF', y: 410 },
+  { id: 'ndr', label: 'NDR', category: 'Network Detection', toolName: 'Darktrace', y: 475 },
+  { id: 'apm', label: 'APM', category: 'Performance', toolName: 'AppDynamics', y: 540 },
+  { id: 'grc', label: 'GRC', category: 'Compliance', toolName: 'ServiceNow GRC', y: 605 },
+  { id: 'apisec', label: 'API SEC', category: 'API Protection', toolName: 'Noname Security', y: 670 },
+  { id: 'npm', label: 'NPM', category: 'Network Performance', toolName: 'Riverbed NPM', y: 735 },
+  { id: 'ueba', label: 'UEBA', category: 'User Analytics', toolName: 'Exabeam UEBA', y: 800 },
+  { id: 'siem', label: 'SIEM', category: 'Security Information', toolName: 'Splunk', y: 865 },
 ];
 
-const TOOL_X = 1920;
-const PIPELINE_X = 1440;
-const PIPELINE_Y = 150;
+const TOOL_X = 1750;
+const PIPELINE_X = 1260;
+const PIPELINE_Y = 170;
 
 // Multi-coloured chaotic pairs for "Organization A (Chaos & Blind Spots)"
-const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: boolean }> = [
-  { from: 'mission-cloud', to: 'mission-tool-fso', color: '#38bdf8', showTap: true },
-  { from: 'mission-cloud', to: 'mission-tool-cdr', color: '#a855f7', showTap: true },
-  { from: 'mission-r1', to: 'mission-tool-fw', color: '#3b82f6', showTap: true },
-  { from: 'mission-r1', to: 'mission-tool-siem', color: '#eab308' },
-  { from: 'mission-r2', to: 'mission-tool-ndr', color: '#a855f7', showTap: true },
-  { from: 'mission-r2', to: 'mission-tool-waf', color: '#10b981' },
-  { from: 'mission-coresw1', to: 'mission-tool-dlp', color: '#f97316', showTap: true },
-  { from: 'mission-coresw1', to: 'mission-tool-apm', color: '#06b6d4' },
-  { from: 'mission-coresw2', to: 'mission-tool-grc', color: '#ec4899', showTap: true },
-  { from: 'mission-coresw2', to: 'mission-tool-siem', color: '#eab308' },
-  { from: 'mission-distsw1', to: 'mission-tool-apisec', color: '#8b5cf6', showTap: true },
-  { from: 'mission-distsw1', to: 'mission-tool-npm', color: '#14b8a6' },
-  { from: 'mission-distsw2', to: 'mission-tool-ueba', color: '#84cc16', showTap: true },
-  { from: 'mission-distsw2', to: 'mission-tool-fw', color: '#3b82f6' },
-  { from: 'mission-acc1', to: 'mission-tool-waf', color: '#10b981', showTap: true },
-  { from: 'mission-acc1', to: 'mission-tool-siem', color: '#eab308' },
-  { from: 'mission-acc2', to: 'mission-tool-dlp', color: '#f97316' },
-  { from: 'mission-acc3', to: 'mission-tool-ndr', color: '#a855f7', showTap: true },
-  { from: 'mission-acc4', to: 'mission-tool-apm', color: '#06b6d4' },
-  { from: 'mission-acc5', to: 'mission-tool-grc', color: '#ec4899', showTap: true },
-  { from: 'mission-acc6', to: 'mission-tool-apisec', color: '#8b5cf6' },
-  { from: 'mission-acc7', to: 'mission-tool-npm', color: '#14b8a6', showTap: true },
-  { from: 'mission-acc8', to: 'mission-tool-ueba', color: '#84cc16' },
+const CHAOS_PAIRS: Array<{ from: string; to: string; color: string; showTap?: boolean; curvature?: number }> = [
+  { from: 'mission-cloud', to: 'mission-tool-fso', color: '#38bdf8', showTap: true, curvature: 0.2 },
+  { from: 'mission-cloud', to: 'mission-tool-cdr', color: '#a855f7', showTap: true, curvature: 0.35 },
+  { from: 'mission-r1', to: 'mission-tool-fw', color: '#3b82f6', showTap: true, curvature: -0.15 },
+  { from: 'mission-r1', to: 'mission-tool-siem', color: '#eab308', curvature: 0.5 },
+  { from: 'mission-r2', to: 'mission-tool-ndr', color: '#a855f7', showTap: true, curvature: 0.25 },
+  { from: 'mission-r2', to: 'mission-tool-waf', color: '#10b981', curvature: -0.1 },
+  { from: 'mission-coresw1', to: 'mission-tool-dlp', color: '#f97316', showTap: true, curvature: -0.2 },
+  { from: 'mission-coresw1', to: 'mission-tool-apm', color: '#06b6d4', curvature: 0.3 },
+  { from: 'mission-coresw2', to: 'mission-tool-grc', color: '#ec4899', showTap: true, curvature: 0.2 },
+  { from: 'mission-coresw2', to: 'mission-tool-siem', color: '#eab308', curvature: 0.45 },
+  { from: 'mission-distsw1', to: 'mission-tool-apisec', color: '#8b5cf6', showTap: true, curvature: -0.25 },
+  { from: 'mission-distsw1', to: 'mission-tool-npm', color: '#14b8a6', curvature: 0.15 },
+  { from: 'mission-distsw2', to: 'mission-tool-ueba', color: '#84cc16', showTap: true, curvature: 0.25 },
+  { from: 'mission-distsw2', to: 'mission-tool-fw', color: '#3b82f6', curvature: -0.4 },
+  { from: 'mission-acc1', to: 'mission-tool-waf', color: '#10b981', showTap: true, curvature: -0.35 },
+  { from: 'mission-acc1', to: 'mission-tool-siem', color: '#eab308', curvature: 0.2 },
+  { from: 'mission-acc2', to: 'mission-tool-dlp', color: '#f97316', curvature: -0.25 },
+  { from: 'mission-acc3', to: 'mission-tool-ndr', color: '#a855f7', showTap: true, curvature: -0.15 },
+  { from: 'mission-acc4', to: 'mission-tool-apm', color: '#06b6d4', curvature: -0.1 },
+  { from: 'mission-acc5', to: 'mission-tool-grc', color: '#ec4899', showTap: true, curvature: 0.1 },
+  { from: 'mission-acc6', to: 'mission-tool-apisec', color: '#8b5cf6', curvature: 0.2 },
+  { from: 'mission-acc7', to: 'mission-tool-npm', color: '#14b8a6', showTap: true, curvature: 0.25 },
+  { from: 'mission-acc8', to: 'mission-tool-ueba', color: '#84cc16', curvature: 0.3 },
 ];
 
 // Clean Organization B convergence trunk mapping
@@ -213,8 +213,8 @@ export const MissionDemo: React.FC = () => {
             id: `mission-bb-${idx + 1}`,
             source: src,
             target: tgt,
-            sourceHandle: srcH || 'out',
-            targetHandle: tgtH || 'in',
+            sourceHandle: srcH || 'out-bottom',
+            targetHandle: tgtH || 'in-top',
             type: 'missionBackboneEdge',
             className: 'mission-demo-edge',
           }))
@@ -242,8 +242,8 @@ export const MissionDemo: React.FC = () => {
           id: `mission-bb-${idx + 1}`,
           source: src,
           target: tgt,
-          sourceHandle: srcH || 'out',
-          targetHandle: tgtH || 'in',
+          sourceHandle: srcH || 'out-bottom',
+          targetHandle: tgtH || 'in-top',
           type: 'missionBackboneEdge',
           className: 'mission-demo-edge',
         }));
@@ -256,7 +256,7 @@ export const MissionDemo: React.FC = () => {
           targetHandle: 'in',
           type: 'missionChaosEdge',
           className: 'mission-demo-edge mission-chaos-active',
-          data: { color: pair.color, showTapBox: pair.showTap, curvature: 0.28 }
+          data: { color: pair.color, showTapBox: pair.showTap, curvature: pair.curvature ?? 0.28 }
         }));
 
         setEdges([...backboneEdges, ...chaosEdges]);
@@ -271,8 +271,8 @@ export const MissionDemo: React.FC = () => {
           id: `mission-bb-${idx + 1}`,
           source: src,
           target: tgt,
-          sourceHandle: srcH || 'out',
-          targetHandle: tgtH || 'in',
+          sourceHandle: srcH || 'out-bottom',
+          targetHandle: tgtH || 'in-top',
           type: 'missionBackboneEdge',
           className: 'mission-demo-edge',
         }));
@@ -310,8 +310,8 @@ export const MissionDemo: React.FC = () => {
           id: `mission-bb-${idx + 1}`,
           source: src,
           target: tgt,
-          sourceHandle: srcH || 'out',
-          targetHandle: tgtH || 'in',
+          sourceHandle: srcH || 'out-bottom',
+          targetHandle: tgtH || 'in-top',
           type: 'missionBackboneEdge',
           className: 'mission-demo-edge',
         }));
@@ -320,7 +320,7 @@ export const MissionDemo: React.FC = () => {
         const cloudConverge = [{
           id: 'mission-bus-cloud',
           source: 'mission-cloud',
-          sourceHandle: 'out',
+          sourceHandle: 'out-down',
           target: 'mission-pipeline',
           targetHandle: 'in-cloud',
           type: 'missionBusEdge',
@@ -328,12 +328,21 @@ export const MissionDemo: React.FC = () => {
           data: { trunkX: CONVERGE_TRUNK_X, dotAtSource: true, color: '#ff9800' }
         }];
 
+        const getTargetHandleForNode = (id: string) => {
+          if (id === 'r1') return 'in-r1';
+          if (id === 'r2') return 'in-r2';
+          if (id === 'coresw1') return 'in-core1';
+          if (id === 'coresw2') return 'in-core2';
+          if (id.startsWith('dist')) return 'in-dist';
+          return 'in-acc';
+        };
+
         const infraConverge = INFRA_NODES.map((n, idx) => ({
           id: `mission-bus-infra-${idx + 1}`,
           source: `mission-${n.id}`,
           sourceHandle: 'out',
           target: 'mission-pipeline',
-          targetHandle: 'in',
+          targetHandle: getTargetHandleForNode(n.id),
           type: 'missionBusEdge',
           className: 'mission-demo-edge',
           data: { trunkX: CONVERGE_TRUNK_X, dotAtSource: true, color: '#ff9800' }
