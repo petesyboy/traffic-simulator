@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.594",
+    date: "2026-08-24",
+    summary: "Updated Bill of Materials export filenames: both the SKU BOM CSV export and the Physical Deployment CSV export now clearly prefix the exported files with 'BOM_' (e.g. BOM_Tusass_Greenland.csv, BOM_Tusass_Greenland_deployment_report.csv, BOM.csv).",
+  },
+  {
     version: "1.0.593",
     date: "2026-08-24",
     summary: "Deduplicated Signal Path Schematics in PDF reports: when multiple deployment sites share identical architectures (e.g. Site A and Site B), renders a single consolidated representative schematic strip under the overview diagram instead of duplicating identical SVGs under each site sub-diagram. Preserves separate per-site schematics whenever site configurations differ.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.575",
     date: "2026-08-23",
     summary: "Streamlined tool group summaries to state total deployed count across sites (e.g. 20 instances deployed across 2 sites: 10 at Site A, 10 at Site B), eliminated redundant repetitive label and value proposition strings, and grouped upstream origin TAP feeds.",
-  },
-  {
-    version: "1.0.574",
-    date: "2026-08-23",
-    summary: "Consolidated optical TAP modules and TAP trays into unified single summaries in the report, clearly displayed site and unit labels next to all HC and TA front panel graphics, and prevented stat blocks and diagrams from breaking across pages.",
   },
 ];

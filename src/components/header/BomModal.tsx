@@ -82,8 +82,10 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const cleanName = currentScenarioName ? currentScenarioName.toLowerCase().replace(/[^a-z0-9_-]/g, '_') : 'bom';
-    a.download = `${cleanName}.csv`;
+    const cleanName = currentScenarioName
+      ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
+      : '';
+    a.download = cleanName ? `BOM_${cleanName}.csv` : 'BOM.csv';
     a.click();
   };
 
@@ -108,9 +110,9 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
     const a = document.createElement('a');
     a.href = url;
     const cleanName = currentScenarioName
-      ? currentScenarioName.toLowerCase().replace(/[^a-z0-9_-]/g, '_')
-      : 'physical_deployment';
-    a.download = `${cleanName}_deployment_report.csv`;
+      ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
+      : '';
+    a.download = cleanName ? `BOM_${cleanName}_deployment_report.csv` : 'BOM_deployment_report.csv';
     a.click();
   };
 
