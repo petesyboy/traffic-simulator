@@ -104,6 +104,54 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImportClick = async () => {
+    // If modern File System Access API is supported (e.g. Chrome/Edge on macOS and Windows)
+    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
+      try {
+        const [fileHandle] = await (window as unknown as {
+          showOpenFilePicker: (opts: unknown) => Promise<FileSystemFileHandle[]>;
+        }).showOpenFilePicker({
+          types: [
+            {
+              description: 'JSON Scenario File (*.json)',
+              accept: {
+                'application/json': ['.json'],
+                'text/plain': ['.json', '.txt'],
+              },
+            },
+          ],
+          multiple: false,
+        });
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        try {
+          const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(text);
+          if (n && e_list) {
+            useStore.getState().restoreState(n, e_list, t || [], s_obj);
+            const scenarioName = file.name.replace(/\.json$/i, '');
+            useStore.getState().setCurrentScenarioName(scenarioName);
+            return;
+          } else {
+            alert('Invalid topology file structure.');
+            return;
+          }
+        } catch {
+          alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
+          return;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.warn('showOpenFilePicker failed or was not completed, falling back to file input:', err);
+      }
+    }
+    // Safari / Firefox / fallback on macOS:
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
 
   const handleOpenBom = () => {
     const siteCheck = detectMixedSiteAssignment(nodes);
@@ -448,14 +496,28 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               <button className="header-btn" onClick={onSaveFileClick} title="Export project to a .json file">
                 <SaveIcon /> Export
               </button>
-              <label
+              <button
                 className="header-btn"
-                style={{ cursor: 'pointer', margin: 0 }}
+                onClick={handleImportClick}
                 title="Import project from a .json file"
               >
                 <FolderOpenIcon /> Import
-                <input type="file" accept=".json" onChange={onLoadFileChange} style={{ display: 'none' }} />
-              </label>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json,text/plain,.txt"
+                onChange={onLoadFileChange}
+                style={{
+                  position: 'fixed',
+                  top: '-9999px',
+                  left: '-9999px',
+                  opacity: 0,
+                  width: '1px',
+                  height: '1px',
+                  pointerEvents: 'none',
+                }}
+              />
 
               <div className="control-divider">
                 <button className="header-btn" onClick={onSaveClick} title="Save to browser local storage">
