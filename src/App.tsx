@@ -149,32 +149,42 @@ function App() {
     currentScenarioName
   ]);
 
-  const handleImportStateFromFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportStateFromFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const raw = e.target?.result as string;
-        const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
-        if (n && e_list) {
-          restoreState(n, e_list, t || [], s_obj);
-          const scenarioName = file.name.replace(/\.json$/i, '');
-          setCurrentScenarioName(scenarioName);
-          setSaveToast(`Loaded "${scenarioName}"`);
-          setTimeout(() => setSaveToast(''), 5000);
-        } else {
-          alert("Invalid topology file structure.");
-        }
-      } catch (err) {
-        alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
-        console.error(err);
+    try {
+      let raw = '';
+      if (typeof file.text === 'function') {
+        raw = await file.text();
+      } else {
+        raw = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error || new Error('FileReader failed to read file'));
+          reader.readAsText(file);
+        });
       }
-    };
-    reader.readAsText(file);
-    // Reset the input value to allow loading the same file again
-    if(event.target) event.target.value = '';
+
+      const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+      if (n && e_list) {
+        restoreState(n, e_list, t || [], s_obj);
+        const scenarioName = file.name.replace(/\.json$/i, '');
+        setCurrentScenarioName(scenarioName);
+        setSaveToast(`Loaded "${scenarioName}"`);
+        setTimeout(() => setSaveToast(''), 5000);
+      } else {
+        alert("Invalid topology file structure.");
+      }
+    } catch (err) {
+      alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
+      console.error('Failed to import topology file:', err);
+    } finally {
+      // Safely reset input value ONLY AFTER file has been completely read
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
   }, [restoreState, setCurrentScenarioName]);
 
 

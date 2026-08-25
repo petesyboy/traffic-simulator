@@ -248,8 +248,28 @@ const CanvasArea: React.FC = () => {
     }
   }, [draggedNodeType, edges, nodes, screenToFlowPosition, advancedMode, hoveredEdgeId]);
 
-  const onDrop = useCallback((event: React.DragEvent) => {
+  const onDrop = useCallback(async (event: React.DragEvent) => {
     event.preventDefault();
+
+    // Check if a file (e.g. scenario .json) was dragged and dropped onto the canvas
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file.name.endsWith('.json') || file.type.includes('json') || file.type.includes('text')) {
+        try {
+          const raw = typeof file.text === 'function' ? await file.text() : await file.slice().text();
+          const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+          if (n && e_list) {
+            useStore.getState().restoreState(n, e_list, t || [], s_obj);
+            const scenarioName = file.name.replace(/\.json$/i, '');
+            useStore.getState().setCurrentScenarioName(scenarioName);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to import dropped scenario file:', err);
+        }
+      }
+    }
+
     const rawData = event.dataTransfer.getData('application/reactflow');
     if (!rawData) return;
     const { type, label, initialData } = JSON.parse(rawData);

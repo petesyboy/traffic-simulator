@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.625",
+    date: "2026-08-25",
+    summary: "Switch to synchronous W3C FileReader import for file:// origin and macOS (v1.0.625)",
+  },
+  {
     version: "1.0.624",
     date: "2026-08-25",
     summary: "Support File System Access API and fix macOS Safari hidden input click (v1.0.624)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.596",
     date: "2026-08-24",
     summary: "Fixed font registration in Patch Sheet report: replaced unbundled 'Courier' font reference with browser VFS-registered 'Roboto' default font and uppercase monospace styling, resolving runtime missing font error when generating Patch Sheet PDFs.",
-  },
-  {
-    version: "1.0.595",
-    date: "2026-08-24",
-    summary: "Implemented the Fabric report suite expansion, introducing three new specialized report formats alongside Signal Path in the Report Generator: (1) Uplink for budget holders and executive sponsors featuring milestone progression charts and outcome reframes; (2) Patch Sheet for install and commissioning technicians featuring monospace work-order document control and concrete field checklists; (3) Crossover for architectural decision-makers featuring side-by-side trade-off comparisons with verdict takeaways.",
   },
 ];
