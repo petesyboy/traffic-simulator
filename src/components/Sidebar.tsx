@@ -63,52 +63,78 @@ const appsList = [
   {
     label: 'Application Metadata',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Application-level intelligence and metadata generation (NetFlow, IPFIX, CEF). Generates AMI licence (SMT-HC3-GEN3-AMI).',
+    skuBadge: 'AMI',
     initial: { actionType: ACTION_TYPES.APP_METADATA, configType: ACTION_TYPES.APP_METADATA },
   },
   {
     label: 'Deduplication',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'De-duplicate identical packets across multi-tap and SPAN feeds to conserve monitoring tool capacity. Generates Deduplication licence (SMT-HC3-GEN3-DEDUP).',
+    skuBadge: 'DEDUP',
     initial: { actionType: ACTION_TYPES.DEDUPLICATION, configType: ACTION_TYPES.DEDUPLICATION },
   },
-  { label: 'Load Balancing', type: NODE_TYPES.GIGASTREAM, initial: { algorithm: 'Round Robin' } },
+  {
+    label: 'Load Balancing',
+    type: NODE_TYPES.GIGASTREAM,
+    tooltip: 'GigaStream flow-aware load balancing across multiple tool ports. Included with core hardware.',
+    skuBadge: 'Core',
+    initial: { algorithm: 'Round Robin' },
+  },
   {
     label: 'Masking',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Mask confidential packet payloads (e.g. PCI/PII data) whilst preserving headers. Generates Base GigaSMART licence (SMT-HC3-GEN3-BAS).',
+    skuBadge: 'Base GS',
     initial: { actionType: ACTION_TYPES.MASKING, configType: ACTION_TYPES.MASKING },
   },
   {
     label: 'Slicing',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Truncate packet payloads to a fixed length for header analysis without payload overhead. Generates Base GigaSMART licence (SMT-HC3-GEN3-BAS).',
+    skuBadge: 'Base GS',
     initial: { actionType: ACTION_TYPES.PACKET_SLICING, configType: ACTION_TYPES.PACKET_SLICING },
   },
   {
     label: 'SSL Decrypt',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'High-performance inline and out-of-band TLS/SSL decryption. Generates SSL Decryption licence (SMT-HC3-GEN3-SSL).',
+    skuBadge: 'SSL',
     initial: { actionType: ACTION_TYPES.SSL_DECRYPT, configType: ACTION_TYPES.SSL_DECRYPT },
   },
   {
     label: 'Header Stripping',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Strip encapsulation headers (VXLAN, VN-Tag, MPLS, GTP) before forwarding to monitoring tools. Generates Header Stripping licence (SMT-HC3-GEN3-HS1).',
+    skuBadge: 'HS1',
     initial: { actionType: ACTION_TYPES.HEADER_STRIP, configType: ACTION_TYPES.HEADER_STRIP, headerStripProtocol: 'VXLAN' },
   },
   {
     label: 'IP FlowVUE',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Subscriber-aware flow sampling and rate reduction for cellular/IP traffic. Generates FlowVUE licence (FVU-SW-TM / SMT-HC3-GEN3-FVU).',
+    skuBadge: 'FVU',
     initial: { actionType: ACTION_TYPES.IP_FLOWVUE, configType: ACTION_TYPES.IP_FLOWVUE },
   },
   {
     label: 'GTP Flow Filtering',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Stateful GTP-c / GTP-u correlation and subscriber session filtering by IMSI/MSISDN. Generates GTP Max licence (GTP-MAX-SW-TM / SMT-HC3-GEN3-GTPMAX).',
+    skuBadge: 'GTP-MAX',
     initial: { actionType: ACTION_TYPES.GTP_FLOW_FILTERING, configType: ACTION_TYPES.GTP_FLOW_FILTERING },
   },
   {
     label: 'GTP Whitelisting',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Prioritised pass-through of specific subscriber sessions matching a configured IMSI whitelist. Uses GTP Max (GTP-MAX-SW-TM) and FlowVUE (FVU-SW-TM).',
+    skuBadge: 'GTP+FVU',
     initial: { actionType: ACTION_TYPES.GTP_WHITELISTING, configType: ACTION_TYPES.GTP_WHITELISTING },
   },
   {
     label: 'GTP Flow Sampling',
     type: NODE_TYPES.GIGASMART,
+    tooltip: 'Stateful percentage sampling of subscriber sessions across control and user plane. Uses GTP Max (GTP-MAX-SW-TM) and FlowVUE (FVU-SW-TM).',
+    skuBadge: 'GTP+FVU',
     initial: { actionType: ACTION_TYPES.GTP_FLOW_SAMPLING, configType: ACTION_TYPES.GTP_FLOW_SAMPLING, gtpSamplePercent: 10 },
   },
 ] as const;
@@ -913,23 +939,41 @@ const Sidebar: React.FC = () => {
                         key={app.label}
                         className="tree-draggable"
                         draggable
+                        title={app.tooltip}
                         onDragStart={(e) => onDragStart(e, app.type, app.label, app.initial)}
                         style={{
                           margin: 0,
-                          padding: '6px',
+                          padding: '6px 4px',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           textAlign: 'center',
-                          gap: '4px',
+                          gap: '3px',
                           background: 'rgba(255,255,255,0.02)',
-                          border: '1px solid rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.06)',
                           borderRadius: '6px',
+                          cursor: 'grab',
+                          position: 'relative',
                         }}
                       >
                         <AppIcon type={app.label} size={20} />
-                        <span style={{ fontSize: '9px', fontWeight: 500, lineHeight: '1.1' }}>{app.label}</span>
+                        <span style={{ fontSize: '9px', fontWeight: 500, lineHeight: '1.1', color: 'var(--text-primary)' }}>
+                          {app.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '7.5px',
+                            fontWeight: 600,
+                            color: app.skuBadge.includes('GTP') ? '#38bdf8' : app.skuBadge === 'FVU' ? '#c084fc' : '#9ca3af',
+                            background: 'rgba(255,255,255,0.05)',
+                            padding: '1px 4px',
+                            borderRadius: '3px',
+                            letterSpacing: '0.2px',
+                          }}
+                        >
+                          {app.skuBadge}
+                        </span>
                       </div>
                     ))}
                 </div>

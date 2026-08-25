@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.617",
+    date: "2026-08-25",
+    summary: "Adjust PDF quote table column widths and margins to fit within printable page (v1.0.617)",
+  },
+  {
     version: "1.0.616",
     date: "2026-08-25",
     summary: "Add commercial quotation engine, SPAN-only mode, and power cord discounting (v1.0.616)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.589",
     date: "2026-08-23",
     summary: "Fixed TAP modules not appearing inside tray bays in rack elevation diagrams — getChassisImagePath() was only searching TA/HC series, so TAP module icons were not resolved. Added model-name fallback so resolveHardwareIcon() correctly matches TAP_MODEL_ALIASES for TAP-M251T, TAP-M273T, etc.",
-  },
-  {
-    version: "1.0.588",
-    date: "2026-08-23",
-    summary: "Rendered full composited add-in cards (GigaSMART, PRT modules, and TAP bays) inside rack elevation diagrams, and relocated device labels and descriptions to side callout cards with leader lines to keep physical equipment faceplates completely unobscured.",
   },
 ];
