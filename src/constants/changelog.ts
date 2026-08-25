@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.610",
+    date: "2026-08-24",
+    summary: "Optimize Mission Demo and canvas edge colours for crisp light and dark theme contrast",
+  },
+  {
     version: "1.0.609",
     date: "2026-08-24",
     summary: "Ensure Total Ingest Traffic value uses theme variable for high contrast in light theme",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.586",
     date: "2026-08-23",
     summary: "Redesigned Solution Report Generator with 'Signal Path' design system: full-bleed dark navy cover with vector fan-in graphics, automated Table of Contents, section wayfinding kickers, hairline stat tiles with zero-value handling, multi-severity notice plates, compact rack elevations, and bespoke table styling.",
-  },
-  {
-    version: "1.0.585",
-    date: "2026-08-23",
-    summary: "Fixed Light Theme styling across canvas background, header toolbars, sidebars, traffic drawer, and configuration panels for full high-contrast visibility.",
   },
 ];

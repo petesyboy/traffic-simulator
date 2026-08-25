@@ -346,7 +346,7 @@ function buildSiteSchematicSvg(
   const box = (cx: number, fill: string, label: string, sub: string) => `
     <rect x="${cx - bw / 2}" y="${cy - bh / 2}" width="${bw}" height="${bh}" rx="${r}" fill="${fill}" />
     <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-family="sans-serif" font-size="8.5" font-weight="bold" fill="#fff">${label}</text>
-    <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="rgba(255,255,255,0.7)">${sub}</text>`;
+    <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-family="sans-serif" font-size="6.8" fill="rgba(255,255,255,0.85)">${sub}</text>`;
 
   const arrow = (x1a: number, x2a: number) => {
     const gx1 = x1a + bw / 2;
@@ -355,7 +355,7 @@ function buildSiteSchematicSvg(
     return `<path d="M${gx1} ${cy} L${mx} ${cy} L${gx2} ${cy}" stroke="${lineC}" stroke-width="1.5" fill="none" marker-end="url(#arrowOrange)" />`;
   };
 
-  const gsLabel = gigaSmartOps > 0 ? `${gigaSmartOps} Op${gigaSmartOps !== 1 ? 's' : ''}` : 'Aggregation';
+  const gsLabel = gigaSmartOps > 0 ? `${gigaSmartOps} Op${gigaSmartOps !== 1 ? 's' : ''}` : 'Deep Observability';
   const tapSubLabel = tapFeedCount > tapLinkCount ? `${tapFeedCount} feeds (${tapLinkCount} links)` : `${tapFeedCount} feeds`;
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
@@ -379,7 +379,7 @@ function buildSiteSchematicSvg(
   <!-- Counts row -->
   <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${tapSubLabel}</text>
   <text x="${x2}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${aggCount} unit${aggCount !== 1 ? 's' : ''}</text>
-  <text x="${x3}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${accent}">${hcCount} engine${hcCount !== 1 ? 's' : ''}</text>
+  <text x="${x3}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${accent}">${gigaSmartOps > 0 ? `${gigaSmartOps} engine${gigaSmartOps !== 1 ? 's' : ''}` : (hcCount > 0 ? `${hcCount} engine${hcCount !== 1 ? 's' : ''}` : '0 engines')}</text>
   <text x="${x4}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${toolCount} dest.</text>
 </svg>`;
 }

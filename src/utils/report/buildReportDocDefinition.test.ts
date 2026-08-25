@@ -404,5 +404,31 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('MONITORED LINKS 96');
     expect(allText).toContain('OPTICAL TAPS 16');
   });
+
+  it('renders Deep Observability on the HC / GigaSMART tier in the Signal Path Schematic instead of Aggregation', () => {
+    const tapNode: CustomNode = {
+      id: 'tap-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: { label: 'TAP-1', model: 'TAP-M273T', sku: 'TAP-M273T' },
+    } as CustomNode;
+    const aggNode: CustomNode = {
+      id: 'ta-1',
+      type: 'hardwareNode',
+      position: { x: 100, y: 0 },
+      data: { label: 'TA25E', model: 'GigaVUE-TA25E', sku: 'TA25E-BASE' },
+    } as CustomNode;
+
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [tapNode, aggNode],
+      edges: [],
+    });
+
+    const stringified = JSON.stringify(doc.content);
+    expect(stringified).toContain('SIGNAL PATH SCHEMATIC');
+    expect(stringified).toContain('Deep Observability');
+    expect(stringified).toContain('0 engines');
+  });
 });
 
