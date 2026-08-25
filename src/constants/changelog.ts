@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.627",
+    date: "2026-08-25",
+    summary: "Add sticky table headers, dedicated table scroll container, and collapsible discount matrix (v1.0.627)",
+  },
+  {
     version: "1.0.626",
     date: "2026-08-25",
     summary: "Use async file.text(), defer input reset, and add canvas drag-and-drop scenario load (v1.0.626)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.598",
     date: "2026-08-24",
     summary: "Project workspace maintenance: cleaned up stale root scratchpads (work_log.md), removed obsolete .claude worktrees, cleared temporary test coverage artifacts, and committed a clean git release state.",
-  },
-  {
-    version: "1.0.597",
-    date: "2026-08-24",
-    summary: "Streamlined Report Generator UI: focused format selector options exclusively on Signal Path (Technical Specification) and Uplink (Executive Brief), while preserving underlying template engines for future format activation.",
   },
 ];

@@ -158,6 +158,7 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
   const t = (type || '').toLowerCase();
   const d = (description || '').toLowerCase();
 
+  // 1. Optics & Transceivers
   if (
     t === 'optic' ||
     s.startsWith('SFP-') ||
@@ -174,36 +175,12 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     return 'Optic';
   }
 
-  if (
-    t === 'license' ||
-    t === 'software' ||
-    s.includes('-SW-') ||
-    s.includes('-TM') ||
-    s.startsWith('CLS-') ||
-    s.startsWith('GEM-') ||
-    s.startsWith('VUE-') ||
-    d.includes('license') ||
-    d.includes('licence') ||
-    d.includes('term license')
-  ) {
-    return 'Software';
+  // 2. Power cords & Accessories
+  if (isEligiblePowerCord(s) || isPowerCord(s, d)) {
+    return 'Other';
   }
 
-  if (t === 'support' || s.startsWith('SPT-') || d.includes('support') || d.includes('maintenance')) {
-    return 'Support';
-  }
-
-  if (
-    t === 'chassis' ||
-    s.startsWith('GVS-') ||
-    s.startsWith('GSW-') ||
-    d.includes('chassis') ||
-    d.includes('node') ||
-    d.includes('traffic aggregator')
-  ) {
-    return 'Chassis';
-  }
-
+  // 3. TAPs, Breakout Panels & Trays
   if (
     t === 'tap' ||
     s.startsWith('GTP-') ||
@@ -212,11 +189,53 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     s.startsWith('M100') ||
     s.startsWith('M200') ||
     s.startsWith('ULT-') ||
-    d.includes('tap') ||
+    d.includes('tap module') ||
     d.includes('breakout panel') ||
     d.includes('rack mount tray')
   ) {
     return 'TAP';
+  }
+
+  // 4. Hardware Chassis (must evaluate BEFORE software because description mentions "Must pair with... Software License")
+  if (
+    t === 'chassis' ||
+    ((s.startsWith('GVS-') || s.startsWith('GSW-')) && !s.includes('-SW-') && !s.includes('-TM')) ||
+    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-')))
+  ) {
+    return 'Chassis';
+  }
+
+  // 5. Hardware Modules & Control Cards
+  if (
+    t === 'module' ||
+    ((s.startsWith('PRT-') || s.startsWith('SMT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-')) &&
+      !s.includes('-SW-') &&
+      !s.includes('-TM')) ||
+    (s.endsWith('-HW') && !s.startsWith('GVS-'))
+  ) {
+    return 'Module';
+  }
+
+  // 6. Support & Maintenance
+  if (t === 'support' || s.startsWith('SPT-') || d.includes('software support') || d.includes('maintenance')) {
+    return 'Support';
+  }
+
+  // 7. Software Licences
+  if (
+    t === 'license' ||
+    t === 'software' ||
+    s.includes('-SW-') ||
+    s.includes('-TM') ||
+    s.startsWith('CLS-') ||
+    s.startsWith('GEM-') ||
+    s.startsWith('VUE-') ||
+    d.includes('term license') ||
+    d.includes('subscription license') ||
+    d.includes('software license') ||
+    d.includes('license for')
+  ) {
+    return 'Software';
   }
 
   if (

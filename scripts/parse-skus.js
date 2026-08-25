@@ -308,9 +308,83 @@ export function generateSkuCatalog() {
     }
   }
 
-  // Determine lifecycle status and flag discontinued/removed items across historical knowledge base
+  // Baseline standard catalog prices for core chassis, modules, and software licenses
+  const DEFAULT_SKU_PRICES = {
+    // HC3 Base Chassis & Hardware
+    'GVS-HC3A1': { listPrice: 22645 },
+    'GVS-HC3A1-HW': { listPrice: 22645 },
+    'GVS-HC3A2': { listPrice: 22645 },
+    'GVS-HC3A2-HW': { listPrice: 22645 },
+    // HC3 Base Term Licences
+    'GVS-HC3A0-SW-TM': { listPriceMonthly: 2365 },
+    'GVS-HC3A1-SW-TM': { listPriceMonthly: 2365 },
+    'GVS-HC3A2-SW-TM': { listPriceMonthly: 2365 },
+
+    // HC3 Port Modules & Cards
+    'PRT-HC3-X24': { listPrice: 3165 },
+    'PRT-HC3-X24-HW': { listPrice: 3165 },
+    'PRT-HC3-X24-SW-TM': { listPriceMonthly: 2155 },
+    'PRT-HC3-C08': { listPrice: 4500 },
+    'PRT-HC3-C08-HW': { listPrice: 4500 },
+    'PRT-HC3-C08-SW-TM': { listPriceMonthly: 2500 },
+    'PRT-HC3-C16': { listPrice: 8500 },
+    'PRT-HC3-C16-HW': { listPrice: 8500 },
+    'PRT-HC3-C16-SW-TM': { listPriceMonthly: 3950 },
+
+    // HC3 GigaSMART Modules & Licences
+    'SMT-HC3-C08': { listPrice: 5450 },
+    'SMT-HC3-C08-HW': { listPrice: 5450 },
+    'SMT-HC3-C08-SW-TM': { listPriceMonthly: 3530 },
+    'SMT-HC3-GEN3-FVU-SW-TM': { listPriceMonthly: 2145 },
+    'SMT-HC3-GEN3-GTPMAX-SW-TM': { listPriceMonthly: 4260 },
+    'SMT-HC3-GEN3-AFS-SW-TM': { listPriceMonthly: 2145 },
+    'SMT-HC3-GEN3-APF-SW-TM': { listPriceMonthly: 3530 },
+
+    // TA25 / TA25E
+    'GVS-TAX20': { listPrice: 23750 },
+    'GVS-TAX20-HW': { listPrice: 23750 },
+    'GVS-TAX21E-HW': { listPrice: 23750 },
+    'GVS-TAX20-SW-TM': { listPriceMonthly: 2365 },
+    'GVS-TAX20E-SW-TM': { listPriceMonthly: 2365 },
+
+    // HC1 Base Chassis, Modules & Licences
+    'GVS-HC101': { listPrice: 14000 },
+    'GVS-HC101-HW': { listPrice: 14000 },
+    'GVS-HC100-SW-TM': { listPriceMonthly: 1500 },
+    'PRT-HC1-X12': { listPrice: 2500 },
+    'PRT-HC1-X12-HW': { listPrice: 2500 },
+    'PRT-HC1-X12-SW-TM': { listPriceMonthly: 1200 },
+    'SMT-HC1-S': { listPrice: 3500 },
+    'SMT-HC1-S-HW': { listPrice: 3500 },
+    'SMT-HC1-S-SW-TM': { listPriceMonthly: 1900 },
+
+    // HC2 Base Chassis, Modules & Licences
+    'GVS-HC201': { listPrice: 18000 },
+    'GVS-HC201-HW': { listPrice: 18000 },
+    'GVS-HC200-SW-TM': { listPriceMonthly: 1800 },
+    'PRT-HC0-X24': { listPrice: 2800 },
+    'PRT-HC0-X24-HW': { listPrice: 2800 },
+    'PRT-HC0-X24-SW-TM': { listPriceMonthly: 1400 },
+    'SMT-HC0-X16': { listPrice: 4500 },
+    'SMT-HC0-X16-HW': { listPrice: 4500 },
+    'SMT-HC0-X16-SW-TM': { listPriceMonthly: 2200 },
+  };
+
+  // Determine lifecycle status and enrich with default prices if missing
   for (const [key, item] of skuMap.entries()) {
     const isPresentInActivePriceLists = newlySeenSkus.has(key);
+
+    // Apply baseline standard reference price if not present in CSVs
+    const defaultPrice = DEFAULT_SKU_PRICES[key];
+    if (defaultPrice) {
+      if (item.listPrice === undefined && defaultPrice.listPrice !== undefined) {
+        item.listPrice = defaultPrice.listPrice;
+      }
+      if (item.listPriceMonthly === undefined && defaultPrice.listPriceMonthly !== undefined) {
+        item.listPriceMonthly = defaultPrice.listPriceMonthly;
+      }
+    }
+
     if (item.endOfLife) {
       item.status = 'EOL';
       item.isUnavailable = true;
