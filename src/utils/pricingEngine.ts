@@ -353,7 +353,11 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
     );
 
     let unitListPrice = 0;
-    if (isMonthly && skuItem?.listPriceMonthly !== undefined) {
+    if (isMonthly && skuItem?.listPriceMonthly !== undefined && skuItem.listPriceMonthly > 0) {
+      unitListPrice = skuItem.listPriceMonthly;
+    } else if (skuItem?.listPrice !== undefined && skuItem.listPrice > 0) {
+      unitListPrice = skuItem.listPrice;
+    } else if (skuItem?.listPriceMonthly !== undefined) {
       unitListPrice = skuItem.listPriceMonthly;
     } else if (skuItem?.listPrice !== undefined) {
       unitListPrice = skuItem.listPrice;
@@ -391,7 +395,11 @@ export function createAdHocQuoteItem(sku: string, qty: number = 1, termDuration:
   );
 
   let unitListPrice = 0;
-  if (isMonthly && skuItem?.listPriceMonthly !== undefined) {
+  if (isMonthly && skuItem?.listPriceMonthly !== undefined && skuItem.listPriceMonthly > 0) {
+    unitListPrice = skuItem.listPriceMonthly;
+  } else if (skuItem?.listPrice !== undefined && skuItem.listPrice > 0) {
+    unitListPrice = skuItem.listPrice;
+  } else if (skuItem?.listPriceMonthly !== undefined) {
     unitListPrice = skuItem.listPriceMonthly;
   } else if (skuItem?.listPrice !== undefined) {
     unitListPrice = skuItem.listPrice;

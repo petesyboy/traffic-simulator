@@ -100,6 +100,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const [freePowerCords, setFreePowerCords] = useState<boolean>(false);
   // SPAN-only mode toggle (removes TAPs & trays, halves TAP termination optics)
   const [spanOnlyMode, setSpanOnlyMode] = useState<boolean>(false);
+  // Collapsible discount schedule for smaller laptop screens
+  const [isDiscountsCollapsed, setIsDiscountsCollapsed] = useState<boolean>(false);
 
   // Ad-hoc SKU search state
   const [skuSearchQuery, setSkuSearchQuery] = useState<string>('');
@@ -380,13 +382,38 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               background: '#1f2937',
               border: '1px solid #374151',
               borderRadius: '8px',
-              padding: '12px 16px',
+              padding: isDiscountsCollapsed ? '8px 16px' : '12px 16px',
+              transition: 'all 0.2s ease',
             }}
           >
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              🎯 Discount Schedule (%) — Category & Blanket Rules
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                marginBottom: isDiscountsCollapsed ? '0' : '10px',
+              }}
+              onClick={() => setIsDiscountsCollapsed((prev) => !prev)}
+              title="Click to expand or collapse category discount schedule"
+            >
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                🎯 Discount Schedule (%) — Category & Blanket Rules
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: '11px', padding: '2px 8px', color: '#38bdf8' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDiscountsCollapsed((prev) => !prev);
+                }}
+              >
+                {isDiscountsCollapsed ? '▼ Show Discounts' : '▲ Hide Discounts'}
+              </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}>
+            {!isDiscountsCollapsed && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '10px', color: '#9ca3af', marginBottom: '3px' }}>Global Default %</label>
                 <input
@@ -548,6 +575,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* ── Section 2: Ad-Hoc SKU Lookup & Add ── */}
@@ -736,22 +764,44 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           </div>
 
           {/* ── Section 4: Line Items Table ── */}
-          <div style={{ border: '1px solid #374151', borderRadius: '8px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: '#111827', borderBottom: '2px solid #374151' }}>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Cat</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>SKU</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Description</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Term</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Unit List ($)</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Apply Disc?</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Disc %</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Ext Net ($)</th>
-                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                📋 Line Items Schedule
+              </div>
+              <div style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                Showing all <strong>{summary.activeLineCount}</strong> items ({summary.totalQty} total units)
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                overflowY: 'auto',
+                overflowX: 'auto',
+                minHeight: '260px',
+                maxHeight: '440px',
+                flex: '1 1 auto',
+                position: 'relative',
+                background: '#111827',
+              }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#111827' }}>
+                  <tr style={{ background: '#111827', borderBottom: '2px solid #374151' }}>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Cat</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>SKU</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Description</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Term</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Qty</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Unit List ($)</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Apply Disc?</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Disc %</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Ext Net ($)</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Actions</th>
+                  </tr>
+                </thead>
               <tbody>
                 {summary.items.length === 0 ? (
                   <tr>
@@ -964,6 +1014,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
 
           {pdfError && (

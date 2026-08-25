@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.626",
+    date: "2026-08-25",
+    summary: "Use async file.text(), defer input reset, and add canvas drag-and-drop scenario load (v1.0.626)",
+  },
+  {
     version: "1.0.625",
     date: "2026-08-25",
     summary: "Switch to synchronous W3C FileReader import for file:// origin and macOS (v1.0.625)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.597",
     date: "2026-08-24",
     summary: "Streamlined Report Generator UI: focused format selector options exclusively on Signal Path (Technical Specification) and Uplink (Executive Brief), while preserving underlying template engines for future format activation.",
-  },
-  {
-    version: "1.0.596",
-    date: "2026-08-24",
-    summary: "Fixed font registration in Patch Sheet report: replaced unbundled 'Courier' font reference with browser VFS-registered 'Roboto' default font and uppercase monospace styling, resolving runtime missing font error when generating Patch Sheet PDFs.",
   },
 ];
