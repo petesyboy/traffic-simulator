@@ -106,47 +106,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [nameDraft, setNameDraft] = useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleImportClick = async () => {
-    // If modern File System Access API is supported (e.g. Chrome/Edge on macOS and Windows)
-    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
-      try {
-        const [fileHandle] = await (window as unknown as {
-          showOpenFilePicker: (opts: unknown) => Promise<FileSystemFileHandle[]>;
-        }).showOpenFilePicker({
-          types: [
-            {
-              description: 'JSON Scenario File (*.json)',
-              accept: {
-                'application/json': ['.json'],
-                'text/plain': ['.json', '.txt'],
-              },
-            },
-          ],
-          multiple: false,
-        });
-        const file = await fileHandle.getFile();
-        const text = await file.text();
-        try {
-          const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(text);
-          if (n && e_list) {
-            useStore.getState().restoreState(n, e_list, t || [], s_obj);
-            const scenarioName = file.name.replace(/\.json$/i, '');
-            useStore.getState().setCurrentScenarioName(scenarioName);
-            return;
-          } else {
-            alert('Invalid topology file structure.');
-            return;
-          }
-        } catch {
-          alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
-          return;
-        }
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') return;
-        console.warn('showOpenFilePicker failed or was not completed, falling back to file input:', err);
-      }
-    }
-    // Safari / Firefox / fallback on macOS:
+  const handleImportClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
       fileInputRef.current.click();
