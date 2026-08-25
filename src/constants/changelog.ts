@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.629",
+    date: "2026-08-25",
+    summary: "Classify term software licenses before support and apply full software discounts (v1.0.629)",
+  },
+  {
     version: "1.0.628",
     date: "2026-08-25",
     summary: "Pre-seed built-in HC3/HC/TA list prices and fix hardware chassis category mapping (v1.0.628)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.605",
     date: "2026-08-24",
     summary: "Expand layout spacing and adjust fitView zoom to prevent node overlap and HUD collision",
-  },
-  {
-    version: "1.0.604",
-    date: "2026-08-24",
-    summary: "Revamp Mission Demo to showcase Deep Observability Pipeline presentation",
   },
 ];
