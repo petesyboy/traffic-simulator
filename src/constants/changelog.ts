@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.630",
+    date: "2026-08-25",
+    summary: "Expand line items table to naturally fill modal vertical space (v1.0.630)",
+  },
+  {
     version: "1.0.629",
     date: "2026-08-25",
     summary: "Classify term software licenses before support and apply full software discounts (v1.0.629)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.606",
     date: "2026-08-24",
     summary: "Add individual dedicated tool links and enable active traffic reduction metrics in Mission Demo",
-  },
-  {
-    version: "1.0.605",
-    date: "2026-08-24",
-    summary: "Expand layout spacing and adjust fitView zoom to prevent node overlap and HUD collision",
   },
 ];

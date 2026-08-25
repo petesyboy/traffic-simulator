@@ -217,10 +217,10 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       <div
         className="modal-card"
         style={{
-          width: '1320px',
+          width: '1440px',
           maxWidth: '96vw',
-          height: '90vh',
-          maxHeight: '90vh',
+          height: 'min(92vh, 960px)',
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 16px 64px rgba(0,0,0,0.9)',
