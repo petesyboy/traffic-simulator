@@ -15,6 +15,7 @@ import { type SKUItem } from '../types/sku';
 import {
   getMergedSkus,
   getMergedSkusMetadata,
+  getMergedSkuPrices,
   getSkuOverrideInfo,
   getBackupOverrideInfo,
   clearSkuOverrides,
@@ -27,6 +28,7 @@ export const skuService = {
   getAllSKUs(): SKUItem[] {
     const mergedDescriptions = getMergedSkus();
     const mergedMeta = getMergedSkusMetadata();
+    const mergedPrices = getMergedSkuPrices();
     const map = new Map<string, SKUItem>();
 
     // 1. Load base items
@@ -35,16 +37,21 @@ export const skuService = {
       map.set(key, { ...item });
     });
 
-    // 2. Overlay any updated descriptions or metadata
+    // 2. Overlay any updated descriptions, metadata, or prices
     for (const [key, desc] of Object.entries(mergedDescriptions)) {
       const existing = map.get(key);
       const meta = mergedMeta[key];
+      const price = mergedPrices[key];
       if (existing) {
         existing.description = desc;
         if (meta) {
           if (meta.eos) existing.endOfSale = meta.eos;
           if (meta.eol) existing.endOfLife = meta.eol;
           if (meta.replacement) existing.eosReplacementSku = meta.replacement;
+        }
+        if (price) {
+          if (price.listPrice !== undefined) existing.listPrice = price.listPrice;
+          if (price.listPriceMonthly !== undefined) existing.listPriceMonthly = price.listPriceMonthly;
         }
       } else {
         map.set(key, {
@@ -54,6 +61,8 @@ export const skuService = {
           endOfSale: meta?.eos,
           endOfLife: meta?.eol,
           eosReplacementSku: meta?.replacement,
+          listPrice: price?.listPrice,
+          listPriceMonthly: price?.listPriceMonthly,
         });
       }
     }
@@ -68,6 +77,7 @@ export const skuService = {
     const desc = getMergedSkus()[target];
     const base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
     const meta = getMergedSkusMetadata()[target];
+    const price = getMergedSkuPrices()[target];
 
     if (!desc && !base) return undefined;
 
@@ -94,8 +104,8 @@ export const skuService = {
       endOfLife: meta?.eol || base?.endOfLife,
       eosReplacementSku: meta?.replacement || base?.eosReplacementSku,
       supportAvailable: isUnavailable ? false : (base?.supportAvailable ?? true),
-      listPrice: base?.listPrice,
-      listPriceMonthly: base?.listPriceMonthly,
+      listPrice: price?.listPrice !== undefined ? price.listPrice : base?.listPrice,
+      listPriceMonthly: price?.listPriceMonthly !== undefined ? price.listPriceMonthly : base?.listPriceMonthly,
       portDensity: base?.portDensity,
       speedsSupported: base?.speedsSupported,
       formFactor: base?.formFactor,

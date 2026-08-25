@@ -32,8 +32,8 @@ describe('parsePriceListFile', () => {
     ]);
     const { rows } = await parsePriceListFile(file);
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined },
-      { sku: 'DEF-456', description: 'Widget B', eos: undefined, eol: undefined, replacement: undefined },
+      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined, listPrice: undefined, listPriceMonthly: undefined },
+      { sku: 'DEF-456', description: 'Widget B', eos: undefined, eol: undefined, replacement: undefined, listPrice: undefined, listPriceMonthly: undefined },
     ]);
   });
 
@@ -45,7 +45,7 @@ describe('parsePriceListFile', () => {
     ]);
     const { rows } = await parsePriceListFile(file);
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined },
+      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined, listPrice: undefined, listPriceMonthly: undefined },
     ]);
   });
 
@@ -57,18 +57,26 @@ describe('parsePriceListFile', () => {
     ]);
     const { rows } = await parsePriceListFile(file);
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined },
+      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined, listPrice: undefined, listPriceMonthly: undefined },
     ]);
   });
 
-  it('picks up EOS, EOL and Replacement SKU columns', async () => {
+  it('picks up EOS, EOL, Replacement SKU and Price columns', async () => {
     const file = xlsxFile([
-      ['SKU', 'Detailed Description', 'End of Sale Date', 'End of Life Date', 'Replacement SKU'],
-      ['ABC-123', 'Widget A', '2026-06-01', '2027-06-01', 'ABC-999'],
+      ['SKU', 'Detailed Description', 'End of Sale Date', 'End of Life Date', 'Replacement SKU', 'List Price', 'List Price/Month'],
+      ['ABC-123', 'Widget A', '2026-06-01', '2027-06-01', 'ABC-999', '$1,250.00', '$120.00'],
     ]);
     const { rows } = await parsePriceListFile(file);
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: '2026-06-01', eol: '2027-06-01', replacement: 'ABC-999' },
+      {
+        sku: 'ABC-123',
+        description: 'Widget A',
+        eos: '2026-06-01',
+        eol: '2027-06-01',
+        replacement: 'ABC-999',
+        listPrice: 1250,
+        listPriceMonthly: 120,
+      },
     ]);
   });
 
@@ -106,7 +114,7 @@ describe('parsePriceListFile', () => {
     const { rows, sheetName } = await parsePriceListFile(file);
     expect(sheetName).toBe('Price List');
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined },
+      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined, listPrice: undefined, listPriceMonthly: undefined },
     ]);
   });
 
@@ -121,11 +129,11 @@ describe('parsePriceListFile', () => {
   });
 
   it('parses a plain CSV file the same way', async () => {
-    const file = csvFile('SKU,Description\nABC-123,Widget A\nDEF-456,Widget B\n');
+    const file = csvFile('SKU,Description,List Price\nABC-123,Widget A,$500\nDEF-456,Widget B,$750.50\n');
     const { rows } = await parsePriceListFile(file);
     expect(rows).toEqual([
-      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined },
-      { sku: 'DEF-456', description: 'Widget B', eos: undefined, eol: undefined, replacement: undefined },
+      { sku: 'ABC-123', description: 'Widget A', eos: undefined, eol: undefined, replacement: undefined, listPrice: 500, listPriceMonthly: undefined },
+      { sku: 'DEF-456', description: 'Widget B', eos: undefined, eol: undefined, replacement: undefined, listPrice: 750.5, listPriceMonthly: undefined },
     ]);
   });
 });

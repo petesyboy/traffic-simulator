@@ -76,6 +76,20 @@ export async function parsePriceListFile(file: File): Promise<ParsedPriceList> {
   ]);
   const eolIdx = findColumnIndex(headerRow, [(h) => h.includes('end of life') || h.includes('eol')]);
   const replIdx = findColumnIndex(headerRow, [(h) => h.includes('replacement')]);
+  const priceIdx = findColumnIndex(headerRow, [
+    (h) => h === 'list price',
+    (h) => h === 'price',
+    (h) => h === 'msrp',
+    (h) => h === 'list price (usd)',
+    (h) => h === 'usd list price',
+    (h) => h.includes('list price') && !h.includes('month'),
+  ]);
+  const monthlyPriceIdx = findColumnIndex(headerRow, [
+    (h) => h === 'list price/month',
+    (h) => h === 'list price / month',
+    (h) => h === 'monthly price',
+    (h) => h.includes('month') && (h.includes('price') || h.includes('list')),
+  ]);
 
   if (skuIdx === -1 || descIdx === -1) {
     throw new Error(
@@ -90,6 +104,16 @@ export async function parsePriceListFile(file: File): Promise<ParsedPriceList> {
     return String(value ?? '').trim();
   };
 
+  const parseNumericPrice = (row: unknown[], idx: number): number | undefined => {
+    if (idx === -1) return undefined;
+    const value = row[idx];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const str = String(value ?? '').replace(/[^0-9.]/g, '');
+    if (!str) return undefined;
+    const num = parseFloat(str);
+    return Number.isFinite(num) ? num : undefined;
+  };
+
   const rows: PriceListRow[] = [];
   for (const row of dataRows) {
     const sku = cell(row, skuIdx);
@@ -100,6 +124,8 @@ export async function parsePriceListFile(file: File): Promise<ParsedPriceList> {
       eos: eosIdx === -1 ? undefined : cell(row, eosIdx),
       eol: eolIdx === -1 ? undefined : cell(row, eolIdx),
       replacement: replIdx === -1 ? undefined : cell(row, replIdx),
+      listPrice: parseNumericPrice(row, priceIdx),
+      listPriceMonthly: parseNumericPrice(row, monthlyPriceIdx),
     });
   }
 

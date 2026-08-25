@@ -28,6 +28,13 @@ export interface PriceListRow {
   eos?: string;
   eol?: string;
   replacement?: string;
+  listPrice?: number;
+  listPriceMonthly?: number;
+}
+
+export interface SkuPriceEntry {
+  listPrice?: number;
+  listPriceMonthly?: number;
 }
 
 export interface ApplyPriceListResult {
@@ -41,6 +48,7 @@ export interface ApplyPriceListResult {
 interface SkuOverrideData {
   skus: Record<string, string>;
   metadata: Record<string, SkuMetadataEntry>;
+  prices?: Record<string, SkuPriceEntry>;
   sourceFileName: string;
   updatedAt: string;
 }
@@ -51,10 +59,17 @@ const STORAGE_KEY_BACKUP = 'fm-simulator-sku-overrides-backup';
 // Generate base flat mappings from the single source of truth (src/data/skus.json)
 const baseSkus: Record<string, string> = {};
 const baseMetadata: Record<string, SkuMetadataEntry> = {};
+const basePrices: Record<string, SkuPriceEntry> = {};
 
 (baseSkuCatalog as SKUItem[]).forEach((item) => {
   const key = item.partNumber.toUpperCase();
   baseSkus[key] = item.description;
+  if (item.listPrice !== undefined || item.listPriceMonthly !== undefined) {
+    basePrices[key] = {
+      listPrice: item.listPrice,
+      listPriceMonthly: item.listPriceMonthly,
+    };
+  }
   if (item.endOfSale || item.endOfLife || item.eosReplacementSku) {
     baseMetadata[key] = {
       eos: item.endOfSale || '',
@@ -103,6 +118,10 @@ export function getMergedSkus(): Record<string, string> {
 
 export function getMergedSkusMetadata(): Record<string, SkuMetadataEntry> {
   return overrides ? { ...baseMetadata, ...overrides.metadata } : baseMetadata;
+}
+
+export function getMergedSkuPrices(): Record<string, SkuPriceEntry> {
+  return overrides?.prices ? { ...basePrices, ...overrides.prices } : basePrices;
 }
 
 /** Clears all overrides and restores the built-in single source of truth. */
@@ -156,6 +175,7 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
 
   const nextSkus = { ...getMergedSkus() };
   const nextMetadata = { ...getMergedSkusMetadata() };
+  const nextPrices = { ...getMergedSkuPrices() };
 
   let added = 0;
   let updated = 0;
@@ -192,6 +212,13 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
         replacement: row.replacement ? row.replacement.toUpperCase() : '',
       };
     }
+
+    if (row.listPrice !== undefined || row.listPriceMonthly !== undefined) {
+      nextPrices[sku] = {
+        listPrice: row.listPrice,
+        listPriceMonthly: row.listPriceMonthly,
+      };
+    }
   }
 
   const uploadedSkuSet = new Set(rows.map((r) => r.sku.trim().toUpperCase()).filter(Boolean));
@@ -216,6 +243,7 @@ export function applyPriceListRows(rows: PriceListRow[], sourceFileName: string)
   overrides = {
     skus: nextSkus,
     metadata: nextMetadata,
+    prices: nextPrices,
     sourceFileName,
     updatedAt: new Date().toISOString(),
   };

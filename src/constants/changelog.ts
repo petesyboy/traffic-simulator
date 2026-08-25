@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.611",
+    date: "2026-08-25",
+    summary: "Label HC tier as Deep Observability instead of Aggregation in signal path schematic",
+  },
+  {
     version: "1.0.610",
     date: "2026-08-24",
     summary: "Optimize Mission Demo and canvas edge colours for crisp light and dark theme contrast",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.587",
     date: "2026-08-23",
     summary: "Consolidated hardware platform descriptions in the Solution Report to display a single representative front-panel photograph per chassis/node model, with all deployed instances, sites, and labels detailed in the text.",
-  },
-  {
-    version: "1.0.586",
-    date: "2026-08-23",
-    summary: "Redesigned Solution Report Generator with 'Signal Path' design system: full-bleed dark navy cover with vector fan-in graphics, automated Table of Contents, section wayfinding kickers, hairline stat tiles with zero-value handling, multi-severity notice plates, compact rack elevations, and bespoke table styling.",
   },
 ];

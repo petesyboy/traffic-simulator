@@ -12,6 +12,7 @@ import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
 import type { HardwareNodeData } from '../../store/types';
+import QuoteModal from './QuoteModal';
 
 export interface BomModalProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
+  const [showQuoteModal, setShowQuoteModal] = useState<boolean>(false);
 
   // Nodes that only ever contribute a single BOM row (standalone TAP modules,
   // breakout panels, ...) are merged into one shared line per SKU per site -
@@ -178,7 +180,31 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
               ⚡ Physical Rack & Deployment Report
             </button>
           </div>
-          <span className="text-sm text-muted">{currentScenarioName || 'Layout'} specs</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="text-sm text-muted">{currentScenarioName || 'Layout'} specs</span>
+            <button
+              onClick={() => setShowQuoteModal(true)}
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#3a3a3a',
+                border: '1px solid #555',
+                cursor: 'pointer',
+                padding: 0,
+                opacity: 0.5,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.background = '#666';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.5';
+                e.currentTarget.style.background = '#3a3a3a';
+              }}
+            />
+          </div>
         </div>
 
         {/* Validation warnings */}
@@ -391,6 +417,8 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
           </button>
         </div>
       </div>
+
+      {showQuoteModal && <QuoteModal onClose={() => setShowQuoteModal(false)} />}
     </div>
   );
 };
