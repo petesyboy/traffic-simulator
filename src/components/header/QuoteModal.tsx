@@ -68,7 +68,6 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
-  const panelTextScale = useStore((s) => s.panelTextScale || 1.0);
 
   // Initialize quote items from consolidated BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
@@ -196,14 +195,25 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 1200 }}>
+    <div
+      className="modal-overlay"
+      style={{
+        background: 'rgba(0,0,0,0.85)',
+        zIndex: 1200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        boxSizing: 'border-box',
+      }}
+    >
       <div
         className="modal-card"
         style={{
-          width: '1280px',
+          width: '1320px',
           maxWidth: '96vw',
-          height: '92vh',
-          maxHeight: '92vh',
+          height: '90vh',
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 16px 64px rgba(0,0,0,0.9)',
@@ -212,7 +222,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           color: '#f3f4f6',
           overflow: 'hidden',
           padding: '16px 20px',
-          zoom: panelTextScale,
+          boxSizing: 'border-box',
         }}
       >
         {/* ── Modal Header ── */}
@@ -353,6 +363,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             flex: '1 1 auto',
             minHeight: 0,
             paddingRight: '6px',
+            paddingBottom: '32px',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',

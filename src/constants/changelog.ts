@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.621",
+    date: "2026-08-25",
+    summary: "Apply screen font scaling zoom and improve quote table typography (v1.0.621)",
+  },
+  {
     version: "1.0.620",
     date: "2026-08-25",
     summary: "Separate Packet Slicing and Advanced Flow Slicing and default traffic panel to minimized (v1.0.620)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.592",
     date: "2026-08-24",
     summary: "Fixed TAP link capacity resolution: getTapNodeLinks() now queries the merged SKU catalogue description and multi-link model heuristics (e.g. 6 links for TAP-M251T/M253T/M271T/M273T), accurately producing 96 monitored links and 192 optical feeds for 16 six-link TAP modules. Added automatic Scope Considerations warning notice plate conversion in executive summary.",
-  },
-  {
-    version: "1.0.591",
-    date: "2026-08-24",
-    summary: "Corrected monitored link, optical feed, and TAP counts across the PDF report: accurately calculates physical TAP units, total network links tapped, and bidirectional optical feeds (2 feeds per tapped link). Updated cover page stat, §01 stat tiles grid, §02 per-site schematic strips, and §03 TAP hardware descriptions to report both link and optical feed counts.",
   },
 ];
