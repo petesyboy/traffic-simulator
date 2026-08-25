@@ -423,8 +423,15 @@ function resolveGigaSmartSku(
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-APF-SW-TM' : 'SMT-HC3-GEN3-APF';
       return '';
     case 'Packet Slicing':
+    case 'Slicing':
       if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-BSE-SW-TM' : 'SMT-HC1-BSE';
       if (isHc1Plus) return ''; // Packet Slicing is included in the HC1 Plus base license
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-APF-SW-TM' : 'SMT-HC3-GEN3-APF';
+      return '';
+    case 'Advanced Flow Slicing':
+    case 'AFS':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-AFS-SW-TM' : 'SMT-HC1-AFS';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-AFS-SW-TM' : 'SMT-HC1P-GEN3-AFS-PL';
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-AFS-SW-TM' : 'SMT-HC3-GEN3-AFS-PL';
       return '';
     case 'Header Stripping':

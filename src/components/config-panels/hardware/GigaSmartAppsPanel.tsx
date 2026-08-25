@@ -167,10 +167,12 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
-            {/* Packet Slicing config */}
-            {actionType === 'Packet Slicing' && (
+            {/* Packet Slicing / Advanced Flow Slicing config */}
+            {(actionType === 'Packet Slicing' || actionType === 'Advanced Flow Slicing' || actionType === 'Slicing') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '11px', color: '#ccc' }}>Packet Slice Size (Bytes)</label>
+                <label style={{ fontSize: '11px', color: '#ccc' }}>
+                  {actionType === 'Advanced Flow Slicing' ? 'Advanced Flow Slice Size (Bytes)' : 'Packet Slice Size (Bytes)'}
+                </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="range"
@@ -294,8 +296,9 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               actionType !== 'Dedup' &&
               actionType !== 'Application Metadata' &&
               actionType !== 'AMX' &&
-              actionType !== 'AMI' &&
               actionType !== 'Packet Slicing' &&
+              actionType !== 'Advanced Flow Slicing' &&
+              actionType !== 'Slicing' &&
               actionType !== 'Header Stripping' &&
               actionType !== 'Header/Trailer Remove' &&
               actionType !== 'Application Filtering Intelligence' &&

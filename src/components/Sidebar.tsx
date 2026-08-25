@@ -89,11 +89,18 @@ const appsList = [
     initial: { actionType: ACTION_TYPES.MASKING, configType: ACTION_TYPES.MASKING },
   },
   {
-    label: 'Slicing',
+    label: 'Packet Slicing',
     type: NODE_TYPES.GIGASMART,
-    tooltip: 'Truncate packet payloads to a fixed length for header analysis without payload overhead. Generates Base GigaSMART licence (SMT-HC3-GEN3-BAS).',
-    skuBadge: 'Base GS',
-    initial: { actionType: ACTION_TYPES.PACKET_SLICING, configType: ACTION_TYPES.PACKET_SLICING },
+    tooltip: 'Standard fixed-length packet slicing (e.g. 128B). Generates Adaptive Packet Filtering / Base licence (SMT-HC3-GEN3-APF-SW-TM / SMT-HC3-GEN3-APF).',
+    skuBadge: 'APF/Base',
+    initial: { actionType: ACTION_TYPES.PACKET_SLICING, configType: ACTION_TYPES.PACKET_SLICING, sliceSize: 128 },
+  },
+  {
+    label: 'Advanced Flow Slicing',
+    type: NODE_TYPES.GIGASMART,
+    tooltip: 'Dynamic, stateful flow-aware slicing. Generates Advanced Flow Slicing licence (SMT-HC3-GEN3-AFS-SW-TM / SMT-HC3-GEN3-AFS-PL).',
+    skuBadge: 'AFS',
+    initial: { actionType: ACTION_TYPES.ADVANCED_FLOW_SLICING, configType: ACTION_TYPES.ADVANCED_FLOW_SLICING, sliceSize: 128 },
   },
   {
     label: 'SSL Decrypt',

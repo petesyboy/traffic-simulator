@@ -70,8 +70,8 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           <option value={ACTION_TYPES.AMI}>AMI</option>
           <option value={ACTION_TYPES.PCAPNG}>Pcapng</option>
           <option value={ACTION_TYPES.SBI_5G}>5G-SBI</option>
-          <option value={ACTION_TYPES.SBIPOE}>Sbipoe</option>
-          <option value={ACTION_TYPES.PACKET_SLICING}>Packet Slicing (Truncate Payload)</option>
+          <option value={ACTION_TYPES.PACKET_SLICING}>Packet Slicing (Fixed Truncation)</option>
+          <option value={ACTION_TYPES.ADVANCED_FLOW_SLICING}>Advanced Flow Slicing (Dynamic Flow Slicing)</option>
           <option value={ACTION_TYPES.SSL_DECRYPT}>SSL Decrypt</option>
         </select>
       </FormGroup>
@@ -303,8 +303,8 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
         </>
       )}
 
-      {actionType === ACTION_TYPES.PACKET_SLICING && (
-        <FormGroup label="Packet Slice Size (Bytes)">
+      {(actionType === ACTION_TYPES.PACKET_SLICING || actionType === ACTION_TYPES.ADVANCED_FLOW_SLICING) && (
+        <FormGroup label={actionType === ACTION_TYPES.ADVANCED_FLOW_SLICING ? 'Flow Slice Size (Bytes)' : 'Packet Slice Size (Bytes)'}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <input
               type="range"

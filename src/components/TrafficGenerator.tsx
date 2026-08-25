@@ -146,16 +146,22 @@ const TrafficGenerator: React.FC = () => {
 
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
   const advancedMode = useStore((state) => state.advancedMode);
+  const currentScenarioName = useStore((state) => state.currentScenarioName);
 
-  // Minimized by default in Standard mode to keep the canvas uncluttered; expanded
-  // by default in Advanced mode where the traffic controls are more likely needed.
-  // A manual toggle is respected until the mode itself changes again (same pattern
-  // ConfigPanel.tsx uses for its own collapse-on-mode-change behaviour).
-  const [isCollapsed, setIsCollapsed] = useState(!advancedMode);
+  // Traffic simulation panel is always minimized by default (both in Standard and Advanced mode)
+  // to keep the canvas clear whenever any scenario or layout is loaded.
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [prevAdvancedMode, setPrevAdvancedMode] = useState(advancedMode);
   if (advancedMode !== prevAdvancedMode) {
     setPrevAdvancedMode(advancedMode);
-    setIsCollapsed(!advancedMode);
+    setIsCollapsed(true);
+  }
+
+  // When a new scenario is loaded or restored, collapse the drawer
+  const [prevScenarioName, setPrevScenarioName] = useState(currentScenarioName);
+  if (currentScenarioName !== prevScenarioName) {
+    setPrevScenarioName(currentScenarioName);
+    setIsCollapsed(true);
   }
 
   // Mission Demo starts with the canvas already in Standard mode, so the

@@ -141,7 +141,7 @@ export const processGigaSmartNode: NodeProcessor = (
       metadataFormat: format as 'CEF' | 'JSON'
     };
   }
-  else if (actionType === 'Packet Slicing') {
+  else if (actionType === 'Packet Slicing' || actionType === 'Advanced Flow Slicing' || actionType === 'Slicing') {
     const sliceSize = Number(data.sliceSize) || 128;
     const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
     const slicedBandwidth = item.stream.bandwidth * ratio;

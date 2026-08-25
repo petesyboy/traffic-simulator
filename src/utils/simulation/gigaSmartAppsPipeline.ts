@@ -38,7 +38,7 @@ export function runGigaSmartApps(
         trafficType: 'metadata',
         metadataFormat: (app.metadataFormat as 'CEF' | 'JSON') || 'CEF'
       });
-    } else if (actionType === 'Packet Slicing') {
+    } else if (actionType === 'Packet Slicing' || actionType === 'Advanced Flow Slicing' || actionType === 'Slicing') {
       const sliceSize = Number(app.sliceSize) || 128;
       const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
       const drop = stream.bandwidth * (1 - ratio);
