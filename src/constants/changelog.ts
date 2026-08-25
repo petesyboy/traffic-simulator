@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.623",
+    date: "2026-08-25",
+    summary: "Scope SPAN-only optic halving to TAP-termination links, add Accessories discount, fix ERSPAN tunnel ID reset (v1.0.623)",
+  },
+  {
     version: "1.0.622",
     date: "2026-08-25",
     summary: "Use project-wide Master BOM aggregation and multipack optimization (v1.0.622)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.594",
     date: "2026-08-24",
     summary: "Updated Bill of Materials export filenames: both the SKU BOM CSV export and the Physical Deployment CSV export now clearly prefix the exported files with 'BOM_' (e.g. BOM_Tusass_Greenland.csv, BOM_Tusass_Greenland_deployment_report.csv, BOM.csv).",
-  },
-  {
-    version: "1.0.593",
-    date: "2026-08-24",
-    summary: "Deduplicated Signal Path Schematics in PDF reports: when multiple deployment sites share identical architectures (e.g. Site A and Site B), renders a single consolidated representative schematic strip under the overview diagram instead of duplicating identical SVGs under each site sub-diagram. Preserves separate per-site schematics whenever site configurations differ.",
   },
 ];
