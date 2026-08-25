@@ -68,6 +68,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
+  const panelTextScale = useStore((s) => s.panelTextScale || 1.0);
 
   // Initialize quote items from consolidated BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
@@ -199,7 +200,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       <div
         className="modal-card"
         style={{
-          width: '1240px',
+          width: '1280px',
           maxWidth: '96vw',
           height: '92vh',
           maxHeight: '92vh',
@@ -211,6 +212,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           color: '#f3f4f6',
           overflow: 'hidden',
           padding: '16px 20px',
+          zoom: panelTextScale,
         }}
       >
         {/* ── Modal Header ── */}
@@ -699,25 +701,25 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
           {/* ── Section 4: Line Items Table ── */}
           <div style={{ border: '1px solid #374151', borderRadius: '8px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#111827', borderBottom: '2px solid #374151' }}>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af' }}>Cat</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af' }}>SKU</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af' }}>Description</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'center' }}>Term</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'right' }}>Unit List ($)</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'center' }}>Apply Disc?</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'center' }}>Disc %</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'right' }}>Ext Net ($)</th>
-                  <th style={{ padding: '8px 10px', color: '#9ca3af', textAlign: 'center' }}>Actions</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Cat</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>SKU</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Description</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Term</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Qty</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Unit List ($)</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Apply Disc?</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Disc %</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Ext Net ($)</th>
+                  <th style={{ padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.items.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>
+                    <td colSpan={10} style={{ padding: '28px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
                       No items currently present in quote.
                     </td>
                   </tr>
@@ -735,17 +737,18 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         }}
                       >
                         {/* Category */}
-                        <td style={{ padding: '8px 10px' }}>
+                        <td style={{ padding: '10px 12px' }}>
                           <span
                             style={{
                               background: `${catColor}20`,
                               border: `1px solid ${catColor}60`,
                               color: catColor,
-                              padding: '2px 6px',
+                              padding: '3px 7px',
                               borderRadius: '4px',
-                              fontSize: '9px',
+                              fontSize: '10px',
                               fontWeight: 'bold',
                               textTransform: 'uppercase',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {item.category}
@@ -753,20 +756,20 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         </td>
 
                         {/* SKU */}
-                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 'bold', color: '#38bdf8' }}>
+                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 'bold', color: '#38bdf8', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
                           {item.sku}
                         </td>
 
                         {/* Description */}
-                        <td style={{ padding: '8px 10px', color: '#e5e7eb', maxWidth: '300px' }}>
+                        <td style={{ padding: '10px 12px', color: '#e5e7eb', fontSize: '12px', maxWidth: '320px', lineHeight: '1.4' }}>
                           {item.description}
                           {item.note && (
-                            <div style={{ fontSize: '10px', color: '#fbbf24', marginTop: '2px' }}>{item.note}</div>
+                            <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '3px' }}>{item.note}</div>
                           )}
                         </td>
 
                         {/* Term (Months) */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           {item.isMonthlyPrice || item.termMonths ? (
                             <input
                               type="text"
@@ -776,13 +779,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                                 handleUpdateItem(item.id, { termMonths: isNaN(parsed) ? undefined : parsed });
                               }}
                               style={{
-                                width: '38px',
-                                padding: '2px 4px',
-                                borderRadius: '3px',
+                                width: '42px',
+                                padding: '4px 6px',
+                                borderRadius: '4px',
                                 background: '#111827',
                                 border: '1px solid #4b5563',
                                 color: '#c084fc',
-                                fontSize: '11px',
+                                fontSize: '12px',
                                 textAlign: 'center',
                               }}
                             />
@@ -792,7 +795,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         </td>
 
                         {/* Qty */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           <input
                             type="text"
                             value={String(item.qty)}
@@ -801,13 +804,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                               handleUpdateItem(item.id, { qty: isNaN(parsed) ? 1 : Math.max(1, parsed) });
                             }}
                             style={{
-                              width: '45px',
-                              padding: '2px 4px',
-                              borderRadius: '3px',
+                              width: '48px',
+                              padding: '4px 6px',
+                              borderRadius: '4px',
                               background: '#111827',
                               border: '1px solid #4b5563',
                               color: '#fff',
-                              fontSize: '11px',
+                              fontSize: '12px',
                               textAlign: 'center',
                               fontWeight: 'bold',
                             }}
@@ -815,7 +818,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         </td>
 
                         {/* Unit List Price (Editable!) */}
-                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                           <input
                             type="text"
                             value={String(item.unitListPrice ?? 0)}
@@ -824,35 +827,35 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                               handleUpdateItem(item.id, { unitListPrice: isNaN(parsed) ? 0 : Math.max(0, parsed) });
                             }}
                             style={{
-                              width: '75px',
-                              padding: '2px 4px',
-                              borderRadius: '3px',
+                              width: '80px',
+                              padding: '4px 6px',
+                              borderRadius: '4px',
                               background: '#111827',
                               border: item.unitListPrice === 0 ? '1px solid #f59e0b' : '1px solid #4b5563',
                               color: item.unitListPrice === 0 ? '#fbbf24' : '#fff',
-                              fontSize: '11px',
+                              fontSize: '12px',
                               textAlign: 'right',
                               fontFamily: 'monospace',
                             }}
                           />
                           {item.isMonthlyPrice && (
-                            <div style={{ fontSize: '9px', color: '#9ca3af' }}>/mo</div>
+                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>/mo</div>
                           )}
                         </td>
 
                         {/* Apply Discount Checkbox (Selective hardware discounts!) */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           <input
                             type="checkbox"
                             checked={item.applyDiscount}
                             onChange={(e) => handleUpdateItem(item.id, { applyDiscount: e.target.checked })}
-                            style={{ cursor: 'pointer', accentColor: '#0284c7' }}
+                            style={{ cursor: 'pointer', accentColor: '#0284c7', width: '15px', height: '15px' }}
                             title="Toggle discount for this specific line"
                           />
                         </td>
 
                         {/* Discount % Override */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           <input
                             type="text"
                             value={
@@ -876,13 +879,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                             disabled={!item.applyDiscount}
                             placeholder={item.applyDiscount ? 'Auto' : '0'}
                             style={{
-                              width: '45px',
-                              padding: '2px 4px',
-                              borderRadius: '3px',
+                              width: '48px',
+                              padding: '4px 6px',
+                              borderRadius: '4px',
                               background: !item.applyDiscount ? '#374151' : '#111827',
                               border: '1px solid #4b5563',
                               color: item.effectiveDiscountPercent > 0 ? '#34d399' : '#9ca3af',
-                              fontSize: '11px',
+                              fontSize: '12px',
                               textAlign: 'center',
                             }}
                           />
@@ -891,18 +894,19 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         {/* Ext Net Price */}
                         <td
                           style={{
-                            padding: '8px 10px',
+                            padding: '10px 12px',
                             textAlign: 'right',
                             fontFamily: 'monospace',
                             fontWeight: 'bold',
                             color: '#38bdf8',
+                            fontSize: '13px',
                           }}
                         >
                           {formatCurrency(item.extendedNetPrice)}
                         </td>
 
                         {/* Delete action */}
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
                             style={{
@@ -910,8 +914,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                               border: 'none',
                               color: '#ef4444',
                               cursor: 'pointer',
-                              fontSize: '13px',
-                              padding: '2px 4px',
+                              fontSize: '14px',
+                              padding: '3px 6px',
                             }}
                             title="Remove item from quote"
                           >
