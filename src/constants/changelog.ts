@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.628",
+    date: "2026-08-25",
+    summary: "Pre-seed built-in HC3/HC/TA list prices and fix hardware chassis category mapping (v1.0.628)",
+  },
+  {
     version: "1.0.627",
     date: "2026-08-25",
     summary: "Add sticky table headers, dedicated table scroll container, and collapsible discount matrix (v1.0.627)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.604",
     date: "2026-08-24",
     summary: "Revamp Mission Demo to showcase Deep Observability Pipeline presentation",
-  },
-  {
-    version: "1.0.598",
-    date: "2026-08-24",
-    summary: "Project workspace maintenance: cleaned up stale root scratchpads (work_log.md), removed obsolete .claude worktrees, cleared temporary test coverage artifacts, and committed a clean git release state.",
   },
 ];

@@ -216,12 +216,7 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     return 'Module';
   }
 
-  // 6. Support & Maintenance
-  if (t === 'support' || s.startsWith('SPT-') || d.includes('software support') || d.includes('maintenance')) {
-    return 'Support';
-  }
-
-  // 7. Software Licences
+  // 6. Software Licences (must evaluate BEFORE Support because term licenses include bundled support text)
   if (
     t === 'license' ||
     t === 'software' ||
@@ -236,6 +231,16 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     d.includes('license for')
   ) {
     return 'Software';
+  }
+
+  // 7. Standalone Support & Maintenance (e.g. SPT-)
+  if (
+    t === 'support' ||
+    s.startsWith('SPT-') ||
+    (d.includes('support') && !s.includes('-SW-') && !s.includes('-TM')) ||
+    d.includes('maintenance')
+  ) {
+    return 'Support';
   }
 
   if (
