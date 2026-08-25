@@ -31,6 +31,10 @@ export interface BomRow {
    *  when optic-pack optimization rounds a quantity up past what's strictly
    *  needed, so the surplus isn't a silent surprise on the quote. */
   note?: string;
+  /** Set only on optic rows that terminate a TAP link (northbound+southbound pair) -
+   *  the only optics a "Convert to SPAN Only" quote should halve. Chassis-to-chassis
+   *  uplinks, GigaSMART/module board optics, and tool ingest optics are never tagged. */
+  linkType?: 'tap-termination';
 }
 
 // Not every chassis names its always-installed board "Base Ports" - e.g. GigaVUE-HC1's is
@@ -176,15 +180,15 @@ export function generateBom(
   const series1PstAcTapsPerSite: Record<string, number> = {};
   const series1PstDcTapsPerSite: Record<string, number> = {};
 
-  const addRow = (nodeId: string | null, sku: string, qty: number, type: BomRow['type'], term?: string, overrideSite?: string) => {
+  const addRow = (nodeId: string | null, sku: string, qty: number, type: BomRow['type'], term?: string, overrideSite?: string, linkType?: BomRow['linkType']) => {
     const description = skus[sku] || 'Unknown SKU';
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
     const node = nodeId ? nodes.find(n => n.id === nodeId) : null;
     const site = overrideSite || (node?.data?.site as string) || 'Unassigned';
-    const key = (groupByNode && nodeId) ? `${nodeId}_${sku}` : `${site}_${sku}`;
-    
+    const key = ((groupByNode && nodeId) ? `${nodeId}_${sku}` : `${site}_${sku}`) + (linkType ? `__${linkType}` : '');
+
     if (rowMap[key]) rowMap[key].qty += qty;
-    else rowMap[key] = { sku, qty, description, term, type, nodeId: groupByNode ? (nodeId || 'global') : undefined, site };
+    else rowMap[key] = { sku, qty, description, term, type, nodeId: groupByNode ? (nodeId || 'global') : undefined, site, linkType };
 
     if (reqMatch && reqMatch[1]) {
       const depSku = reqMatch[1];
@@ -250,17 +254,17 @@ export function generateBom(
           const fiCount = Number(node.data?.activeTapFiberSfpCount) || 0;
           if (cuCount > 0) {
             const fallbackOptic = (node.data?.tappedLinkOptic as string) || 'SFP-501';
-            addRow(node.id, (fallbackOptic.includes('TAA') || fallbackOptic.includes('T')) ? 'SFP-501T' : 'SFP-501', cuCount, 'Optic');
+            addRow(node.id, (fallbackOptic.includes('TAA') || fallbackOptic.includes('T')) ? 'SFP-501T' : 'SFP-501', cuCount, 'Optic', undefined, undefined, 'tap-termination');
           }
-          if (fiCount > 0) addRow(node.id, resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), fiCount, 'Optic');
+          if (fiCount > 0) addRow(node.id, resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), fiCount, 'Optic', undefined, undefined, 'tap-termination');
         } else {
           const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
           if (allocations.length > 0) {
             allocations.forEach(alloc => {
-              addRow(node.id, resolveOpticSku(alloc.optic, ''), 2 * alloc.qty, 'Optic');
-              addRow(node.id, resolveOpticSku(alloc.toolOptic || alloc.optic, ''), 2 * alloc.qty, 'Optic');
+              addRow(node.id, resolveOpticSku(alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, undefined, 'tap-termination');
+              addRow(node.id, resolveOpticSku(alloc.toolOptic || alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, undefined, 'tap-termination');
             });
-          } else addRow(node.id, resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic');
+          } else addRow(node.id, resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic', undefined, undefined, 'tap-termination');
         }
       }
       const isSeries2 = model.includes('SF2') || model.includes('TX2');
@@ -318,9 +322,12 @@ export function generateBom(
       if (licenseMode === 'HTL') { addRow(node.id, boardSku + '-HW', 1, 'Module'); addRow(node.id, boardSku + '-SW-TM', 1, 'License', termOverride); }
       else addRow(node.id, boardSku, 1, 'Module');
     });
-    ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => {
+    ((node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || []).forEach(opt => {
       if (!opt.optic) return;
-      addRow(node.id, resolveOpticSku(opt.optic, model), opt.qty, 'Optic');
+      // Only optics auto-added by syncOpticsOnTapConnection actually terminate a TAP link
+      // (northbound+southbound pair) - manually configured board optics may serve uplinks,
+      // GigaSMART appliance links, or other non-TAP purposes and must not be halved with them.
+      addRow(node.id, resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, undefined, opt.isAutoAdded ? 'tap-termination' : undefined);
     });
 
     if (model.includes('HC')) {
@@ -613,13 +620,14 @@ export function generateSingleNodeBom(
 ): BomRow[] {
   const rowMap: Record<string, BomRow> = {};
   const skus = getSkus();
-  const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string) => {
+  const addRow = (sku: string, qty: number, type: BomRow['type'], term?: string, linkType?: BomRow['linkType']) => {
     let description = skus[sku] || 'Unknown SKU';
     const purpose = type === 'Chassis' ? 'Base hardware chassis required to host modules and aggregate traffic.' : (type === 'Module' ? 'Hardware line card or module installed in the chassis to provide additional ports or compute resources.' : (type === 'Optic' ? 'Transceiver required to connect physical fiber or copper links to the system.' : (type === 'TAP' ? 'Network TAP used to passively mirror traffic from live network links without disruption.' : (type === 'License' ? 'Software license required to enable features, advanced processing (GigaSMART), or hardware functionality.' : (type === 'Dependency' ? 'Mandatory accessory (e.g., power cord, rack mount) required for proper installation and operation.' : '')))));
     if (purpose) description += ` | Purpose: ${purpose}`;
     const reqMatch = description.match(/(?:requires|Must also add|Needs)\s+(?:.*?)([A-Z0-9]+-[A-Z0-9-]+)(?:\s|\)|\.|$)/i);
-    if (rowMap[sku]) rowMap[sku].qty += qty;
-    else rowMap[sku] = { sku, qty, description, term, type };
+    const key = sku + (linkType ? `__${linkType}` : '');
+    if (rowMap[key]) rowMap[key].qty += qty;
+    else rowMap[key] = { sku, qty, description, term, type, linkType };
     if (reqMatch && reqMatch[1]) {
       const depSku = reqMatch[1];
       if (isQuotableDependency(depSku, skus)) {
@@ -663,8 +671,8 @@ export function generateSingleNodeBom(
     addRow(resolved.hwSku, 1, 'TAP');
     if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
       const allocations = (node.data?.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [];
-      if (allocations.length > 0) allocations.forEach(alloc => { addRow(resolveOpticSku(alloc.optic, ''), 2 * alloc.qty, 'Optic'); addRow(resolveOpticSku(alloc.toolOptic || alloc.optic, ''), 2 * alloc.qty, 'Optic'); });
-      else addRow(resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic');
+      if (allocations.length > 0) allocations.forEach(alloc => { addRow(resolveOpticSku(alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, 'tap-termination'); addRow(resolveOpticSku(alloc.toolOptic || alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, 'tap-termination'); });
+      else addRow(resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic', undefined, 'tap-termination');
     }
     const isSeries2 = model.includes('SF2') || model.includes('TX2'), isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
     if (isSeries1) {
@@ -710,7 +718,7 @@ export function generateSingleNodeBom(
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', termOverride);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
-  ((node.data?.optics as { board: string, optic: string, qty: number }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic'); });
+  ((node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, opt.isAutoAdded ? 'tap-termination' : undefined); });
   if (model.includes('HC')) {
     const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, nodes);
     resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {

@@ -5,6 +5,7 @@ import {
   calculateLineFinancials,
   calculateQuoteSummary,
   createAdHocQuoteItem,
+  DEFAULT_DISCOUNT_CONFIG,
   type QuoteLineItem,
   type DiscountCategoryConfig,
 } from './pricingEngine';
@@ -332,6 +333,7 @@ describe('pricingEngine', () => {
           unitListPrice: 500,
           isMonthlyPrice: false,
           applyDiscount: true,
+          linkType: 'tap-termination',
         },
       ];
 
@@ -355,6 +357,28 @@ describe('pricingEngine', () => {
       expect(spanOptic?.qty).toBe(4);
       expect(spanOptic?.extendedListPrice).toBe(2000); // 4 * 500 = 2000
       expect(spanSummary.spanOnlyMode).toBe(true);
+    });
+
+    it('does not halve Optic-category rows that are not tagged as TAP-termination', () => {
+      // e.g. a chassis-to-chassis interconnect uplink or a GigaSMART/module board optic -
+      // these share the 'Optic' category with real TAP-termination optics but aren't
+      // eligible for the SPAN-only halving rule.
+      const unrelatedOptics: QuoteLineItem[] = [
+        {
+          id: '1',
+          sku: 'QSF-502T',
+          description: '40G Chassis Interconnect Uplink',
+          type: 'Optic',
+          category: 'Optic',
+          qty: 2,
+          unitListPrice: 800,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+      ];
+
+      const spanSummary = calculateQuoteSummary(unrelatedOptics, DEFAULT_DISCOUNT_CONFIG, false, false, true);
+      expect(spanSummary.items.find((i) => i.sku === 'QSF-502T')?.qty).toBe(2);
     });
   });
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { CONFIG_TYPES, SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import { QSB_BIDI_OPTICS } from '../../constants/tapOpticRules';
@@ -11,6 +11,19 @@ interface InputNodePanelProps {
 
 export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericChange }) => {
   const configType = (node.data?.configType as string) || CONFIG_TYPES.SPAN;
+
+  const [erspanIdStr, setErspanIdStr] = useState(String((node.data?.erspanId as number) ?? 10));
+
+  useEffect(() => {
+    setErspanIdStr(String((node.data?.erspanId as number) ?? 10));
+  }, [node.id]);
+
+  const handleErspanIdBlur = () => {
+    let parsed = parseInt(erspanIdStr, 10);
+    if (isNaN(parsed) || parsed < 1) parsed = 10;
+    setErspanIdStr(parsed.toString());
+    onGenericChange('erspanId', parsed.toString());
+  };
 
   // Derive TAP specific settings for simple mode
   const tapFiberMode = (node.data?.tapFiberMode as string) || 'Multimode';
@@ -179,8 +192,9 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
             <input
               type="number"
               placeholder="e.g. 10"
-              value={(node.data?.erspanId as number) || 10}
-              onChange={(e) => onGenericChange('erspanId', e.target.value)}
+              value={erspanIdStr}
+              onChange={(e) => setErspanIdStr(e.target.value)}
+              onBlur={handleErspanIdBlur}
             />
           </FormGroup>
           <FormGroup label="ERSPAN Source IP">

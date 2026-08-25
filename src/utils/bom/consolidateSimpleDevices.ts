@@ -41,7 +41,7 @@ export function consolidateSimpleDeviceRows(rows: BomRow[]): BomRow[] {
       return;
     }
     const row = nodeRows[0];
-    const key = `${row.site || ''}_${row.sku}`;
+    const key = `${row.site || ''}_${row.sku}${row.linkType ? `__${row.linkType}` : ''}`;
     const existing = merged.get(key);
     if (existing) existing.qty += row.qty;
     else merged.set(key, { ...row, nodeId: CONSOLIDATED_DEVICES_NODE_ID });

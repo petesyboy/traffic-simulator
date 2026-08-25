@@ -91,6 +91,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     optics: '0',
     taps: '0',
     support: '0',
+    accessories: '0',
   });
 
   // Exclude all optics toggle
@@ -167,6 +168,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       optics: '0',
       taps: '0',
       support: '0',
+      accessories: '0',
     });
     setExcludeOptics(false);
     setFreePowerCords(false);
@@ -519,6 +521,26 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                     background: '#111827',
                     border: '1px solid #db2777',
                     color: '#f472b6',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                  }}
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', color: '#a78bfa', marginBottom: '3px' }}>Accessories %</label>
+                <input
+                  type="text"
+                  value={rawDiscountInputs.accessories}
+                  onChange={(e) => handleDiscountInputChange('accessories', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '5px 8px',
+                    borderRadius: '4px',
+                    background: '#111827',
+                    border: '1px solid #7c3aed',
+                    color: '#a78bfa',
                     fontSize: '12px',
                     fontWeight: 'bold',
                   }}

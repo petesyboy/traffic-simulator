@@ -18,7 +18,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.0.622",
     date: "2026-08-25",
-    summary: "Preserve strict viewport bounds, lock footer, and add bottom scroll padding (v1.0.622)",
+    summary: "Use project-wide Master BOM aggregation and multipack optimization (v1.0.622)",
   },
   {
     version: "1.0.621",

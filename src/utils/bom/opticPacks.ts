@@ -48,9 +48,14 @@ export const OPTIC_PACK_RULES: Record<string, OpticPackRule> = {
 export function aggregateBomRowsBySku(rows: BomRow[]): BomRow[] {
   const map = new Map<string, BomRow>();
   for (const row of rows) {
-    const existing = map.get(row.sku);
+    // Keyed by sku + linkType, not sku alone - a TAP-termination optic (e.g. an
+    // auto-added chassis SFP that terminates a tapped link) must never merge with
+    // a same-SKU optic serving another purpose (uplink, module board, etc.), since
+    // only the former is eligible for SPAN-only halving downstream.
+    const key = row.sku + (row.linkType ? `__${row.linkType}` : '');
+    const existing = map.get(key);
     if (existing) existing.qty += row.qty;
-    else map.set(row.sku, { ...row, nodeId: undefined, site: undefined });
+    else map.set(key, { ...row, nodeId: undefined, site: undefined });
   }
   return Array.from(map.values());
 }

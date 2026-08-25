@@ -62,6 +62,7 @@ export interface QuoteLineItem {
   site?: string;
   nodeId?: string;
   note?: string;
+  linkType?: 'tap-termination';
 }
 
 export interface CalculatedLineItem extends QuoteLineItem {
@@ -308,9 +309,12 @@ export function calculateLineFinancials(
     item.isMonthlyPrice ||
     (item.category === 'Software' && (item.sku.includes('-SW-TM') || item.sku.endsWith('-TM')));
 
-  // In SPAN-only mode, TAP termination links require only 1 optic per link instead of 2 (halve optic quantity)
+  // In SPAN-only mode, TAP termination links require only 1 optic per link instead of 2 (halve optic
+  // quantity) - but only for optics actually tagged as terminating a TAP link. Other 'Optic' category
+  // rows (chassis-to-chassis uplinks, GigaSMART/module board optics, tool ingest optics) are unrelated
+  // to the TAP<->SPAN conversion and must pass through at full quantity.
   const effectiveQty =
-    spanOnlyMode && item.category === 'Optic'
+    spanOnlyMode && item.linkType === 'tap-termination'
       ? Math.max(1, Math.ceil((item.qty || 0) / 2))
       : (item.qty || 0);
 
@@ -371,6 +375,7 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
       site: row.site,
       nodeId: row.nodeId,
       note: row.note,
+      linkType: row.linkType,
     };
   });
 }
