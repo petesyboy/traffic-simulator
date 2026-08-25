@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.622",
+    date: "2026-08-25",
+    summary: "Preserve strict viewport bounds, lock footer, and add bottom scroll padding (v1.0.622)",
+  },
+  {
     version: "1.0.621",
     date: "2026-08-25",
     summary: "Apply screen font scaling zoom and improve quote table typography (v1.0.621)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.593",
     date: "2026-08-24",
     summary: "Deduplicated Signal Path Schematics in PDF reports: when multiple deployment sites share identical architectures (e.g. Site A and Site B), renders a single consolidated representative schematic strip under the overview diagram instead of duplicating identical SVGs under each site sub-diagram. Preserves separate per-site schematics whenever site configurations differ.",
-  },
-  {
-    version: "1.0.592",
-    date: "2026-08-24",
-    summary: "Fixed TAP link capacity resolution: getTapNodeLinks() now queries the merged SKU catalogue description and multi-link model heuristics (e.g. 6 links for TAP-M251T/M253T/M271T/M273T), accurately producing 96 monitored links and 192 optical feeds for 16 six-link TAP modules. Added automatic Scope Considerations warning notice plate conversion in executive summary.",
   },
 ];

@@ -15,8 +15,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../store/store';
-import { generateBom } from '../../utils/bomEngine';
+import { generateBom, getSkus } from '../../utils/bomEngine';
 import { consolidateSimpleDeviceRows } from '../../utils/bom/consolidateSimpleDevices';
+import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { skuService } from '../../services/skuService';
 import {
   type QuoteLineItem,
@@ -69,13 +70,14 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
 
-  // Initialize quote items from consolidated BOM rows
+  // Initialize quote items from project-wide consolidated Master BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
     const rawBom = consolidateSimpleDeviceRows(
       generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
     );
+    const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
-    return createQuoteItemsFromBom(rawBom, defaultTerm);
+    return createQuoteItemsFromBom(masterBom, defaultTerm);
   });
 
   // Category discount matrix
@@ -153,8 +155,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     const rawBom = consolidateSimpleDeviceRows(
       generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
     );
+    const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
-    setItems(createQuoteItemsFromBom(rawBom, defaultTerm));
+    setItems(createQuoteItemsFromBom(masterBom, defaultTerm));
     setDiscountConfig(DEFAULT_DISCOUNT_CONFIG);
     setRawDiscountInputs({
       global: '0',
