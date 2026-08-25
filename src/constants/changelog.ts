@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.616",
+    date: "2026-08-25",
+    summary: "Add commercial quotation engine, SPAN-only mode, and power cord discounting (v1.0.616)",
+  },
+  {
     version: "1.0.611",
     date: "2026-08-25",
     summary: "Label HC tier as Deep Observability instead of Aggregation in signal path schematic",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.588",
     date: "2026-08-23",
     summary: "Rendered full composited add-in cards (GigaSMART, PRT modules, and TAP bays) inside rack elevation diagrams, and relocated device labels and descriptions to side callout cards with leader lines to keep physical equipment faceplates completely unobscured.",
-  },
-  {
-    version: "1.0.587",
-    date: "2026-08-23",
-    summary: "Consolidated hardware platform descriptions in the Solution Report to display a single representative front-panel photograph per chassis/node model, with all deployed instances, sites, and labels detailed in the text.",
   },
 ];

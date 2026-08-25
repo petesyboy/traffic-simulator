@@ -54,16 +54,16 @@ export function buildQuotePdfDocDefinition(
   const categoryRows: Content[][] = Object.values(summary.categoryBreakdown)
     .filter((c) => c.itemCount > 0)
     .map((c) => [
-      { text: c.category, fontSize: 8, bold: true, color: '#ffffff' },
-      { text: String(c.totalQty), fontSize: 8, alignment: 'center' as const, color: '#cccccc' },
-      { text: formatCurrency(c.listPrice), fontSize: 8, alignment: 'right' as const, color: '#cccccc' },
+      { text: c.category, fontSize: 7, bold: true, color: '#ffffff' },
+      { text: String(c.totalQty), fontSize: 7, alignment: 'center' as const, color: '#cccccc' },
+      { text: formatCurrency(c.listPrice), fontSize: 7, alignment: 'right' as const, color: '#cccccc' },
       {
         text: `${formatCurrency(c.discountAmount)} (${c.listPrice > 0 ? ((c.discountAmount / c.listPrice) * 100).toFixed(1) : '0.0'}%)`,
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'right' as const,
         color: '#22c55e',
       },
-      { text: formatCurrency(c.netPrice), fontSize: 8, bold: true, alignment: 'right' as const, color: '#00e5ff' },
+      { text: formatCurrency(c.netPrice), fontSize: 7, bold: true, alignment: 'right' as const, color: '#00e5ff' },
     ]);
 
   // ── Itemized Line Items Table ──
@@ -86,28 +86,28 @@ export function buildQuotePdfDocDefinition(
     const bg = isZebra ? '#1f2937' : '#111827';
 
     tableBody.push([
-      { text: item.category, fontSize: 7, color: '#9ca3af', fillColor: bg },
-      { text: item.sku, fontSize: 7, bold: true, color: '#38bdf8', fillColor: bg },
+      { text: item.category, fontSize: 6.5, color: '#9ca3af', fillColor: bg },
+      { text: item.sku, fontSize: 6.5, bold: true, color: '#38bdf8', fillColor: bg },
       {
         text: item.description + (item.note ? `\nNote: ${item.note}` : ''),
-        fontSize: 7,
+        fontSize: 6.5,
         color: '#f3f4f6',
         fillColor: bg,
       },
-      { text: item.termMonths ? `${item.termMonths}m` : '—', fontSize: 7, alignment: 'center', color: '#d1d5db', fillColor: bg },
-      { text: String(item.qty), fontSize: 7, bold: true, alignment: 'center', color: '#ffffff', fillColor: bg },
-      { text: formatCurrency(item.effectiveUnitList), fontSize: 7, alignment: 'right', color: '#d1d5db', fillColor: bg },
-      { text: formatCurrency(item.extendedListPrice), fontSize: 7, alignment: 'right', color: '#d1d5db', fillColor: bg },
+      { text: item.termMonths ? `${item.termMonths}m` : '—', fontSize: 6.5, alignment: 'center', color: '#d1d5db', fillColor: bg },
+      { text: String(item.qty), fontSize: 6.5, bold: true, alignment: 'center', color: '#ffffff', fillColor: bg },
+      { text: formatCurrency(item.effectiveUnitList), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
+      { text: formatCurrency(item.extendedListPrice), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
       {
         text: item.effectiveDiscountPercent > 0 ? `${item.effectiveDiscountPercent.toFixed(1)}%` : '—',
-        fontSize: 7,
+        fontSize: 6.5,
         alignment: 'center',
         color: item.effectiveDiscountPercent > 0 ? '#22c55e' : '#9ca3af',
         fillColor: bg,
       },
       {
         text: formatCurrency(item.extendedNetPrice),
-        fontSize: 7,
+        fontSize: 6.5,
         bold: true,
         alignment: 'right',
         color: '#38bdf8',
@@ -119,7 +119,7 @@ export function buildQuotePdfDocDefinition(
   return {
     pageSize: 'A4',
     pageOrientation: 'landscape',
-    pageMargins: [30, 30, 30, 35],
+    pageMargins: [24, 24, 24, 26],
     background: () => ({
       canvas: [
         {
@@ -133,7 +133,7 @@ export function buildQuotePdfDocDefinition(
       ],
     }),
     footer: (currentPage, pageCount) => ({
-      margin: [30, 10, 30, 0],
+      margin: [24, 10, 24, 0],
       columns: [
         {
           text: `Gigamon Indicative Quotation (Illustrative Order of Magnitude • Non-Binding) • ${scenario}`,
@@ -232,7 +232,7 @@ export function buildQuotePdfDocDefinition(
       },
       {
         table: {
-          widths: ['30%', '15%', '18%', '18%', '19%'],
+          widths: ['*', 70, 110, 130, 120],
           body: [
             [
               { text: 'Category', style: 'tableHeader' },
@@ -265,7 +265,7 @@ export function buildQuotePdfDocDefinition(
       {
         table: {
           headerRows: 1,
-          widths: ['8%', '16%', '32%', '6%', '5%', '11%', '11%', '6%', '11%'],
+          widths: [48, 85, '*', 32, 28, 78, 80, 42, 85],
           body: tableBody,
         },
         layout: {
@@ -295,11 +295,11 @@ export function buildQuotePdfDocDefinition(
     ],
     styles: {
       tableHeader: {
-        fontSize: 7,
+        fontSize: 6.5,
         bold: true,
         color: '#ffffff',
         fillColor: '#1e293b',
-        margin: [2, 3, 2, 3],
+        margin: [1, 2, 1, 2],
       },
     },
   };
