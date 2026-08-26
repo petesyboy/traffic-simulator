@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.636",
+    date: "2026-08-26",
+    summary: "Add 2 vs 4 PSU chassis configuration for GigaVUE-HC3 (v1.0.636)",
+  },
+  {
     version: "1.0.635",
     date: "2026-08-26",
     summary: "Add bulk replace transceivers with connected TAP media synchronisation (v1.0.635)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.611",
     date: "2026-08-25",
     summary: "Label HC tier as Deep Observability instead of Aggregation in signal path schematic",
-  },
-  {
-    version: "1.0.610",
-    date: "2026-08-24",
-    summary: "Optimize Mission Demo and canvas edge colours for crisp light and dark theme contrast",
   },
 ];

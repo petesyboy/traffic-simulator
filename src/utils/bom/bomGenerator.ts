@@ -313,8 +313,9 @@ export function generateBom(
       addRow(node.id, globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
     }
     if (model.includes('TA') || model.includes('HC')) {
-      if (node.data?.powerSupply === 'DC') addRow(node.id, 'PCD-00051', 2, 'Dependency');
-      else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), 2, 'Dependency');
+      const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
+      if (node.data?.powerSupply === 'DC') addRow(node.id, 'PCD-00051', psuQty, 'Dependency');
+      else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
     }
     if (resolved.advSku) addRow(node.id, resolved.advSku, 1, 'License', termOverride);
     Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => {
@@ -713,8 +714,9 @@ export function generateSingleNodeBom(
     addRow(globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
   }
   if (model.includes('TA') || model.includes('HC')) {
-    if (node.data?.powerSupply === 'DC') addRow('PCD-00051', 2, 'Dependency');
-    else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), 2, 'Dependency');
+    const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
+    if (node.data?.powerSupply === 'DC') addRow('PCD-00051', psuQty, 'Dependency');
+    else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', termOverride);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });

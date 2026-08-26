@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Edge } from '@xyflow/react';
-import { syncOpticsOnTapConnection, validateConfiguration, setMockSkusMetadata } from './bomEngine';
+import { syncOpticsOnTapConnection, validateConfiguration, setMockSkusMetadata, generateBom, generateSingleNodeBom } from './bomEngine';
 import { type CustomNode, type InstalledOptic, type PortLink } from '../store/types';
 import { syncPortAssignments } from './portSync';
 
@@ -460,5 +460,51 @@ describe('MPO breakout panel validation', () => {
     const err = errors.find(e => e.type === 'breakout_panel_capacity_exceeded');
     expect(err).toBeDefined();
     expect(err?.nodeId).toBe('p1');
+  });
+
+  describe('HC3 Power Cord Quantities', () => {
+    it('generates 2 power cords for 2-PSU HC3 and 4 power cords for 4-PSU HC3', () => {
+      const hc3TwoPsu: CustomNode = {
+        id: 'hc3-2',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3 (2 PSUs)',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC3',
+          sku: 'HC3-BASE',
+          powerSupply: 'AC',
+          psuCount: 2,
+        },
+      };
+
+      const hc3FourPsu: CustomNode = {
+        id: 'hc3-4',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3 (4 PSUs)',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC3',
+          sku: 'HC3-BASE',
+          powerSupply: 'AC',
+          psuCount: 4,
+        },
+      };
+
+      // US Region (PCD-00001)
+      const bom2 = generateBom([hc3TwoPsu], [], 'Perpetual', '12', 'US');
+      const cordRow2 = bom2.find(r => r.sku === 'PCD-00001');
+      expect(cordRow2?.qty).toBe(2);
+
+      const bom4 = generateBom([hc3FourPsu], [], 'Perpetual', '12', 'US');
+      const cordRow4 = bom4.find(r => r.sku === 'PCD-00001');
+      expect(cordRow4?.qty).toBe(4);
+
+      // Single node BOM check
+      const singleRow4 = generateSingleNodeBom(hc3FourPsu, 'Perpetual', '12', 'UK');
+      const ukCordRow4 = singleRow4.find(r => r.sku === 'PCD-00005');
+      expect(ukCordRow4?.qty).toBe(4);
+    });
   });
 });
