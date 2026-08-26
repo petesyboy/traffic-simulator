@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.642",
+    date: "2026-08-26",
+    summary: "Add list prices for GFM, Gen2 GigaSMART and TA upgrade term licences with hyphen normalization (v1.0.642)",
+  },
+  {
     version: "1.0.641",
     date: "2026-08-26",
     summary: "Preserve and convert manually added ad-hoc SKUs between HTL and Perpetual modes (v1.0.641)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.622",
     date: "2026-08-25",
     summary: "Use project-wide Master BOM aggregation and multipack optimization (v1.0.622)",
-  },
-  {
-    version: "1.0.621",
-    date: "2026-08-25",
-    summary: "Apply screen font scaling zoom and improve quote table typography (v1.0.621)",
   },
 ];

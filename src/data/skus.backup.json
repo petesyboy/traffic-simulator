@@ -103,6 +103,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 6500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -119,6 +120,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 6500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -130,6 +132,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "Active",
     "isUnavailable": false
   },
@@ -144,6 +147,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 8500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -158,6 +162,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 8500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -169,6 +174,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -183,6 +189,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -197,6 +204,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -208,6 +216,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 850,
     "status": "Active",
     "isUnavailable": false
   },
@@ -225,6 +234,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -242,6 +252,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -253,6 +264,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -270,6 +282,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 18500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -287,6 +300,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 18500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -298,6 +312,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1750,
     "status": "Active",
     "isUnavailable": false
   },
@@ -315,6 +330,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 14500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -332,6 +348,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 14500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -343,6 +360,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1350,
     "status": "Active",
     "isUnavailable": false
   },
@@ -442,6 +460,7 @@
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
+    "listPrice": 150,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -491,6 +510,7 @@
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
+    "listPrice": 650,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -522,6 +542,7 @@
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
+    "listPrice": 850,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -783,6 +804,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": false,
+    "listPrice": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -966,6 +988,7 @@
     "productSubFamily": "GigaVUE-HD",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": false,
+    "listPrice": 150,
     "status": "Active",
     "isUnavailable": false
   },
@@ -977,6 +1000,7 @@
     "productSubFamily": "GigaVUE-HD",
     "countryOfOrigin": "Mexico",
     "supportAvailable": false,
+    "listPrice": 250,
     "status": "Active",
     "isUnavailable": false
   },
@@ -988,6 +1012,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 12500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -999,6 +1024,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 16000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1010,6 +1036,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1021,6 +1048,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1035,6 +1063,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 450,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1049,6 +1078,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1060,6 +1090,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 850,
     "status": "Active",
     "isUnavailable": false
   },
@@ -1071,6 +1102,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1050,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2296,6 +2328,7 @@
       "1G",
       "25G"
     ],
+    "listPrice": 45000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -2305,6 +2338,7 @@
     "description": "AC-powered GSA110 hardware only; requires a separate GigaVUE-OS license.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 45000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -2314,6 +2348,7 @@
     "description": "Same GSA110 configuration with dual redundant DC power supplies.",
     "category": "Chassis",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 45000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -2409,6 +2444,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 14000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2425,6 +2461,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 14000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2449,6 +2486,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2464,6 +2502,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2479,6 +2518,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2494,6 +2534,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2509,6 +2550,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 16500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2711,6 +2753,7 @@
     "productSubFamily": "GigaVUE-HCT",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 950,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2727,6 +2770,7 @@
     "productSubFamily": "GigaVUE-HCT",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2743,6 +2787,7 @@
     "productSubFamily": "GigaVUE-HCT",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4321,6 +4366,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 1800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4336,6 +4382,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 1800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4347,6 +4394,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 900,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4365,6 +4413,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 4200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4383,6 +4432,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 4200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4394,6 +4444,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2100,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4451,6 +4502,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4464,6 +4516,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -4475,6 +4528,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6332,6 +6386,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6367,6 +6422,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6378,6 +6434,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6389,6 +6446,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6400,6 +6458,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 45000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6411,6 +6470,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 45000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6422,6 +6482,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 65000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6469,6 +6530,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6480,6 +6542,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6491,6 +6554,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6514,6 +6578,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6537,6 +6602,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6548,6 +6614,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6619,6 +6686,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1650,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6630,6 +6698,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6641,6 +6710,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1100,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6652,6 +6722,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6663,6 +6734,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6674,6 +6746,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6685,6 +6758,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6696,6 +6770,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6707,6 +6782,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6718,6 +6794,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6729,6 +6806,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6740,6 +6818,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6751,6 +6830,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6762,6 +6842,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 16000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6773,6 +6854,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1400,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6784,6 +6866,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6795,6 +6878,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6806,6 +6890,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6841,6 +6926,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6852,6 +6938,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6863,6 +6950,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 12000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6874,6 +6962,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1100,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6885,6 +6974,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6896,6 +6986,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6907,6 +6998,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6918,6 +7010,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1650,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6929,6 +7022,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 30000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6940,6 +7034,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6975,6 +7070,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7022,6 +7118,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7033,6 +7130,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 12000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7044,6 +7142,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7055,6 +7154,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7066,6 +7166,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 20000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7077,6 +7178,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7088,6 +7190,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 20000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7099,6 +7202,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7110,6 +7214,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7121,6 +7226,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7204,6 +7310,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 16000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7215,6 +7322,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1400,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7226,6 +7334,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 7500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7357,6 +7466,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7368,6 +7478,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1650,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7734,6 +7845,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7810,6 +7922,7 @@
       "40G"
     ],
     "formFactor": "QSFP28",
+    "listPrice": 5450,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -7824,6 +7937,7 @@
       "40G"
     ],
     "formFactor": "QSFP28",
+    "listPrice": 5450,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -7835,6 +7949,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-C08-SW-TM",
+    "listPriceMonthly": 3530,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7908,6 +8023,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8062,6 +8178,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 20000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8226,6 +8343,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 9500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8401,6 +8519,7 @@
     "partNumber": "SMT-HC3-UPGAFI",
     "description": "Application Filtering Intelligence – Upgrade",
     "category": "Module",
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8468,6 +8587,7 @@
     "productSubFamily": "GigaVUE-HC2",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -8481,6 +8601,7 @@
     "productSubFamily": "GigaVUE-HC2",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -8494,6 +8615,7 @@
     "productSubFamily": "GigaVUE-HC2",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -8507,6 +8629,7 @@
     "productSubFamily": "GigaVUE-HC2",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -8521,6 +8644,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 4500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8535,6 +8659,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
+    "listPrice": 4500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8546,6 +8671,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 550,
     "status": "Active",
     "isUnavailable": false
   },
