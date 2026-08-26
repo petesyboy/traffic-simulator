@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.655",
+    date: "2026-08-26",
+    summary: "Allow bulk replace to non-TAA optics without being reverted by TAP sync (v1.0.655)",
+  },
+  {
     version: "1.0.653",
     date: "2026-08-26",
     summary: "Resolve PDF generation hanging on promise resolution and table widths (v1.0.653)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.635",
     date: "2026-08-26",
     summary: "Add bulk replace transceivers with connected TAP media synchronisation (v1.0.635)",
-  },
-  {
-    version: "1.0.634",
-    date: "2026-08-26",
-    summary: "Add persistent Save and Load Commercial Quote JSON feature with solution naming (v1.0.634)",
   },
 ];

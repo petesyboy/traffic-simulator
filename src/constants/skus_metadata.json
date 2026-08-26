@@ -1,32 +1,32 @@
 {
   "BPS-HC0-D25A4G-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "BPS-HC1-D25A60-SW-TM"
   },
   "BPS-HC0-D25B4G-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "BPS-HC0-D35C4G-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "BPS-HC1-D25A60-SW-TM"
   },
   "BPS-HC0-Q25A28-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "BPS-HC3-C25F2G-SW-TM"
   },
   "CLS-TA100-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "CLS-TAX20-SW-TM"
   },
   "CLS-TAC00-SW-TM": {
-    "eos": "Mon Feb 28 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Sun Feb 28 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44620",
+    "eol": "46446",
     "replacement": "CLS-TAC20-SW-TM"
   },
   "CLS-TAC40": {
@@ -35,13 +35,13 @@
     "replacement": "CLS-TAC40E"
   },
   "CLS-TAC40-SW-TM": {
-    "eos": "Mon Jul 07 2025 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Sat Dec 07 2030 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "45845",
+    "eol": "47824",
     "replacement": "CLS-TAC40E-SW-TM"
   },
   "CLS-TAQ00-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "CLS-TAC20-SW-TM"
   },
   "CLS-TAX20": {
@@ -55,8 +55,8 @@
     "replacement": "CLS-TAX20E-SW-TM"
   },
   "CLS-WBX01": {
-    "eos": "Tue May 26 2026 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Sat Oct 28 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "46168",
+    "eol": "47054",
     "replacement": ""
   },
   "FAN-TAC40": {
@@ -70,8 +70,8 @@
     "replacement": ""
   },
   "GSW-WBX01": {
-    "eos": "Tue May 26 2026 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Sat Oct 28 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "46168",
+    "eol": "47054",
     "replacement": ""
   },
   "GVS-GSA110-2AC": {
@@ -100,53 +100,53 @@
     "replacement": ""
   },
   "GVS-HC101-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-HC100-SW-TM"
   },
   "GVS-HC102-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-HC100-SW-TM"
   },
   "GVS-HC200-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "GVS-HC2A0-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "GVS-HC2A1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "GVS-HC1P-SW-TM"
   },
   "GVS-HC2A2-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "GVS-HC1P-SW-TM"
   },
   "GVS-HC3A1-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-HC3A0-SW-TM"
   },
   "GVS-HC3A2-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-HC3A0-SW-TM"
   },
   "GVS-TAC01-SW-TM": {
-    "eos": "Mon Feb 28 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Sun Feb 28 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44620",
+    "eol": "46446",
     "replacement": "GVS-TAC21-SW-TM"
   },
   "GVS-TAC02-SW-TM": {
-    "eos": "Mon Feb 28 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Sun Feb 28 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44620",
+    "eol": "46446",
     "replacement": "GVS-TAC22-SW-TM"
   },
   "GVS-TAC20A-SW-TM": {
@@ -155,18 +155,18 @@
     "replacement": ""
   },
   "GVS-TAC21-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAC20-SW-TM"
   },
   "GVS-TAC22-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAC20-SW-TM"
   },
   "GVS-TAC40-SW-TM": {
-    "eos": "Mon Jul 07 2025 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Sat Dec 07 2030 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "45845",
+    "eol": "47824",
     "replacement": "GVS-TAC40E-SW-TM"
   },
   "GVS-TAC41": {
@@ -200,33 +200,33 @@
     "replacement": ""
   },
   "GVS-TAQ01-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAC21-SW-TM"
   },
   "GVS-TAQ02-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAC22-SW-TM"
   },
   "GVS-TAX01-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAX21-SW-TM"
   },
   "GVS-TAX01A-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAX21A-SW-TM"
   },
   "GVS-TAX02-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAX22-SW-TM"
   },
   "GVS-TAX02A-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "GVS-TAX22A-SW-TM"
   },
   "GVS-TAX20-SW-TM": {
@@ -250,7 +250,7 @@
     "replacement": "GVS-TAX21E-HW"
   },
   "GVS-TAX21-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20-SW-TM"
   },
@@ -265,7 +265,7 @@
     "replacement": "GVS-TAX21E-HW"
   },
   "GVS-TAX21A-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
   },
@@ -280,7 +280,7 @@
     "replacement": "GVS-TAX22E-HW"
   },
   "GVS-TAX22-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20-SW-TM"
   },
@@ -295,7 +295,7 @@
     "replacement": "GVS-TAX22E-HW"
   },
   "GVS-TAX22A-SW-TM": {
-    "eos": "Tue Feb 28 2023 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
   },
@@ -310,18 +310,18 @@
     "replacement": "IBP-TAX20E-SW-TM"
   },
   "PRT-HC0-C02-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PRT-HC0-Q06-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PRT-HC0-X24-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PWR-TAC41": {
@@ -355,8 +355,8 @@
     "replacement": ""
   },
   "QSB-501": {
-    "eos": "Thu Oct 01 2026 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Wed Oct 01 2031 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "46296",
+    "eol": "48122",
     "replacement": "QSB-523T"
   },
   "QSB-502": {
@@ -365,13 +365,13 @@
     "replacement": "QSB-504"
   },
   "QSB-504": {
-    "eos": "Wed Jan 06 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Tue Jan 06 2032 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "46393",
+    "eol": "48219",
     "replacement": "QSB-524T"
   },
   "QSB-521": {
-    "eos": "Thu Oct 01 2026 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Wed Oct 01 2031 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "46296",
+    "eol": "48122",
     "replacement": "QSB-523T"
   },
   "RMK-TAC40E": {
@@ -420,318 +420,318 @@
     "replacement": ""
   },
   "SMT-HC0-AFI": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
   },
   "SMT-HC0-AFS": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-AFS"
   },
   "SMT-HC0-AMI": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
   },
   "SMT-HC0-GEN1-AFI-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
   },
   "SMT-HC0-GEN1-AFS-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-AFS-SW-TM"
   },
   "SMT-HC0-GEN1-AMI-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
   },
   "SMT-HC0-GEN1-APF-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-APF-SW-TM"
   },
   "SMT-HC0-GEN1-AT1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AT1-SW-TM"
   },
   "SMT-HC0-GEN1-DD1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-DD1-SW-TM"
   },
   "SMT-HC0-GEN1-FVU-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
   },
   "SMT-HC0-GEN1-GTP250-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
   },
   "SMT-HC0-GEN1-GTP500-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
   },
   "SMT-HC0-GEN1-GTPMAX-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN3-GTPMAX-SW-TM"
   },
   "SMT-HC0-GEN1-HS1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-HS1-SW-TM"
   },
   "SMT-HC0-GEN1-INSSL-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-INSSL-SW-TM"
   },
   "SMT-HC0-GEN1-NF1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-NF1-SW-TM"
   },
   "SMT-HC0-GEN1-SIP10-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
   },
   "SMT-HC0-GEN1-SIPMAX-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
   },
   "SMT-HC0-GEN1-SSL-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-SSL-SW-TM"
   },
   "SMT-HC0-GEN1-UPGINSSL-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC0-Q02X08-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1-S-SW-TM"
   },
   "SMT-HC0-R-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC0-X16-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1-S-SW-TM"
   },
   "SMT-HC2-AFI": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
   },
   "SMT-HC2-AFS": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-AFS"
   },
   "SMT-HC2-AMI": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
   },
   "SMT-HC2-BN-CORE": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-BN-MV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-BN-NV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-BN-NVP": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-BN-SV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-BN-SVP": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-GEN2-5GC-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-5GC-SW-TM"
   },
   "SMT-HC2-GEN2-AFI-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AFI-SW-TM"
   },
   "SMT-HC2-GEN2-AFS-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-AFS-SW-TM"
   },
   "SMT-HC2-GEN2-AMI-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AMI-SW-TM"
   },
   "SMT-HC2-GEN2-APF-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-APF-SW-TM"
   },
   "SMT-HC2-GEN2-AT1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-AT1-SW-TM"
   },
   "SMT-HC2-GEN2-BN-ZTA-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-GEN2-DCRP-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-INSSL-SW-TM"
   },
   "SMT-HC2-GEN2-DD1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-DD1-SW-TM"
   },
   "SMT-HC2-GEN2-FVU-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
   },
   "SMT-HC2-GEN2-GTPMAX-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-GTPMAX-SW-TM"
   },
   "SMT-HC2-GEN2-HS1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-HS1-SW-TM"
   },
   "SMT-HC2-GEN2-NF1-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC1P-GEN3-NF1-SW-TM"
   },
   "SMT-HC2-GEN2-SIP10-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
   },
   "SMT-HC2-GEN2-SIPMAX-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-SIPMAX-SW-TM"
   },
   "SMT-HC2-GEN2-VDR-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-GEN2-VDR-SW-TM"
   },
   "SMT-HC2-UPGBN-MV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-UPGBN-NV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-UPGBN-NVP": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-UPGBN-SV": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-UPGBN-SVP": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "SMT-HC2-VDR": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": "SMT-HC3-VDR"
   },
   "SMT-HC3-AFI": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-AFS": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-AMI": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-CORE": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-MV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-NV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-NVP": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-SV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-BN-SVP": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-C05": {
@@ -745,153 +745,153 @@
     "replacement": ""
   },
   "SMT-HC3-C05-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-C08-SW-TM"
   },
   "SMT-HC3-GEN2-5GC-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-5GC-SW-TM"
   },
   "SMT-HC3-GEN2-AFI-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-AFI-SW-TM"
   },
   "SMT-HC3-GEN2-AFS-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-AFS-SW-TM"
   },
   "SMT-HC3-GEN2-AMI-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-AMI-SW-TM"
   },
   "SMT-HC3-GEN2-APF-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-APF-SW-TM"
   },
   "SMT-HC3-GEN2-AT1-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-AT1-SW-TM"
   },
   "SMT-HC3-GEN2-BN-ZTA-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-BN-ZTA-SW-TM"
   },
   "SMT-HC3-GEN2-DD1-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-DD1-SW-TM"
   },
   "SMT-HC3-GEN2-FVU-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-FVU-SW-TM"
   },
   "SMT-HC3-GEN2-GTPMAX-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-GEN2-HS1-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-HS1-SW-TM"
   },
   "SMT-HC3-GEN2-INSSL-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-INSSL-SW-TM"
   },
   "SMT-HC3-GEN2-NF1-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-NF1-SW-TM"
   },
   "SMT-HC3-GEN2-SIPMAX-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-GEN2-SSL-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": "SMT-HC3-GEN3-SSL-SW-TM"
   },
   "SMT-HC3-GEN2-VDR-SW-TM": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-MV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-NV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-NVP": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-SV": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-SVP": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "SMT-HC3-VDR": {
-    "eos": "Mon Jul 31 2023 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Mon Jul 31 2028 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "45138",
+    "eol": "46965",
     "replacement": ""
   },
   "TAP-HC0-D25AC0-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "TAP-HC0-D25BC0-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "TAP-HC0-D35CC0-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "TAP-HC0-G100C0-SW-TM": {
-    "eos": "Sat Dec 31 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Fri Dec 31 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44926",
+    "eol": "46752",
     "replacement": ""
   },
   "UPG-TAC24-SW-TM": {
-    "eos": "Mon Feb 28 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Sun Feb 28 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44620",
+    "eol": "46446",
     "replacement": "UPG-TAC20-SW-TM"
   },
   "UPG-TAC32-SW-TM": {
-    "eos": "Mon Feb 28 2022 00:00:00 GMT+0000 (Greenwich Mean Time)",
-    "eol": "Sun Feb 28 2027 00:00:00 GMT+0000 (Greenwich Mean Time)",
+    "eos": "44620",
+    "eol": "46446",
     "replacement": "UPG-TAC20-SW-TM"
   },
   "UPG-TAX00-SW-TM": {
-    "eos": "Fri Jul 30 2021 00:00:00 GMT+0100 (British Summer Time)",
-    "eol": "Thu Jul 30 2026 00:00:00 GMT+0100 (British Summer Time)",
+    "eos": "44407",
+    "eol": "46233",
     "replacement": "UPG-TAX20-SW-TM"
   }
 }
