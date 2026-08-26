@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.632",
+    date: "2026-08-26",
+    summary: "Track raw string state for table row inputs to allow smooth editing and backspacing (v1.0.632)",
+  },
+  {
     version: "1.0.630",
     date: "2026-08-25",
     summary: "Expand line items table to naturally fill modal vertical space (v1.0.630)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.607",
     date: "2026-08-24",
     summary: "Suppress ingest overload warnings on mission demo tool nodes",
-  },
-  {
-    version: "1.0.606",
-    date: "2026-08-24",
-    summary: "Add individual dedicated tool links and enable active traffic reduction metrics in Mission Demo",
   },
 ];

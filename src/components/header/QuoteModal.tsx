@@ -124,6 +124,33 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     [items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode],
   );
 
+  // Calculate live financial impact & savings for each of the 3 top toggles
+  const toggleSavings = useMemo(() => {
+    // 1. SPAN Only impact
+    const withTaps = calculateQuoteSummary(items, discountConfig, excludeOptics, freePowerCords, false);
+    const spanOnly = calculateQuoteSummary(items, discountConfig, excludeOptics, freePowerCords, true);
+    const spanSavingsNet = Math.max(0, withTaps.totalNetPrice - spanOnly.totalNetPrice);
+    const spanSavingsPct = withTaps.totalNetPrice > 0 ? (spanSavingsNet / withTaps.totalNetPrice) * 100 : 0;
+
+    // 2. Exclude All Optics impact
+    const withOptics = calculateQuoteSummary(items, discountConfig, false, freePowerCords, spanOnlyMode);
+    const noOptics = calculateQuoteSummary(items, discountConfig, true, freePowerCords, spanOnlyMode);
+    const opticsSavingsNet = Math.max(0, withOptics.totalNetPrice - noOptics.totalNetPrice);
+    const opticsSavingsPct = withOptics.totalNetPrice > 0 ? (opticsSavingsNet / withOptics.totalNetPrice) * 100 : 0;
+
+    // 3. Free Power Cords impact
+    const paidCords = calculateQuoteSummary(items, discountConfig, excludeOptics, false, spanOnlyMode);
+    const freeCords = calculateQuoteSummary(items, discountConfig, excludeOptics, true, spanOnlyMode);
+    const cordsSavingsNet = Math.max(0, paidCords.totalNetPrice - freeCords.totalNetPrice);
+    const cordsSavingsPct = paidCords.totalNetPrice > 0 ? (cordsSavingsNet / paidCords.totalNetPrice) * 100 : 0;
+
+    return {
+      span: { net: spanSavingsNet, pct: spanSavingsPct },
+      optics: { net: opticsSavingsNet, pct: opticsSavingsPct },
+      cords: { net: cordsSavingsNet, pct: cordsSavingsPct },
+    };
+  }, [items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode]);
+
   // Update discount input handler
   const handleDiscountInputChange = (key: keyof DiscountCategoryConfig, valStr: string) => {
     setRawDiscountInputs((prev) => ({ ...prev, [key]: valStr }));
@@ -385,87 +412,141 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
             {/* SPAN Only Mode Toggle */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background: spanOnlyMode ? 'rgba(6, 182, 212, 0.15)' : '#1f2937',
-                border: `1px solid ${spanOnlyMode ? '#06b6d4' : '#374151'}`,
-                padding: '5px 9px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: spanOnlyMode ? '#22d3ee' : '#d1d5db',
-                userSelect: 'none',
-              }}
-              title="Convert solution to SPAN only: removes all TAPs & TAP trays, and halves TAP termination optics"
-            >
-              <input
-                type="checkbox"
-                checked={spanOnlyMode}
-                onChange={(e) => setSpanOnlyMode(e.target.checked)}
-                style={{ cursor: 'pointer', accentColor: '#06b6d4' }}
-              />
-              📡 Convert to SPAN Only
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: spanOnlyMode ? 'rgba(6, 182, 212, 0.15)' : '#1f2937',
+                  border: `1px solid ${spanOnlyMode ? '#06b6d4' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: spanOnlyMode ? '#22d3ee' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Convert solution to SPAN only: removes all TAPs & TAP trays, and halves TAP termination optics"
+              >
+                <input
+                  type="checkbox"
+                  checked={spanOnlyMode}
+                  onChange={(e) => setSpanOnlyMode(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#06b6d4' }}
+                />
+                📡 Convert to SPAN Only
+              </label>
+              {spanOnlyMode && toggleSavings.span.net > 0 && (
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#22d3ee',
+                    fontWeight: 'bold',
+                    marginTop: '3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                  }}
+                  title="Total commercial investment savings achieved by eliminating physical TAPs & trays"
+                >
+                  ⬇ {formatCurrency(toggleSavings.span.net)} ({toggleSavings.span.pct.toFixed(1)}% off)
+                </div>
+              )}
+            </div>
 
             {/* Exclude All Optics Checkbox */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background: excludeOptics ? 'rgba(245, 158, 11, 0.15)' : '#1f2937',
-                border: `1px solid ${excludeOptics ? '#f59e0b' : '#374151'}`,
-                padding: '5px 9px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: excludeOptics ? '#fbbf24' : '#d1d5db',
-                userSelect: 'none',
-              }}
-              title="Exclude all optics and transceivers (for customer-supplied optics)"
-            >
-              <input
-                type="checkbox"
-                checked={excludeOptics}
-                onChange={(e) => setExcludeOptics(e.target.checked)}
-                style={{ cursor: 'pointer', accentColor: '#f59e0b' }}
-              />
-              🚫 Exclude All Optics
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: excludeOptics ? 'rgba(245, 158, 11, 0.15)' : '#1f2937',
+                  border: `1px solid ${excludeOptics ? '#f59e0b' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: excludeOptics ? '#fbbf24' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Exclude all optics and transceivers (for customer-supplied optics)"
+              >
+                <input
+                  type="checkbox"
+                  checked={excludeOptics}
+                  onChange={(e) => setExcludeOptics(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#f59e0b' }}
+                />
+                🚫 Exclude All Optics
+              </label>
+              {excludeOptics && toggleSavings.optics.net > 0 && (
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#fbbf24',
+                    fontWeight: 'bold',
+                    marginTop: '3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                  }}
+                  title="Total commercial investment savings achieved by excluding all transceivers"
+                >
+                  ⬇ {formatCurrency(toggleSavings.optics.net)} ({toggleSavings.optics.pct.toFixed(1)}% off)
+                </div>
+              )}
+            </div>
 
             {/* 100% Discount on Power Cords Checkbox */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background: freePowerCords ? 'rgba(34, 197, 94, 0.15)' : '#1f2937',
-                border: `1px solid ${freePowerCords ? '#22c55e' : '#374151'}`,
-                padding: '5px 9px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: freePowerCords ? '#4ade80' : '#d1d5db',
-                userSelect: 'none',
-              }}
-              title="Apply 100% discount on TA & HC international power cords (PCD-00003/5/7/9 & PCD-000R3/5/7/9, included free of charge)"
-            >
-              <input
-                type="checkbox"
-                checked={freePowerCords}
-                onChange={(e) => setFreePowerCords(e.target.checked)}
-                style={{ cursor: 'pointer', accentColor: '#22c55e' }}
-              />
-              🔌 100% Disc Power Cords
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: freePowerCords ? 'rgba(34, 197, 94, 0.15)' : '#1f2937',
+                  border: `1px solid ${freePowerCords ? '#22c55e' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: freePowerCords ? '#4ade80' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Apply 100% discount on TA & HC international power cords (PCD-00003/5/7/9 & PCD-000R3/5/7/9, included free of charge)"
+              >
+                <input
+                  type="checkbox"
+                  checked={freePowerCords}
+                  onChange={(e) => setFreePowerCords(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#22c55e' }}
+                />
+                🔌 100% Disc Power Cords
+              </label>
+              {freePowerCords && toggleSavings.cords.net > 0 && (
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#4ade80',
+                    fontWeight: 'bold',
+                    marginTop: '3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                  }}
+                  title="Total commercial investment savings achieved by 100% discount on power cords"
+                >
+                  ⬇ {formatCurrency(toggleSavings.cords.net)} ({toggleSavings.cords.pct.toFixed(1)}% off)
+                </div>
+              )}
+            </div>
 
             <button
               onClick={handleResetToBom}
