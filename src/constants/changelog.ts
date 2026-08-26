@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.633",
+    date: "2026-08-26",
+    summary: "Display live dollar and percentage savings indicators under top toggles (v1.0.633)",
+  },
+  {
     version: "1.0.632",
     date: "2026-08-26",
     summary: "Track raw string state for table row inputs to allow smooth editing and backspacing (v1.0.632)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.608",
     date: "2026-08-24",
     summary: "Stagger network nodes and add multi-directional handles to prevent node and edge occlusion",
-  },
-  {
-    version: "1.0.607",
-    date: "2026-08-24",
-    summary: "Suppress ingest overload warnings on mission demo tool nodes",
   },
 ];

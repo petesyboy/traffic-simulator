@@ -13,7 +13,7 @@
  * - CSV and formal PDF quote export
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, getSkus } from '../../utils/bomEngine';
 import { consolidateSimpleDeviceRows } from '../../utils/bom/consolidateSimpleDevices';
@@ -29,6 +29,8 @@ import {
   calculateQuoteSummary,
   formatCurrency,
   exportQuoteToCsv,
+  exportCommercialQuoteToJson,
+  parseCommercialQuoteJson,
 } from '../../utils/pricingEngine';
 import { buildQuotePdfDocDefinition } from '../../utils/report/quotePdfReport';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
@@ -333,6 +335,82 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setSpanOnlyMode(false);
   };
 
+  // Quote Save/Load JSON Notification and File Input Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [quoteNotification, setQuoteNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Save customized commercial quote as JSON
+  const handleSaveQuoteJson = () => {
+    try {
+      exportCommercialQuoteToJson(
+        items,
+        discountConfig,
+        rawDiscountInputs,
+        excludeOptics,
+        freePowerCords,
+        spanOnlyMode,
+        {
+          scenarioName: currentScenarioName || 'Solution',
+          projectLicenseMode: globalLicenseMode,
+          defaultTermDuration: globalTermDuration,
+          projectRegion: globalRegion,
+        },
+      );
+      setQuoteNotification({
+        type: 'success',
+        message: `Commercial quote saved successfully (${items.length} line items).`,
+      });
+      setTimeout(() => setQuoteNotification(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setQuoteNotification({ type: 'error', message: `Failed to save quote: ${msg}` });
+    }
+  };
+
+  // Trigger file selection dialog
+  const handleTriggerLoadQuote = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  // Load and restore quote from JSON file
+  const handleQuoteFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const loadedData = parseCommercialQuoteJson(text);
+
+      setItems(loadedData.items);
+      setDiscountConfig(loadedData.discountConfig);
+      if (loadedData.rawDiscountInputs) {
+        setRawDiscountInputs(loadedData.rawDiscountInputs);
+      }
+      setExcludeOptics(loadedData.excludeOptics);
+      setFreePowerCords(loadedData.freePowerCords);
+      setSpanOnlyMode(loadedData.spanOnlyMode);
+      setRawRowInputs({});
+      setQuoteNotification({
+        type: 'success',
+        message: `Successfully loaded commercial quote from "${file.name}" (${loadedData.items.length} line items).`,
+      });
+      setTimeout(() => setQuoteNotification(null), 5000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setQuoteNotification({
+        type: 'error',
+        message: `Failed to load quote: ${msg}`,
+      });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // PDF Export handler
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
@@ -547,7 +625,36 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 </div>
               )}
             </div>
-
+            <button
+              onClick={handleSaveQuoteJson}
+              className="btn btn-secondary"
+              style={{
+                fontSize: '11px',
+                padding: '5px 10px',
+                background: '#1f2937',
+                border: '1px solid #10b981',
+                color: '#34d399',
+                fontWeight: 600,
+              }}
+              title="Save this customized commercial quote with all overrides as a JSON file"
+            >
+              💾 Save Quote
+            </button>
+            <button
+              onClick={handleTriggerLoadQuote}
+              className="btn btn-secondary"
+              style={{
+                fontSize: '11px',
+                padding: '5px 10px',
+                background: '#1f2937',
+                border: '1px solid #38bdf8',
+                color: '#38bdf8',
+                fontWeight: 600,
+              }}
+              title="Load and restore a previously saved commercial quote JSON file"
+            >
+              📂 Load Quote
+            </button>
             <button
               onClick={handleResetToBom}
               className="btn btn-ghost"
@@ -586,6 +693,32 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             gap: '14px',
           }}
         >
+          {/* Notification / Toast Banner */}
+          {quoteNotification && (
+            <div
+              style={{
+                padding: '8px 14px',
+                marginBottom: '12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                background: quoteNotification.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                border: `1px solid ${quoteNotification.type === 'success' ? '#22c55e' : '#ef4444'}`,
+                color: quoteNotification.type === 'success' ? '#4ade80' : '#f87171',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>{quoteNotification.type === 'success' ? '✓ ' : '⚠️ '}{quoteNotification.message}</span>
+              <button
+                onClick={() => setQuoteNotification(null)}
+                style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '14px' }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {/* ── Section 1: Discount Schedule Matrix ── */}
           <div
             style={{
@@ -1259,13 +1392,54 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             Informal budgetary and engineering aid for SEs, sales leadership, and customers. Strictly non-binding and non-contractual; does not constitute a formal commercial offer by Gigamon.
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+          {/* Hidden File Input for Loading Quote JSON */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={handleQuoteFileSelected}
+            style={{ display: 'none' }}
+          />
+
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+            <button
+              onClick={handleSaveQuoteJson}
+              className="btn btn-secondary"
+              style={{
+                fontSize: '12px',
+                padding: '6px 13px',
+                background: '#1f2937',
+                border: '1px solid #10b981',
+                color: '#34d399',
+                fontWeight: 600,
+              }}
+              title="Save this customized quote (with all overrides, term durations, and discounts) to a JSON file"
+            >
+              💾 Save Quote JSON
+            </button>
+
+            <button
+              onClick={handleTriggerLoadQuote}
+              className="btn btn-secondary"
+              style={{
+                fontSize: '12px',
+                padding: '6px 13px',
+                background: '#1f2937',
+                border: '1px solid #38bdf8',
+                color: '#38bdf8',
+                fontWeight: 600,
+              }}
+              title="Restore a previously saved commercial quote JSON file"
+            >
+              📂 Load Quote JSON
+            </button>
+
             <button
               onClick={() => exportQuoteToCsv(items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode, currentScenarioName || undefined)}
               className="btn btn-secondary"
               style={{
                 fontSize: '12px',
-                padding: '6px 14px',
+                padding: '6px 13px',
                 background: '#1f2937',
                 border: '1px solid #4b5563',
                 color: '#f3f4f6',
@@ -1280,7 +1454,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               className="btn btn-primary"
               style={{
                 fontSize: '12px',
-                padding: '6px 16px',
+                padding: '6px 15px',
                 background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                 border: '1px solid #38bdf8',
                 color: '#ffffff',

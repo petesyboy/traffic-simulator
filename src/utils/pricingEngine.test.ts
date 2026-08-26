@@ -6,6 +6,7 @@ import {
   calculateQuoteSummary,
   createAdHocQuoteItem,
   DEFAULT_DISCOUNT_CONFIG,
+  parseCommercialQuoteJson,
   type QuoteLineItem,
   type DiscountCategoryConfig,
 } from './pricingEngine';
@@ -389,6 +390,88 @@ describe('pricingEngine', () => {
       expect(item.qty).toBe(4);
       expect(item.category).toBe('Optic');
       expect(item.isCustomOrAdHoc).toBe(true);
+    });
+  });
+
+  describe('parseCommercialQuoteJson', () => {
+    it('successfully parses and restores a customized commercial quote JSON', () => {
+      const samplePayload = JSON.stringify({
+        version: '1.0',
+        type: 'commercial-quote',
+        savedAt: '2026-08-26T10:00:00.000Z',
+        scenarioName: 'Tusass Greenland 5G Core',
+        projectLicenseMode: 'HTL',
+        defaultTermDuration: '36',
+        projectRegion: 'EU',
+        items: [
+          {
+            id: 'item-1',
+            sku: 'VUE-FM0-001',
+            description: 'GigaVUE Fabric Manager Prime',
+            category: 'Software',
+            qty: 2,
+            unitListPrice: 15000,
+            isMonthlyPrice: false,
+            applyDiscount: true,
+            discountOverride: 40,
+            isCustomOrAdHoc: true,
+          },
+          {
+            id: 'item-2',
+            sku: 'GVS-HC3A1-HW',
+            description: 'GigaVUE-HC3 Base Chassis',
+            category: 'Chassis',
+            qty: 2,
+            unitListPrice: 22645,
+            isMonthlyPrice: false,
+            applyDiscount: true,
+          },
+        ],
+        discountConfig: {
+          global: 10,
+          software: 35,
+          chassis: 20,
+          modules: 15,
+          optics: 10,
+          taps: 10,
+          support: 0,
+          accessories: 0,
+        },
+        rawDiscountInputs: {
+          global: '10',
+          software: '35',
+          chassis: '20',
+          modules: '15',
+          optics: '10',
+          taps: '10',
+          support: '0',
+          accessories: '0',
+        },
+        excludeOptics: true,
+        freePowerCords: true,
+        spanOnlyMode: false,
+      });
+
+      const parsed = parseCommercialQuoteJson(samplePayload);
+      expect(parsed.type).toBe('commercial-quote');
+      expect(parsed.scenarioName).toBe('Tusass Greenland 5G Core');
+      expect(parsed.excludeOptics).toBe(true);
+      expect(parsed.freePowerCords).toBe(true);
+      expect(parsed.items.length).toBe(2);
+
+      const fm = parsed.items.find((i) => i.sku === 'VUE-FM0-001');
+      expect(fm).toBeDefined();
+      expect(fm?.qty).toBe(2);
+      expect(fm?.discountOverride).toBe(40);
+      expect(fm?.isCustomOrAdHoc).toBe(true);
+
+      expect(parsed.discountConfig.software).toBe(35);
+      expect(parsed.discountConfig.chassis).toBe(20);
+    });
+
+    it('throws meaningful error on invalid JSON string or missing items', () => {
+      expect(() => parseCommercialQuoteJson('bad-json')).toThrow(/Invalid JSON/);
+      expect(() => parseCommercialQuoteJson(JSON.stringify({ version: '1.0' }))).toThrow(/missing items array/);
     });
   });
 });

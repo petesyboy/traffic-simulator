@@ -601,3 +601,165 @@ export function exportQuoteToCsv(
   a.download = `Commercial_Quote_${cleanName}.csv`;
   a.click();
 }
+
+/** Structured JSON payload for persistent saving and loading of customized commercial quotes. */
+export interface CommercialQuoteSaveData {
+  version: '1.0';
+  type: 'commercial-quote';
+  savedAt: string;
+  scenarioName: string;
+  projectLicenseMode?: string;
+  defaultTermDuration?: string;
+  projectRegion?: string;
+  items: QuoteLineItem[];
+  discountConfig: DiscountCategoryConfig;
+  rawDiscountInputs?: Record<string, string>;
+  excludeOptics: boolean;
+  freePowerCords: boolean;
+  spanOnlyMode: boolean;
+  summarySnapshot?: {
+    totalListPrice: number;
+    totalDiscountAmount: number;
+    totalNetPrice: number;
+    effectiveDiscountPercent: number;
+    activeLineCount: number;
+    totalQty: number;
+  };
+}
+
+/** Exports the current customized commercial quote as a JSON file. */
+export function exportCommercialQuoteToJson(
+  items: QuoteLineItem[],
+  config: DiscountCategoryConfig,
+  rawDiscountInputs: Record<string, string>,
+  excludeOptics: boolean,
+  freePowerCords: boolean,
+  spanOnlyMode: boolean,
+  metadata: {
+    scenarioName?: string;
+    projectLicenseMode?: string;
+    defaultTermDuration?: string;
+    projectRegion?: string;
+  },
+): void {
+  const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
+
+  const quoteData: CommercialQuoteSaveData = {
+    version: '1.0',
+    type: 'commercial-quote',
+    savedAt: new Date().toISOString(),
+    scenarioName: metadata.scenarioName || 'Solution',
+    projectLicenseMode: metadata.projectLicenseMode,
+    defaultTermDuration: metadata.defaultTermDuration,
+    projectRegion: metadata.projectRegion,
+    items,
+    discountConfig: config,
+    rawDiscountInputs,
+    excludeOptics,
+    freePowerCords,
+    spanOnlyMode,
+    summarySnapshot: {
+      totalListPrice: summary.totalListPrice,
+      totalDiscountAmount: summary.totalDiscountAmount,
+      totalNetPrice: summary.totalNetPrice,
+      effectiveDiscountPercent: summary.effectiveDiscountPercent,
+      activeLineCount: summary.activeLineCount,
+      totalQty: summary.totalQty,
+    },
+  };
+
+  const jsonString = JSON.stringify(quoteData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const cleanName = metadata.scenarioName
+    ? metadata.scenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
+    : 'Solution';
+  a.download = `${cleanName}_Commercial_Quote.json`;
+  a.click();
+}
+
+/** Validates and parses imported JSON string into CommercialQuoteSaveData. */
+export function parseCommercialQuoteJson(jsonString: string): CommercialQuoteSaveData {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    throw new Error('Invalid JSON syntax: could not parse file contents.');
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid quote file: payload must be a valid JSON object.');
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  // Validate either type marker or items array presence
+  if (!Array.isArray(obj.items)) {
+    throw new Error('Invalid quote file: missing items array in quotation data.');
+  }
+
+  // Validate items structure
+  const validatedItems: QuoteLineItem[] = obj.items.map((item: any, idx: number) => {
+    if (!item.sku || typeof item.sku !== 'string') {
+      throw new Error(`Invalid line item at index ${idx}: missing SKU.`);
+    }
+    return {
+      id: String(item.id || `loaded-item-${idx}-${Date.now()}`),
+      sku: String(item.sku),
+      description: String(item.description || item.sku),
+      type: String(item.type || item.category || 'Other'),
+      category: item.category || 'Other',
+      qty: Math.max(1, parseInt(item.qty, 10) || 1),
+      unitListPrice: Math.max(0, parseFloat(item.unitListPrice) || 0),
+      isMonthlyPrice: Boolean(item.isMonthlyPrice),
+      termMonths: item.termMonths !== undefined ? parseInt(item.termMonths, 10) : undefined,
+      applyDiscount: item.applyDiscount !== undefined ? Boolean(item.applyDiscount) : true,
+      discountOverride: item.discountOverride !== undefined && item.discountOverride !== null ? parseFloat(item.discountOverride) : undefined,
+      isCustomOrAdHoc: Boolean(item.isCustomOrAdHoc),
+      site: item.site ? String(item.site) : undefined,
+      note: item.note ? String(item.note) : undefined,
+    };
+  });
+
+  // Validate discount config
+  const rawDiscount = (obj.discountConfig as Record<string, any>) || {};
+  const validatedDiscountConfig: DiscountCategoryConfig = {
+    global: Math.max(0, Math.min(100, parseFloat(rawDiscount.global) || 0)),
+    software: Math.max(0, Math.min(100, parseFloat(rawDiscount.software) || 0)),
+    chassis: Math.max(0, Math.min(100, parseFloat(rawDiscount.chassis) || 0)),
+    modules: Math.max(0, Math.min(100, parseFloat(rawDiscount.modules) || 0)),
+    optics: Math.max(0, Math.min(100, parseFloat(rawDiscount.optics) || 0)),
+    taps: Math.max(0, Math.min(100, parseFloat(rawDiscount.taps) || 0)),
+    support: Math.max(0, Math.min(100, parseFloat(rawDiscount.support) || 0)),
+    accessories: Math.max(0, Math.min(100, parseFloat(rawDiscount.accessories) || 0)),
+  };
+
+  return {
+    version: '1.0',
+    type: 'commercial-quote',
+    savedAt: typeof obj.savedAt === 'string' ? obj.savedAt : new Date().toISOString(),
+    scenarioName: typeof obj.scenarioName === 'string' ? obj.scenarioName : 'Imported Quote',
+    projectLicenseMode: typeof obj.projectLicenseMode === 'string' ? obj.projectLicenseMode : undefined,
+    defaultTermDuration: typeof obj.defaultTermDuration === 'string' ? obj.defaultTermDuration : undefined,
+    projectRegion: typeof obj.projectRegion === 'string' ? obj.projectRegion : undefined,
+    items: validatedItems,
+    discountConfig: validatedDiscountConfig,
+    rawDiscountInputs: (obj.rawDiscountInputs as Record<string, string>) || {
+      global: String(validatedDiscountConfig.global),
+      software: String(validatedDiscountConfig.software),
+      chassis: String(validatedDiscountConfig.chassis),
+      modules: String(validatedDiscountConfig.modules),
+      optics: String(validatedDiscountConfig.optics),
+      taps: String(validatedDiscountConfig.taps),
+      support: String(validatedDiscountConfig.support),
+      accessories: String(validatedDiscountConfig.accessories),
+    },
+    excludeOptics: Boolean(obj.excludeOptics),
+    freePowerCords: Boolean(obj.freePowerCords),
+    spanOnlyMode: Boolean(obj.spanOnlyMode),
+    summarySnapshot: obj.summarySnapshot as any,
+  };
+}
+
