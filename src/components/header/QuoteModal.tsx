@@ -145,9 +145,137 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setAdHocQty('1');
   };
 
+  // Raw string state for table row inputs to prevent React cursor jumping / resetting on Backspace
+  const [rawRowInputs, setRawRowInputs] = useState<
+    Record<string, { qty?: string; termMonths?: string; unitListPrice?: string; discountOverride?: string }>
+  >({});
+
   // Line item modifications
   const handleUpdateItem = (id: string, updates: Partial<QuoteLineItem>) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)));
+  };
+
+  const handleRowQtyChange = (id: string, val: string) => {
+    setRawRowInputs((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], qty: val },
+    }));
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      handleUpdateItem(id, { qty: parsed });
+    }
+  };
+
+  const handleRowQtyBlur = (id: string, currentQty: number) => {
+    const rawVal = rawRowInputs[id]?.qty;
+    if (rawVal !== undefined) {
+      const parsed = parseInt(rawVal, 10);
+      const safeQty = isNaN(parsed) || parsed < 1 ? currentQty || 1 : parsed;
+      handleUpdateItem(id, { qty: safeQty });
+      setRawRowInputs((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          delete next[id].qty;
+          if (Object.keys(next[id]).length === 0) delete next[id];
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleRowTermChange = (id: string, val: string) => {
+    setRawRowInputs((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], termMonths: val },
+    }));
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      handleUpdateItem(id, { termMonths: parsed });
+    } else if (val.trim() === '') {
+      handleUpdateItem(id, { termMonths: undefined });
+    }
+  };
+
+  const handleRowTermBlur = (id: string, currentTerm?: number) => {
+    const rawVal = rawRowInputs[id]?.termMonths;
+    if (rawVal !== undefined) {
+      const parsed = parseInt(rawVal, 10);
+      const safeTerm = isNaN(parsed) || parsed < 1 ? currentTerm : parsed;
+      handleUpdateItem(id, { termMonths: safeTerm });
+      setRawRowInputs((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          delete next[id].termMonths;
+          if (Object.keys(next[id]).length === 0) delete next[id];
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleRowPriceChange = (id: string, val: string) => {
+    setRawRowInputs((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], unitListPrice: val },
+    }));
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= 0) {
+      handleUpdateItem(id, { unitListPrice: parsed });
+    }
+  };
+
+  const handleRowPriceBlur = (id: string, currentPrice: number) => {
+    const rawVal = rawRowInputs[id]?.unitListPrice;
+    if (rawVal !== undefined) {
+      const parsed = parseFloat(rawVal);
+      const safePrice = isNaN(parsed) || parsed < 0 ? currentPrice || 0 : parsed;
+      handleUpdateItem(id, { unitListPrice: safePrice });
+      setRawRowInputs((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          delete next[id].unitListPrice;
+          if (Object.keys(next[id]).length === 0) delete next[id];
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleRowDiscountChange = (id: string, val: string) => {
+    setRawRowInputs((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], discountOverride: val },
+    }));
+    if (val.trim() === '') {
+      handleUpdateItem(id, { discountOverride: undefined });
+    } else {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed)) {
+        handleUpdateItem(id, { discountOverride: Math.max(0, Math.min(100, parsed)) });
+      }
+    }
+  };
+
+  const handleRowDiscountBlur = (id: string) => {
+    const rawVal = rawRowInputs[id]?.discountOverride;
+    if (rawVal !== undefined) {
+      if (rawVal.trim() === '') {
+        handleUpdateItem(id, { discountOverride: undefined });
+      } else {
+        const parsed = parseFloat(rawVal);
+        if (!isNaN(parsed)) {
+          handleUpdateItem(id, { discountOverride: Math.max(0, Math.min(100, parsed)) });
+        }
+      }
+      setRawRowInputs((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          delete next[id].discountOverride;
+          if (Object.keys(next[id]).length === 0) delete next[id];
+        }
+        return next;
+      });
+    }
   };
 
   const handleDeleteItem = (id: string) => {
@@ -172,6 +300,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       support: '0',
       accessories: '0',
     });
+    setRawRowInputs({});
     setExcludeOptics(false);
     setFreePowerCords(false);
     setSpanOnlyMode(false);
@@ -858,11 +987,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                           {item.isMonthlyPrice || item.termMonths ? (
                             <input
                               type="text"
-                              value={String(item.termMonths ?? '')}
-                              onChange={(e) => {
-                                const parsed = parseInt(e.target.value, 10);
-                                handleUpdateItem(item.id, { termMonths: isNaN(parsed) ? undefined : parsed });
-                              }}
+                              value={
+                                rawRowInputs[item.id]?.termMonths !== undefined
+                                  ? rawRowInputs[item.id]!.termMonths!
+                                  : String(item.termMonths ?? '')
+                              }
+                              onChange={(e) => handleRowTermChange(item.id, e.target.value)}
+                              onBlur={() => handleRowTermBlur(item.id, item.termMonths)}
                               style={{
                                 width: '42px',
                                 padding: '4px 6px',
@@ -883,11 +1014,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           <input
                             type="text"
-                            value={String(item.qty)}
-                            onChange={(e) => {
-                              const parsed = parseInt(e.target.value, 10);
-                              handleUpdateItem(item.id, { qty: isNaN(parsed) ? 1 : Math.max(1, parsed) });
-                            }}
+                            value={
+                              rawRowInputs[item.id]?.qty !== undefined
+                                ? rawRowInputs[item.id]!.qty!
+                                : String(item.qty)
+                            }
+                            onChange={(e) => handleRowQtyChange(item.id, e.target.value)}
+                            onBlur={() => handleRowQtyBlur(item.id, item.qty)}
                             style={{
                               width: '48px',
                               padding: '4px 6px',
@@ -906,11 +1039,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                           <input
                             type="text"
-                            value={String(item.unitListPrice ?? 0)}
-                            onChange={(e) => {
-                              const parsed = parseFloat(e.target.value);
-                              handleUpdateItem(item.id, { unitListPrice: isNaN(parsed) ? 0 : Math.max(0, parsed) });
-                            }}
+                            value={
+                              rawRowInputs[item.id]?.unitListPrice !== undefined
+                                ? rawRowInputs[item.id]!.unitListPrice!
+                                : String(item.unitListPrice ?? 0)
+                            }
+                            onChange={(e) => handleRowPriceChange(item.id, e.target.value)}
+                            onBlur={() => handleRowPriceBlur(item.id, item.unitListPrice)}
                             style={{
                               width: '80px',
                               padding: '4px 6px',
@@ -944,23 +1079,16 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                           <input
                             type="text"
                             value={
-                              item.discountOverride !== undefined
-                                ? String(item.discountOverride)
-                                : item.effectiveDiscountPercent > 0
-                                  ? String(item.effectiveDiscountPercent)
-                                  : ''
+                              rawRowInputs[item.id]?.discountOverride !== undefined
+                                ? rawRowInputs[item.id]!.discountOverride!
+                                : item.discountOverride !== undefined
+                                  ? String(item.discountOverride)
+                                  : item.effectiveDiscountPercent > 0
+                                    ? String(item.effectiveDiscountPercent)
+                                    : ''
                             }
-                            onChange={(e) => {
-                              const val = e.target.value.trim();
-                              if (val === '') {
-                                handleUpdateItem(item.id, { discountOverride: undefined });
-                              } else {
-                                const parsed = parseFloat(val);
-                                if (!isNaN(parsed)) {
-                                  handleUpdateItem(item.id, { discountOverride: Math.max(0, Math.min(100, parsed)) });
-                                }
-                              }
-                            }}
+                            onChange={(e) => handleRowDiscountChange(item.id, e.target.value)}
+                            onBlur={() => handleRowDiscountBlur(item.id)}
                             disabled={!item.applyDiscount}
                             placeholder={item.applyDiscount ? 'Auto' : '0'}
                             style={{
