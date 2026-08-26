@@ -6,7 +6,8 @@ import { getSupportedBoards, validateOptic } from '../../../utils/opticValidatio
 import { getOpticSpeed, formatOpticLabel, getCageCapacityBreakdown, getOpticFiberType, getBoardSpeedSubCap, isBreakoutPanelModel } from '../../../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap, getOpticCage, allowedBreakoutLcOptics } from '../../../utils/ports';
 import { isParallelBreakoutOptic, boardFeedsBreakoutPanel } from '../../../utils/breakoutRules';
-import { SUPPORTED_TAP_OPTICS } from '../../../constants/nodeTypes';
+import { SUPPORTED_TAP_OPTICS, NODE_TYPES } from '../../../constants/nodeTypes';
+import { getCandidateReplacementOptics, performOpticBulkReplace } from '../../../utils/opticBulkReplace';
 
 /** How long a newly-fitted port stays highlighted on the canvas node's port map. */
 const FLASH_DURATION_MS = 2500;
@@ -29,6 +30,13 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
   const [selectedOptic, setSelectedOptic] = useState('');
   const [qtyStr, setQtyStr] = useState('1');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Bulk Replace state
+  const [bulkReplaceSource, setBulkReplaceSource] = useState<string | null>(null);
+  const [bulkReplaceTarget, setBulkReplaceTarget] = useState<string>('');
+  const [bulkReplaceScope, setBulkReplaceScope] = useState<'node' | 'project'>('node');
+  const [syncConnectedTaps, setSyncConnectedTaps] = useState<boolean>(true);
+  const [replaceFeedback, setReplaceFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   if (model.includes('TAP') || isBreakoutPanelModel(model)) return null;
 
@@ -259,6 +267,40 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     updateNodeData(selectedNode.id, { optics: newOptics });
   };
 
+  // ─── Bulk Replace Handlers ──────────────────────────────────────────
+  const handleStartBulkReplace = (opticName: string) => {
+    setBulkReplaceSource(opticName);
+    const candidates = getCandidateReplacementOptics(model, opticName);
+    setBulkReplaceTarget(candidates[0] || '');
+    setBulkReplaceScope('node');
+    setSyncConnectedTaps(true);
+    setReplaceFeedback(null);
+  };
+
+  const handleExecuteBulkReplace = () => {
+    if (!bulkReplaceSource || !bulkReplaceTarget) return;
+
+    try {
+      const result = performOpticBulkReplace(nodes, edges, {
+        targetNodeId: bulkReplaceScope === 'node' ? selectedNode.id : undefined,
+        sourceOptic: bulkReplaceSource,
+        targetOptic: bulkReplaceTarget,
+        syncConnectedTaps,
+      });
+
+      useStore.getState().setNodes(result.updatedNodes);
+      setBulkReplaceSource(null);
+      setReplaceFeedback({
+        type: 'success',
+        message: `Successfully replaced ${result.replacedChassisOpticCount}x ${bulkReplaceSource.split(' ')[0]} with ${bulkReplaceTarget.split(' ')[0]}${result.updatedTapCount > 0 ? ` and synchronised ${result.updatedTapCount} connected TAP(s)` : ''}.`,
+      });
+      setTimeout(() => setReplaceFeedback(null), 5000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setReplaceFeedback({ type: 'error', message: `Bulk replacement failed: ${msg}` });
+    }
+  };
+
   // ─── Tool links check for suggestions ─────────────────────────────
   const toolsReached = new Set<string>();
   const visited = new Set<string>();
@@ -434,25 +476,267 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             {errorMsg && <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(239, 83, 80, 0.1)', border: '1px solid rgba(239, 83, 80, 0.3)', borderRadius: '4px', color: '#ef5350', fontSize: '11px', whiteSpace: 'pre-wrap' }}>⚠️ {errorMsg}</div>}
           </div>
 
+          {replaceFeedback && (
+            <div
+              style={{
+                marginTop: '10px',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: replaceFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                border: `1px solid ${replaceFeedback.type === 'success' ? '#22c55e' : '#ef4444'}`,
+                color: replaceFeedback.type === 'success' ? '#4ade80' : '#f87171',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>{replaceFeedback.type === 'success' ? '✓ ' : '⚠️ '}{replaceFeedback.message}</span>
+              <button
+                onClick={() => setReplaceFeedback(null)}
+                style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '14px' }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {installedOptics.length > 0 && (
             <div style={{ marginTop: '12px' }}>
-              <h5 style={{ margin: '0 0 6px 0', fontSize: '11px', color: '#ccc' }}>Installed Optics:</h5>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 6px 0' }}>
+                <h5 style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>Installed Optics:</h5>
+                <span style={{ fontSize: '10px', color: '#888' }}>Click 🔄 to bulk replace</span>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {installedOptics.map((opt, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', border: '1px solid #333' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '5px 8px', borderRadius: '4px', fontSize: '10px', border: '1px solid #333' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ color: '#fff' }}>{opt.qty}x {formatOpticLabel(opt.optic)}</span>
+                      <span style={{ color: '#fff', fontWeight: 600 }}>{opt.qty}x {formatOpticLabel(opt.optic)}</span>
                       <span style={{ color: '#888' }}>
                         {opt.board}
                         {opt.pinnedPortId && <span style={{ color: '#00e5ff' }}> · 📌 {opt.pinnedPortId}</span>}
                       </span>
                     </div>
-                    <button onClick={() => handleRemoveOptic(i)} style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }} title="Remove Optic">×</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        onClick={() => handleStartBulkReplace(opt.optic)}
+                        style={{
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid #38bdf8',
+                          color: '#38bdf8',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          padding: '2px 6px',
+                          fontWeight: 600,
+                        }}
+                        title={`Bulk replace all ${opt.optic.split(' ')[0]} transceivers on this chassis or project-wide`}
+                      >
+                        🔄 Replace
+                      </button>
+                      <button onClick={() => handleRemoveOptic(i)} style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }} title="Remove Optic">×</button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Bulk Replace Transceiver Modal Dialog */}
+          {bulkReplaceSource && (() => {
+            const sourceSku = bulkReplaceSource.split(' ')[0].toUpperCase();
+            const candidates = getCandidateReplacementOptics(model, bulkReplaceSource);
+            const sourceFiber = getOpticFiberType(bulkReplaceSource);
+            const targetFiber = bulkReplaceTarget ? getOpticFiberType(bulkReplaceTarget) : '';
+            const isFiberChange = sourceFiber !== targetFiber && !!sourceFiber && !!targetFiber;
+
+            const thisNodeCount = installedOptics
+              .filter(o => o.optic.split(' ')[0].toUpperCase() === sourceSku)
+              .reduce((sum, o) => sum + o.qty, 0);
+
+            const projectCount = nodes
+              .filter(n => n.type === NODE_TYPES.HARDWARE && !String(n.data?.model || '').includes('TAP'))
+              .reduce((sum, n) => {
+                const nOptics = (n.data as HardwareNodeData).optics || [];
+                return sum + nOptics.filter(o => o.optic.split(' ')[0].toUpperCase() === sourceSku).reduce((s, o) => s + o.qty, 0);
+              }, 0);
+
+            return (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.75)',
+                  zIndex: 2000,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    background: '#181f2a',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    padding: '16px 20px',
+                    width: '460px',
+                    maxWidth: '92vw',
+                    boxShadow: '0 12px 36px rgba(0,0,0,0.8)',
+                    color: '#f3f4f6',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #374151', paddingBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '16px' }}>🔄</span>
+                      <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#38bdf8' }}>
+                        Bulk Replace Transceiver
+                      </h4>
+                    </div>
+                    <button
+                      onClick={() => setBulkReplaceSource(null)}
+                      style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '16px' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>Current Transceiver:</div>
+                    <div style={{ background: '#111827', padding: '8px 10px', borderRadius: '4px', border: '1px solid #374151', fontSize: '12px', color: '#fff', fontWeight: 'bold' }}>
+                      {formatOpticLabel(bulkReplaceSource)}
+                      <div style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'normal', marginTop: '3px' }}>
+                        Installed on this chassis: <span style={{ color: '#38bdf8', fontWeight: 600 }}>{thisNodeCount} units</span>
+                        {projectCount > thisNodeCount && (
+                          <span> • Project-wide: <span style={{ color: '#34d399', fontWeight: 600 }}>{projectCount} units</span></span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>Replace With:</div>
+                    {candidates.length > 0 ? (
+                      <select
+                        value={bulkReplaceTarget}
+                        onChange={(e) => setBulkReplaceTarget(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          background: '#111827',
+                          border: '1px solid #4b5563',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {candidates.map((c) => (
+                          <option key={c} value={c}>
+                            {formatOpticLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div style={{ padding: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '4px', color: '#f87171', fontSize: '11px' }}>
+                        No compatible replacement transceivers found for this cage family.
+                      </div>
+                    )}
+                  </div>
+
+                  {isFiberChange && (
+                    <div
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(245, 158, 11, 0.12)',
+                        border: '1px solid #f59e0b',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        color: '#fbbf24',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      <div style={{ fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ⚠️ Fibre Mode Transition: {sourceFiber === 'SM' ? 'Single-mode' : 'Multi-mode'} ➔ {targetFiber === 'SM' ? 'Single-mode' : 'Multi-mode'}
+                      </div>
+                      <div>
+                        Replacing with {targetFiber === 'SM' ? 'Single-mode' : 'Multi-mode'} optics will require matching optical TAP splitters to maintain network link compatibility.
+                      </div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', cursor: 'pointer', color: '#fff', fontWeight: 600 }}>
+                        <input
+                          type="checkbox"
+                          checked={syncConnectedTaps}
+                          onChange={(e) => setSyncConnectedTaps(e.target.checked)}
+                          style={{ cursor: 'pointer', accentColor: '#f59e0b' }}
+                        />
+                        Automatically synchronise connected TAP nodes & link allocations to matching {targetFiber === 'SM' ? 'Single-mode' : 'Multi-mode'} media
+                      </label>
+                    </div>
+                  )}
+
+                  <div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>Replacement Scope:</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="replaceScope"
+                          value="node"
+                          checked={bulkReplaceScope === 'node'}
+                          onChange={() => setBulkReplaceScope('node')}
+                          style={{ accentColor: '#38bdf8' }}
+                        />
+                        <span>This chassis only (<strong>{selectedNode.data.label || model}</strong> · {thisNodeCount} units)</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="replaceScope"
+                          value="project"
+                          checked={bulkReplaceScope === 'project'}
+                          onChange={() => setBulkReplaceScope('project')}
+                          style={{ accentColor: '#38bdf8' }}
+                        />
+                        <span>Project-wide (all chassis and connected TAPs in design · <strong>{projectCount} units</strong>)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px', borderTop: '1px solid #374151', paddingTop: '10px' }}>
+                    <button
+                      onClick={() => setBulkReplaceSource(null)}
+                      className="btn btn-ghost"
+                      style={{ fontSize: '11px', padding: '5px 12px', color: '#9ca3af' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleExecuteBulkReplace}
+                      disabled={!bulkReplaceTarget}
+                      className="btn btn-primary"
+                      style={{
+                        fontSize: '11px',
+                        padding: '5px 14px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        border: '1px solid #34d399',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        cursor: !bulkReplaceTarget ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Confirm Bulk Replacement
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Suggestions */}
           {(() => {

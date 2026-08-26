@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.634",
+    date: "2026-08-26",
+    summary: "Add persistent Save and Load Commercial Quote JSON feature with solution naming (v1.0.634)",
+  },
+  {
     version: "1.0.633",
     date: "2026-08-26",
     summary: "Display live dollar and percentage savings indicators under top toggles (v1.0.633)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.609",
     date: "2026-08-24",
     summary: "Ensure Total Ingest Traffic value uses theme variable for high contrast in light theme",
-  },
-  {
-    version: "1.0.608",
-    date: "2026-08-24",
-    summary: "Stagger network nodes and add multi-directional handles to prevent node and edge occlusion",
   },
 ];
