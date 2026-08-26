@@ -362,7 +362,8 @@ export function generateSkuCatalog() {
     // HC3 GigaSMART Modules & Licences (Perpetual & HTL)
     'SMT-HC3-C08': { listPrice: 5450 },
     'SMT-HC3-C08-HW': { listPrice: 5450 },
-    'SMT-HC3-C08-SW-TM': { listPriceMonthly: 3530 },
+    'SMT-HC3-C08-SW-TM': { listPriceMonthly: 24400 },
+    'SMT-HC3-C08-SW': { listPriceMonthly: 24400 },
     'SMT-HC3-GEN3-FVU': { listPrice: 25000 },
     'SMT-HC3-GEN3-FVU-SW-TM': { listPriceMonthly: 2145 },
     'SMT-HC3-GEN3-GTPMAX': { listPrice: 45000 },

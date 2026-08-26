@@ -134,7 +134,8 @@ describe('BOM to Quotation Engine Validation & Arithmetic Integrity', () => {
     expect(skuService.getSKUByPartNumber('PRT-HC3-X24-HW')?.listPrice).toBe(3165);
     expect(skuService.getSKUByPartNumber('PRT-HC3-X24-SW-TM')?.listPriceMonthly).toBe(2155);
     expect(skuService.getSKUByPartNumber('SMT-HC3-C08-HW')?.listPrice).toBe(5450);
-    expect(skuService.getSKUByPartNumber('SMT-HC3-C08-SW-TM')?.listPriceMonthly).toBe(3530);
+    expect(skuService.getSKUByPartNumber('SMT-HC3-C08-SW-TM')?.listPriceMonthly).toBe(24400);
+    expect(skuService.getSKUByPartNumber('SMT-HC3-C08-SW')?.listPriceMonthly).toBe(24400);
     expect(skuService.getSKUByPartNumber('SMT-HC3-GEN3-FVU-SW-TM')?.listPriceMonthly).toBe(2145);
     expect(skuService.getSKUByPartNumber('SMT-HC3-GEN3-GTPMAX-SW-TM')?.listPriceMonthly).toBe(4260);
     expect(skuService.getSKUByPartNumber('GVS-TAX20E-SW-TM')?.listPriceMonthly).toBe(1205);

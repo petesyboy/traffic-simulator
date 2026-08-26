@@ -77,7 +77,7 @@ export const skuService = {
     let desc = getMergedSkus()[target];
     let base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
 
-    // Fallback normalization for common typo variants (e.g. -SWTM <-> -SW-TM)
+    // Fallback normalization for common typo variants (e.g. -SWTM <-> -SW-TM, -SW <-> -SW-TM)
     if (!desc && !base) {
       if (target.endsWith('-SWTM')) {
         const alt = target.replace(/-SWTM$/, '-SW-TM');
@@ -88,6 +88,13 @@ export const skuService = {
         }
       } else if (target.endsWith('-SW-TM')) {
         const alt = target.replace(/-SW-TM$/, '-SWTM');
+        if (getMergedSkus()[alt] || (baseSkuData as SKUItem[]).some((i) => i.partNumber.toUpperCase() === alt)) {
+          target = alt;
+          desc = getMergedSkus()[target];
+          base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
+        }
+      } else if (target.endsWith('-SW')) {
+        const alt = target.replace(/-SW$/, '-SW-TM');
         if (getMergedSkus()[alt] || (baseSkuData as SKUItem[]).some((i) => i.partNumber.toUpperCase() === alt)) {
           target = alt;
           desc = getMergedSkus()[target];
