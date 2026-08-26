@@ -28,9 +28,20 @@ const TAP_OPTIC_SKU_MAP: Record<string, string> = {
 };
 
 export function resolveOpticSku(opticStr: string, chassisModel: string): string {
-  if (TAP_OPTIC_SKU_MAP[opticStr]) return TAP_OPTIC_SKU_MAP[opticStr];
+  if (!opticStr) return '';
+  const trimmed = opticStr.trim();
+  const firstWord = trimmed.split(' ')[0].toUpperCase();
 
-  const name = opticStr.toUpperCase();
+  // If the first word is already an exact, orderable SKU in the catalog, preserve it exactly!
+  // This allows explicit non-TAA selections (e.g. SFP-533, SFP-532, QSF-502) as well as TAA (SFP-533T, SFP-532T)
+  if (skuService.getSKUByPartNumber(firstWord)) {
+    return firstWord;
+  }
+
+  if (TAP_OPTIC_SKU_MAP[trimmed]) return TAP_OPTIC_SKU_MAP[trimmed];
+  if (TAP_OPTIC_SKU_MAP[firstWord]) return TAP_OPTIC_SKU_MAP[firstWord];
+
+  const name = trimmed.toUpperCase();
   if (name.includes('1G COPPER')) return 'SFP-501T';
   if (name.includes('1G MULTIMODE SX') || name.includes('1G MM SX')) return 'SFP-502T';
   if (name.includes('1G SINGLEMODE LX') || name.includes('1G SM LX')) return 'SFP-503T';
@@ -47,8 +58,7 @@ export function resolveOpticSku(opticStr: string, chassisModel: string): string 
   if (name.includes('Q28-503') || name.includes('QSFP28-503')) return 'Q28-503T';
   if (name.includes('SFP-553')) return 'SFP-553T';
 
-  const firstWord = opticStr.split(' ')[0];
-  if (firstWord === 'Cable') {
+  if (firstWord === 'CABLE') {
     if (chassisModel.includes('TA200') || chassisModel.includes('HC3')) {
       return 'CBL-505';
     } else if (chassisModel.includes('TA400')) {
@@ -56,6 +66,7 @@ export function resolveOpticSku(opticStr: string, chassisModel: string): string 
     }
     return 'CBL-205';
   }
+
   const taaSku = firstWord + 'T';
   if (skuService.getSKUByPartNumber(taaSku)) {
     return taaSku;

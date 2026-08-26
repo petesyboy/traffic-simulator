@@ -48,24 +48,26 @@ function getMainBoardKey(rules: Record<string, string[]> | undefined): string | 
 
 function resolveOpticForChassis(opticStr: string, chassisModel: string): string {
   const resolvedSku = resolveOpticSku(opticStr, chassisModel);
-  // Only treat "<sku>T" as the TAA variant if it's a real, catalogued SKU - not
-  // every part has one. QSB-501/QSB-521/QSB-531 (Rx-only BiDi) have no "T"
-  // counterpart at all; blindly appending 'T' invented "QSB-521T" etc., which
-  // isn't a real transceiver and showed up as an unknown SKU in the BOM.
-  const candidateTaaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
-  const taaSku = candidateTaaSku === resolvedSku || getSkus()[candidateTaaSku] ? candidateTaaSku : resolvedSku;
   const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
   const mainBoardKey = getMainBoardKey(rules);
   const group = mainBoardKey ? rules[mainBoardKey] : undefined;
   if (group) {
-    // Prefer TAA-compliant ('T' suffix) option if available on chassis
+    // 1. Look for exact match for the requested SKU first (preserves explicit non-TAA / TAA user choices)
+    const exactMatch = group.find(opt => opt.startsWith(resolvedSku + ' ') || opt === resolvedSku);
+    if (exactMatch) return exactMatch;
+
+    // 2. If exact SKU not found on this chassis, look for TAA variant ('T' suffix)
+    const candidateTaaSku = resolvedSku.endsWith('T') ? resolvedSku : resolvedSku + 'T';
+    const taaSku = candidateTaaSku === resolvedSku || getSkus()[candidateTaaSku] ? candidateTaaSku : resolvedSku;
     const taaMatch = group.find(opt => opt.startsWith(taaSku + ' ') || opt === taaSku);
     if (taaMatch) return taaMatch;
 
-    const baseMatch = group.find(opt => opt.startsWith(resolvedSku + ' ') || opt === resolvedSku);
+    // 3. Fallback to base SKU without 'T'
+    const baseSku = resolvedSku.endsWith('T') ? resolvedSku.slice(0, -1) : resolvedSku;
+    const baseMatch = group.find(opt => opt.startsWith(baseSku + ' ') || opt === baseSku);
     if (baseMatch) return baseMatch;
   }
-  return taaSku;
+  return resolvedSku;
 }
 
 export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
@@ -89,7 +91,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
             : (sourceNode.data?.tapFiberMode === 'Singlemode');
           
           const isM506T = String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T');
-          const defaultOptic = isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533' : 'SFP-532');
+          const defaultOptic = isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533T' : 'SFP-532T');
           const allocations = resolveTapAllocations(sourceNode.data as HardwareNodeData, defaultOptic);
 
           for (const alloc of allocations) {

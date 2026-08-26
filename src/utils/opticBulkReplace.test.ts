@@ -113,5 +113,54 @@ describe('opticBulkReplace', () => {
       expect(updatedTap?.data.sku).toBe('TAP-M253T');
       expect(updatedTap?.data.tapFiberMode).toBe('Multimode');
     });
+
+    it('replaces SFP-533T (TAA) with SFP-533 (non-TAA) and preserves non-TAA on chassis without reverting on sync', () => {
+      const taaNodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'G-TAP M Series TAP-M273T',
+            configType: 'Hardware',
+            model: 'G-TAP M Series TAP-M273T',
+            sku: 'TAP-M273T',
+            tappedLinksCount: 24,
+            tappedLinkOptic: 'SFP-533T',
+            tapFiberMode: 'Singlemode',
+            tappedLinkAllocations: [{ qty: 24, optic: 'SFP-533T' }],
+          },
+        },
+        {
+          id: 'ta25e-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: {
+            label: 'GigaVUE-TA25E Nuuk',
+            configType: 'Hardware',
+            model: 'GigaVUE-TA25E',
+            sku: 'TA25E-BASE',
+            optics: [{ board: 'Base Ports', optic: 'SFP-533T (10G SFP+ LR)', qty: 48, isAutoAdded: true }],
+          },
+        },
+      ];
+
+      const result = performOpticBulkReplace(taaNodes, mockEdges, {
+        targetNodeId: 'ta25e-1',
+        sourceOptic: 'SFP-533T (10G SFP+ LR)',
+        targetOptic: 'SFP-533 (10G SFP+ LR)',
+        syncConnectedTaps: true,
+      });
+
+      expect(result.replacedChassisOpticCount).toBe(48);
+      const updatedChassis = result.updatedNodes.find((n) => n.id === 'ta25e-1');
+      const chassisOptic = updatedChassis?.data.optics?.[0]?.optic;
+      expect(chassisOptic).toBe('SFP-533 (10G SFP+ LR)');
+      expect(chassisOptic).not.toContain('SFP-533T');
+
+      const updatedTap = result.updatedNodes.find((n) => n.id === 'tap-1');
+      expect(updatedTap?.data.tappedLinkOptic).toBe('SFP-533');
+      expect((updatedTap?.data.tappedLinkAllocations as any[])[0].optic).toBe('SFP-533');
+    });
   });
 });

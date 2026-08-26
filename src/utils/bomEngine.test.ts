@@ -251,7 +251,7 @@ describe('BOM Engine', () => {
             label: 'HC1',
             configType: 'HC',
             model: 'GigaVUE-HC1',
-            optics: [{ board: 'Base Ports', optic: 'SFP-532', qty: 2 }]
+            optics: [{ board: 'Base Ports', optic: 'SFP-532T', qty: 2 }]
           }
         }
       ];
