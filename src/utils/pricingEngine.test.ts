@@ -6,6 +6,9 @@ import {
   calculateQuoteSummary,
   createQuoteItemsFromBom,
   createAdHocQuoteItem,
+  resolveLicenseModeSku,
+  convertQuoteItemLicenseMode,
+  convertQuoteItemsLicenseMode,
   DEFAULT_DISCOUNT_CONFIG,
   parseCommercialQuoteJson,
   type QuoteLineItem,
@@ -530,6 +533,171 @@ describe('pricingEngine', () => {
       const calculatedSw = calculateLineFinancials(sw!, DEFAULT_DISCOUNT_CONFIG);
       expect(calculatedSw.effectiveUnitList).toBe(2365 * 36);
       expect(calculatedSw.extendedListPrice).toBe(2365 * 36);
+    });
+  });
+
+  describe('License Mode Conversions (HTL <-> Perpetual Preservation)', () => {
+    it('correctly maps SKUs between HTL and Perpetual', () => {
+      // SMT feature licenses
+      expect(resolveLicenseModeSku('SMT-HC3-GEN3-FVU-SW-TM', 'Perpetual')).toBe('SMT-HC3-GEN3-FVU');
+      expect(resolveLicenseModeSku('SMT-HC3-GEN3-FVU', 'HTL')).toBe('SMT-HC3-GEN3-FVU-SW-TM');
+      expect(resolveLicenseModeSku('SMT-HC3-GEN3-GTPMAX-SW-TM', 'Perpetual')).toBe('SMT-HC3-GEN3-GTPMAX');
+      expect(resolveLicenseModeSku('SMT-HC3-GEN3-GTPMAX', 'HTL')).toBe('SMT-HC3-GEN3-GTPMAX-SW-TM');
+      expect(resolveLicenseModeSku('SMT-HC1P-GEN3-FVU-SW-TM', 'Perpetual')).toBe('SMT-HC1P-GEN3-FVU-PL');
+      expect(resolveLicenseModeSku('SMT-HC1P-GEN3-FVU-PL', 'HTL')).toBe('SMT-HC1P-GEN3-FVU-SW-TM');
+
+      // Port upgrade licenses
+      expect(resolveLicenseModeSku('UPG-TAC40EA-SW-TM', 'Perpetual')).toBe('UPG-TAC40EA');
+      expect(resolveLicenseModeSku('UPG-TAC40EA', 'HTL')).toBe('UPG-TAC40EA-SW-TM');
+
+      // Hardware and optics must remain unchanged
+      expect(resolveLicenseModeSku('SFP-532T', 'Perpetual')).toBe('SFP-532T');
+      expect(resolveLicenseModeSku('SFP-532T', 'HTL')).toBe('SFP-532T');
+      expect(resolveLicenseModeSku('PNL-M341', 'Perpetual')).toBe('PNL-M341');
+      expect(resolveLicenseModeSku('PCD-00001', 'HTL')).toBe('PCD-00001');
+    });
+
+    it('converts ad-hoc HTL item to Perpetual preserving quantity and discount override', () => {
+      const htlItem: QuoteLineItem = {
+        id: 'adhoc-1',
+        sku: 'SMT-HC3-GEN3-FVU-SW-TM',
+        description: 'Monthly FlowVUE',
+        type: 'License',
+        category: 'Software',
+        qty: 2,
+        termMonths: 24,
+        unitListPrice: 2145,
+        isMonthlyPrice: true,
+        applyDiscount: true,
+        discountOverride: 35,
+        isCustomOrAdHoc: true,
+      };
+
+      const perpItem = convertQuoteItemLicenseMode(htlItem, 'Perpetual', 24);
+      expect(perpItem.sku).toBe('SMT-HC3-GEN3-FVU');
+      expect(perpItem.isMonthlyPrice).toBe(false);
+      expect(perpItem.termMonths).toBeUndefined();
+      expect(perpItem.unitListPrice).toBe(25000);
+      expect(perpItem.qty).toBe(2);
+      expect(perpItem.discountOverride).toBe(35);
+      expect(perpItem.isCustomOrAdHoc).toBe(true);
+    });
+
+    it('converts ad-hoc Perpetual item to HTL setting monthly term pricing', () => {
+      const perpItem: QuoteLineItem = {
+        id: 'adhoc-2',
+        sku: 'SMT-HC3-GEN3-GTPMAX',
+        description: 'Perpetual GTP Max',
+        type: 'License',
+        category: 'Software',
+        qty: 1,
+        unitListPrice: 45000,
+        isMonthlyPrice: false,
+        applyDiscount: true,
+        discountOverride: 20,
+        isCustomOrAdHoc: true,
+      };
+
+      const htlItem = convertQuoteItemLicenseMode(perpItem, 'HTL', 36);
+      expect(htlItem.sku).toBe('SMT-HC3-GEN3-GTPMAX-SW-TM');
+      expect(htlItem.isMonthlyPrice).toBe(true);
+      expect(htlItem.termMonths).toBe(36);
+      expect(htlItem.unitListPrice).toBe(4260);
+      expect(htlItem.qty).toBe(1);
+      expect(htlItem.discountOverride).toBe(20);
+      expect(htlItem.isCustomOrAdHoc).toBe(true);
+    });
+
+    it('convertQuoteItemsLicenseMode preserves all ad-hoc items and customizations when switching modes', () => {
+      const prevItems: QuoteLineItem[] = [
+        {
+          id: 'bom-1',
+          sku: 'GVS-HC3A1-HW',
+          description: 'HC3 Chassis HW',
+          type: 'Chassis',
+          category: 'Chassis',
+          qty: 1,
+          unitListPrice: 22645,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+          discountOverride: 15,
+        },
+        {
+          id: 'bom-2',
+          sku: 'GVS-HC3A0-SW-TM',
+          description: 'HC3 Base SW Term',
+          type: 'License',
+          category: 'Software',
+          qty: 1,
+          termMonths: 12,
+          unitListPrice: 2365,
+          isMonthlyPrice: true,
+          applyDiscount: true,
+        },
+        {
+          id: 'adhoc-custom-1',
+          sku: 'SMT-HC3-GEN3-FVU-SW-TM',
+          description: 'FlowVUE Term',
+          type: 'License',
+          category: 'Software',
+          qty: 3,
+          termMonths: 12,
+          unitListPrice: 2145,
+          isMonthlyPrice: true,
+          applyDiscount: true,
+          discountOverride: 40,
+          isCustomOrAdHoc: true,
+        },
+        {
+          id: 'adhoc-custom-2',
+          sku: 'SFP-532T',
+          description: '10G Transceiver',
+          type: 'Transceiver',
+          category: 'Optic',
+          qty: 8,
+          unitListPrice: 400,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+          isCustomOrAdHoc: true,
+        },
+      ];
+
+      const newPerpBomItems: QuoteLineItem[] = [
+        {
+          id: 'bom-1-perp',
+          sku: 'GVS-HC3A1',
+          description: 'HC3 Chassis Base Perpetual',
+          type: 'Chassis',
+          category: 'Chassis',
+          qty: 1,
+          unitListPrice: 22645,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+      ];
+
+      const converted = convertQuoteItemsLicenseMode(prevItems, newPerpBomItems, 'Perpetual', 12);
+
+      // Should include BOM chassis with preserved 15% discountOverride
+      const chassis = converted.find((i) => i.sku === 'GVS-HC3A1');
+      expect(chassis).toBeDefined();
+      expect(chassis?.discountOverride).toBe(15);
+
+      // Should include converted FlowVUE perpetual license with preserved qty 3 and 40% discount
+      const fvu = converted.find((i) => i.sku === 'SMT-HC3-GEN3-FVU');
+      expect(fvu).toBeDefined();
+      expect(fvu?.qty).toBe(3);
+      expect(fvu?.unitListPrice).toBe(25000);
+      expect(fvu?.isMonthlyPrice).toBe(false);
+      expect(fvu?.discountOverride).toBe(40);
+      expect(fvu?.isCustomOrAdHoc).toBe(true);
+
+      // Should include the custom optic intact
+      const optic = converted.find((i) => i.sku === 'SFP-532T');
+      expect(optic).toBeDefined();
+      expect(optic?.qty).toBe(8);
+      expect(optic?.unitListPrice).toBe(400);
+      expect(optic?.isCustomOrAdHoc).toBe(true);
     });
   });
 });

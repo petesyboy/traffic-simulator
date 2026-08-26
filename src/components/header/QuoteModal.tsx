@@ -26,6 +26,7 @@ import {
   DEFAULT_DISCOUNT_CONFIG,
   createQuoteItemsFromBom,
   createAdHocQuoteItem,
+  convertQuoteItemsLicenseMode,
   calculateQuoteSummary,
   formatCurrency,
   exportQuoteToCsv,
@@ -96,10 +97,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
       const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm);
 
-      setItems((prevItems) => {
-        const adHocItems = prevItems.filter((it) => it.isCustomOrAdHoc);
-        return [...newBomItems, ...adHocItems];
-      });
+      setItems((prevItems) =>
+        convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm),
+      );
       // Clear out stale buffered inputs
       setRawRowInputs({});
     }

@@ -458,6 +458,169 @@ export function createAdHocQuoteItem(sku: string, qty: number = 1, termDuration:
   };
 }
 
+/**
+ * Maps an SKU to its matching Perpetual SKU if converting to Perpetual,
+ * or matching HTL SKU if converting to HTL.
+ */
+export function resolveLicenseModeSku(
+  currentSku: string,
+  targetMode: 'HTL' | 'Perpetual',
+): string {
+  const upper = currentSku.toUpperCase().trim();
+
+  if (targetMode === 'Perpetual') {
+    // 1. If ends with -SW-TM, try finding perpetual counterpart
+    if (upper.endsWith('-SW-TM')) {
+      const base = upper.replace(/-SW-TM$/i, '');
+      // Try -PL variant first (e.g. SMT-HC1P-GEN3-FVU-PL, SMT-HC3-GEN3-AFS-PL, SMT-GSA110-AMI-100G-PL)
+      const plCandidate = `${base}-PL`;
+      if (skuService.getSKUByPartNumber(plCandidate)) {
+        return plCandidate;
+      }
+      // Try base without -SW-TM (e.g. SMT-HC3-GEN3-FVU, SMT-HC3-GEN3-GTPMAX, SMT-HC3-GEN3-APF, UPG-TAC40EA, UPG-TAC20, CLS-TAX20)
+      if (skuService.getSKUByPartNumber(base)) {
+        return base;
+      }
+      // Try mapping hardware/chassis prefix if base was like GVS-HC3A0 -> GVS-HC3A1
+      if (base.endsWith('-HW')) {
+        const pureBase = base.replace(/-HW$/i, '');
+        if (skuService.getSKUByPartNumber(pureBase)) return pureBase;
+      }
+      return base;
+    }
+    // 2. If ends with -HW, check if base module/chassis without -HW exists in perpetual
+    if (upper.endsWith('-HW')) {
+      const base = upper.replace(/-HW$/i, '');
+      if (skuService.getSKUByPartNumber(base)) {
+        return base;
+      }
+    }
+    // Already perpetual or hardware/accessory/optic
+    return upper;
+  }
+
+  // targetMode === 'HTL'
+  if (targetMode === 'HTL') {
+    // 1. If ends with -PL, replace with -SW-TM
+    if (upper.endsWith('-PL')) {
+      const htlCandidate = upper.replace(/-PL$/i, '-SW-TM');
+      if (skuService.getSKUByPartNumber(htlCandidate)) {
+        return htlCandidate;
+      }
+      return htlCandidate;
+    }
+    // 2. If already ends with -SW-TM or -HW, keep as is
+    if (upper.endsWith('-SW-TM') || upper.endsWith('-HW')) {
+      return upper;
+    }
+    // 3. Try appending -SW-TM (e.g. SMT-HC3-GEN3-FVU -> SMT-HC3-GEN3-FVU-SW-TM)
+    const swTmCandidate = `${upper}-SW-TM`;
+    if (skuService.getSKUByPartNumber(swTmCandidate)) {
+      return swTmCandidate;
+    }
+    return upper;
+  }
+
+  return upper;
+}
+
+/**
+ * Converts a single QuoteLineItem between HTL and Perpetual mode,
+ * preserving all manual customizations (quantities, discount overrides, ad-hoc status).
+ */
+export function convertQuoteItemLicenseMode(
+  item: QuoteLineItem,
+  targetMode: 'HTL' | 'Perpetual',
+  targetTermMonths: number = 12,
+): QuoteLineItem {
+  const targetSku = resolveLicenseModeSku(item.sku, targetMode);
+  const isSkuChanged = targetSku !== item.sku;
+  const skuRecord = skuService.getSKUByPartNumber(targetSku) || skuService.getSKUByPartNumber(item.sku);
+
+  const isMonthly = Boolean(
+    targetMode === 'HTL' &&
+      (targetSku.includes('-SW-TM') ||
+        targetSku.endsWith('-TM') ||
+        (skuRecord?.listPriceMonthly !== undefined && skuRecord.listPriceMonthly > 0 && !skuRecord?.listPrice)),
+  );
+
+  let unitListPrice = item.unitListPrice;
+  if (isSkuChanged || isMonthly !== item.isMonthlyPrice) {
+    if (isMonthly) {
+      if (skuRecord?.listPriceMonthly !== undefined && skuRecord.listPriceMonthly > 0) {
+        unitListPrice = skuRecord.listPriceMonthly;
+      }
+    } else {
+      // Perpetual mode or non-monthly item
+      if (skuRecord?.listPrice !== undefined && skuRecord.listPrice > 0) {
+        unitListPrice = skuRecord.listPrice;
+      }
+    }
+  }
+
+  const category = mapBomTypeToQuoteCategory(
+    skuRecord?.category || item.category,
+    targetSku,
+    skuRecord?.description || item.description,
+  );
+
+  return {
+    ...item,
+    sku: targetSku,
+    description: isSkuChanged && skuRecord?.description ? skuRecord.description : item.description,
+    category,
+    isMonthlyPrice: isMonthly,
+    termMonths: isMonthly ? (item.termMonths || targetTermMonths) : undefined,
+    unitListPrice,
+  };
+}
+
+/**
+ * Converts an entire list of quote line items (including custom / ad-hoc items)
+ * when switching between HTL and Perpetual, preserving user edits and ad-hoc additions.
+ */
+export function convertQuoteItemsLicenseMode(
+  prevItems: QuoteLineItem[],
+  newBomItems: QuoteLineItem[],
+  targetMode: 'HTL' | 'Perpetual',
+  targetTermMonths: number = 12,
+): QuoteLineItem[] {
+  // 1. Separate ad-hoc items and BOM items from prevItems
+  const prevAdHocItems = prevItems.filter((it) => it.isCustomOrAdHoc);
+
+  // 2. Convert each ad-hoc item to the target license mode
+  const convertedAdHocItems = prevAdHocItems.map((item) =>
+    convertQuoteItemLicenseMode(item, targetMode, targetTermMonths),
+  );
+
+  // 3. For new BOM items, preserve any user custom discountOverrides or quantity overrides from matching previous BOM items
+  const prevBomMap = new Map<string, QuoteLineItem>();
+  for (const prev of prevItems) {
+    if (!prev.isCustomOrAdHoc) {
+      prevBomMap.set(prev.id, prev);
+      prevBomMap.set(prev.sku, prev);
+      // Also map without suffix
+      const baseSku = prev.sku.replace(/-SW-TM$/i, '').replace(/-HW$/i, '').replace(/-PL$/i, '');
+      prevBomMap.set(baseSku, prev);
+    }
+  }
+
+  const mergedBomItems = newBomItems.map((newItem) => {
+    const baseNew = newItem.sku.replace(/-SW-TM$/i, '').replace(/-HW$/i, '').replace(/-PL$/i, '');
+    const prev = prevBomMap.get(newItem.id) || prevBomMap.get(newItem.sku) || prevBomMap.get(baseNew);
+    if (prev) {
+      return {
+        ...newItem,
+        discountOverride: prev.discountOverride,
+        applyDiscount: prev.applyDiscount,
+      };
+    }
+    return newItem;
+  });
+
+  return [...mergedBomItems, ...convertedAdHocItems];
+}
+
 const CATEGORY_LIST: QuoteCategory[] = [
   'Software',
   'Chassis',
