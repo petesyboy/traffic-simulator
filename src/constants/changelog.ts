@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.638",
+    date: "2026-08-26",
+    summary: "Honour SKU types, terms, and capital vs term pricing when switching between Perpetual and HTL (v1.0.638)",
+  },
+  {
     version: "1.0.637",
     date: "2026-08-26",
     summary: "Scale power cord quantities with HC3 PSU count (v1.0.637)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.617",
     date: "2026-08-25",
     summary: "Adjust PDF quote table column widths and margins to fit within printable page (v1.0.617)",
-  },
-  {
-    version: "1.0.616",
-    date: "2026-08-25",
-    summary: "Add commercial quotation engine, SPAN-only mode, and power cord discounting (v1.0.616)",
   },
 ];

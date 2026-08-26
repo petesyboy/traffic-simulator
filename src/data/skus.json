@@ -1312,7 +1312,7 @@
   {
     "partNumber": "GFM-HW2-FM001-HW",
     "description": "GigaVUE-FM Hardware Appliance (dual 2.0GHz 20 cores/40 threads CPU, 2.4 TB hard disk drive with RAID, 2x100G, 2x10/25Gb and 2x1Gb network interfaces) only. Requires GigaVUE-FM license, sold separately.",
-    "category": "Other",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 2,
     "speedsSupported": [
@@ -1470,7 +1470,7 @@
   {
     "partNumber": "GPS-PSO-GNA",
     "description": "Onsite GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment. \nPlease contact your Gigamon Account team for larger network options.",
-    "category": "Other",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1596,7 +1596,7 @@
   {
     "partNumber": "GPS-PSR-GNA",
     "description": "Remote GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment.",
-    "category": "Other",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1605,7 +1605,7 @@
   {
     "partNumber": "GPS-PSR-GNA-PSP",
     "description": "Remote GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment.\nAvailable only via qualified Gigamon partners.",
-    "category": "Other",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -2292,7 +2292,7 @@
   {
     "partNumber": "GVS-GSA110-2AC-HW",
     "description": "AC-powered GSA110 hardware only; requires a separate GigaVUE-OS license.",
-    "category": "Chassis",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -2310,7 +2310,7 @@
   {
     "partNumber": "GVS-GSA110-2DC-HW",
     "description": "DC-powered GSA110 hardware only; requires a separate GigaVUE-OS license.",
-    "category": "Chassis",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -2651,6 +2651,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 24995,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2662,6 +2663,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 24995,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2673,6 +2675,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 24995,
     "status": "Active",
     "isUnavailable": false
   },
@@ -2684,6 +2687,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
+    "listPrice": 24995,
     "status": "Active",
     "isUnavailable": false
   },
@@ -5978,7 +5982,7 @@
   {
     "partNumber": "SMT-GSA110-AFI-100G-PL",
     "description": "Perpetual AFI license up to 100Gbps; support sold separately.",
-    "category": "Module",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
@@ -6002,7 +6006,7 @@
   {
     "partNumber": "SMT-GSA110-AMI-100G-PL",
     "description": "Perpetual AMI license up to 100Gbps, including v5/v9 NetFlow and protocol metadata; support sold separately.",
-    "category": "Module",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
@@ -6026,7 +6030,7 @@
   {
     "partNumber": "SMT-GSA110-AMI-5G-100G-PL",
     "description": "Perpetual AMI license with 4G/5G metadata enrichment up to 100Gbps; support sold separately.",
-    "category": "Module",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
@@ -6050,7 +6054,7 @@
   {
     "partNumber": "SMT-GSA110-DD-100G-PL",
     "description": "Perpetual De-duplication license up to 100Gbps; support sold separately.",
-    "category": "Module",
+    "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
@@ -6336,7 +6340,7 @@
   {
     "partNumber": "SMT-HC1-APF",
     "description": "GigaSMART, GigaVUE-HC1 license, Adaptive Packet Filtering feature",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6402,7 +6406,7 @@
   {
     "partNumber": "SMT-HC1-BSE",
     "description": "GigaSMART, GigaVUE-HC1 license combo, includes Slicing, Masking, & Source Port Labeling.",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6413,7 +6417,7 @@
   {
     "partNumber": "SMT-HC1-DD1",
     "description": "GigaSMART, GigaVUE-HC1 license, De-Duplication feature",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6424,7 +6428,7 @@
   {
     "partNumber": "SMT-HC1-FVU",
     "description": "GigaSMART, GigaVUE-HC1 license, FlowVUE feature license",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6721,7 +6725,7 @@
   {
     "partNumber": "SMT-HC1-GEN3-AT1",
     "description": "GigaSMART, GigaVUE-HC1, Advanced Tunneling feature license per GigaVUE-HC1 Gen3 GigaSMART module; includes tunnel encapsulation and tunnel decapsulation. Requires SMT-HC1-S",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6781,6 +6785,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6792,13 +6797,14 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
   {
     "partNumber": "SMT-HC1-GEN3-GTPMAX-PL",
     "description": "GigaSMART, GigaVUE-HC1 Gen3, GTP Filtering & Correlation feature license per GigaSMART module, Maximum subscribers. Valid only on GigaSMART GigaVUE-HC1 Gen 3 addon module to GigaVUE-HC1P",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6908,7 +6914,7 @@
   {
     "partNumber": "SMT-HC1-HS1",
     "description": "GigaSMART, GigaVUE-HC1 license, Header Stripping feature",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6919,7 +6925,7 @@
   {
     "partNumber": "SMT-HC1-INSSL",
     "description": "GigaSMART, GigaVUE-HC1, SSL Decryption for Inline and Out of Band Tools feature license",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6941,7 +6947,7 @@
   {
     "partNumber": "SMT-HC1-S",
     "description": "Gen3 GigaSMART module on GigaVUE-HC1-Plus/HC1/HCT. Includes  Slicing, Masking & Source Port Labeling (Only works with feature licenses & bundles that have a 'SMT-HC1-Gen3' prefix).",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Mexico",
@@ -6977,7 +6983,7 @@
   {
     "partNumber": "SMT-HC1-SSL",
     "description": "GigaSMART, GigaVUE-HC1, SSL Decryption for Out of Band Tools Feature License",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6988,7 +6994,7 @@
   {
     "partNumber": "SMT-HC1-TUN",
     "description": "GigaSMART, GigaVUE-HC1 license, Tunneling feature (includes ERSPAN De-Encapsulation)",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7054,7 +7060,7 @@
   {
     "partNumber": "SMT-HC1-UPGINSSL",
     "description": "GigaSMART, GigaVUE-HC1, SSL Decryption Upgrade for Inline Tools Feature License per GigaSMART module",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7213,6 +7219,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7224,13 +7231,14 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
   {
     "partNumber": "SMT-HC1P-GEN3-GTPMAX-PL",
     "description": "GigaSMART, GigaVUE-HC1P Gen3, GTP Filtering & Correlation feature license per GigaSMART module, Maximum subscribers",
-    "category": "Module",
+    "category": "License",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
@@ -7996,6 +8004,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8007,6 +8016,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8018,6 +8028,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 30000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8029,6 +8040,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8040,6 +8052,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8063,6 +8076,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 38000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8074,6 +8088,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3530,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8085,6 +8100,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 38000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8108,6 +8124,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 20000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8119,6 +8136,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1850,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8141,6 +8159,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8152,6 +8171,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2300,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8163,6 +8183,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 25000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8186,6 +8207,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 45000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8209,6 +8231,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8220,6 +8243,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1400,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8231,6 +8255,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 50000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8242,6 +8267,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 4600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8253,6 +8279,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8264,6 +8291,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1650,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8275,6 +8303,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 40000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8286,6 +8315,7 @@
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -8894,7 +8924,7 @@
   {
     "partNumber": "UPG-TAC20",
     "description": "Perpetual upgrade option for GigaVUE-TA200; enables all 64 100G ports (requires GVS-TAC[21/22]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "portDensity": 64,
     "speedsSupported": [
       "100G"
@@ -8926,7 +8956,7 @@
   {
     "partNumber": "UPG-TAC20E",
     "description": "Perpetual upgrade option for GigaVUE-TA200E; enables all 64 100G ports (requires GVS-TAC[21E/22E]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "portDensity": 64,
     "speedsSupported": [
       "100G"
@@ -8996,7 +9026,7 @@
   {
     "partNumber": "UPG-TAC40EA",
     "description": "Perpetual upgrade option for GigaVUE-TA400E; upgrades 16 100G ports (ports 1-16) to 400G (total 16 400G + 16 100G). (requires GVS-TAC[41EA/42EA]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "portDensity": 16,
     "speedsSupported": [
       "100G",
@@ -9030,7 +9060,7 @@
   {
     "partNumber": "UPG-TAC40EB",
     "description": "Perpetual upgrade option for GigaVUE-TA400E; upgrades 16 100G ports (ports 17-32) to 400G (total 16 400G + 16 100G). (requires GVS-TAC[41EA/42EA]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "portDensity": 16,
     "speedsSupported": [
       "100G",
@@ -9084,7 +9114,7 @@
   {
     "partNumber": "UPG-TAX20",
     "description": "Perpetual upgrade option for GigaVUE-TA25; enables all  48 1/10/25G + 8 40/100G ports  (requires GVS-TAX[21A/22A]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "speedsSupported": [
       "25G",
       "100G"
@@ -9116,7 +9146,7 @@
   {
     "partNumber": "UPG-TAX20E",
     "description": "Perpetual upgrade option for GigaVUE-TA25E; enables all 48 1/10/25G + 8 40/100G ports (requires GVS-TAX[21EA/22EA]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "speedsSupported": [
       "25G",
       "100G"
@@ -9148,7 +9178,7 @@
   {
     "partNumber": "UPG-TAX20EB",
     "description": "Perpetual upgrade option for GigaVUE-TA25E; to enable additional 12 x 1/10/25G + 2 40/100G ports (total 24 1/10/25G + 4 40/100G) (requires GVS-TAX[21EB/22EB]). Software support at desired level must be purchased separately.",
-    "category": "Chassis",
+    "category": "License",
     "speedsSupported": [
       "25G",
       "100G"

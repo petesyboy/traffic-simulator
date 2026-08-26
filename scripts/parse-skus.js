@@ -81,13 +81,27 @@ function determineCategory(sku, desc, prodFamily, prodSubFamily) {
   if (sub === 'power' || s.startsWith('PWR-') || s.startsWith('BAT-') || d.includes('power supply') || d.includes('battery pack')) {
     return 'Power';
   }
-  if (s.includes('-SW-') || s.includes('-TM') || s.startsWith('CLS-') || s.startsWith('GEM-') || d.includes('term license') || d.includes('perpetual license') || d.includes('software license') || d.includes('license for')) {
+  if (
+    s.includes('-SW-') ||
+    s.includes('-TM') ||
+    s.includes('-GEN3-') ||
+    s.includes('-GEN2-') ||
+    s.startsWith('CLS-') ||
+    s.startsWith('GEM-') ||
+    s.startsWith('UPG-') ||
+    d.includes('term license') ||
+    d.includes('perpetual license') ||
+    d.includes('feature license') ||
+    d.includes('software license') ||
+    d.includes('license for') ||
+    d.includes('license')
+  ) {
     return 'License';
   }
   if (s.startsWith('GTP-') || s.startsWith('TAP-') || s.startsWith('PNL-') || d.includes('tap module') || d.includes('always on tap') || sub.includes('gtap') || sub.includes('tap')) {
     return 'TAP';
   }
-  if (s.startsWith('BPS-') || s.startsWith('PRT-') || (s.startsWith('SMT-') && !s.includes('-SW-')) || s.startsWith('CCV') || d.includes('module') || d.includes('combo module')) {
+  if (s.startsWith('BPS-') || s.startsWith('PRT-') || (s.startsWith('SMT-') && !s.includes('-SW-') && !s.includes('-GEN3-') && !s.includes('-GEN2-') && !d.includes('license')) || s.startsWith('CCV') || d.includes('module') || d.includes('combo module')) {
     return 'Module';
   }
   if (s.startsWith('GVS-') || sub.includes('gigavue-hc') || sub.includes('gigavue-ta') || d.includes('chassis') || d.includes('node')) {
@@ -315,6 +329,10 @@ export function generateSkuCatalog() {
     'GVS-HC3A1-HW': { listPrice: 22645 },
     'GVS-HC3A2': { listPrice: 22645 },
     'GVS-HC3A2-HW': { listPrice: 22645 },
+    'GVS-HC3A3': { listPrice: 24995 },
+    'GVS-HC3A3-HW': { listPrice: 24995 },
+    'GVS-HC3A4': { listPrice: 24995 },
+    'GVS-HC3A4-HW': { listPrice: 24995 },
     // HC3 Base Term Licences
     'GVS-HC3A0-SW-TM': { listPriceMonthly: 2365 },
     'GVS-HC3A1-SW-TM': { listPriceMonthly: 2365 },
@@ -331,14 +349,44 @@ export function generateSkuCatalog() {
     'PRT-HC3-C16-HW': { listPrice: 8500 },
     'PRT-HC3-C16-SW-TM': { listPriceMonthly: 3950 },
 
-    // HC3 GigaSMART Modules & Licences
+    // HC3 GigaSMART Modules & Licences (Perpetual & HTL)
     'SMT-HC3-C08': { listPrice: 5450 },
     'SMT-HC3-C08-HW': { listPrice: 5450 },
     'SMT-HC3-C08-SW-TM': { listPriceMonthly: 3530 },
+    'SMT-HC3-GEN3-FVU': { listPrice: 25000 },
     'SMT-HC3-GEN3-FVU-SW-TM': { listPriceMonthly: 2145 },
+    'SMT-HC3-GEN3-GTPMAX': { listPrice: 45000 },
     'SMT-HC3-GEN3-GTPMAX-SW-TM': { listPriceMonthly: 4260 },
+    'SMT-HC3-GEN3-AFS-PL': { listPrice: 25000 },
     'SMT-HC3-GEN3-AFS-SW-TM': { listPriceMonthly: 2145 },
+    'SMT-HC3-GEN3-APF': { listPrice: 38000 },
     'SMT-HC3-GEN3-APF-SW-TM': { listPriceMonthly: 3530 },
+    'SMT-HC3-GEN3-5GC-PL': { listPrice: 35000 },
+    'SMT-HC3-GEN3-5GC-SW-TM': { listPriceMonthly: 3200 },
+    'SMT-HC3-GEN3-AMI': { listPrice: 38000 },
+    'SMT-HC3-GEN3-AMI-SW-TM': { listPriceMonthly: 3530 },
+    'SMT-HC3-GEN3-SSL': { listPrice: 40000 },
+    'SMT-HC3-GEN3-SSL-SW-TM': { listPriceMonthly: 3800 },
+    'SMT-HC3-GEN3-INSSL-PL': { listPrice: 50000 },
+    'SMT-HC3-GEN3-INSSL-SW-TM': { listPriceMonthly: 4600 },
+    'SMT-HC3-GEN3-HS1-PL': { listPrice: 15000 },
+    'SMT-HC3-GEN3-HS1-SW-TM': { listPriceMonthly: 1400 },
+    'SMT-HC3-GEN3-NF1': { listPrice: 18000 },
+    'SMT-HC3-GEN3-NF1-SW-TM': { listPriceMonthly: 1650 },
+    'SMT-HC3-GEN3-DD1': { listPrice: 25000 },
+    'SMT-HC3-GEN3-DD1-SW-TM': { listPriceMonthly: 2300 },
+    'SMT-HC3-GEN3-AT1': { listPrice: 20000 },
+    'SMT-HC3-GEN3-AT1-SW-TM': { listPriceMonthly: 1850 },
+    'SMT-HC3-GEN3-AFI': { listPrice: 30000 },
+    'SMT-HC3-GEN3-AFI-SW-TM': { listPriceMonthly: 2800 },
+
+    // HC1 / HC1P GigaSMART Licences
+    'SMT-HC1P-GEN3-FVU-PL': { listPrice: 18000 },
+    'SMT-HC1P-GEN3-FVU-SW-TM': { listPriceMonthly: 1600 },
+    'SMT-HC1P-GEN3-GTP-PL': { listPrice: 30000 },
+    'SMT-HC1P-GEN3-GTP-SW-TM': { listPriceMonthly: 2800 },
+    'SMT-HC1-GEN3-FVU-PL': { listPrice: 18000 },
+    'SMT-HC1-GEN3-FVU-SW-TM': { listPriceMonthly: 1600 },
 
     // TA25 / TA25E
     'GVS-TAX20': { listPrice: 23750 },
