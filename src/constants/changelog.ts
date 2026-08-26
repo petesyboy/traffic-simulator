@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.641",
+    date: "2026-08-26",
+    summary: "Preserve and convert manually added ad-hoc SKUs between HTL and Perpetual modes (v1.0.641)",
+  },
+  {
     version: "1.0.640",
     date: "2026-08-26",
     summary: "Refactor top header navigation with dropdowns and responsive layout for Mac and laptop screens (v1.0.640)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.621",
     date: "2026-08-25",
     summary: "Apply screen font scaling zoom and improve quote table typography (v1.0.621)",
-  },
-  {
-    version: "1.0.620",
-    date: "2026-08-25",
-    summary: "Separate Packet Slicing and Advanced Flow Slicing and default traffic panel to minimized (v1.0.620)",
   },
 ];

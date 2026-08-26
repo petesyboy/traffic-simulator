@@ -1251,6 +1251,7 @@
     "description": "Perpetual license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes VMware NSX Manager Integration (GFM-VM-NSX) add-ons. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 27720,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1260,6 +1261,7 @@
     "description": "Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPriceMonthly": 2310,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1269,6 +1271,7 @@
     "description": "Perpetual license for GigaVUE-FM, manages 1 Physical Visibility Fabric Node. (Promotion/Evaluation 1 seat license). Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 1500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1278,6 +1281,7 @@
     "description": "Perpetual license for GigaVUE-FM, manages up to 5 Physical Visibility Fabric Nodes. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 6000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1287,6 +1291,7 @@
     "description": "Monthly term license for GigaVUE-FM, manages up to 5 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPriceMonthly": 550,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1296,6 +1301,7 @@
     "description": "Perpetual license for GigaVUE-FM, manages up to 10 Physical Visibility Fabric Nodes. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 11000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1305,6 +1311,7 @@
     "description": "Monthly term license for GigaVUE-FM, manages up to 10 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPriceMonthly": 990,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1318,6 +1325,7 @@
     "speedsSupported": [
       "25G"
     ],
+    "listPrice": 18500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1327,6 +1335,7 @@
     "description": "Perpetual license for GigaVUE-FM to upgrade from the 10-Pack License to the Prime Edition for either Software only or Hardware Appliance. Includes VMware NSX Manager Integration (GFM-VM-NSX) add-ons. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 16500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1336,6 +1345,7 @@
     "description": "Perpetual license for GigaVUE-FM to upgrade from the 5-Pack to the 10-Pack license. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 5500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -1345,6 +1355,7 @@
     "description": "Perpetual license for GigaVUE-FM to upgrade from the 5-Pack License to the Prime Edition for either Software only or Hardware Appliance. Includes VMware NSX Manager Integration (GFM-VM-NSX) add-ons. Software support at desired level must be purchased separately.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPrice": 22000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -2321,6 +2332,7 @@
     "description": "Monthly term license for GigaVUE-OS on GSA110; includes Elite-Plus Software Support.",
     "category": "License",
     "endOfSale": "Discontinued (Removed from Price List)",
+    "listPriceMonthly": 1800,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -5987,6 +5999,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPrice": 20000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -5999,6 +6012,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPriceMonthly": 1800,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6011,6 +6025,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPrice": 24000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6023,6 +6038,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPriceMonthly": 2100,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6035,6 +6051,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPrice": 28000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6047,6 +6064,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPriceMonthly": 2500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6059,6 +6077,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPrice": 17000,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6071,6 +6090,7 @@
     "speedsSupported": [
       "100G"
     ],
+    "listPriceMonthly": 1500,
     "status": "Discontinued",
     "isUnavailable": true,
     "supportAvailable": false
@@ -6323,6 +6343,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6334,6 +6355,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6411,6 +6433,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 20000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6422,6 +6445,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6433,6 +6457,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6477,6 +6502,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6499,6 +6525,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6532,6 +6559,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6543,6 +6571,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6554,6 +6583,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6565,6 +6595,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1100,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6576,6 +6607,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6919,6 +6951,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 12000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -6930,6 +6963,7 @@
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7098,6 +7132,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7109,6 +7144,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7120,6 +7156,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7131,6 +7168,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7142,6 +7180,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 28000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7153,6 +7192,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2500,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7197,6 +7237,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 18000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7208,6 +7249,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1600,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7243,6 +7285,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7254,6 +7297,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7265,6 +7309,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 12000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7276,6 +7321,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 1100,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7287,6 +7333,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 35000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7298,6 +7345,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 3200,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7331,6 +7379,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPrice": 30000,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7342,6 +7391,7 @@
     "productSubFamily": "GigaVUE-HC1-Plus",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
+    "listPriceMonthly": 2800,
     "status": "Active",
     "isUnavailable": false
   },
@@ -7352,6 +7402,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AFI-SW-TM",
+    "listPrice": 30000,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7362,6 +7413,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-AFS",
+    "listPrice": 25000,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7372,6 +7424,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AMI-SW-TM",
+    "listPrice": 38000,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7436,6 +7489,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-GEN2-5GC-SW-TM",
+    "listPriceMonthly": 3200,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7446,6 +7500,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AFI-SW-TM",
+    "listPriceMonthly": 2800,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7456,6 +7511,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-GEN2-AFS-SW-TM",
+    "listPriceMonthly": 2145,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7466,6 +7522,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AMI-SW-TM",
+    "listPriceMonthly": 3530,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7476,6 +7533,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-APF-SW-TM",
+    "listPriceMonthly": 3530,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7486,6 +7544,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AT1-SW-TM",
+    "listPriceMonthly": 1850,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7505,6 +7564,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-GEN2-INSSL-SW-TM",
+    "listPriceMonthly": 3800,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7515,6 +7575,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-DD1-SW-TM",
+    "listPriceMonthly": 2300,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7525,6 +7586,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-GEN3-FVU-SW-TM",
+    "listPriceMonthly": 2145,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7535,6 +7597,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-GEN2-GTPMAX-SW-TM",
+    "listPriceMonthly": 4260,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7545,6 +7608,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-HS1-SW-TM",
+    "listPriceMonthly": 1400,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7555,6 +7619,7 @@
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-NF1-SW-TM",
+    "listPriceMonthly": 1650,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7820,6 +7885,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-5GC-SW-TM",
+    "listPriceMonthly": 3200,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7830,6 +7896,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-AFI-SW-TM",
+    "listPriceMonthly": 2800,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7851,6 +7918,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-AFS-SW-TM",
+    "listPriceMonthly": 2145,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7861,6 +7929,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-AMI-SW-TM",
+    "listPriceMonthly": 3530,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7871,6 +7940,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-APF-SW-TM",
+    "listPriceMonthly": 3530,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7881,6 +7951,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-AT1-SW-TM",
+    "listPriceMonthly": 1850,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7905,6 +7976,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-DD1-SW-TM",
+    "listPriceMonthly": 2300,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7915,6 +7987,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-FVU-SW-TM",
+    "listPriceMonthly": 2145,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7924,6 +7997,7 @@
     "category": "License",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
+    "listPriceMonthly": 4260,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7934,6 +8008,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-HS1-SW-TM",
+    "listPriceMonthly": 1400,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7944,6 +8019,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-INSSL-SW-TM",
+    "listPriceMonthly": 4600,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7954,6 +8030,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-NF1-SW-TM",
+    "listPriceMonthly": 1650,
     "status": "EOL",
     "isUnavailable": true
   },
@@ -7973,6 +8050,7 @@
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "eosReplacementSku": "SMT-HC3-GEN3-SSL-SW-TM",
+    "listPriceMonthly": 3800,
     "status": "EOL",
     "isUnavailable": true
   },

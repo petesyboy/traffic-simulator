@@ -699,5 +699,17 @@ describe('pricingEngine', () => {
       expect(optic?.unitListPrice).toBe(400);
       expect(optic?.isCustomOrAdHoc).toBe(true);
     });
+
+    it('resolves GFM-FM000-SW-TM (and GFM-FM000-SWTM) with monthly list price of $2310/mo', () => {
+      const gfmItem = createAdHocQuoteItem('GFM-FM000-SW-TM', 1, 12);
+      expect(gfmItem.isMonthlyPrice).toBe(true);
+      expect(gfmItem.unitListPrice).toBe(2310);
+      expect(gfmItem.termMonths).toBe(12);
+
+      const gfmVariant = createAdHocQuoteItem('GFM-FM000-SWTM', 1, 36);
+      expect(gfmVariant.isMonthlyPrice).toBe(true);
+      expect(gfmVariant.unitListPrice).toBe(2310);
+      expect(gfmVariant.termMonths).toBe(36);
+    });
   });
 });

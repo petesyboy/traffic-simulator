@@ -70,12 +70,32 @@ export const skuService = {
     return Array.from(map.values()).sort((a, b) => a.partNumber.localeCompare(b.partNumber));
   },
 
-  /** Finds an exact SKU by part number (case-insensitive). */
+  /** Finds an exact SKU by part number (case-insensitive with normalized variant fallback). */
   getSKUByPartNumber(partNumber: string): SKUItem | undefined {
     if (!partNumber) return undefined;
-    const target = partNumber.trim().toUpperCase();
-    const desc = getMergedSkus()[target];
-    const base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
+    let target = partNumber.trim().toUpperCase();
+    let desc = getMergedSkus()[target];
+    let base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
+
+    // Fallback normalization for common typo variants (e.g. -SWTM <-> -SW-TM)
+    if (!desc && !base) {
+      if (target.endsWith('-SWTM')) {
+        const alt = target.replace(/-SWTM$/, '-SW-TM');
+        if (getMergedSkus()[alt] || (baseSkuData as SKUItem[]).some((i) => i.partNumber.toUpperCase() === alt)) {
+          target = alt;
+          desc = getMergedSkus()[target];
+          base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
+        }
+      } else if (target.endsWith('-SW-TM')) {
+        const alt = target.replace(/-SW-TM$/, '-SWTM');
+        if (getMergedSkus()[alt] || (baseSkuData as SKUItem[]).some((i) => i.partNumber.toUpperCase() === alt)) {
+          target = alt;
+          desc = getMergedSkus()[target];
+          base = (baseSkuData as SKUItem[]).find((item) => item.partNumber.toUpperCase() === target);
+        }
+      }
+    }
+
     const meta = getMergedSkusMetadata()[target];
     const price = getMergedSkuPrices()[target];
 
