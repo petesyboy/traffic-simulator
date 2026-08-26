@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.651",
+    date: "2026-08-26",
+    summary: "Synchronize master SKU catalog and all prices against latest WWPL_20260731 (v1.0.651)",
+  },
+  {
     version: "1.0.650",
     date: "2026-08-26",
     summary: "Support percent-of-total hardware support SKU GSS-HW-AHR-GMO (41% of covered hardware list price) (v1.0.650)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.632",
     date: "2026-08-26",
     summary: "Track raw string state for table row inputs to allow smooth editing and backspacing (v1.0.632)",
-  },
-  {
-    version: "1.0.630",
-    date: "2026-08-25",
-    summary: "Expand line items table to naturally fill modal vertical space (v1.0.630)",
   },
 ];

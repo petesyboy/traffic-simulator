@@ -135,6 +135,26 @@ describe('buildProjectWideOpticBom', () => {
       { sku: 'SFP-532T', qty: 4, description: 'Base optic', type: 'Optic', nodeId: undefined, site: undefined },
     ]);
   });
+
+  it('consolidates optics across different linkTypes (e.g. tap-termination and uplinks) into unified packs without split duplicate lines', () => {
+    const testSkus: Record<string, string> = {
+      ...skus,
+      'SFP-533T': '10G SFP+ Singlemode LR',
+      'SFP-533T-20P': '20 pack of 10Gb SFP+, Singlemode LR. TAA Compliant.',
+    };
+
+    const rows: BomRow[] = [
+      { sku: 'SFP-533T', qty: 20, description: '10G SFP+ Singlemode LR', type: 'Optic', nodeId: 'chassis-1' }, // uplinks
+      { sku: 'SFP-533T', qty: 192, description: '10G SFP+ Singlemode LR', type: 'Optic', nodeId: 'chassis-1', linkType: 'tap-termination' }, // tap termination
+    ];
+
+    const result = buildProjectWideOpticBom(rows, testSkus);
+    // 192 + 20 = 212 total -> 10 packs of 20 (200) + 12 remainder -> rounded up to 11 packs of 20 (220 total)
+    expect(result).toHaveLength(1);
+    expect(result[0].sku).toBe('SFP-533T-20P');
+    expect(result[0].qty).toBe(11);
+    expect(result[0].note).toContain('Rounded up from 212 individual units to 11 × SFP-533T-20P (220 total)');
+  });
 });
 
 describe('generateBom stays raw per-node/site - no pack optimization baked in', () => {
