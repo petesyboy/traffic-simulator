@@ -494,16 +494,32 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
       const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
         try {
+          const timeout = setTimeout(() => {
+            reject(new Error('PDF generation timed out after 10 seconds.'));
+          }, 10000);
+
           const pdfDoc = pdfMake.createPdf(docDef) as unknown as {
-            getBlob: (cb: (blob: Blob) => void) => void;
+            getBlob: (cb?: (blob: Blob) => void) => Promise<Blob> | void;
           };
-          pdfDoc.getBlob((blob: Blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('PDF generation produced an empty file.'));
-            }
+
+          const res = pdfDoc.getBlob((blob: Blob) => {
+            clearTimeout(timeout);
+            if (blob) resolve(blob);
+            else reject(new Error('PDF generation produced an empty file.'));
           });
+
+          if (res && typeof (res as Promise<Blob>).then === 'function') {
+            (res as Promise<Blob>)
+              .then((blob) => {
+                clearTimeout(timeout);
+                if (blob) resolve(blob);
+                else reject(new Error('PDF generation produced an empty file.'));
+              })
+              .catch((err) => {
+                clearTimeout(timeout);
+                reject(err);
+              });
+          }
         } catch (err) {
           reject(err);
         }

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.652",
+    date: "2026-08-26",
+    summary: "Consolidate optic pack optimization across all links into unified 20-packs (v1.0.652)",
+  },
+  {
     version: "1.0.651",
     date: "2026-08-26",
     summary: "Synchronize master SKU catalog and all prices against latest WWPL_20260731 (v1.0.651)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.633",
     date: "2026-08-26",
     summary: "Display live dollar and percentage savings indicators under top toggles (v1.0.633)",
-  },
-  {
-    version: "1.0.632",
-    date: "2026-08-26",
-    summary: "Track raw string state for table row inputs to allow smooth editing and backspacing (v1.0.632)",
   },
 ];

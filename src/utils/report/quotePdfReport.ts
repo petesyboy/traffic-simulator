@@ -184,7 +184,7 @@ export function buildQuotePdfDocDefinition(
       // ── Financial Summary Tile Grid ──
       {
         table: {
-          widths: ['25%', '25%', '25%', '25%'],
+          widths: ['*', '*', '*', '*'],
           body: [
             [
               {
