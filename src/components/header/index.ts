@@ -28,6 +28,8 @@ export {
   SaveIcon,
   FolderOpenIcon,
   GearIcon,
+  SlidersIcon,
+  PaletteIcon,
   RefreshIcon,
   TrashIcon,
   UndoIcon,

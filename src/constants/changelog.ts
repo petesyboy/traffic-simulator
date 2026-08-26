@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.653",
+    date: "2026-08-26",
+    summary: "Resolve PDF generation hanging on promise resolution and table widths (v1.0.653)",
+  },
+  {
     version: "1.0.652",
     date: "2026-08-26",
     summary: "Consolidate optic pack optimization across all links into unified 20-packs (v1.0.652)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.634",
     date: "2026-08-26",
     summary: "Add persistent Save and Load Commercial Quote JSON feature with solution naming (v1.0.634)",
-  },
-  {
-    version: "1.0.633",
-    date: "2026-08-26",
-    summary: "Display live dollar and percentage savings indicators under top toggles (v1.0.633)",
   },
 ];

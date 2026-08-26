@@ -134,13 +134,40 @@ export const FolderOpenIcon: React.FC<IconProps> = ({ size = 14 }) => (
 
 export const GearIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <circle cx="12" cy="12" r="2.8" stroke="currentColor" strokeWidth="1.7" />
     <path
-      d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"
+      d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.6"
       strokeLinecap="round"
+      strokeLinejoin="round"
     />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+export const SlidersIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="9" cy="6" r="2.2" fill="currentColor" />
+    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="15" cy="12" r="2.2" fill="currentColor" />
+    <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="8" cy="18" r="2.2" fill="currentColor" />
+  </svg>
+);
+
+export const PaletteIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M12 3a9 9 0 00-9 9c0 4.97 4.03 9 9 9a3.5 3.5 0 003.5-3.5c0-.96-.4-1.83-1.04-2.45A3.5 3.5 0 0117.5 12H19a3 3 0 003-3 6 6 0 00-6-6h-4z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" />
+    <circle cx="10.5" cy="7.5" r="1.2" fill="currentColor" />
+    <circle cx="14.5" cy="7.5" r="1.2" fill="currentColor" />
+    <circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" />
   </svg>
 );
 
@@ -254,11 +281,11 @@ export const PriceListIcon: React.FC<IconProps> = ({ size = 14 }) => (
 
 export const SunIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
-    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.7" />
+    <circle cx="12" cy="12" r="3.8" fill="currentColor" />
     <path
-      d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+      d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.8"
       strokeLinecap="round"
     />
   </svg>
@@ -268,8 +295,9 @@ export const MoonIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
     <path
       d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+      fill="currentColor"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
