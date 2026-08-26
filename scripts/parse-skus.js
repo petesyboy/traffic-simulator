@@ -64,7 +64,7 @@ function parsePrice(val) {
 
 /** Determines category from SKU and metadata. */
 function determineCategory(sku, desc, prodFamily, prodSubFamily) {
-  const s = sku.toUpperCase();
+  const s = sku.toUpperCase().trim();
   const sub = (prodSubFamily || '').toLowerCase();
   const fam = (prodFamily || '').toLowerCase();
   const d = (desc || '').toLowerCase();
@@ -78,39 +78,49 @@ function determineCategory(sku, desc, prodFamily, prodSubFamily) {
   if (sub === 'fans' || s.startsWith('FAN-') || d.includes('fan assembly') || d.includes('fan tray')) {
     return 'Fan';
   }
-  if (sub === 'power' || s.startsWith('PWR-') || s.startsWith('BAT-') || d.includes('power supply') || d.includes('battery pack')) {
+  if (sub === 'power' || s.startsWith('PWR-') || s.startsWith('BAT-') || s.startsWith('PCD-') || d.includes('power supply') || d.includes('power cord') || d.includes('battery pack')) {
     return 'Power';
+  }
+  if (s.startsWith('GTP-') || s.startsWith('TAP-') || s.startsWith('PNL-') || s.startsWith('M100') || s.startsWith('M200') || s.startsWith('ULT-') || d.includes('tap module') || d.includes('always on tap') || sub.includes('gtap') || sub.includes('tap')) {
+    return 'TAP';
+  }
+  if (
+    ((s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-HW')) && !s.includes('-SW-') && !s.includes('-TM') && !s.endsWith('-PL')) ||
+    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-')))
+  ) {
+    return 'Chassis';
+  }
+  if (
+    (s.endsWith('-HW') && (s.startsWith('PRT-') || s.startsWith('SMT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-'))) ||
+    ((s.startsWith('PRT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-') || s === 'SMT-HC3-C08' || s === 'SMT-HC3-C05' || s === 'SMT-HC0-X16' || s === 'SMT-HC1-S' || s === 'SMT-HC0-Q02X08') &&
+      !s.includes('-SW-') &&
+      !s.includes('-TM') &&
+      !s.endsWith('-PL'))
+  ) {
+    return 'Module';
   }
   if (
     s.includes('-SW-') ||
     s.includes('-TM') ||
+    s.endsWith('-PL') ||
     s.includes('-GEN3-') ||
     s.includes('-GEN2-') ||
     s.startsWith('CLS-') ||
     s.startsWith('GEM-') ||
     s.startsWith('UPG-') ||
+    s.startsWith('GFM-') ||
     d.includes('term license') ||
+    d.includes('subscription license') ||
     d.includes('perpetual license') ||
     d.includes('feature license') ||
-    d.includes('software license') ||
-    d.includes('license for') ||
-    d.includes('license')
+    d.includes('license for')
   ) {
     return 'License';
   }
-  if (s.startsWith('GTP-') || s.startsWith('TAP-') || s.startsWith('PNL-') || d.includes('tap module') || d.includes('always on tap') || sub.includes('gtap') || sub.includes('tap')) {
-    return 'TAP';
-  }
-  if (s.startsWith('BPS-') || s.startsWith('PRT-') || (s.startsWith('SMT-') && !s.includes('-SW-') && !s.includes('-GEN3-') && !s.includes('-GEN2-') && !d.includes('license')) || s.startsWith('CCV') || d.includes('module') || d.includes('combo module')) {
-    return 'Module';
-  }
-  if (s.startsWith('GVS-') || sub.includes('gigavue-hc') || sub.includes('gigavue-ta') || d.includes('chassis') || d.includes('node')) {
-    return 'Chassis';
-  }
-  if (fam.includes('accessories') || sub.includes('accessories') || s.startsWith('ACC-') || s.startsWith('RACK-')) {
+  if (fam.includes('accessories') || sub.includes('accessories') || s.startsWith('ACC-') || s.startsWith('RACK-') || s.startsWith('FIL-')) {
     return 'Accessory';
   }
-  if (d.includes('support') || s.includes('SPT-')) {
+  if (d.includes('support') || s.includes('SPT-') || s.startsWith('GSS-') || s.startsWith('GSP-')) {
     return 'Support';
   }
   return 'Other';

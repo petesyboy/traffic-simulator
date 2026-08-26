@@ -110,7 +110,7 @@
   {
     "partNumber": "BPS-HC1-D25A24-HW",
     "description": "Bypass Combo Module, GigaVUE-HC1-Plus/HC1/HCT, 2 SX/SR 50/125 BPS pairs, 4 10G SFP+ cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 4,
     "speedsSupported": [
       "10G"
@@ -154,7 +154,7 @@
   {
     "partNumber": "BPS-HC1-D25A60-HW",
     "description": "Bypass Module, GigaVUE-HC1-Plus/HC1/HCT, 6 1/10G SX/SR 50/125 BPS pairs. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "speedsSupported": [
       "10G"
     ],
@@ -196,7 +196,7 @@
   {
     "partNumber": "BPS-HC1-D35C60-HW",
     "description": "Bypass Module, GigaVUE-HC1-Plus/HC1/HCT, 6 1/10G LX/LR BPS pairs. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "speedsSupported": [
       "10G"
     ],
@@ -241,7 +241,7 @@
   {
     "partNumber": "BPS-HC3-C25F2G-HW",
     "description": "Bypass Combo Module, GigaVUE-HC3, 2  40/100Gb SR4 BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 16,
     "speedsSupported": [
       "10G",
@@ -289,7 +289,7 @@
   {
     "partNumber": "BPS-HC3-C35C2G-HW",
     "description": "Bypass Combo Module, GigaVUE-HC3, 2 100Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 2,
     "speedsSupported": [
       "10G",
@@ -337,7 +337,7 @@
   {
     "partNumber": "BPS-HC3-Q35C2G-HW",
     "description": "Bypass Combo Module, GigaVUE-HC3, 2 40Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 2,
     "speedsSupported": [
       "10G",
@@ -799,7 +799,7 @@
   {
     "partNumber": "CTL-HC3-002",
     "description": "Control Card Version 2, GigaVUE-HC3",
-    "category": "Chassis",
+    "category": "Module",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
@@ -983,7 +983,7 @@
   {
     "partNumber": "FIL-HD400",
     "description": "GigaVUE-HD4 Filter Assembly",
-    "category": "Other",
+    "category": "Accessory",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HD",
     "countryOfOrigin": "Taiwan",
@@ -995,7 +995,7 @@
   {
     "partNumber": "FIL-HD800",
     "description": "GigaVUE-HD8 Filter Assembly",
-    "category": "Other",
+    "category": "Accessory",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HD",
     "countryOfOrigin": "Mexico",
@@ -1351,7 +1351,7 @@
   {
     "partNumber": "GFM-HW2-FM001-HW",
     "description": "GigaVUE-FM Hardware Appliance (dual 2.0GHz 20 cores/40 threads CPU, 2.4 TB hard disk drive with RAID, 2x100G, 2x10/25Gb and 2x1Gb network interfaces) only. Requires GigaVUE-FM license, sold separately.",
-    "category": "License",
+    "category": "Chassis",
     "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 2,
     "speedsSupported": [
@@ -1513,7 +1513,7 @@
   {
     "partNumber": "GPS-PSO-GNA",
     "description": "Onsite GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment. \nPlease contact your Gigamon Account team for larger network options.",
-    "category": "License",
+    "category": "Other",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1639,7 +1639,7 @@
   {
     "partNumber": "GPS-PSR-GNA",
     "description": "Remote GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment.",
-    "category": "License",
+    "category": "Other",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1648,7 +1648,7 @@
   {
     "partNumber": "GPS-PSR-GNA-PSP",
     "description": "Remote GigaHEALTH Network Assessment, used within 6 months of services kick off date. Includes remote assessment of up to 10 Gigamon devices (or 1 Cluster or 1 V Series license) within your Gigamon deployment.\nAvailable only via qualified Gigamon partners.",
-    "category": "License",
+    "category": "Other",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1828,7 +1828,7 @@
   {
     "partNumber": "GSP-HW-AHR-PMR",
     "description": "Gigamon Advance Hardware Replacement with PREMIER Level Partners, available with Subscription enabled hardware products at time of product purchase.",
-    "category": "Other",
+    "category": "Support",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1837,7 +1837,7 @@
   {
     "partNumber": "GSP-HW-AHR-PRO",
     "description": "Gigamon Advance Hardware Replacement with PRO Level Partners, available with Subscription enabled hardware products at time of product purchase.",
-    "category": "Other",
+    "category": "Support",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1909,7 +1909,7 @@
   {
     "partNumber": "GSP-RNL-HW-AHR-PMR",
     "description": "Renewal Gigamon AHR HW Replacement Program with PREMIER Level Partners, purchased >1 year post product ship date",
-    "category": "Other",
+    "category": "Support",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -1918,7 +1918,7 @@
   {
     "partNumber": "GSP-RNL-HW-AHR-PRO",
     "description": "Renewal Gigamon AHR HW Replacement Program with PRO Level Partners, purchased >1 year post product ship date",
-    "category": "Other",
+    "category": "Support",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -2197,7 +2197,7 @@
   {
     "partNumber": "GSW-WBX01",
     "description": "Monthly GigaVUE-OS term license for Dell 4112F-ON (500 Gbps & lower, 12x1G + 3x100G). Includes Bundled Elite-Plus Software Support.",
-    "category": "License",
+    "category": "Chassis",
     "endOfSale": "2026-05-25",
     "endOfLife": "2028-10-27",
     "portDensity": 12,
@@ -2336,7 +2336,7 @@
   {
     "partNumber": "GVS-GSA110-2AC-HW",
     "description": "AC-powered GSA110 hardware only; requires a separate GigaVUE-OS license.",
-    "category": "License",
+    "category": "Chassis",
     "endOfSale": "Discontinued (Removed from Price List)",
     "listPrice": 45000,
     "status": "Discontinued",
@@ -2356,7 +2356,7 @@
   {
     "partNumber": "GVS-GSA110-2DC-HW",
     "description": "DC-powered GSA110 hardware only; requires a separate GigaVUE-OS license.",
-    "category": "License",
+    "category": "Chassis",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -2624,7 +2624,7 @@
   {
     "partNumber": "GVS-HC3A1",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 2 power supplies, AC power.",
-    "category": "Module",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
@@ -2636,7 +2636,7 @@
   {
     "partNumber": "GVS-HC3A1-HW",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 2 power supplies, AC power . Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
@@ -2662,7 +2662,7 @@
   {
     "partNumber": "GVS-HC3A2",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 2 power supplies, DC power.",
-    "category": "Module",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
@@ -2674,7 +2674,7 @@
   {
     "partNumber": "GVS-HC3A2-HW",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 2 power supplies, DC power. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Taiwan",
@@ -2700,7 +2700,7 @@
   {
     "partNumber": "GVS-HC3A3",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 4 power supplies, AC power.",
-    "category": "Module",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
@@ -2712,7 +2712,7 @@
   {
     "partNumber": "GVS-HC3A3-HW",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 4 power supplies, AC power . Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
@@ -2724,7 +2724,7 @@
   {
     "partNumber": "GVS-HC3A4",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 4 power supplies, DC power.",
-    "category": "Module",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
@@ -2736,7 +2736,7 @@
   {
     "partNumber": "GVS-HC3A4-HW",
     "description": "GigaVUE-HC3 base unit w/ chassis, Control Card v2, 5 Fan Modules, CLI, 4 power supplies, DC power. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Chassis",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "Mexico",
@@ -4153,7 +4153,7 @@
   {
     "partNumber": "PCD-00061",
     "description": "Power cord, Positronic PLA03M4BN0A1/AA DC power connector, 2C+E, 12AWG, 3m. ANZ Compliant (Recommended for TA25E)",
-    "category": "Other",
+    "category": "Power",
     "endOfSale": "Discontinued (Removed from Price List)",
     "status": "Discontinued",
     "isUnavailable": true,
@@ -4373,7 +4373,7 @@
   {
     "partNumber": "PRT-HC1-G12-HW",
     "description": "Port module, GigaVUE-HCT, 6 x 10/100/1000M copper ports, 6 x 100/1000M SFP cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.​",
-    "category": "License",
+    "category": "Module",
     "speedsSupported": [
       "1G"
     ],
@@ -4420,7 +4420,7 @@
   {
     "partNumber": "PRT-HC1-Q04X08-HW",
     "description": "Port Module, GigaVUE-HC1-Plus/HC1/HCT. On GigaVUE-HC1, the port speeds are 4 x 40G, 8 x 10G. On GigaVUE-HC1-Plus, the port speeds are 4 x 100G, 8 x 25G. On GigaVUE-HCT, the port speeds are 4 x 40G, 4 x 25G, 4 x 10G. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 4,
     "speedsSupported": [
       "10G",
@@ -4467,7 +4467,7 @@
   {
     "partNumber": "PRT-HC1-X12-HW",
     "description": "Port Module, GigaVUE-HC1-Plus/HC1/HCT, 12 1/10G SFP+ cages. Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "speedsSupported": [
       "10G"
     ],
@@ -4509,7 +4509,7 @@
   {
     "partNumber": "PRT-HC3-C08Q08-HW",
     "description": "Port Module, GigaVUE-HC3, 8x100G QSFP28 cages and 8x40G QSFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 8,
     "formFactor": "QSFP28",
     "productFamily": "GigaVUE H Series",
@@ -4549,7 +4549,7 @@
   {
     "partNumber": "PRT-HC3-C16-HW",
     "description": "Port Module, GigaVUE-HC3, 16x100G QSFP28 cages.  Requires Control Card Version 2.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 16,
     "formFactor": "QSFP28",
     "productFamily": "GigaVUE H Series",
@@ -4589,7 +4589,7 @@
   {
     "partNumber": "PRT-HC3-X24-HW",
     "description": "Port Module, GigaVUE-HC3, 24x10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 24,
     "formFactor": "SFP+",
     "productFamily": "GigaVUE H Series",
@@ -5604,7 +5604,7 @@
   {
     "partNumber": "RMK-HCT00",
     "description": "GigaVUE-HCT Rack Mount Kit, Allows Installation of One or Two Chassis Side-By-Side Into Standard 19\" Rack",
-    "category": "Chassis",
+    "category": "Accessory",
     "productFamily": "Accessories",
     "productSubFamily": "Accessories",
     "countryOfOrigin": "Mexico",
@@ -6152,7 +6152,7 @@
   {
     "partNumber": "SMT-HC0-AFI",
     "description": "Application Filtering Intelligence (1 Month ) – GigaVUE-HC2 (12-month Minimum)*Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AFI-SW-TM",
@@ -6162,7 +6162,7 @@
   {
     "partNumber": "SMT-HC0-AFS",
     "description": "Advanced Flow Slicing (1 Month ) – GigaVUE-HC2 (12-month Minimum). *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-AFS",
@@ -6172,7 +6172,7 @@
   {
     "partNumber": "SMT-HC0-AMI",
     "description": "Application Metadata Intelligence (1 Month) – GigaVUE-HC2 (12-Month Minimum)*Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AMI-SW-TM",
@@ -6381,7 +6381,7 @@
   {
     "partNumber": "SMT-HC1-AFI",
     "description": "Application Filtering Intelligence (1 Month ) GigaVUE-HC1 (12-month Minimum). Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6393,7 +6393,7 @@
   {
     "partNumber": "SMT-HC1-AFS",
     "description": "Advanced Flow Slicing (1 Month ) GigaVUE-HC1 (12-month Minimum). Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6405,7 +6405,7 @@
   {
     "partNumber": "SMT-HC1-AMI",
     "description": "Application Metadata Intelligence (1 Month) - GigaVUE-HC1 (12-Month Minimum). Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6417,7 +6417,7 @@
   {
     "partNumber": "SMT-HC1-APF",
     "description": "GigaSMART, GigaVUE-HC1 license, Adaptive Packet Filtering feature",
-    "category": "License",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6429,7 +6429,7 @@
   {
     "partNumber": "SMT-HC1-BN-CORE",
     "description": "CoreVUE GigaSMART software bundle for GigaVUE-HC1. Capabilities included: Advanced Tunneling, Header Stripping, Slicing, Masking, Advanced Load Balancing, Source Port Labeling. Includes bundled Elite-Plus Support",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6441,7 +6441,7 @@
   {
     "partNumber": "SMT-HC1-BN-NV",
     "description": "NetVUE GigaSMART software bundle for GigaVUE-HC1. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation. Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6453,7 +6453,7 @@
   {
     "partNumber": "SMT-HC1-BN-NVP",
     "description": "NetVUE Plus GigaSMART software bundle for GigaVUE-HC1. Capabilities included: All NetVUE GigaSMART capabilities, Application Filtering Intelligence, Adaptive Packet Filtering, Advanced Flow Slicing. Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6465,7 +6465,7 @@
   {
     "partNumber": "SMT-HC1-BN-SV",
     "description": "SecureVUE GigaSMART software bundle for GigaVUE-HC1. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation, Adaptive Packet Filtering. Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6477,7 +6477,7 @@
   {
     "partNumber": "SMT-HC1-BN-SVP",
     "description": "SecureVUE Plus GigaSMART software bundle for GigaVUE-HC1. Capabilities included: All SecureVUE GigaSMART capabilities, SSL Decryption (Inline + Out-of-band), Application Filtering Intelligence, Application Metadata Intelligence. Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6489,7 +6489,7 @@
   {
     "partNumber": "SMT-HC1-BSE",
     "description": "GigaSMART, GigaVUE-HC1 license combo, includes Slicing, Masking, & Source Port Labeling.",
-    "category": "License",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -6501,7 +6501,7 @@
   {
     "partNumber": "SMT-HC1-DD1",
     "description": "GigaSMART, GigaVUE-HC1 license, De-Duplication feature",
-    "category": "License",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7041,7 +7041,7 @@
   {
     "partNumber": "SMT-HC1-HS1",
     "description": "GigaSMART, GigaVUE-HC1 license, Header Stripping feature",
-    "category": "License",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7077,7 +7077,7 @@
   {
     "partNumber": "SMT-HC1-S",
     "description": "Gen3 GigaSMART module on GigaVUE-HC1-Plus/HC1/HCT. Includes  Slicing, Masking & Source Port Labeling (Only works with feature licenses & bundles that have a 'SMT-HC1-Gen3' prefix).",
-    "category": "License",
+    "category": "Module",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Mexico",
@@ -7089,7 +7089,7 @@
   {
     "partNumber": "SMT-HC1-S-HW",
     "description": "Gen3 GigaSMART, GigaVUE-HC1-Plus/HC1/HCT, Module. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "Mexico",
@@ -7125,7 +7125,7 @@
   {
     "partNumber": "SMT-HC1-TUN",
     "description": "GigaSMART, GigaVUE-HC1 license, Tunneling feature (includes ERSPAN De-Encapsulation)",
-    "category": "License",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7137,7 +7137,7 @@
   {
     "partNumber": "SMT-HC1-UPGAFI",
     "description": "Application Filtering Intelligence - Upgrade from ASF - GigaVUE-HC1.",
-    "category": "Module",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7149,7 +7149,7 @@
   {
     "partNumber": "SMT-HC1-UPGBN-NV",
     "description": "Upgrade SKU from CoreVUE to NetVUE GigaSMART software bundle for GigaVUE-HC1. Includes bundled Elite-Plus Support",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7161,7 +7161,7 @@
   {
     "partNumber": "SMT-HC1-UPGBN-NVP",
     "description": "Upgrade SKU from NetVUE to NetVUE Plus GigaSMART software bundle for GigaVUE-HC1. Includes bundled Elite-Plus Support",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7173,7 +7173,7 @@
   {
     "partNumber": "SMT-HC1-UPGBN-SV",
     "description": "Upgrade SKU from CoreVUE to SecureVUE GigaSMART software bundle for GigaVUE-HC1. Includes bundled Elite-Plus Support",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7185,7 +7185,7 @@
   {
     "partNumber": "SMT-HC1-UPGBN-SVP",
     "description": "Upgrade SKU from SecureVUE to SecureVUE Plus GigaSMART software bundle for GigaVUE-HC1. Includes bundled Elite-Plus Support.",
-    "category": "Module",
+    "category": "Support",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",
@@ -7509,7 +7509,7 @@
   {
     "partNumber": "SMT-HC2-AFI",
     "description": "Application Filtering Intelligence (1 Month ) – GigaVUE-HC2 Gen2 GigaSMART module; requires SMT-HC0-Q02X08 *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AFI-SW-TM",
@@ -7520,7 +7520,7 @@
   {
     "partNumber": "SMT-HC2-AFS",
     "description": "Advanced Flow Slicing (1 Month ) – GigaVUE-HC2 (12-month Minimum); requires SMT-HC0-Q02X08 *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-AFS",
@@ -7531,7 +7531,7 @@
   {
     "partNumber": "SMT-HC2-AMI",
     "description": "Application Metadata Intelligence (1 Month) – GigaVUE-HC2 Gen2 GigaSMART module; requires SMT-HC0-Q02X08 (12-Month Minimum) *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC1P-GEN3-AMI-SW-TM",
@@ -7542,7 +7542,7 @@
   {
     "partNumber": "SMT-HC2-BN-CORE",
     "description": "CoreVUE Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: Advanced Tunneling, Header Stripping, Slicing, Masking, Advanced Load Balancing, Source Port Labeling. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7551,7 +7551,7 @@
   {
     "partNumber": "SMT-HC2-BN-MV",
     "description": "MobileVUE Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: All CoreVUE GigaSMART capabilities, GTP Correlation, FlowVUE, 5G Correlation, CUPS and SUPI-based load balancing. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7560,7 +7560,7 @@
   {
     "partNumber": "SMT-HC2-BN-NV",
     "description": "NetVUE Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7569,7 +7569,7 @@
   {
     "partNumber": "SMT-HC2-BN-NVP",
     "description": "NetVUE Plus Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: All NetVUE GigaSMART capabilities, Application Filtering Intelligence, Adaptive Packet Filtering, Advanced Flow Slicing. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7578,7 +7578,7 @@
   {
     "partNumber": "SMT-HC2-BN-SV",
     "description": "SecureVUE Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation, Adaptive Packet Filtering. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7587,7 +7587,7 @@
   {
     "partNumber": "SMT-HC2-BN-SVP",
     "description": "SecureVUE Plus Gen2 GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Capabilities included: All SecureVUE GigaSMART capabilities, SSL Decryption (Inline + Out-of-band), Application Filtering Intelligence, Application Metadata Intelligence. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7767,7 +7767,7 @@
   {
     "partNumber": "SMT-HC2-UPGBN-MV",
     "description": "Upgrade SKU from CoreVUE to MobileVUE GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7776,7 +7776,7 @@
   {
     "partNumber": "SMT-HC2-UPGBN-NV",
     "description": "Upgrade SKU from CoreVUE to NetVUE GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7785,7 +7785,7 @@
   {
     "partNumber": "SMT-HC2-UPGBN-NVP",
     "description": "GigaSMART Bundle Upgrade, NetVUE to NetVUE Plus (1 Month) – GigaVUE-HC2 (12-month Minimum); *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7794,7 +7794,7 @@
   {
     "partNumber": "SMT-HC2-UPGBN-SV",
     "description": "Upgrade SKU from CoreVUE to SecureVUE GigaSMART software bundle for GigaVUE-HC2. Requires SMT-HC0-Q02X08. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7803,7 +7803,7 @@
   {
     "partNumber": "SMT-HC2-UPGBN-SVP",
     "description": "GigaSMART Bundle Upgrade, SecureVUE to SecureVUE Plus (1 Month) – GigaVUE-HC2 (12-month Minimum); *Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "status": "EOL",
@@ -7812,7 +7812,7 @@
   {
     "partNumber": "SMT-HC2-VDR",
     "description": "GigaSMART, GigaVUE-HC2, Video Data Record generation for Nokia AVA platform. Gen2 only. 12-month minimum. Includes bundled Elite-Plus Support (EOS Dec 31, 2022)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2022-12-31",
     "endOfLife": "2027-12-31",
     "eosReplacementSku": "SMT-HC3-VDR",
@@ -7822,7 +7822,7 @@
   {
     "partNumber": "SMT-HC3-AFI",
     "description": "Application Filtering Intelligence (1 Month ) – GigaVUE-HC3 (12-month Minimum).*Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7831,7 +7831,7 @@
   {
     "partNumber": "SMT-HC3-AFS",
     "description": "Advanced Flow Slicing (1 Month ) – GigaVUE-HC3 (12-month Minimum). *Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7840,7 +7840,7 @@
   {
     "partNumber": "SMT-HC3-AFSP",
     "description": "GigaSMART, GigaVUE-HC3, Advanced Flow Slicing and Enhanced Load Balancing per GigaSMART module (perpetual)",
-    "category": "Module",
+    "category": "Other",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC3",
     "countryOfOrigin": "United States",
@@ -7852,7 +7852,7 @@
   {
     "partNumber": "SMT-HC3-AMI",
     "description": "Application Metadata Intelligence (1 Month) – GigaVUE-HC3 (12-Month Minimum).*Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7861,7 +7861,7 @@
   {
     "partNumber": "SMT-HC3-BN-CORE",
     "description": "CoreVUE GigaSMART software bundle for GigaVUE-HC3. Capabilities included: Advanced Tunneling, Header Stripping, Slicing, Masking, Advanced Load Balancing, Source Port Labeling. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7870,7 +7870,7 @@
   {
     "partNumber": "SMT-HC3-BN-MV",
     "description": "MobileVUE GigaSMART software bundle for GigaVUE-HC3. Capabilities included: All CoreVUE GigaSMART capabilities, GTP Correlation, FlowVUE, 5G Correlation, CUPS and SUPI-based load balancing. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7879,7 +7879,7 @@
   {
     "partNumber": "SMT-HC3-BN-NV",
     "description": "NetVUE GigaSMART software bundle for GigaVUE-HC3. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7888,7 +7888,7 @@
   {
     "partNumber": "SMT-HC3-BN-NVP",
     "description": "NetVUE Plus GigaSMART software bundle for GigaVUE-HC3. Capabilities included: All NetVUE GigaSMART capabilities, Application Filtering Intelligence, Adaptive Packet Filtering, Advanced Flow Slicing. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7897,7 +7897,7 @@
   {
     "partNumber": "SMT-HC3-BN-SV",
     "description": "SecureVUE GigaSMART software bundle for GigaVUE-HC3. Capabilities included: All CoreVUE GigaSMART capabilities, De-duplication, NetFlow Generation, Adaptive Packet Filtering. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7906,7 +7906,7 @@
   {
     "partNumber": "SMT-HC3-BN-SVP",
     "description": "SecureVUE Plus GigaSMART software bundle for GigaVUE-HC3. Capabilities included: All SecureVUE GigaSMART capabilities, SSL Decryption (Inline + Out-of-band), Application Filtering Intelligence, Application Metadata Intelligence. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -7930,7 +7930,7 @@
   {
     "partNumber": "SMT-HC3-C05-HW",
     "description": "Gen3 GigaSMART, GigaVUE-HC3, Module, 5x100G/40G QSFP28 cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 5,
     "speedsSupported": [
@@ -7970,7 +7970,7 @@
   {
     "partNumber": "SMT-HC3-C08-HW",
     "description": "Gen3 GigaSMART, GigaVUE-HC3, Module, 8x100G QSFP28 cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "Module",
     "portDensity": 8,
     "formFactor": "QSFP28",
     "productFamily": "GigaVUE H Series",
@@ -8518,7 +8518,7 @@
   {
     "partNumber": "SMT-HC3-UPGAFI",
     "description": "Application Filtering Intelligence – Upgrade",
-    "category": "Module",
+    "category": "Other",
     "listPrice": 15000,
     "status": "Active",
     "isUnavailable": false
@@ -8526,7 +8526,7 @@
   {
     "partNumber": "SMT-HC3-UPGBN-MV",
     "description": "Upgrade SKU from CoreVUE to MobileVUE GigaSMART software bundle for GigaVUE-HC3. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8535,7 +8535,7 @@
   {
     "partNumber": "SMT-HC3-UPGBN-NV",
     "description": "Upgrade SKU from CoreVUE to NetVUE GigaSMART software bundle for GigaVUE-HC3. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8544,7 +8544,7 @@
   {
     "partNumber": "SMT-HC3-UPGBN-NVP",
     "description": "Upgrade SKU from NetVUE to NetVUE Plus GigaSMART software bundle for GigaVUE-HC3. Includes bundled Elite-Plus Support​. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8553,7 +8553,7 @@
   {
     "partNumber": "SMT-HC3-UPGBN-SV",
     "description": "Upgrade SKU from CoreVUE to SecureVUE GigaSMART software bundle for GigaVUE-HC3. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8562,7 +8562,7 @@
   {
     "partNumber": "SMT-HC3-UPGBN-SVP",
     "description": "Upgrade SKU from SecureVUE to SecureVUE Plus GigaSMART software bundle for GigaVUE-HC3. Includes bundled Elite-Plus Support​. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8571,7 +8571,7 @@
   {
     "partNumber": "SMT-HC3-VDR",
     "description": "GigaSMART, GigaVUE-HC3, Video Data Record generation for Nokia AVA platform. 12-month minimum. Includes bundled Elite-Plus Support. (EOS Jul 31, 2023)",
-    "category": "Module",
+    "category": "Support",
     "endOfSale": "2023-07-30",
     "endOfLife": "2028-07-30",
     "status": "EOL",
@@ -8580,7 +8580,7 @@
   {
     "partNumber": "TAP-HC0-D25AC0-SW-TM",
     "description": "Monthly GigaVUE-OS term license for TAP-HC0-D25AC0-HW. Includes Bundled Elite-Plus Software Support. (EOS Dec 31, 2022)",
-    "category": "License",
+    "category": "TAP",
     "endOfSale": "12/31/2022",
     "endOfLife": "12/31/2027",
     "productFamily": "GigaVUE H Series",
@@ -8594,7 +8594,7 @@
   {
     "partNumber": "TAP-HC0-D25BC0-SW-TM",
     "description": "Monthly GigaVUE-OS term license for TAP-HC0-D25BC0-HW. Includes Bundled Elite-Plus Software Support. (EOS Dec 31, 2022)",
-    "category": "License",
+    "category": "TAP",
     "endOfSale": "12/31/2022",
     "endOfLife": "12/31/2027",
     "productFamily": "GigaVUE H Series",
@@ -8608,7 +8608,7 @@
   {
     "partNumber": "TAP-HC0-D35CC0-SW-TM",
     "description": "Monthly GigaVUE-OS term license for TAP-HC0-D35CC0-HW. Includes Bundled Elite-Plus Software Support. (EOS Dec 31, 2022)",
-    "category": "License",
+    "category": "TAP",
     "endOfSale": "12/31/2022",
     "endOfLife": "12/31/2027",
     "productFamily": "GigaVUE H Series",
@@ -8622,7 +8622,7 @@
   {
     "partNumber": "TAP-HC0-G100C0-SW-TM",
     "description": "Monthly GigaVUE-OS term license for TAP-HC0-G100C0-HW. Includes Bundled Elite-Plus Software Support. (EOS Dec 31, 2022)",
-    "category": "License",
+    "category": "TAP",
     "endOfSale": "12/31/2022",
     "endOfLife": "12/31/2027",
     "productFamily": "GigaVUE H Series",
@@ -8651,7 +8651,7 @@
   {
     "partNumber": "TAP-HC1-G10040-HW",
     "description": "TAP and Bypass module, GigaVUE-HC1-Plus/HC1/HCT, 10/100/1000M Copper, 4 TAPs or Bypass pairs. On GigaVUE-HC1, the port speeds are 10/100/1000M. On GigaVUE-HC1-Plus/HCT, the port speed is 1000M only. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
-    "category": "License",
+    "category": "TAP",
     "speedsSupported": [
       "1G"
     ],
@@ -8666,7 +8666,7 @@
   {
     "partNumber": "TAP-HC1-G10040-SW-TM",
     "description": "Monthly GigaVUE-OS term license for TAP-HC1-G10040-HW. Includes Bundled Elite-Plus Software Support.",
-    "category": "License",
+    "category": "TAP",
     "productFamily": "GigaVUE H Series",
     "productSubFamily": "GigaVUE-HC1",
     "countryOfOrigin": "United States",

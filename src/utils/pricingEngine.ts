@@ -199,47 +199,45 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
   // 4. Hardware Chassis (must evaluate BEFORE software because description mentions "Must pair with... Software License")
   if (
     t === 'chassis' ||
-    ((s.startsWith('GVS-') || s.startsWith('GSW-')) && !s.includes('-SW-') && !s.includes('-TM')) ||
-    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-')))
+    ((s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-HW')) && !s.includes('-SW-') && !s.includes('-TM') && !s.endsWith('-PL')) ||
+    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-')))
   ) {
     return 'Chassis';
   }
 
-  // 5. Software Licences (must evaluate BEFORE Module/Support because feature licenses like SMT-*-FVU and term licenses contain SMT-/support text)
+  // 5. Hardware Modules & Control Cards (physical line cards and base modules only, e.g. PRT-, BPS-, CTL-, SMT-HC3-C08-HW, SMT-HC3-C08)
+  if (
+    (s.endsWith('-HW') && (s.startsWith('PRT-') || s.startsWith('SMT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-'))) ||
+    ((s.startsWith('PRT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-') || s === 'SMT-HC3-C08' || s === 'SMT-HC3-C05' || s === 'SMT-HC0-X16' || s === 'SMT-HC1-S' || s === 'SMT-HC0-Q02X08') &&
+      !s.includes('-SW-') &&
+      !s.includes('-TM') &&
+      !s.endsWith('-PL')) ||
+    t === 'module'
+  ) {
+    return 'Module';
+  }
+
+  // 6. Software Licences (GigaSMART feature licenses, term software, capacity licenses)
   if (
     t === 'license' ||
     t === 'software' ||
     s.includes('-SW-') ||
     s.includes('-TM') ||
+    s.endsWith('-PL') ||
     s.includes('-GEN3-') ||
     s.includes('-GEN2-') ||
     s.startsWith('CLS-') ||
     s.startsWith('GEM-') ||
     s.startsWith('VUE-') ||
     s.startsWith('UPG-') ||
+    s.startsWith('GFM-') ||
     d.includes('term license') ||
     d.includes('subscription license') ||
     d.includes('perpetual license') ||
     d.includes('feature license') ||
-    d.includes('software license') ||
-    d.includes('license for') ||
-    d.includes('license')
+    d.includes('license for')
   ) {
     return 'Software';
-  }
-
-  // 6. Hardware Modules & Control Cards (physical line cards and base modules only)
-  if (
-    t === 'module' ||
-    ((s.startsWith('PRT-') || s.startsWith('SMT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-')) &&
-      !s.includes('-SW-') &&
-      !s.includes('-TM') &&
-      !s.includes('-GEN3-') &&
-      !s.includes('-GEN2-') &&
-      !d.includes('license')) ||
-    (s.endsWith('-HW') && !s.startsWith('GVS-'))
-  ) {
-    return 'Module';
   }
 
   // 7. Standalone Support & Maintenance (e.g. SPT-)

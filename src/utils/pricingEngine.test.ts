@@ -35,10 +35,24 @@ describe('pricingEngine', () => {
       expect(mapBomTypeToQuoteCategory('Hardware', 'GVS-TAX20', 'GigaVUE-TA25 Traffic Aggregator')).toBe('Chassis');
     });
 
-    it('correctly categorises modules', () => {
+    it('correctly categorises modules and hardware line cards', () => {
       expect(mapBomTypeToQuoteCategory('Module', 'PRT-HC3-C16', '16-Port 100G Module')).toBe('Module');
       expect(mapBomTypeToQuoteCategory('Hardware', 'SMT-HC0-X16', 'GigaSMART Module')).toBe('Module');
       expect(mapBomTypeToQuoteCategory('Hardware', 'BPS-HC3-C25F2G', 'Bypass Module')).toBe('Module');
+      expect(
+        mapBomTypeToQuoteCategory(
+          'License',
+          'PRT-HC3-X24-HW',
+          'Port Module, GigaVUE-HC3, 24x10G/1G SFP+ cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.',
+        ),
+      ).toBe('Module');
+      expect(
+        mapBomTypeToQuoteCategory(
+          'License',
+          'SMT-HC3-C08-HW',
+          'Gen3 GigaSMART, GigaVUE-HC3, Module, 8x100G/40G QSFP28 cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.',
+        ),
+      ).toBe('Module');
     });
 
     it('correctly categorises TAPs and breakout panels', () => {
