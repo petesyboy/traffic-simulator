@@ -2088,12 +2088,16 @@
   },
   {
     "partNumber": "GSS-HW-AHR-GMO",
-    "description": "Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.",
+    "description": "Advanced Hardware Replacement (AHR) for Support-Enabled Hardware - 5 Year / 60 Month Term (41.0% of HW List Price)",
     "category": "Support",
-    "endOfSale": "Discontinued (Removed from Price List)",
-    "status": "Discontinued",
-    "isUnavailable": true,
-    "supportAvailable": false
+    "productFamily": "Support & Services",
+    "productSubFamily": "Advanced Hardware Replacement",
+    "listPrice": 0,
+    "isPercentOfTotal": true,
+    "percentOfTotalRate": 0.41,
+    "status": "Active",
+    "isUnavailable": false,
+    "supportAvailable": true
   },
   {
     "partNumber": "GSS-RNL-BAS-PSS",

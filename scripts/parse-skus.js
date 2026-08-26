@@ -332,6 +332,22 @@ export function generateSkuCatalog() {
     }
   }
 
+  // Add GSS-HW-AHR-GMO percent-of-total support SKU
+  skuMap.set('GSS-HW-AHR-GMO', {
+    partNumber: 'GSS-HW-AHR-GMO',
+    description: 'Advanced Hardware Replacement (AHR) for Support-Enabled Hardware - 5 Year / 60 Month Term (41.0% of HW List Price)',
+    category: 'Support',
+    productFamily: 'Support & Services',
+    productSubFamily: 'Advanced Hardware Replacement',
+    listPrice: 0,
+    isPercentOfTotal: true,
+    percentOfTotalRate: 0.41,
+    status: 'Active',
+    isUnavailable: false,
+    supportAvailable: true,
+  });
+  newlySeenSkus.add('GSS-HW-AHR-GMO');
+
   // Baseline standard catalog prices for core chassis, modules, and software licenses
   const DEFAULT_SKU_PRICES = {
     // HC3 Base Chassis & Hardware

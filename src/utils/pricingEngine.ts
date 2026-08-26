@@ -59,6 +59,7 @@ export interface QuoteLineItem {
   isMonthlyPrice: boolean;
   applyDiscount: boolean;
   discountOverride?: number;
+  isPriceOverridden?: boolean;
   isCustomOrAdHoc?: boolean;
   site?: string;
   nodeId?: string;
@@ -203,6 +204,49 @@ export function isHardwareDescription(description: string): boolean {
     d.startsWith('gigavue-ta') ||
     d.startsWith('gen3 gigasmart, gigavue-hc3, module')
   );
+}
+
+/** Identifies whether a SKU is a percent-of-total support SKU (e.g. GSS-HW-AHR-GMO). */
+export function isPercentOfTotalSupportSku(sku: string): boolean {
+  const s = (sku || '').trim().toUpperCase();
+  return s === 'GSS-HW-AHR-GMO' || s.startsWith('GSS-HW-AHR');
+}
+
+/**
+ * Resolves the percentage rate for percent-of-total support SKUs.
+ * GSS-HW-AHR-GMO is 41.0% (5-year / 60-month all-in AHR term: Years 1-3 @ 8%/yr = 24%, Years 4-5 @ 8.5%/yr = 17%).
+ */
+export function getPercentOfTotalSupportRate(sku: string): number {
+  const s = (sku || '').trim().toUpperCase();
+  if (s === 'GSS-HW-AHR-GMO' || s.startsWith('GSS-HW-AHR')) {
+    return 0.41;
+  }
+  return 0;
+}
+
+/**
+ * Identifies whether a line item is an eligible support-enabled hardware product (Chassis or Module).
+ * In Gigamon CPQ / WWPL, percent-of-total hardware support (AHR) covers active chassis and physical modules/control cards.
+ */
+export function isSupportEnabledHardware(category: QuoteCategory, sku: string): boolean {
+  const s = (sku || '').trim().toUpperCase();
+
+  // Software licenses, term software, support items, optics, accessories, and passive TAPs are not support-enabled hardware products
+  if (
+    category === 'Software' ||
+    category === 'Support' ||
+    category === 'Optic' ||
+    category === 'TAP' ||
+    s.includes('-SW-') ||
+    s.includes('-TM') ||
+    s.endsWith('-PL') ||
+    isPercentOfTotalSupportSku(s)
+  ) {
+    return false;
+  }
+
+  // Active hardware chassis and physical modules / control cards
+  return category === 'Chassis' || category === 'Module';
 }
 
 /** Determines quote category from SKU, BOM type, and catalogue metadata. */
@@ -388,6 +432,7 @@ export function calculateLineFinancials(
   config: DiscountCategoryConfig,
   freePowerCords: boolean = false,
   spanOnlyMode: boolean = false,
+  eligibleHardwareListTotal?: number,
 ): CalculatedLineItem {
   // Always dynamically re-resolve category so loaded quote items or stale state are guaranteed 100% accurate
   const resolvedCategory = mapBomTypeToQuoteCategory(item.category || item.type, item.sku, item.description);
@@ -406,9 +451,24 @@ export function calculateLineFinancials(
       ? Math.max(1, Math.ceil((normalizedItem.qty || 0) / 2))
       : (normalizedItem.qty || 0);
 
+  const isPercentOfTotal = isPercentOfTotalSupportSku(normalizedItem.sku);
+  let dynamicUnitList = normalizedItem.unitListPrice || 0;
+  let dynamicNote = normalizedItem.note;
+
+  if (isPercentOfTotal && !normalizedItem.isPriceOverridden && eligibleHardwareListTotal !== undefined) {
+    const rate = getPercentOfTotalSupportRate(normalizedItem.sku);
+    const computedTotal = Math.round(eligibleHardwareListTotal * rate * 100) / 100;
+    dynamicUnitList = effectiveQty > 0 ? computedTotal / effectiveQty : computedTotal;
+    if (!dynamicNote) {
+      dynamicNote = `41.0% of Covered Hardware List Price (${formatCurrency(eligibleHardwareListTotal)})`;
+    }
+  }
+
   const term = isMonthly && normalizedItem.termMonths && normalizedItem.termMonths > 0 ? normalizedItem.termMonths : 1;
-  const effectiveUnitList = (normalizedItem.unitListPrice || 0) * (isMonthly ? term : 1);
-  const extendedListPrice = effectiveUnitList * effectiveQty;
+  const effectiveUnitList = dynamicUnitList * (isMonthly ? term : 1);
+  const extendedListPrice = isPercentOfTotal && !normalizedItem.isPriceOverridden && eligibleHardwareListTotal !== undefined
+    ? Math.round(eligibleHardwareListTotal * getPercentOfTotalSupportRate(normalizedItem.sku) * 100) / 100
+    : effectiveUnitList * effectiveQty;
 
   const effectiveDiscountPercent = resolveLineDiscount(normalizedItem, config, freePowerCords);
   const discountAmount = extendedListPrice * (effectiveDiscountPercent / 100);
@@ -418,6 +478,8 @@ export function calculateLineFinancials(
   return {
     ...normalizedItem,
     category: resolvedCategory,
+    unitListPrice: dynamicUnitList,
+    note: dynamicNote,
     qty: effectiveQty,
     effectiveDiscountPercent,
     effectiveUnitList,
@@ -704,9 +766,19 @@ export function calculateQuoteSummary(
     activeRawItems = activeRawItems.filter((i) => i.category !== 'Optic');
   }
 
-  // 3. Compute line financials (which halves optic quantities if spanOnlyMode is true and applies 100% discount on power cords if freePowerCords is true)
+  // 3. Compute total list price of eligible support-enabled hardware lines (Chassis + Modules)
+  const eligibleHardwareListTotal = activeRawItems.reduce((sum, rawItem) => {
+    const resolvedCat = mapBomTypeToQuoteCategory(rawItem.category || rawItem.type, rawItem.sku, rawItem.description);
+    if (isSupportEnabledHardware(resolvedCat, rawItem.sku)) {
+      const hwLine = calculateLineFinancials(rawItem, config, freePowerCords, spanOnlyMode);
+      return sum + (hwLine.extendedListPrice || 0);
+    }
+    return sum;
+  }, 0);
+
+  // 4. Compute line financials with eligibleHardwareListTotal passed in
   const calculatedItems = activeRawItems.map((item) =>
-    calculateLineFinancials(item, config, freePowerCords, spanOnlyMode),
+    calculateLineFinancials(item, config, freePowerCords, spanOnlyMode, eligibleHardwareListTotal),
   );
 
   const categoryBreakdown = CATEGORY_LIST.reduce(

@@ -9,6 +9,9 @@ import {
   resolveLicenseModeSku,
   convertQuoteItemLicenseMode,
   convertQuoteItemsLicenseMode,
+  isPercentOfTotalSupportSku,
+  getPercentOfTotalSupportRate,
+  isSupportEnabledHardware,
   DEFAULT_DISCOUNT_CONFIG,
   parseCommercialQuoteJson,
   type QuoteLineItem,
@@ -782,6 +785,141 @@ describe('pricingEngine', () => {
       expect(calculated.category).toBe('Module');
       expect(calculated.effectiveDiscountPercent).toBe(15); // Applies Module discount (15%), NOT Software discount (50%)!
       expect(calculated.extendedNetPrice).toBe(3165 * (1 - 0.15));
+    });
+  });
+
+  describe('Percent-of-total Support SKUs (GSS-HW-AHR-GMO)', () => {
+    it('identifies GSS-HW-AHR-GMO as a percent-of-total support SKU with 41% rate', () => {
+      expect(isPercentOfTotalSupportSku('GSS-HW-AHR-GMO')).toBe(true);
+      expect(isPercentOfTotalSupportSku('gss-hw-ahr-gmo')).toBe(true);
+      expect(isPercentOfTotalSupportSku('GVS-HC3')).toBe(false);
+      expect(getPercentOfTotalSupportRate('GSS-HW-AHR-GMO')).toBe(0.41);
+    });
+
+    it('identifies eligible support-enabled hardware (Chassis and Modules)', () => {
+      expect(isSupportEnabledHardware('Chassis', 'GVS-HC3-0001')).toBe(true);
+      expect(isSupportEnabledHardware('Module', 'PRT-HC3-X24-HW')).toBe(true);
+      expect(isSupportEnabledHardware('Module', 'SMT-HC3-C08-HW')).toBe(true);
+      expect(isSupportEnabledHardware('Software', 'SMT-HC3-GEN3-FVU-SW-TM')).toBe(false);
+      expect(isSupportEnabledHardware('Optic', 'SFP-532')).toBe(false);
+      expect(isSupportEnabledHardware('TAP', 'M100T')).toBe(false);
+      expect(isSupportEnabledHardware('Support', 'GSS-HW-AHR-GMO')).toBe(false);
+    });
+
+    it('calculates GSS-HW-AHR-GMO price as exactly 41% of eligible covered hardware list price ($12,915 -> $5,295.15)', () => {
+      const items: QuoteLineItem[] = [
+        {
+          id: 'hw-chassis',
+          sku: 'GVS-HC1-0001',
+          description: 'GigaVUE-HC1 Chassis',
+          type: 'Chassis',
+          category: 'Chassis',
+          qty: 1,
+          unitListPrice: 8415,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'hw-module',
+          sku: 'PRT-HC1-X12-HW',
+          description: 'Port Module, GigaVUE-HC1, 12x10G cages. Hardware only.',
+          type: 'Module',
+          category: 'Module',
+          qty: 1,
+          unitListPrice: 4500,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'optic-line',
+          sku: 'SFP-532',
+          description: '10G SFP+ Transceiver',
+          type: 'Optic',
+          category: 'Optic',
+          qty: 4,
+          unitListPrice: 500,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'support-ahr',
+          sku: 'GSS-HW-AHR-GMO',
+          description: 'Advanced Hardware Replacement (AHR) for Support-Enabled Hardware - 5 Year / 60 Month Term (41.0% of HW List Price)',
+          type: 'Support',
+          category: 'Support',
+          qty: 1,
+          unitListPrice: 0, // Formula-based percent-of-total
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+      ];
+
+      // Eligible hardware total = 8415 + 4500 = $12,915 (optics excluded from hardware support basis)
+      // 12,915 * 0.41 = $5,295.15
+      const config: DiscountCategoryConfig = {
+        global: 0,
+        software: 0,
+        optics: 0,
+        chassis: 0,
+        modules: 0,
+        taps: 0,
+        support: 20, // 20% discount on Support category
+        accessories: 0,
+      };
+
+      const summary = calculateQuoteSummary(items, config, false);
+      const ahrLine = summary.items.find((i) => i.sku === 'GSS-HW-AHR-GMO');
+
+      expect(ahrLine).toBeDefined();
+      expect(ahrLine!.unitListPrice).toBe(5295.15);
+      expect(ahrLine!.extendedListPrice).toBe(5295.15);
+      expect(ahrLine!.effectiveDiscountPercent).toBe(20);
+      expect(ahrLine!.discountAmount).toBeCloseTo(1059.03, 2);
+      expect(ahrLine!.extendedNetPrice).toBeCloseTo(4236.12, 2);
+      expect(ahrLine!.note).toContain('41.0% of Covered Hardware List Price');
+    });
+
+    it('respects manual unitListPrice override on GSS-HW-AHR-GMO when isPriceOverridden is set', () => {
+      const items: QuoteLineItem[] = [
+        {
+          id: 'hw-chassis',
+          sku: 'GVS-HC1-0001',
+          description: 'GigaVUE-HC1 Chassis',
+          type: 'Chassis',
+          category: 'Chassis',
+          qty: 1,
+          unitListPrice: 10000,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'support-ahr',
+          sku: 'GSS-HW-AHR-GMO',
+          description: 'Advanced Hardware Replacement',
+          type: 'Support',
+          category: 'Support',
+          qty: 1,
+          unitListPrice: 6000,
+          isPriceOverridden: true, // Manual user override
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+      ];
+
+      const config: DiscountCategoryConfig = {
+        global: 0,
+        software: 0,
+        optics: 0,
+        chassis: 0,
+        modules: 0,
+        taps: 0,
+        support: 0,
+        accessories: 0,
+      };
+
+      const summary = calculateQuoteSummary(items, config, false);
+      const ahrLine = summary.items.find((i) => i.sku === 'GSS-HW-AHR-GMO');
+      expect(ahrLine!.extendedListPrice).toBe(6000);
     });
   });
 });
