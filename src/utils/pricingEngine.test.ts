@@ -53,6 +53,34 @@ describe('pricingEngine', () => {
           'Gen3 GigaSMART, GigaVUE-HC3, Module, 8x100G/40G QSFP28 cages. Hardware only. Must pair with appropriate GigaVUE-OS Software License.',
         ),
       ).toBe('Module');
+      expect(
+        mapBomTypeToQuoteCategory(
+          'Hardware',
+          'UNKNOWN-PORT-MOD',
+          'Port Module with 16x 10G SFP+ cages. Hardware only.',
+        ),
+      ).toBe('Module');
+    });
+
+    it('correctly uses English description semantics to differentiate software licenses vs hardware', () => {
+      // Software license descriptions
+      expect(
+        mapBomTypeToQuoteCategory('Other', 'CUSTOM-LIC-01', 'Perpetual license for GigaSMART Advanced Flow Slicing'),
+      ).toBe('Software');
+      expect(
+        mapBomTypeToQuoteCategory('Other', 'CUSTOM-LIC-02', 'Monthly subscription license for SSL Decryption'),
+      ).toBe('Software');
+      expect(
+        mapBomTypeToQuoteCategory('Other', 'CUSTOM-LIC-03', 'Feature license per GigaSMART module, Maximum subscribers'),
+      ).toBe('Software');
+
+      // Hardware descriptions
+      expect(
+        mapBomTypeToQuoteCategory('Other', 'CUSTOM-HW-01', 'Bypass Combo Module, 2 40/100Gb SR4 BPS pairs, 16 10G cages'),
+      ).toBe('Module');
+      expect(
+        mapBomTypeToQuoteCategory('Other', 'CUSTOM-CHASSIS-01', 'GigaVUE-HC3 chassis, fan tray, 2 power supplies, AC power'),
+      ).toBe('Chassis');
     });
 
     it('correctly categorises TAPs and breakout panels', () => {

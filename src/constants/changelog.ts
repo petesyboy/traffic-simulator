@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.644",
+    date: "2026-08-26",
+    summary: "Ensure hardware modules (PRT-*-HW, SMT-*-HW) are classified as Module rather than Software (v1.0.644)",
+  },
+  {
     version: "1.0.643",
     date: "2026-08-26",
     summary: "Complete 100% pricing audit across all active SKUs and HTL hardware/software components (v1.0.643)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.624",
     date: "2026-08-25",
     summary: "Support File System Access API and fix macOS Safari hidden input click (v1.0.624)",
-  },
-  {
-    version: "1.0.623",
-    date: "2026-08-25",
-    summary: "Scope SPAN-only optic halving to TAP-termination links, add Accessories discount, fix ERSPAN tunnel ID reset (v1.0.623)",
   },
 ];

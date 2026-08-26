@@ -152,6 +152,58 @@ export function isTapOrTray(sku: string, category: string = '', description: str
   );
 }
 
+/**
+ * Analyzes English language description semantics to determine if an item is a Software Licence.
+ */
+export function isSoftwareLicenseDescription(description: string): boolean {
+  const d = (description || '').toLowerCase().trim();
+  return (
+    d.startsWith('monthly subscription license') ||
+    d.startsWith('monthly term license') ||
+    d.startsWith('perpetual license') ||
+    d.startsWith('feature license') ||
+    d.startsWith('license for') ||
+    d.startsWith('software license') ||
+    d.startsWith('upgrade sku') ||
+    d.startsWith('bundle of gigasmart applications') ||
+    d.startsWith('gigasmart bundle upgrade') ||
+    d.startsWith('monthly gigavue-os term license') ||
+    d.startsWith('for telecommunications service providers only. perpetual license') ||
+    d.includes('perpetual license for') ||
+    d.includes('monthly subscription license for') ||
+    d.includes('monthly term license for') ||
+    d.includes('feature license per gigasmart') ||
+    d.includes('license to upgrade') ||
+    d.includes('software support at desired level must be purchased separately')
+  );
+}
+
+/**
+ * Analyzes English language description semantics to determine if an item is physical Hardware.
+ */
+export function isHardwareDescription(description: string): boolean {
+  const d = (description || '').toLowerCase().trim();
+  return (
+    d.includes('hardware only') ||
+    d.includes('cages') ||
+    d.includes('sfp+ cages') ||
+    d.includes('qsfp28 cages') ||
+    d.includes('qsfp+ cages') ||
+    d.startsWith('port module') ||
+    d.startsWith('bypass combo module') ||
+    d.startsWith('bypass module') ||
+    d.startsWith('control card') ||
+    d.startsWith('filter assembly') ||
+    d.startsWith('fan tray') ||
+    d.startsWith('rack mount') ||
+    d.startsWith('gigavue-fm hardware appliance') ||
+    d.startsWith('gigavue-hct chassis') ||
+    d.startsWith('gigavue-hc') ||
+    d.startsWith('gigavue-ta') ||
+    d.startsWith('gen3 gigasmart, gigavue-hc3, module')
+  );
+}
+
 /** Determines quote category from SKU, BOM type, and catalogue metadata. */
 export function mapBomTypeToQuoteCategory(type: string, sku: string, description: string = ''): QuoteCategory {
   const s = (sku || '').toUpperCase().trim();
@@ -175,7 +227,7 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     return 'Optic';
   }
 
-  // 2. Power cords & Accessories
+  // 2. Power cords & Basic Power Accessories
   if (isEligiblePowerCord(s) || isPowerCord(s, d)) {
     return 'Other';
   }
@@ -196,28 +248,30 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     return 'TAP';
   }
 
-  // 4. Hardware Chassis (must evaluate BEFORE software because description mentions "Must pair with... Software License")
+  // 4. Hardware Chassis (evaluates before generic software rules)
   if (
     t === 'chassis' ||
     ((s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-HW')) && !s.includes('-SW-') && !s.includes('-TM') && !s.endsWith('-PL')) ||
-    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-')))
+    (s.endsWith('-HW') && (s.startsWith('GVS-') || s.startsWith('GSW-') || s.startsWith('GFM-'))) ||
+    (!s.includes('-SW-') && !s.includes('-TM') && isHardwareDescription(d) && (d.includes('chassis') || d.includes('appliance')))
   ) {
     return 'Chassis';
   }
 
-  // 5. Hardware Modules & Control Cards (physical line cards and base modules only, e.g. PRT-, BPS-, CTL-, SMT-HC3-C08-HW, SMT-HC3-C08)
+  // 5. Hardware Modules & Control Cards (physical line cards, bypass modules, and base modules)
   if (
     (s.endsWith('-HW') && (s.startsWith('PRT-') || s.startsWith('SMT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-'))) ||
     ((s.startsWith('PRT-') || s.startsWith('BPS-') || s.startsWith('CTL-') || s.startsWith('CCV-') || s === 'SMT-HC3-C08' || s === 'SMT-HC3-C05' || s === 'SMT-HC0-X16' || s === 'SMT-HC1-S' || s === 'SMT-HC0-Q02X08') &&
       !s.includes('-SW-') &&
       !s.includes('-TM') &&
       !s.endsWith('-PL')) ||
+    (!s.includes('-SW-') && !s.includes('-TM') && !s.endsWith('-PL') && isHardwareDescription(d) && !isSoftwareLicenseDescription(d)) ||
     t === 'module'
   ) {
     return 'Module';
   }
 
-  // 6. Software Licences (GigaSMART feature licenses, term software, capacity licenses)
+  // 6. Software Licences (GigaSMART feature licenses, term software, capacity licenses, and license descriptions)
   if (
     t === 'license' ||
     t === 'software' ||
@@ -231,11 +285,7 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
     s.startsWith('VUE-') ||
     s.startsWith('UPG-') ||
     s.startsWith('GFM-') ||
-    d.includes('term license') ||
-    d.includes('subscription license') ||
-    d.includes('perpetual license') ||
-    d.includes('feature license') ||
-    d.includes('license for')
+    isSoftwareLicenseDescription(d)
   ) {
     return 'Software';
   }
@@ -244,6 +294,8 @@ export function mapBomTypeToQuoteCategory(type: string, sku: string, description
   if (
     t === 'support' ||
     s.startsWith('SPT-') ||
+    s.startsWith('GSS-') ||
+    s.startsWith('GSP-') ||
     (d.includes('support') && !s.includes('-SW-') && !s.includes('-TM')) ||
     d.includes('maintenance')
   ) {
