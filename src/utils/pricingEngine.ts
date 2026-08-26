@@ -231,15 +231,31 @@ export function getPercentOfTotalSupportRate(sku: string): number {
 export function isSupportEnabledHardware(category: QuoteCategory, sku: string): boolean {
   const s = (sku || '').trim().toUpperCase();
 
-  // Software licenses, term software, support items, optics, accessories, and passive TAPs are not support-enabled hardware products
+  // Exclude non-hardware lines:
+  // - AHR and other support SKUs
+  // - Software subscriptions (-SW-TM, -TM) and perpetual feature licenses
+  // - Professional services & training (GES-*, GSS-SVC-*)
+  // - Optics / transceivers (Optic category, SFP-*, QSF-*, Q28-*, etc.)
+  // - Cables (CBL-*), power cords (PCD-*), fans (FAN-*), power supplies (PWR-*), rack kits (RCK-*)
+  // - Passive optical TAPs & trays (TAP category, TAP-*)
   if (
     category === 'Software' ||
     category === 'Support' ||
     category === 'Optic' ||
     category === 'TAP' ||
+    category === 'Accessory' ||
+    category === 'Other' ||
     s.includes('-SW-') ||
     s.includes('-TM') ||
     s.endsWith('-PL') ||
+    s.startsWith('CBL-') ||
+    s.startsWith('PCD-') ||
+    s.startsWith('GES-') ||
+    s.startsWith('GSS-') ||
+    s.startsWith('FAN-') ||
+    s.startsWith('PWR-') ||
+    s.startsWith('RCK-') ||
+    s.startsWith('TAP-') ||
     isPercentOfTotalSupportSku(s)
   ) {
     return false;
@@ -459,9 +475,7 @@ export function calculateLineFinancials(
     const rate = getPercentOfTotalSupportRate(normalizedItem.sku);
     const computedTotal = Math.round(eligibleHardwareListTotal * rate * 100) / 100;
     dynamicUnitList = effectiveQty > 0 ? computedTotal / effectiveQty : computedTotal;
-    if (!dynamicNote) {
-      dynamicNote = `41.0% of Covered Hardware List Price (${formatCurrency(eligibleHardwareListTotal)})`;
-    }
+    dynamicNote = `41.0% of Covered Hardware List Price (${formatCurrency(eligibleHardwareListTotal)})`;
   }
 
   const term = isMonthly && normalizedItem.termMonths && normalizedItem.termMonths > 0 ? normalizedItem.termMonths : 1;

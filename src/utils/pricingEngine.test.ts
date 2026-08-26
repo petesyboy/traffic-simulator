@@ -879,6 +879,41 @@ describe('pricingEngine', () => {
       expect(ahrLine!.note).toContain('41.0% of Covered Hardware List Price');
     });
 
+    it('accurately filters bifurcated -HW lines vs paired -SW-TM, optics, power cords, cables, TAPs, and licenses', () => {
+      const mixedItems: QuoteLineItem[] = [
+        // Eligible Hardware:
+        { id: '1', sku: 'GVS-TAX21E', description: 'GigaVUE-TA25E node', type: 'Chassis', category: 'Chassis', qty: 2, unitListPrice: 38440, isMonthlyPrice: false, applyDiscount: true }, // 2 * 38440 = 76880
+        { id: '2', sku: 'SMT-HC3-C08-HW', description: 'Gen3 GigaSMART HW only', type: 'Module', category: 'Module', qty: 1, unitListPrice: 24400, isMonthlyPrice: false, applyDiscount: true }, // 1 * 24400 = 24400
+        // Ineligible paired subscription (includes its own support):
+        { id: '3', sku: 'SMT-HC3-C08-SW-TM', description: 'Gen3 GigaSMART Term SW', type: 'Software', category: 'Software', qty: 1, unitListPrice: 3530, isMonthlyPrice: true, termMonths: 36, applyDiscount: true },
+        // Ineligible software license:
+        { id: '4', sku: 'CLS-TAX20E', description: 'Perpetual Advanced Features', type: 'Software', category: 'Software', qty: 2, unitListPrice: 5095, isMonthlyPrice: false, applyDiscount: true },
+        // Ineligible optics:
+        { id: '5', sku: 'SFP-533T-20P', description: '20 pack SFP+', type: 'Optic', category: 'Optic', qty: 2, unitListPrice: 31860, isMonthlyPrice: false, applyDiscount: true },
+        // Ineligible accessories:
+        { id: '6', sku: 'PCD-00003', description: 'Power Cord', type: 'Accessory', category: 'Accessory', qty: 8, unitListPrice: 35, isMonthlyPrice: false, applyDiscount: true },
+        { id: '7', sku: 'CBL-505', description: 'Breakout cable', type: 'Accessory', category: 'Accessory', qty: 4, unitListPrice: 250, isMonthlyPrice: false, applyDiscount: true },
+        // Ineligible passive TAPs:
+        { id: '8', sku: 'TAP-M273T', description: 'G-TAP Module', type: 'TAP', category: 'TAP', qty: 2, unitListPrice: 1200, isMonthlyPrice: false, applyDiscount: true },
+        { id: '9', sku: 'TAP-M100T', description: 'G-TAP 1/2 RU Tray', type: 'TAP', category: 'TAP', qty: 1, unitListPrice: 485, isMonthlyPrice: false, applyDiscount: true },
+        // Ineligible other/training:
+        { id: '10', sku: 'GES-LMS-ACD', description: 'eLearning voucher', type: 'Other', category: 'Other', qty: 1, unitListPrice: 500, isMonthlyPrice: false, applyDiscount: true },
+        // AHR Support SKU:
+        { id: '11', sku: 'GSS-HW-AHR-GMO', description: 'AHR Support 60-Month', type: 'Support', category: 'Support', qty: 1, unitListPrice: 0, isMonthlyPrice: false, applyDiscount: true },
+      ];
+
+      // Eligible HW Total = 76880 (TA25E x2) + 24400 (SMT-HC3-C08-HW x1) = $101,280.00
+      // 41% of $101,280.00 = $41,524.80
+      const summary = calculateQuoteSummary(mixedItems, { global: 0, software: 0, optics: 0, chassis: 0, modules: 0, taps: 0, support: 15, accessories: 0 }, false);
+      const ahr = summary.items.find((i) => i.sku === 'GSS-HW-AHR-GMO');
+
+      expect(ahr).toBeDefined();
+      expect(ahr!.extendedListPrice).toBe(41524.8);
+      expect(ahr!.effectiveDiscountPercent).toBe(15);
+      expect(ahr!.extendedNetPrice).toBeCloseTo(35296.08, 2);
+      expect(ahr!.note).toContain('41.0% of Covered Hardware List Price ($101,280.00)');
+    });
+
     it('respects manual unitListPrice override on GSS-HW-AHR-GMO when isPriceOverridden is set', () => {
       const items: QuoteLineItem[] = [
         {
