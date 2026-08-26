@@ -342,7 +342,7 @@ export function calculateLineFinancials(
       ? Math.max(1, Math.ceil((item.qty || 0) / 2))
       : (item.qty || 0);
 
-  const term = item.termMonths && item.termMonths > 0 ? item.termMonths : 1;
+  const term = isMonthly && item.termMonths && item.termMonths > 0 ? item.termMonths : 1;
   const effectiveUnitList = (item.unitListPrice || 0) * (isMonthly ? term : 1);
   const extendedListPrice = effectiveUnitList * effectiveQty;
 
@@ -369,11 +369,14 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
     const skuItem = skuService.getSKUByPartNumber(row.sku);
     const category = mapBomTypeToQuoteCategory(row.type, row.sku, row.description || skuItem?.description);
 
+    const isTermSku = row.sku.includes('-SW-TM') || row.sku.endsWith('-TM');
     const isMonthly = Boolean(
-      skuItem?.listPriceMonthly !== undefined ||
-        row.sku.includes('-SW-TM') ||
-        row.sku.endsWith('-TM') ||
-        (row.term && parseInt(row.term, 10) > 0),
+      isTermSku ||
+        (row.term &&
+          parseInt(row.term, 10) > 0 &&
+          skuItem?.listPriceMonthly !== undefined &&
+          skuItem.listPriceMonthly > 0 &&
+          !skuItem?.listPrice),
     );
 
     let unitListPrice = 0;
@@ -387,7 +390,7 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
       unitListPrice = skuItem.listPrice;
     }
 
-    const termMonths = row.term ? parseInt(row.term, 10) : defaultTermDuration;
+    const termMonths = isMonthly ? (row.term ? parseInt(row.term, 10) : defaultTermDuration) : undefined;
 
     return {
       id: `bom-${row.sku}-${idx}`,
@@ -396,7 +399,7 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
       type: row.type,
       category,
       qty: row.qty,
-      termMonths: isMonthly ? termMonths : undefined,
+      termMonths,
       unitListPrice,
       isMonthlyPrice: isMonthly,
       applyDiscount: true,
@@ -415,7 +418,9 @@ export function createAdHocQuoteItem(sku: string, qty: number = 1, termDuration:
   const category = mapBomTypeToQuoteCategory(skuItem?.category || 'Other', sku, description);
 
   const isMonthly = Boolean(
-    skuItem?.listPriceMonthly !== undefined || sku.includes('-SW-TM') || sku.endsWith('-TM'),
+    sku.includes('-SW-TM') ||
+      sku.endsWith('-TM') ||
+      (skuItem?.listPriceMonthly !== undefined && skuItem.listPriceMonthly > 0 && !skuItem?.listPrice),
   );
 
   let unitListPrice = 0;

@@ -4,12 +4,14 @@ import {
   resolveLineDiscount,
   calculateLineFinancials,
   calculateQuoteSummary,
+  createQuoteItemsFromBom,
   createAdHocQuoteItem,
   DEFAULT_DISCOUNT_CONFIG,
   parseCommercialQuoteJson,
   type QuoteLineItem,
   type DiscountCategoryConfig,
 } from './pricingEngine';
+import type { BomRow } from './bom/bomGenerator';
 
 describe('pricingEngine', () => {
   describe('mapBomTypeToQuoteCategory', () => {
@@ -472,6 +474,62 @@ describe('pricingEngine', () => {
     it('throws meaningful error on invalid JSON string or missing items', () => {
       expect(() => parseCommercialQuoteJson('bad-json')).toThrow(/Invalid JSON/);
       expect(() => parseCommercialQuoteJson(JSON.stringify({ version: '1.0' }))).toThrow(/missing items array/);
+    });
+  });
+
+  describe('Licence Mode Switching (Perpetual vs HTL)', () => {
+    it('creates perpetual quote items without term multiplier and with full perpetual capital price', () => {
+      const perpetualBomRows: BomRow[] = [
+        { sku: 'GVS-HC3A1', qty: 1, description: 'GigaVUE-HC3 Chassis AC (2 PSUs)', type: 'Chassis' },
+        { sku: 'SMT-HC3-C08', qty: 1, description: 'GigaSMART HC3 Module', type: 'Module' },
+        { sku: 'UPG-TAC20', qty: 1, description: 'TA200 Port Upgrade License', type: 'License' },
+        { sku: 'PCD-00001', qty: 2, description: 'Power Cord', type: 'Dependency' },
+      ];
+
+      const quoteItems = createQuoteItemsFromBom(perpetualBomRows, 12);
+      expect(quoteItems).toHaveLength(4);
+
+      const hc3 = quoteItems.find((i) => i.sku === 'GVS-HC3A1');
+      expect(hc3?.isMonthlyPrice).toBe(false);
+      expect(hc3?.termMonths).toBeUndefined();
+      expect(hc3?.unitListPrice).toBe(22645);
+
+      const upg = quoteItems.find((i) => i.sku === 'UPG-TAC20');
+      expect(upg?.isMonthlyPrice).toBe(false);
+      expect(upg?.termMonths).toBeUndefined();
+      expect(upg?.unitListPrice).toBe(25485);
+
+      // Financial calculations must use term multiplier of 1
+      const calculated = calculateLineFinancials(upg!, DEFAULT_DISCOUNT_CONFIG);
+      expect(calculated.extendedListPrice).toBe(25485);
+    });
+
+    it('creates HTL quote items with term months and monthly pricing for -SW-TM licenses', () => {
+      const htlBomRows: BomRow[] = [
+        { sku: 'GVS-HC3A1-HW', qty: 1, description: 'GigaVUE-HC3 Base Chassis (HW Only)', type: 'Chassis' },
+        { sku: 'GVS-HC3A0-SW-TM', qty: 1, description: 'HC3 GigaVUE-OS Software Term License', type: 'License', term: '36' },
+        { sku: 'UPG-TAC20-SW-TM', qty: 1, description: 'TA200 Port Upgrade Term License', type: 'License', term: '36' },
+      ];
+
+      const quoteItems = createQuoteItemsFromBom(htlBomRows, 36);
+
+      const hw = quoteItems.find((i) => i.sku === 'GVS-HC3A1-HW');
+      expect(hw?.isMonthlyPrice).toBe(false);
+      expect(hw?.termMonths).toBeUndefined();
+
+      const sw = quoteItems.find((i) => i.sku === 'GVS-HC3A0-SW-TM');
+      expect(sw?.isMonthlyPrice).toBe(true);
+      expect(sw?.termMonths).toBe(36);
+      expect(sw?.unitListPrice).toBe(2365); // monthly list price
+
+      const upgTm = quoteItems.find((i) => i.sku === 'UPG-TAC20-SW-TM');
+      expect(upgTm?.isMonthlyPrice).toBe(true);
+      expect(upgTm?.termMonths).toBe(36);
+      expect(upgTm?.unitListPrice).toBe(995); // $995/mo
+
+      const calculatedSw = calculateLineFinancials(sw!, DEFAULT_DISCOUNT_CONFIG);
+      expect(calculatedSw.effectiveUnitList).toBe(2365 * 36);
+      expect(calculatedSw.extendedListPrice).toBe(2365 * 36);
     });
   });
 });

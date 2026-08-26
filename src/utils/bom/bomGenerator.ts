@@ -303,21 +303,21 @@ export function generateBom(
 
     addRow(node.id, resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) addRow(node.id, resolved.swSku, 1, 'License', termOverride);
-    if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
+    if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
     // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default -
     // going to Full (64 ports) needs a separate UPG-TAC20(E)(-SW-TM) add-on
     // license. See the matching comment in generateSingleNodeBom below and in
     // skuResolver.ts.
     if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
       const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
-      addRow(node.id, globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
+      addRow(node.id, globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
     }
     if (model.includes('TA') || model.includes('HC')) {
       const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
       if (node.data?.powerSupply === 'DC') addRow(node.id, 'PCD-00051', psuQty, 'Dependency');
       else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
     }
-    if (resolved.advSku) addRow(node.id, resolved.advSku, 1, 'License', termOverride);
+    if (resolved.advSku) addRow(node.id, resolved.advSku, 1, 'License', resolved.advSku.includes('-SW-TM') ? termOverride : undefined);
     Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => {
       if (!boardSku || boardSku.toLowerCase().includes('base')) return;
       if (licenseMode === 'HTL') { addRow(node.id, boardSku + '-HW', 1, 'Module'); addRow(node.id, boardSku + '-SW-TM', 1, 'License', termOverride); }
@@ -703,7 +703,7 @@ export function generateSingleNodeBom(
 
   addRow(resolved.hwSku, 1, 'Chassis');
   if (resolved.swSku) addRow(resolved.swSku, 1, 'License', termOverride);
-  if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', termOverride);
+  if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
   // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default (the
   // base GVS-TAC2[12](E)(-HW)/-SW-TM SKUs already cover that) - going to Full
   // (64 ports) is a separate UPG-TAC20(E)(-SW-TM) add-on license, not a
@@ -711,14 +711,14 @@ export function generateSingleNodeBom(
   // baked into resolved.swSku like TA25(E)/TA400(E)'s suffixed variants are.
   if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
     const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
-    addRow(globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', termOverride);
+    addRow(globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
   }
   if (model.includes('TA') || model.includes('HC')) {
     const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
     if (node.data?.powerSupply === 'DC') addRow('PCD-00051', psuQty, 'Dependency');
     else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
   }
-  if (resolved.advSku) addRow(resolved.advSku, 1, 'License', termOverride);
+  if (resolved.advSku) addRow(resolved.advSku, 1, 'License', resolved.advSku.includes('-SW-TM') ? termOverride : undefined);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
   ((node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, opt.isAutoAdded ? 'tap-termination' : undefined); });
   if (model.includes('HC')) {

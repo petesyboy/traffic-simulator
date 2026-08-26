@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.637",
+    date: "2026-08-26",
+    summary: "Scale power cord quantities with HC3 PSU count (v1.0.637)",
+  },
+  {
     version: "1.0.636",
     date: "2026-08-26",
     summary: "Add 2 vs 4 PSU chassis configuration for GigaVUE-HC3 (v1.0.636)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.616",
     date: "2026-08-25",
     summary: "Add commercial quotation engine, SPAN-only mode, and power cord discounting (v1.0.616)",
-  },
-  {
-    version: "1.0.611",
-    date: "2026-08-25",
-    summary: "Label HC tier as Deep Observability instead of Aggregation in signal path schematic",
   },
 ];

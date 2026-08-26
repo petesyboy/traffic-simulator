@@ -13,7 +13,7 @@
  * - CSV and formal PDF quote export
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useStore } from '../../store/store';
 import { generateBom, getSkus } from '../../utils/bomEngine';
 import { consolidateSimpleDeviceRows } from '../../utils/bom/consolidateSimpleDevices';
@@ -67,7 +67,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const nodes = useStore((s) => s.nodes);
   const edges = useStore((s) => s.edges);
   const globalLicenseMode = useStore((s) => s.projectLicenseMode);
+  const setProjectLicenseMode = useStore((s) => s.setProjectLicenseMode);
   const globalTermDuration = useStore((s) => s.defaultTermDuration);
+  const setDefaultTermDuration = useStore((s) => s.setDefaultTermDuration);
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
@@ -81,6 +83,41 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
     return createQuoteItemsFromBom(masterBom, defaultTerm);
   });
+
+  // Track license mode switches: re-generate BOM items to reflect Perpetual vs HTL SKUs/pricing
+  const prevLicenseModeRef = useRef(globalLicenseMode);
+  useEffect(() => {
+    if (prevLicenseModeRef.current !== globalLicenseMode) {
+      prevLicenseModeRef.current = globalLicenseMode;
+      const rawBom = consolidateSimpleDeviceRows(
+        generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+      );
+      const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
+      const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
+      const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm);
+
+      setItems((prevItems) => {
+        const adHocItems = prevItems.filter((it) => it.isCustomOrAdHoc);
+        return [...newBomItems, ...adHocItems];
+      });
+      // Clear out stale buffered inputs
+      setRawRowInputs({});
+    }
+  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps]);
+
+  // Track term duration changes: update term for all monthly subscription items
+  const prevTermDurationRef = useRef(globalTermDuration);
+  useEffect(() => {
+    if (prevTermDurationRef.current !== globalTermDuration) {
+      prevTermDurationRef.current = globalTermDuration;
+      const parsedTerm = parseInt(globalTermDuration || '12', 10) || 12;
+      setItems((prevItems) =>
+        prevItems.map((it) =>
+          it.isMonthlyPrice ? { ...it, termMonths: parsedTerm } : it,
+        ),
+      );
+    }
+  }, [globalTermDuration]);
 
   // Category discount matrix
   const [discountConfig, setDiscountConfig] = useState<DiscountCategoryConfig>(DEFAULT_DISCOUNT_CONFIG);
@@ -484,8 +521,59 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#38bdf8' }}>
                 Commercial Quotation & Pricing Engine
               </h3>
-              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                {currentScenarioName || 'Layout'} • License Mode: {globalLicenseMode || 'HTL'} • Term: {globalTermDuration || '12'}m
+              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span>{currentScenarioName || 'Layout'}</span>
+                <span>•</span>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#d1d5db', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '11px' }}>Licence Mode:</span>
+                  <select
+                    value={globalLicenseMode}
+                    onChange={(e) => setProjectLicenseMode(e.target.value as 'HTL' | 'Perpetual')}
+                    style={{
+                      background: '#1f2937',
+                      border: '1px solid #4b5563',
+                      borderRadius: '4px',
+                      color: globalLicenseMode === 'HTL' ? '#38bdf8' : '#34d399',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      cursor: 'pointer',
+                    }}
+                    title="Switch project between Hybrid Term Licensing (HTL) and Perpetual Licensing"
+                  >
+                    <option value="HTL">Hybrid Term (HTL)</option>
+                    <option value="Perpetual">Perpetual</option>
+                  </select>
+                </label>
+                {globalLicenseMode === 'HTL' && (
+                  <>
+                    <span>•</span>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#d1d5db', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '11px' }}>Term:</span>
+                      <select
+                        value={globalTermDuration || '12'}
+                        onChange={(e) => setDefaultTermDuration(e.target.value)}
+                        style={{
+                          background: '#1f2937',
+                          border: '1px solid #4b5563',
+                          borderRadius: '4px',
+                          color: '#c084fc',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          cursor: 'pointer',
+                        }}
+                        title="Default subscription term in months"
+                      >
+                        <option value="12">12 Months (1 Yr)</option>
+                        <option value="24">24 Months (2 Yrs)</option>
+                        <option value="36">36 Months (3 Yrs)</option>
+                        <option value="48">48 Months (4 Yrs)</option>
+                        <option value="60">60 Months (5 Yrs)</option>
+                      </select>
+                    </label>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1198,7 +1286,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
                         {/* Term (Months) */}
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          {item.isMonthlyPrice || item.termMonths ? (
+                          {item.isMonthlyPrice ? (
                             <input
                               type="text"
                               value={
