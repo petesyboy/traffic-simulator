@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as XLSX from 'xlsx';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -261,8 +262,110 @@ function parseCsvFile(filePath) {
   return items;
 }
 
+function parseXlsxFile(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+  let workbook;
+  try {
+    const buffer = fs.readFileSync(filePath);
+    workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  } catch (err) {
+    console.warn(`[parse-skus] Skipping non-price-list file ${path.basename(filePath)}: ${err.message}`);
+    return [];
+  }
+
+  // Find sheet containing SKU data
+  let targetSheetName = workbook.SheetNames[0];
+  for (const name of workbook.SheetNames) {
+    const raw = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, blankrows: false });
+    for (const row of raw.slice(0, 4)) {
+      if ((row || []).some((cell) => String(cell || '').toLowerCase().includes('sku'))) {
+        targetSheetName = name;
+        break;
+      }
+    }
+  }
+
+  const sheet = workbook.Sheets[targetSheetName];
+  const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: '' });
+  if (raw.length < 2) return [];
+
+  let headerIndex = -1;
+  for (let i = 0; i < Math.min(6, raw.length); i++) {
+    const rowStr = (raw[i] || []).join(' ').toLowerCase();
+    if (rowStr.includes('sku') && (rowStr.includes('desc') || rowStr.includes('price'))) {
+      headerIndex = i;
+      break;
+    }
+  }
+
+  if (headerIndex === -1) {
+    // Not a price list spreadsheet (e.g. matrix or stencil)
+    return [];
+  }
+
+  const headers = (raw[headerIndex] || []).map((h) => String(h || '').toLowerCase().trim());
+  const skuIdx = headers.findIndex((h) => h === 'sku' || h.startsWith('sku'));
+  const descIdx = headers.findIndex((h) => h.includes('description') || h === 'desc');
+  const listPriceIdx = headers.findIndex((h) => h === 'list price' || h === 'price');
+  const listPriceMonthIdx = headers.findIndex((h) => h.includes('price/month') || h.includes('monthly'));
+  const prodFamIdx = headers.findIndex((h) => h === 'product family');
+  const prodSubFamIdx = headers.findIndex((h) => h === 'product sub-family');
+  const cooIdx = headers.findIndex((h) => h.includes('country of origin') || h === 'coo');
+  const eosIdx = headers.findIndex((h) => (h.includes('end of sale') || h.includes('eos')) && !h.includes('replacement'));
+  const eolIdx = headers.findIndex((h) => h.includes('end of life') || h.includes('eol'));
+  const replIdx = headers.findIndex((h) => h.includes('replacement') || h.includes('eos replacement'));
+  const suppIdx = headers.findIndex((h) => h.includes('support available'));
+  const suppPricingIdx = headers.findIndex((h) => h.includes('support pricing'));
+
+  const items = [];
+  for (let i = headerIndex + 1; i < raw.length; i++) {
+    const row = raw[i];
+    const sku = String(row[skuIdx] || '').trim();
+    const desc = String(row[descIdx] || '').trim();
+    if (!sku || !desc) continue;
+
+    const prodFamily = prodFamIdx !== -1 ? String(row[prodFamIdx] || '').trim() : undefined;
+    const prodSubFamily = prodSubFamIdx !== -1 ? String(row[prodSubFamIdx] || '').trim() : undefined;
+    const coo = cooIdx !== -1 ? String(row[cooIdx] || '').trim() : undefined;
+    const eos = eosIdx !== -1 ? String(row[eosIdx] || '').trim() : undefined;
+    const eol = eolIdx !== -1 ? String(row[eolIdx] || '').trim() : undefined;
+    const repl = replIdx !== -1 ? String(row[replIdx] || '').trim() : undefined;
+    const supp = suppIdx !== -1 ? (row[suppIdx] === true || String(row[suppIdx]).trim().toUpperCase() === 'TRUE') : undefined;
+    const suppPricing = suppPricingIdx !== -1 ? String(row[suppPricingIdx] || '').trim() : undefined;
+    const price = listPriceIdx !== -1 ? parsePrice(row[listPriceIdx]) : undefined;
+    const priceMonth = listPriceMonthIdx !== -1 ? parsePrice(row[listPriceMonthIdx]) : undefined;
+
+    const isTaa = /TAA Compliant/i.test(desc)
+      ? !/Not TAA/i.test(desc)
+      : sku.endsWith('T')
+        ? true
+        : undefined;
+
+    items.push({
+      partNumber: sku,
+      description: desc,
+      category: determineCategory(sku, desc, prodFamily, prodSubFamily),
+      productFamily: prodFamily || undefined,
+      productSubFamily: prodSubFamily || undefined,
+      countryOfOrigin: coo || undefined,
+      endOfSale: eos || undefined,
+      endOfLife: eol || undefined,
+      eosReplacementSku: repl || undefined,
+      supportAvailable: supp,
+      supportPricing: suppPricing || undefined,
+      listPrice: price,
+      listPriceMonthly: priceMonth,
+      portDensity: extractPortDensity(desc),
+      speedsSupported: extractSpeeds(desc),
+      formFactor: extractFormFactor(sku, desc),
+      isTaaCompliant: isTaa,
+    });
+  }
+  return items;
+}
+
 export function generateSkuCatalog() {
-  console.log('[parse-skus] Ingesting SKU reference data from CSV files...');
+  console.log('[parse-skus] Ingesting SKU reference data from CSV and XLSX files...');
   const skuMap = new Map();
 
   // 1. Seed with base master catalogue entries if available
@@ -328,6 +431,41 @@ export function generateSkuCatalog() {
           isTaaCompliant: item.isTaaCompliant !== undefined ? item.isTaaCompliant : existing.isTaaCompliant,
         };
         skuMap.set(key, merged);
+      }
+    }
+  }
+
+  // 2. Ingest active XLSX Price Lists (e.g. WWPL_20260731.xlsx) with highest priority
+  const xlsxFiles = fs.readdirSync(REFERENCES_DIR).filter((f) => f.endsWith('.xlsx') || f.endsWith('.xls'));
+  for (const filename of xlsxFiles) {
+    const filePath = path.join(REFERENCES_DIR, filename);
+    const parsed = parseXlsxFile(filePath);
+    console.log(`[parse-skus] Parsed ${parsed.length} entries from XLSX: ${filename}`);
+
+    for (const item of parsed) {
+      const key = item.partNumber.toUpperCase();
+      newlySeenSkus.add(key);
+
+      if (!skuMap.has(key)) {
+        skuMap.set(key, item);
+      } else {
+        const existing = skuMap.get(key);
+        skuMap.set(key, {
+          ...existing,
+          ...item,
+          // Authoritative spreadsheet fields overwrite older CSV approximations
+          listPrice: item.listPrice !== undefined ? item.listPrice : existing.listPrice,
+          listPriceMonthly: item.listPriceMonthly !== undefined ? item.listPriceMonthly : existing.listPriceMonthly,
+          description: item.description || existing.description,
+          category: item.category || existing.category,
+          productFamily: item.productFamily || existing.productFamily,
+          productSubFamily: item.productSubFamily || existing.productSubFamily,
+          endOfSale: item.endOfSale || existing.endOfSale,
+          endOfLife: item.endOfLife || existing.endOfLife,
+          eosReplacementSku: item.eosReplacementSku || existing.eosReplacementSku,
+          supportAvailable: item.supportAvailable !== undefined ? item.supportAvailable : existing.supportAvailable,
+          supportPricing: item.supportPricing || existing.supportPricing,
+        });
       }
     }
   }

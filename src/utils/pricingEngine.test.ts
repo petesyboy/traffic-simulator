@@ -540,7 +540,7 @@ describe('pricingEngine', () => {
       const hc3 = quoteItems.find((i) => i.sku === 'GVS-HC3A1');
       expect(hc3?.isMonthlyPrice).toBe(false);
       expect(hc3?.termMonths).toBeUndefined();
-      expect(hc3?.unitListPrice).toBe(22645);
+      expect(hc3?.unitListPrice).toBe(87550);
 
       const upg = quoteItems.find((i) => i.sku === 'UPG-TAC20');
       expect(upg?.isMonthlyPrice).toBe(false);
@@ -622,7 +622,7 @@ describe('pricingEngine', () => {
       expect(perpItem.sku).toBe('SMT-HC3-GEN3-FVU');
       expect(perpItem.isMonthlyPrice).toBe(false);
       expect(perpItem.termMonths).toBeUndefined();
-      expect(perpItem.unitListPrice).toBe(25000);
+      expect(perpItem.unitListPrice).toBe(52465);
       expect(perpItem.qty).toBe(2);
       expect(perpItem.discountOverride).toBe(35);
       expect(perpItem.isCustomOrAdHoc).toBe(true);
@@ -732,7 +732,7 @@ describe('pricingEngine', () => {
       const fvu = converted.find((i) => i.sku === 'SMT-HC3-GEN3-FVU');
       expect(fvu).toBeDefined();
       expect(fvu?.qty).toBe(3);
-      expect(fvu?.unitListPrice).toBe(25000);
+      expect(fvu?.unitListPrice).toBe(52465);
       expect(fvu?.isMonthlyPrice).toBe(false);
       expect(fvu?.discountOverride).toBe(40);
       expect(fvu?.isCustomOrAdHoc).toBe(true);
