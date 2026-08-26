@@ -27,10 +27,51 @@ describe('skuResolver - resolveNodeSkus', () => {
       advSku: undefined,
     });
 
-    // HC3 AC
+    // HC3 AC (2 PSUs default)
     expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'AC' }, 'Perpetual')).toEqual({
       hwSku: 'GVS-HC3A1',
       swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'AC', psuCount: 2 }, 'HTL')).toEqual({
+      hwSku: 'GVS-HC3A1-HW',
+      swSku: 'GVS-HC3A0-SW-TM',
+      advSku: undefined,
+    });
+
+    // HC3 AC (4 PSUs)
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'AC', psuCount: 4 }, 'Perpetual')).toEqual({
+      hwSku: 'GVS-HC3A3',
+      swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'AC', psuCount: 4 }, 'HTL')).toEqual({
+      hwSku: 'GVS-HC3A3-HW',
+      swSku: 'GVS-HC3A0-SW-TM',
+      advSku: undefined,
+    });
+
+    // HC3 DC (2 PSUs)
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'DC', psuCount: 2 }, 'Perpetual')).toEqual({
+      hwSku: 'GVS-HC3A2',
+      swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'DC', psuCount: 2 }, 'HTL')).toEqual({
+      hwSku: 'GVS-HC3A2-HW',
+      swSku: 'GVS-HC3A0-SW-TM',
+      advSku: undefined,
+    });
+
+    // HC3 DC (4 PSUs)
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'DC', psuCount: 4 }, 'Perpetual')).toEqual({
+      hwSku: 'GVS-HC3A4',
+      swSku: undefined,
+      advSku: undefined,
+    });
+    expect(resolveNodeSkus({ model: 'GigaVUE-HC3', powerSupply: 'DC', psuCount: 4 }, 'HTL')).toEqual({
+      hwSku: 'GVS-HC3A4-HW',
+      swSku: 'GVS-HC3A0-SW-TM',
       advSku: undefined,
     });
   });

@@ -148,6 +148,25 @@ export const PowerSupplyPanel: React.FC<PowerSupplyPanelProps> = ({
         </div>
       </div>
 
+      {model?.includes('HC3') && (
+        <div className="flex-col gap-1 mt-2">
+          <label className="form-label">Power Supply Configuration</label>
+          <select
+            value={hwData.psuCount === 4 ? 4 : 2}
+            onChange={(e) => updateNodeData(selectedNode.id, { psuCount: Number(e.target.value) as 2 | 4 })}
+            className="form-select w-full"
+          >
+            <option value={2}>2 Power Supplies (GVS-HC3A1 AC / GVS-HC3A2 DC)</option>
+            <option value={4}>4 Power Supplies (GVS-HC3A3 AC / GVS-HC3A4 DC)</option>
+          </select>
+          <span className="text-xs text-muted" style={{ fontSize: '10px', color: '#9ca3af' }}>
+            {hwData.psuCount === 4
+              ? '4x PSU high-capacity chassis variant (GVS-HC3A3 / GVS-HC3A4).'
+              : 'Standard 2x PSU chassis variant (GVS-HC3A1 / GVS-HC3A2).'}
+          </span>
+        </div>
+      )}
+
       {model?.includes('TA') && (
         <div className="flex-col gap-1 mt-2">
           <label className="form-label">Software Port Capacity</label>

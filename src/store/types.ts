@@ -263,6 +263,7 @@ export interface HardwareNodeData extends BaseNodeData {
   gigaSmartApps?: GigaSmartNodeData[];
   installedBoards?: Record<string, string>;
   powerSupply?: 'AC' | 'DC';
+  psuCount?: 2 | 4;
   portCapacity?: 'Full' | 'Quarter' | 'Half' | 'Upgrade' | '100G';
   tapMode?: 'Passive' | 'Active';
   tapFiberMode?: 'Singlemode' | 'Multimode';

@@ -363,7 +363,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
           </div>
         )}
 
-        {advancedMode && (!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && !isBreakoutPanelModel(model) && (
+        {(!model?.includes('TAP') || model?.includes('G-TAP A') || model?.includes('ASF') || model?.includes('ATX')) && !isBreakoutPanelModel(model) && (
           <PowerSupplyPanel selectedNode={node} updateNodeData={updateNodeData} />
         )}
 

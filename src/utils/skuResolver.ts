@@ -11,6 +11,7 @@ export interface HardwareNodeSkuData {
   sku?: string;
   licenseModeOverride?: string;
   powerSupply?: string;
+  psuCount?: number;
   portCapacity?: string;
   tapPower?: string;
   advancedFeatures?: boolean;
@@ -33,7 +34,12 @@ export function resolveNodeSkus(nodeData: HardwareNodeSkuData, globalLicenseMode
   } else if (model.includes('HC1-Plus') || model.includes('HC1P')) {
     resolvedSku = power === 'DC' ? 'GVS-HC1P2' : 'GVS-HC1P1';
   } else if (model.includes('HC3')) {
-    resolvedSku = power === 'DC' ? 'GVS-HC3A2' : 'GVS-HC3A1';
+    const is4Psu = nodeData.psuCount === 4;
+    if (is4Psu) {
+      resolvedSku = power === 'DC' ? 'GVS-HC3A4' : 'GVS-HC3A3';
+    } else {
+      resolvedSku = power === 'DC' ? 'GVS-HC3A2' : 'GVS-HC3A1';
+    }
   } else if (model.includes('HCT')) {
     resolvedSku = 'GVS-HCT01';
   } else if (model.includes('TA25E')) {
