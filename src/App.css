@@ -26,7 +26,8 @@
 .header-wrapper {
   display: flex;
   flex-direction: column;
-  z-index: 10;
+  position: relative;
+  z-index: 1000;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
@@ -40,13 +41,9 @@
   padding: 0 14px;
   justify-content: space-between;
   gap: 12px;
-  overflow-x: auto;
-  overflow-y: visible;
-  scrollbar-width: none;
-}
-
-.header-brand::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
+  position: relative;
+  z-index: 1000;
 }
 
 .brand-logo {
@@ -240,16 +237,16 @@
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  min-width: 200px;
+  min-width: 220px;
   background-color: var(--bg-secondary, #1e293b);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: 6px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
   padding: 5px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 10000;
+  z-index: 99999;
   animation: headerDropdownFadeIn 0.12s ease-out;
 }
 

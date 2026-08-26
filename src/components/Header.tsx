@@ -423,7 +423,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 <div className="header-dropdown-wrapper" ref={demoMenuRef}>
                   <button
                     className="header-btn header-btn--green"
-                    onClick={() => setShowDemoMenu(!showDemoMenu)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDemoMenu((prev) => !prev);
+                      setShowProjectMenu(false);
+                    }}
                     title="Demonstration modes"
                   >
                     <PresentationIcon /> <span>Demo</span> <ChevronDownIcon />
@@ -494,13 +498,17 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               <div className="header-dropdown-wrapper" ref={projectMenuRef}>
                 <button
                   className="header-btn"
-                  onClick={() => setShowProjectMenu(!showProjectMenu)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowProjectMenu((prev) => !prev);
+                    setShowDemoMenu(false);
+                  }}
                   title="Project file save and load options"
                 >
                   <SaveIcon /> <span>Project</span> <ChevronDownIcon />
                 </button>
                 {showProjectMenu && (
-                  <div className="header-dropdown-menu">
+                  <div className="header-dropdown-menu right-aligned">
                     <button
                       className="header-dropdown-item"
                       onClick={() => {
