@@ -33,6 +33,7 @@ import {
   exportCommercialQuoteToJson,
   parseCommercialQuoteJson,
 } from '../../utils/pricingEngine';
+import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { buildQuotePdfDocDefinition } from '../../utils/report/quotePdfReport';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 
@@ -377,9 +378,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const [quoteNotification, setQuoteNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Save customized commercial quote as JSON
-  const handleSaveQuoteJson = () => {
+  const handleSaveQuoteJson = async () => {
     try {
-      exportCommercialQuoteToJson(
+      const res = await exportCommercialQuoteToJson(
         items,
         discountConfig,
         rawDiscountInputs,
@@ -393,14 +394,40 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           projectRegion: globalRegion,
         },
       );
-      setQuoteNotification({
-        type: 'success',
-        message: `Commercial quote saved successfully (${items.length} line items).`,
-      });
-      setTimeout(() => setQuoteNotification(null), 4000);
+      if (res.saved) {
+        setQuoteNotification({
+          type: 'success',
+          message: `Commercial quote JSON saved successfully as "${res.filename}" (${items.length} line items).`,
+        });
+        setTimeout(() => setQuoteNotification(null), 4000);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setQuoteNotification({ type: 'error', message: `Failed to save quote: ${msg}` });
+    }
+  };
+
+  // CSV Export handler
+  const handleExportCsv = async () => {
+    try {
+      const res = await exportQuoteToCsv(
+        items,
+        discountConfig,
+        excludeOptics,
+        freePowerCords,
+        spanOnlyMode,
+        currentScenarioName || undefined,
+      );
+      if (res.saved) {
+        setQuoteNotification({
+          type: 'success',
+          message: `Commercial quote CSV exported successfully as "${res.filename}".`,
+        });
+        setTimeout(() => setQuoteNotification(null), 4000);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setQuoteNotification({ type: 'error', message: `Failed to export CSV: ${msg}` });
     }
   };
 
@@ -463,7 +490,38 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       const cleanName = currentScenarioName
         ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
         : 'Quote';
-      pdfMake.createPdf(docDef).download(`Commercial_Quote_${cleanName}.pdf`);
+      const defaultFilename = `Commercial_Quote_${cleanName}.pdf`;
+
+      const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
+        try {
+          const pdfDoc = pdfMake.createPdf(docDef) as unknown as {
+            getBlob: (cb: (blob: Blob) => void) => void;
+          };
+          pdfDoc.getBlob((blob: Blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('PDF generation produced an empty file.'));
+            }
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      const res = await saveWithFilePickerOrPrompt(pdfBlob, defaultFilename, {
+        description: 'PDF Quotation Document',
+        mimeType: 'application/pdf',
+        extension: '.pdf',
+      });
+
+      if (res.saved) {
+        setQuoteNotification({
+          type: 'success',
+          message: `Formal quote PDF saved successfully as "${res.filename}".`,
+        });
+        setTimeout(() => setQuoteNotification(null), 4000);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setPdfError(`Failed to generate quotation PDF: ${msg}`);
@@ -1523,7 +1581,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             </button>
 
             <button
-              onClick={() => exportQuoteToCsv(items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode, currentScenarioName || undefined)}
+              onClick={handleExportCsv}
               className="btn btn-secondary"
               style={{
                 fontSize: '12px',

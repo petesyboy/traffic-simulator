@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.648",
+    date: "2026-08-26",
+    summary: "Fix dropdown overflow clipping and click propagation for Project and Demo menus on macOS Chrome (v1.0.648)",
+  },
+  {
     version: "1.0.647",
     date: "2026-08-26",
     summary: "Align SMT-HC3-C08-SW-TM pricing to WWPL_20260731 (,400/mo) and add -SW normalization (v1.0.647)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.628",
     date: "2026-08-25",
     summary: "Pre-seed built-in HC3/HC/TA list prices and fix hardware chassis category mapping (v1.0.628)",
-  },
-  {
-    version: "1.0.627",
-    date: "2026-08-25",
-    summary: "Add sticky table headers, dedicated table scroll container, and collapsible discount matrix (v1.0.627)",
   },
 ];

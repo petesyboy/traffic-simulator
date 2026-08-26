@@ -11,6 +11,7 @@ import { generateBom, validateConfiguration, detectMixedSiteAssignment, getSkus 
 import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
+import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import type { HardwareNodeData } from '../../store/types';
 import QuoteModal from './QuoteModal';
 
@@ -70,7 +71,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   );
 
   // ── Export handlers ──
-  const handleExportBomCsv = () => {
+  const handleExportBomCsv = async () => {
     const headers = 'Site,Type,SKU,Description,Term(Months),Qty';
     const csv = [headers]
       .concat(
@@ -80,18 +81,19 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         ),
       )
       .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const cleanName = currentScenarioName
       ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
       : '';
-    a.download = cleanName ? `BOM_${cleanName}.csv` : 'BOM.csv';
-    a.click();
+    const defaultFilename = cleanName ? `BOM_${cleanName}.csv` : 'BOM.csv';
+
+    await saveWithFilePickerOrPrompt(csv, defaultFilename, {
+      description: 'BOM CSV File',
+      mimeType: 'text/csv',
+      extension: '.csv',
+    });
   };
 
-  const handleExportPhysicalCsv = () => {
+  const handleExportPhysicalCsv = async () => {
     const csv = [
       'Node/Chassis,Qty,Rack Space,Dimensions (Imperial),Dimensions (Metric),Weight (Imperial),Weight (Metric),Power,Heat,Airflow',
     ]
@@ -107,15 +109,16 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,-,${totalWeight.toFixed(1)} lbs,${(totalWeight * 0.45359237).toFixed(1)} kg,${totalPower} W,${totalHeat} BTU/hr,-`,
       ])
       .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const cleanName = currentScenarioName
       ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
       : '';
-    a.download = cleanName ? `BOM_${cleanName}_deployment_report.csv` : 'BOM_deployment_report.csv';
-    a.click();
+    const defaultFilename = cleanName ? `BOM_${cleanName}_deployment_report.csv` : 'BOM_deployment_report.csv';
+
+    await saveWithFilePickerOrPrompt(csv, defaultFilename, {
+      description: 'Deployment Report CSV File',
+      mimeType: 'text/csv',
+      extension: '.csv',
+    });
   };
 
   // ── Render ──

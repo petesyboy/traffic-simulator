@@ -13,6 +13,7 @@
 
 import { skuService } from '../services/skuService';
 import type { BomRow } from './bom/bomGenerator';
+import { saveWithFilePickerOrPrompt, type SaveFileResult } from './fileSaveHelper';
 
 export type QuoteCategory =
   | 'Software'
@@ -771,14 +772,14 @@ export function formatCurrency(val: number): string {
 }
 
 /** Exports quote line items and financial totals to a structured CSV file. */
-export function exportQuoteToCsv(
+export async function exportQuoteToCsv(
   items: QuoteLineItem[],
   config: DiscountCategoryConfig,
   excludeOptics: boolean,
   freePowerCords: boolean = false,
   spanOnlyMode: boolean = false,
   scenarioName?: string,
-): void {
+): Promise<SaveFileResult> {
   const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
 
   const escapeCsv = (str: string) => `"${String(str ?? '').replace(/"/g, '""')}"`;
@@ -825,13 +826,14 @@ export function exportQuoteToCsv(
   ];
 
   const csvContent = [headers, ...rows, ...summaryRows].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
   const cleanName = scenarioName ? scenarioName.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Quote';
-  a.download = `Commercial_Quote_${cleanName}.csv`;
-  a.click();
+  const defaultFilename = `Commercial_Quote_${cleanName}.csv`;
+
+  return saveWithFilePickerOrPrompt(csvContent, defaultFilename, {
+    description: 'Commercial Quote CSV File',
+    mimeType: 'text/csv',
+    extension: '.csv',
+  });
 }
 
 /** Structured JSON payload for persistent saving and loading of customized commercial quotes. */
@@ -860,7 +862,7 @@ export interface CommercialQuoteSaveData {
 }
 
 /** Exports the current customized commercial quote as a JSON file. */
-export function exportCommercialQuoteToJson(
+export async function exportCommercialQuoteToJson(
   items: QuoteLineItem[],
   config: DiscountCategoryConfig,
   rawDiscountInputs: Record<string, string>,
@@ -873,7 +875,7 @@ export function exportCommercialQuoteToJson(
     defaultTermDuration?: string;
     projectRegion?: string;
   },
-): void {
+): Promise<SaveFileResult> {
   const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
 
   const quoteData: CommercialQuoteSaveData = {
@@ -901,15 +903,16 @@ export function exportCommercialQuoteToJson(
   };
 
   const jsonString = JSON.stringify(quoteData, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
   const cleanName = metadata.scenarioName
     ? metadata.scenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
     : 'Solution';
-  a.download = `${cleanName}_Commercial_Quote.json`;
-  a.click();
+  const defaultFilename = `${cleanName}_Commercial_Quote.json`;
+
+  return saveWithFilePickerOrPrompt(jsonString, defaultFilename, {
+    description: 'Commercial Quote JSON File',
+    mimeType: 'application/json',
+    extension: '.json',
+  });
 }
 
 /** Validates and parses imported JSON string into CommercialQuoteSaveData. */

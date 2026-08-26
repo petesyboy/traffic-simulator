@@ -25,6 +25,7 @@ import { buildCrossoverReportDocDefinition } from '../../utils/report/crossoverR
 import { autoDeployRack } from '../../utils/autoRack';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
+import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
@@ -203,7 +204,30 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       const cleanName = currentScenarioName
         ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
         : 'solution_report';
-      await pdfMake.createPdf(docDefinition).download(`${filenamePrefix}_${cleanName}.pdf`);
+      const defaultFilename = `${filenamePrefix}_${cleanName}.pdf`;
+
+      const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
+        try {
+          const pdfDoc = pdfMake.createPdf(docDefinition) as unknown as {
+            getBlob: (cb: (blob: Blob) => void) => void;
+          };
+          pdfDoc.getBlob((blob: Blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('PDF report generation produced an empty file.'));
+            }
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      await saveWithFilePickerOrPrompt(pdfBlob, defaultFilename, {
+        description: 'PDF Solution Report',
+        mimeType: 'application/pdf',
+        extension: '.pdf',
+      });
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not generate the report.');
