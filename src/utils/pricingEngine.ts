@@ -388,30 +388,35 @@ export function calculateLineFinancials(
   freePowerCords: boolean = false,
   spanOnlyMode: boolean = false,
 ): CalculatedLineItem {
+  // Always dynamically re-resolve category so loaded quote items or stale state are guaranteed 100% accurate
+  const resolvedCategory = mapBomTypeToQuoteCategory(item.category || item.type, item.sku, item.description);
+  const normalizedItem: QuoteLineItem = item.category !== resolvedCategory ? { ...item, category: resolvedCategory } : item;
+
   const isMonthly =
-    item.isMonthlyPrice ||
-    (item.category === 'Software' && (item.sku.includes('-SW-TM') || item.sku.endsWith('-TM')));
+    normalizedItem.isMonthlyPrice ||
+    (normalizedItem.category === 'Software' && (normalizedItem.sku.includes('-SW-TM') || normalizedItem.sku.endsWith('-TM')));
 
   // In SPAN-only mode, TAP termination links require only 1 optic per link instead of 2 (halve optic
   // quantity) - but only for optics actually tagged as terminating a TAP link. Other 'Optic' category
   // rows (chassis-to-chassis uplinks, GigaSMART/module board optics, tool ingest optics) are unrelated
   // to the TAP<->SPAN conversion and must pass through at full quantity.
   const effectiveQty =
-    spanOnlyMode && item.linkType === 'tap-termination'
-      ? Math.max(1, Math.ceil((item.qty || 0) / 2))
-      : (item.qty || 0);
+    spanOnlyMode && normalizedItem.linkType === 'tap-termination'
+      ? Math.max(1, Math.ceil((normalizedItem.qty || 0) / 2))
+      : (normalizedItem.qty || 0);
 
-  const term = isMonthly && item.termMonths && item.termMonths > 0 ? item.termMonths : 1;
-  const effectiveUnitList = (item.unitListPrice || 0) * (isMonthly ? term : 1);
+  const term = isMonthly && normalizedItem.termMonths && normalizedItem.termMonths > 0 ? normalizedItem.termMonths : 1;
+  const effectiveUnitList = (normalizedItem.unitListPrice || 0) * (isMonthly ? term : 1);
   const extendedListPrice = effectiveUnitList * effectiveQty;
 
-  const effectiveDiscountPercent = resolveLineDiscount(item, config, freePowerCords);
+  const effectiveDiscountPercent = resolveLineDiscount(normalizedItem, config, freePowerCords);
   const discountAmount = extendedListPrice * (effectiveDiscountPercent / 100);
   const extendedNetPrice = Math.max(0, extendedListPrice - discountAmount);
   const unitNetPrice = effectiveQty > 0 ? extendedNetPrice / effectiveQty : 0;
 
   return {
-    ...item,
+    ...normalizedItem,
+    category: resolvedCategory,
     qty: effectiveQty,
     effectiveDiscountPercent,
     effectiveUnitList,

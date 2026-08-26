@@ -753,5 +753,35 @@ describe('pricingEngine', () => {
       expect(gfmVariant.unitListPrice).toBe(2310);
       expect(gfmVariant.termMonths).toBe(36);
     });
+
+    it('auto-corrects stale Software category on hardware line cards and applies Module discount', () => {
+      const staleItem: QuoteLineItem = {
+        id: 'test-stale-hw',
+        sku: 'PRT-HC3-X24-HW',
+        description: 'Port Module, GigaVUE-HC3, 24x10G SFP+ cages. Hardware only.',
+        type: 'License',
+        category: 'Software', // Stale saved category in old state
+        qty: 1,
+        unitListPrice: 3165,
+        isMonthlyPrice: false,
+        applyDiscount: true,
+      };
+
+      const discountConfig: DiscountCategoryConfig = {
+        global: 10,
+        software: 50,
+        modules: 15,
+        chassis: 20,
+        optics: 25,
+        taps: 12,
+        support: 5,
+        accessories: 8,
+      };
+
+      const calculated = calculateLineFinancials(staleItem, discountConfig);
+      expect(calculated.category).toBe('Module');
+      expect(calculated.effectiveDiscountPercent).toBe(15); // Applies Module discount (15%), NOT Software discount (50%)!
+      expect(calculated.extendedNetPrice).toBe(3165 * (1 - 0.15));
+    });
   });
 });

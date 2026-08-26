@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.645",
+    date: "2026-08-26",
+    summary: "Add semantic English description validation for hardware vs software category resolution (v1.0.645)",
+  },
+  {
     version: "1.0.644",
     date: "2026-08-26",
     summary: "Ensure hardware modules (PRT-*-HW, SMT-*-HW) are classified as Module rather than Software (v1.0.644)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.625",
     date: "2026-08-25",
     summary: "Switch to synchronous W3C FileReader import for file:// origin and macOS (v1.0.625)",
-  },
-  {
-    version: "1.0.624",
-    date: "2026-08-25",
-    summary: "Support File System Access API and fix macOS Safari hidden input click (v1.0.624)",
   },
 ];
