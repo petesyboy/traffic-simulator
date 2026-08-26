@@ -275,3 +275,15 @@ export const MoonIcon: React.FC<IconProps> = ({ size = 14 }) => (
     />
   </svg>
 );
+
+export const ChevronDownIcon: React.FC<IconProps> = ({ size = 10 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M6 9l6 6 6-6"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

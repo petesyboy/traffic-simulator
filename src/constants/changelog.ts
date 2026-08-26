@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.639",
+    date: "2026-08-26",
+    summary: "Add catalogue list prices for HC3A3/A4 & Gen3 perpetual licences, categorize GigaSMART licences as Software (v1.0.639)",
+  },
+  {
     version: "1.0.638",
     date: "2026-08-26",
     summary: "Honour SKU types, terms, and capital vs term pricing when switching between Perpetual and HTL (v1.0.638)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.618",
     date: "2026-08-25",
     summary: "Add tooltips and SKU badges to GigaSMART sidebar elements (v1.0.618)",
-  },
-  {
-    version: "1.0.617",
-    date: "2026-08-25",
-    summary: "Adjust PDF quote table column widths and margins to fit within printable page (v1.0.617)",
   },
 ];

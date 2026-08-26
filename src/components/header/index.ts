@@ -36,6 +36,7 @@ export {
   ReportIcon,
   SunIcon,
   MoonIcon,
+  ChevronDownIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';

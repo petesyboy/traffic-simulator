@@ -43,6 +43,7 @@ import {
   PriceListIcon,
   SunIcon,
   MoonIcon,
+  ChevronDownIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const toggleTheme = useStore((state) => state.toggleTheme);
   const bumpSkuCatalogueVersion = useStore((state) => state.bumpSkuCatalogueVersion);
 
-  // Local UI state for modals
+  // Local UI state for modals & dropdowns
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBom, setShowBom] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -104,7 +105,24 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [logoClicks, setLogoClicks] = useState<number[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const [showDemoMenu, setShowDemoMenu] = useState(false);
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const demoMenuRef = React.useRef<HTMLDivElement>(null);
+  const projectMenuRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (demoMenuRef.current && !demoMenuRef.current.contains(e.target as Node)) {
+        setShowDemoMenu(false);
+      }
+      if (projectMenuRef.current && !projectMenuRef.current.contains(e.target as Node)) {
+        setShowProjectMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const handleImportClick = () => {
     if (fileInputRef.current) {
@@ -235,12 +253,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
             <img
               src={gigamonLogo}
               alt="Gigamon"
-              style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer' }}
+              style={{ height: '18px', display: 'block', objectFit: 'contain', cursor: 'pointer', flexShrink: 0 }}
               onClick={handleLogoClick}
               title="Gigamon Traffic Simulator"
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
               <span className="brand-project-name">
                 {isEditingName ? (
                   <input
@@ -261,7 +279,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       color: 'var(--text-primary)',
                       font: 'inherit',
                       padding: '0 4px',
-                      width: '180px',
+                      width: '150px',
                     }}
                   />
                 ) : (
@@ -288,7 +306,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 />
               </span>
               <span className="brand-subtitle">
-                FLOW MAPPING DESIGNER
+                <span className="brand-subtitle-full">FLOW MAPPING DESIGNER </span>
                 <button
                   className="brand-build-link"
                   onClick={() => setShowAbout(true)}
@@ -300,21 +318,22 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               </span>
             </div>
 
-            <div className="tab monitoring-session active" style={{ color: advancedMode ? '#ff9800' : '#fff' }}>
+            <div className="tab monitoring-session active" style={{ color: advancedMode ? '#ff9800' : '#fff', flexShrink: 0 }}>
               {advancedMode ? 'Expert Designer' : 'Standard View'}
             </div>
           </div>
 
           <div className="header-controls">
             {/* ── Group 1: Simulation ── */}
-            <div className="control-group">
+            <div className="control-group" style={{ flexShrink: 0 }}>
               <button
                 onClick={toggleSimulation}
                 className={`sim-btn ${isRunning ? 'running' : ''}`}
-                style={{ minWidth: isRunning ? '80px' : '130px' }}
+                style={{ minWidth: isRunning ? '75px' : '110px' }}
               >
                 {isRunning ? <PauseIcon /> : <PlayIcon />}
-                {isRunning ? 'Pause' : 'Run Simulation'}
+                <span>{isRunning ? 'Pause' : 'Run'}</span>
+                <span className="header-btn-text-optional">{isRunning ? '' : ' Simulation'}</span>
               </button>
 
               {isRunning && (
@@ -346,7 +365,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   onClick={() => setShowDuplicatePrompt(true)}
                   title="Duplicate the entire topology to a new site"
                 >
-                  <CopyIcon /> Duplicate
+                  <CopyIcon /> <span className="header-btn-text-optional">Duplicate</span>
                 </button>
               )}
 
@@ -373,53 +392,72 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 >
                   {activeView === 'rack' ? (
                     <>
-                      <GridIcon /> Canvas View
+                      <GridIcon /> <span className="header-btn-text-optional">Canvas View</span>
                     </>
                   ) : (
                     <>
-                      <ServerRackIcon /> Rack View
+                      <ServerRackIcon /> <span className="header-btn-text-optional">Rack View</span>
                     </>
                   )}
                 </button>
               )}
 
-              {advancedMode && (
+              {/* Demo Modes: Active state stop button OR compact dropdown */}
+              {isTradeShowDemoActive ? (
                 <button
-                  className={`header-btn ${isTradeShowDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
-                  onClick={() => setTradeShowDemoActive(!isTradeShowDemoActive)}
-                  title="Toggle Automated Trade Show Demonstration Mode"
+                  className="header-btn header-btn--solid-red"
+                  onClick={() => setTradeShowDemoActive(false)}
+                  title="Stop Automated Demo"
                 >
-                  {isTradeShowDemoActive ? (
-                    <>
-                      <StopIcon /> Stop Demo
-                    </>
-                  ) : (
-                    <>
-                      <PresentationIcon /> Auto Demo
-                    </>
-                  )}
+                  <StopIcon /> Stop Demo
                 </button>
+              ) : isMissionDemoActive ? (
+                <button
+                  className="header-btn header-btn--solid-red"
+                  onClick={() => setMissionDemoActive(false)}
+                  title="Stop Mission Demo"
+                >
+                  <StopIcon /> Stop Mission
+                </button>
+              ) : (
+                <div className="header-dropdown-wrapper" ref={demoMenuRef}>
+                  <button
+                    className="header-btn header-btn--green"
+                    onClick={() => setShowDemoMenu(!showDemoMenu)}
+                    title="Demonstration modes"
+                  >
+                    <PresentationIcon /> <span>Demo</span> <ChevronDownIcon />
+                  </button>
+                  {showDemoMenu && (
+                    <div className="header-dropdown-menu">
+                      <button
+                        className="header-dropdown-item"
+                        onClick={() => {
+                          setTradeShowDemoActive(true);
+                          setShowDemoMenu(false);
+                        }}
+                      >
+                        <PresentationIcon size={14} />
+                        <span>Automated Trade Show Demo</span>
+                      </button>
+                      <button
+                        className="header-dropdown-item"
+                        onClick={() => {
+                          setMissionDemoActive(true);
+                          setShowDemoMenu(false);
+                        }}
+                      >
+                        <PresentationIcon size={14} />
+                        <span>Mission (Before / After) Demo</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-
-              <button
-                className={`header-btn ${isMissionDemoActive ? 'header-btn--solid-red' : 'header-btn--green'}`}
-                onClick={() => setMissionDemoActive(!isMissionDemoActive)}
-                title="Toggle Mission (Before/After Visibility) Demonstration"
-              >
-                {isMissionDemoActive ? (
-                  <>
-                    <StopIcon /> Stop Mission Demo
-                  </>
-                ) : (
-                  <>
-                    <PresentationIcon /> Mission Demo
-                  </>
-                )}
-              </button>
 
               {advancedMode && (
                 <button className="header-btn" onClick={handleExportScreenshot} title="Export canvas to PNG">
-                  <CameraIcon /> Screenshot
+                  <CameraIcon /> <span className="header-btn-text-optional">Screenshot</span>
                 </button>
               )}
 
@@ -429,7 +467,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   onClick={handleOpenReport}
                   title="Generate a customer-facing PDF solution report"
                 >
-                  <ReportIcon /> Generate Report
+                  <ReportIcon /> <span className="header-btn-text-optional">Report</span>
                 </button>
               )}
 
@@ -439,7 +477,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   value={panelTextScale}
                   onChange={(e) => setPanelTextScale(Number(e.target.value))}
                   className="sim-speed-select"
-                  style={{ width: '55px', height: '24px', padding: '0 4px' }}
+                  style={{ width: '52px', height: '24px', padding: '0 2px' }}
                 >
                   <option value={0.75}>75%</option>
                   <option value={0.85}>85%</option>
@@ -451,18 +489,62 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               </div>
             </div>
 
-            {/* ── Group 3: File Operations ── */}
+            {/* ── Group 3: File / Project Storage Operations ── */}
             <div className="control-group">
-              <button className="header-btn" onClick={onSaveFileClick} title="Export project to a .json file">
-                <SaveIcon /> Export
-              </button>
-              <button
-                className="header-btn"
-                onClick={handleImportClick}
-                title="Import project from a .json file"
-              >
-                <FolderOpenIcon /> Import
-              </button>
+              <div className="header-dropdown-wrapper" ref={projectMenuRef}>
+                <button
+                  className="header-btn"
+                  onClick={() => setShowProjectMenu(!showProjectMenu)}
+                  title="Project file save and load options"
+                >
+                  <SaveIcon /> <span>Project</span> <ChevronDownIcon />
+                </button>
+                {showProjectMenu && (
+                  <div className="header-dropdown-menu">
+                    <button
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        onSaveFileClick();
+                        setShowProjectMenu(false);
+                      }}
+                    >
+                      <SaveIcon size={14} />
+                      <span>Export Project File (.json)</span>
+                    </button>
+                    <button
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        handleImportClick();
+                        setShowProjectMenu(false);
+                      }}
+                    >
+                      <FolderOpenIcon size={14} />
+                      <span>Import Project File (.json)</span>
+                    </button>
+                    <div className="header-dropdown-divider" />
+                    <button
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        onSaveClick();
+                        setShowProjectMenu(false);
+                      }}
+                    >
+                      <SaveIcon size={14} />
+                      <span>Save to Browser Slot...</span>
+                    </button>
+                    <button
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        onLoadClick();
+                        setShowProjectMenu(false);
+                      }}
+                    >
+                      <FolderOpenIcon size={14} />
+                      <span>Load from Browser Slot...</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -478,19 +560,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   pointerEvents: 'none',
                 }}
               />
-
-              <div className="control-divider">
-                <button className="header-btn" onClick={onSaveClick} title="Save to browser local storage">
-                  <SaveIcon /> Browser Save
-                </button>
-                <button className="header-btn" onClick={onLoadClick} title="Load from browser local storage">
-                  <FolderOpenIcon /> Browser Load
-                </button>
-              </div>
             </div>
 
             {/* ── Group 4: System / Danger ── */}
-            <div className="control-group">
+            <div className="control-group" style={{ flexShrink: 0 }}>
               {advancedMode && (
                 <button
                   className="header-btn icon-only"
