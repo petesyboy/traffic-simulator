@@ -1675,8 +1675,27 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 📋 Line Items Schedule
               </div>
-              <div style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                Showing all <strong>{summary.activeLineCount}</strong> items ({summary.totalQty} total units)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: '#f472b6',
+                    background: 'rgba(236, 72, 153, 0.12)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(236, 72, 153, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title="Items tagged with 🛡️ AHR are covered hardware qualifying for the 41% Advance Hardware Replacement calculation"
+                >
+                  <span>🛡️ AHR</span>
+                  <span style={{ color: '#d1d5db' }}>= Eligible Hardware ({summary.items.filter((i) => i.inclInSupport).length} SKUs)</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                  Showing all <strong>{summary.activeLineCount}</strong> items ({summary.totalQty} total units)
+                </div>
               </div>
             </div>
 
@@ -1718,6 +1737,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   summary.items.map((item, idx) => {
                     const catColor = CATEGORY_COLORS[item.category] || '#94a3b8';
                     const isEven = idx % 2 === 0;
+                    const isAhrEligible = Boolean(item.inclInSupport);
 
                     return (
                       <tr
@@ -1746,9 +1766,32 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                           </span>
                         </td>
 
-                        {/* SKU */}
+                        {/* SKU + AHR Indicator Tag */}
                         <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 'bold', color: '#38bdf8', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
-                          {item.sku}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{item.sku}</span>
+                            {isAhrEligible && (
+                              <span
+                                style={{
+                                  background: 'rgba(236, 72, 153, 0.2)',
+                                  border: '1px solid #ec4899',
+                                  color: '#f472b6',
+                                  fontSize: '9.5px',
+                                  fontWeight: 'bold',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  letterSpacing: '0.3px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px',
+                                  cursor: 'help',
+                                }}
+                                title="AHR Eligible Hardware: Qualifies for 41% Advance Hardware Replacement support calculation"
+                              >
+                                🛡️ AHR
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Description */}
