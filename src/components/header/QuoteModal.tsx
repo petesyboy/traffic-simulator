@@ -674,21 +674,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         projectLicenseMode: globalLicenseMode,
         defaultTermDuration: globalTermDuration,
         projectRegion: globalRegion,
-        quoteNumber: quoteMetadata.quoteNumber,
-        posId: quoteMetadata.posId,
-        customerName: quoteMetadata.endCustomer,
-        reseller: quoteMetadata.reseller,
-        resellerContact: quoteMetadata.resellerContact,
-        resellerEmail: quoteMetadata.resellerEmail,
-        resellerPhone: quoteMetadata.resellerPhone,
-        distributor: quoteMetadata.distributor,
-        distributorContact: quoteMetadata.distributorContact,
-        distributorEmail: quoteMetadata.distributorEmail,
-        distributorPhone: quoteMetadata.distributorPhone,
-        salesRep: quoteMetadata.salesRep,
-        salesRepEmail: quoteMetadata.salesRepEmail,
-        paymentTerms: quoteMetadata.paymentTerms,
-        billingFrequency: quoteMetadata.billingFrequency,
+        customerName: quoteMetadata?.endCustomer || currentScenarioName || 'Gigamon Customer',
       });
       const defaultFilename = getStandardExportFilename('quote-pdf', currentScenarioName);
 
@@ -734,7 +720,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       if (res.saved) {
         setQuoteNotification({
           type: 'success',
-          message: `Official Salesforce CPQ quote PDF saved successfully as "${res.filename}".`,
+          message: `Formal quote PDF saved successfully as "${res.filename}".`,
         });
         setTimeout(() => setQuoteNotification(null), 4000);
       }

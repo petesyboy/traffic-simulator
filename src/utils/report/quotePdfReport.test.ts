@@ -79,7 +79,7 @@ describe('quotePdfReport', () => {
 
     expect(docDef).toBeDefined();
     expect(docDef.pageSize).toBe('A4');
-    expect(docDef.pageOrientation).toBe('portrait');
+    expect(docDef.pageOrientation).toBe('landscape');
   });
 
   it('generates a binary PDF blob successfully via pdfmake without hanging or error', async () => {

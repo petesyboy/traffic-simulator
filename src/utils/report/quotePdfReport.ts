@@ -1,8 +1,9 @@
 /**
  * quotePdfReport.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * Generates an official, customer-facing PDF quotation matching the layout,
- * typography, and commercial rules of Gigamon Salesforce CPQ quotes.
+ * Generates an executive, customer-facing PDF quotation for the solution BOM
+ * using the dark cyan/slate/blue design language consistent with the
+ * Gigamon Architecture Report.
  */
 
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
@@ -20,23 +21,6 @@ export interface QuotePdfOptions {
   projectRegion?: string;
   customerName?: string;
   preparedBy?: string;
-  quoteNumber?: string;
-  posId?: string;
-  createdDate?: string;
-  expiresOn?: string;
-  salesRep?: string;
-  salesRepEmail?: string;
-  reseller?: string;
-  resellerContact?: string;
-  resellerEmail?: string;
-  resellerPhone?: string;
-  distributor?: string;
-  distributorContact?: string;
-  distributorEmail?: string;
-  distributorPhone?: string;
-  paymentTerms?: string;
-  billingFrequency?: string;
-  logoDataUrl?: string;
 }
 
 export function buildQuotePdfDocDefinition(
@@ -49,315 +33,277 @@ export function buildQuotePdfDocDefinition(
 ): TDocumentDefinitions {
   const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
   const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
-  // Quote Metadata
-  const createdDateStr =
-    options.createdDate ||
-    `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+  const scenario = options.scenarioName || 'Gigamon Visibility Solution';
 
-  const expiresDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const expiresOnStr =
-    options.expiresOn ||
-    `${expiresDate.getMonth() + 1}/${expiresDate.getDate()}/${expiresDate.getFullYear()}`;
+  // ── Executive Summary Cards ──
+  const summaryCard = (title: string, value: string, sub?: string, color: string = '#00e5ff'): Content => ({
+    stack: [
+      { text: title.toUpperCase(), fontSize: 7, bold: true, color: '#888888', margin: [0, 0, 0, 3] },
+      { text: value, fontSize: 14, bold: true, color },
+      sub ? { text: sub, fontSize: 7, color: '#aaaaaa', margin: [0, 2, 0, 0] } : { text: '' },
+    ],
+    margin: [6, 8, 6, 8],
+  });
 
-  const quoteNumber = options.quoteNumber || 'Q-207013-1';
-  const posId = options.posId || 'POS0258668';
-  const salesRep = options.salesRep || 'Marko Ramo';
-  const salesRepEmail = options.salesRepEmail || 'marko.ramo@gigamon.com';
-  const paymentTerms = options.paymentTerms || 'Net 45';
-  const billingFrequency = options.billingFrequency || 'All in Advance';
+  // ── Category Breakdown Table ──
+  const categoryRows: Content[][] = Object.values(summary.categoryBreakdown)
+    .filter((c) => c.itemCount > 0)
+    .map((c) => [
+      { text: c.category, fontSize: 7, bold: true, color: '#ffffff' },
+      { text: String(c.totalQty), fontSize: 7, alignment: 'center' as const, color: '#cccccc' },
+      { text: formatCurrency(c.listPrice), fontSize: 7, alignment: 'right' as const, color: '#cccccc' },
+      {
+        text: `${formatCurrency(c.discountAmount)} (${c.listPrice > 0 ? ((c.discountAmount / c.listPrice) * 100).toFixed(1) : '0.0'}%)`,
+        fontSize: 7,
+        alignment: 'right' as const,
+        color: '#22c55e',
+      },
+      { text: formatCurrency(c.netPrice), fontSize: 7, bold: true, alignment: 'right' as const, color: '#00e5ff' },
+    ]);
 
-  const endCustomer = options.customerName || options.scenarioName || 'Göteborgs Stad';
-  const reseller = options.reseller || 'Atea Sverige AB';
-  const resellerContact = options.resellerContact || 'Peter Thuresson';
-  const resellerEmail = options.resellerEmail || 'peter.thuresson@atea.se';
-  const resellerPhone = options.resellerPhone || '+46 31 748 20 15';
-
-  const distributor = options.distributor || 'Exclusive Networks Sweden AB';
-  const distributorContact = options.distributorContact || 'Johan Bjorn';
-  const distributorEmail = options.distributorEmail || 'jbjorn@exclusive-networks.com';
-  const distributorPhone = options.distributorPhone || '+33 141315304';
-
-  // ── CPQ Table Rows ──
-  const cpqTableBody: Content[][] = [
+  // ── Itemized Line Items Table ──
+  const tableBody: Content[][] = [
     [
-      { text: '#', style: 'tableHeader', alignment: 'left' },
-      { text: 'SKU', style: 'tableHeader', alignment: 'left' },
-      { text: 'Incl. In\nSupport', style: 'tableHeader', alignment: 'center' },
-      { text: 'Description', style: 'tableHeader', alignment: 'left' },
+      { text: 'Cat', style: 'tableHeader' },
+      { text: 'Part Number (SKU)', style: 'tableHeader' },
+      { text: 'Description', style: 'tableHeader' },
+      { text: 'Term', style: 'tableHeader', alignment: 'center' },
       { text: 'Qty', style: 'tableHeader', alignment: 'center' },
-      { text: 'List Price', style: 'tableHeader', alignment: 'right' },
-      { text: 'Unit Price', style: 'tableHeader', alignment: 'right' },
-      { text: 'Net\nDisc %', style: 'tableHeader', alignment: 'center' },
-      { text: 'Net Price', style: 'tableHeader', alignment: 'right' },
+      { text: 'Unit List', style: 'tableHeader', alignment: 'right' },
+      { text: 'Ext List', style: 'tableHeader', alignment: 'right' },
+      { text: 'Disc %', style: 'tableHeader', alignment: 'center' },
+      { text: 'Ext Net Price', style: 'tableHeader', alignment: 'right' },
     ],
   ];
 
   summary.items.forEach((item, index) => {
-    const isSupportCovered = Boolean(item.inclInSupport);
-    const discPct = Math.round(item.effectiveDiscountPercent);
-    const unitList = item.effectiveUnitList;
-    const unitPrice = item.unitNetPrice;
+    const isZebra = index % 2 === 1;
+    const bg = isZebra ? '#1f2937' : '#111827';
 
-    // Formatting description with term e.g. "36 months"
-    const termSnippet = item.termMonths ? `\n${item.termMonths} months` : '';
-    const noteSnippet = item.note && !item.note.includes('months') ? `\n${item.note}` : '';
-    const fullDesc = `${item.description}${termSnippet}${noteSnippet}`;
-
-    cpqTableBody.push([
-      { text: String(index + 1), fontSize: 7, color: '#111827', margin: [0, 2, 0, 2] },
-      { text: item.sku, fontSize: 7, bold: true, color: '#111827', margin: [0, 2, 0, 2] },
-      { text: isSupportCovered ? 'Yes' : '', fontSize: 7, alignment: 'center', color: '#111827', margin: [0, 2, 0, 2] },
-      { text: fullDesc, fontSize: 6.8, color: '#374151', margin: [0, 2, 0, 2] },
-      { text: String(item.qty), fontSize: 7, alignment: 'center', color: '#111827', margin: [0, 2, 0, 2] },
-      { text: formatCurrency(unitList), fontSize: 7, alignment: 'right', color: '#111827', margin: [0, 2, 0, 2] },
-      { text: formatCurrency(unitPrice), fontSize: 7, alignment: 'right', color: '#111827', margin: [0, 2, 0, 2] },
-      { text: discPct > 0 ? String(discPct) : '—', fontSize: 7, alignment: 'center', color: '#111827', margin: [0, 2, 0, 2] },
-      { text: formatCurrency(item.extendedNetPrice), fontSize: 7, alignment: 'right', color: '#111827', margin: [0, 2, 0, 2] },
+    tableBody.push([
+      { text: item.category, fontSize: 6.5, color: '#9ca3af', fillColor: bg },
+      { text: item.sku, fontSize: 6.5, bold: true, color: '#38bdf8', fillColor: bg },
+      {
+        text: item.description + (item.note ? `\nNote: ${item.note}` : ''),
+        fontSize: 6.5,
+        color: '#f3f4f6',
+        fillColor: bg,
+      },
+      { text: item.termMonths ? `${item.termMonths}m` : '—', fontSize: 6.5, alignment: 'center', color: '#d1d5db', fillColor: bg },
+      { text: String(item.qty), fontSize: 6.5, bold: true, alignment: 'center', color: '#ffffff', fillColor: bg },
+      { text: formatCurrency(item.effectiveUnitList), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
+      { text: formatCurrency(item.extendedListPrice), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
+      {
+        text: item.effectiveDiscountPercent > 0 ? `${item.effectiveDiscountPercent.toFixed(1)}%` : '—',
+        fontSize: 6.5,
+        alignment: 'center',
+        color: item.effectiveDiscountPercent > 0 ? '#22c55e' : '#9ca3af',
+        fillColor: bg,
+      },
+      {
+        text: formatCurrency(item.extendedNetPrice),
+        fontSize: 6.5,
+        bold: true,
+        alignment: 'right',
+        color: '#38bdf8',
+        fillColor: bg,
+      },
     ]);
   });
 
   return {
     pageSize: 'A4',
-    pageOrientation: 'portrait',
-    pageMargins: [28, 28, 28, 36],
-    footer: (currentPage) => ({
-      margin: [28, 10, 28, 0],
+    pageOrientation: 'landscape',
+    pageMargins: [24, 24, 24, 26],
+    background: () => ({
+      canvas: [
+        {
+          type: 'rect',
+          x: 0,
+          y: 0,
+          w: 841.89,
+          h: 595.28,
+          color: '#0b0f19',
+        },
+      ],
+    }),
+    footer: (currentPage, pageCount) => ({
+      margin: [24, 10, 24, 0],
       columns: [
         {
-          text: 'Thank you for your business and the opportunity to serve your needs!',
-          fontSize: 7.5,
-          color: '#e0531c',
-          italics: true,
+          text: `Gigamon Indicative Quotation (Illustrative Order of Magnitude • Non-Binding) • ${scenario}`,
+          fontSize: 6.5,
+          color: '#6b7280',
         },
         {
-          text: `Page ${currentPage}`,
-          fontSize: 7.5,
+          text: `Page ${currentPage} of ${pageCount}`,
+          fontSize: 6.5,
           alignment: 'right',
           color: '#6b7280',
         },
       ],
     }),
     content: [
-      // ── Header & Identity Row ──
+      // ── Header Banner ──
       {
         columns: [
           {
-            width: '*',
             stack: [
+              { text: 'GIGAMON SOLUTION QUOTATION', fontSize: 16, bold: true, color: '#38bdf8' },
+              { text: `Scenario: ${scenario}`, fontSize: 10, bold: true, color: '#f3f4f6', margin: [0, 2, 0, 0] },
+              spanOnlyMode
+                ? { text: 'Architecture: SPAN-Only (TAPs Removed & TAP Optics Halved)', fontSize: 7.5, bold: true, color: '#06b6d4', margin: [0, 2, 0, 0] }
+                : { text: '' },
+            ],
+          },
+          {
+            stack: [
+              { text: `Date: ${dateStr}`, fontSize: 8, alignment: 'right', color: '#9ca3af' },
               {
-                text: 'Gigamon®',
-                fontSize: 22,
+                text: `Optics Policy: ${excludeOptics ? 'Customer Supplied (Optics Excluded)' : 'Gigamon Optics Included'}`,
+                fontSize: 8,
                 bold: true,
-                color: '#e0531c',
+                alignment: 'right',
+                color: excludeOptics ? '#f59e0b' : '#10b981',
+                margin: [0, 2, 0, 0],
+              },
+              freePowerCords
+                ? { text: 'Power Cords: 100% Discount Applied (Free of Charge)', fontSize: 7.5, bold: true, alignment: 'right', color: '#22c55e', margin: [0, 2, 0, 0] }
+                : { text: '' },
+            ],
+          },
+        ],
+        margin: [0, 0, 0, 14],
+      },
+
+      // ── Financial Summary Tile Grid ──
+      {
+        table: {
+          widths: ['*', '*', '*', '*'],
+          body: [
+            [
+              {
+                fillColor: '#1e293b',
+                stack: [summaryCard('Total List Value', formatCurrency(summary.totalListPrice), `${summary.totalQty} total units`, '#94a3b8')],
               },
               {
-                text: '3300 Olcott Street Santa Clara, CA 95054 USA | 408.263.2022',
-                fontSize: 7,
-                color: '#6b7280',
-                margin: [0, 2, 0, 8],
+                fillColor: '#1e293b',
+                stack: [summaryCard('Commercial Discount', formatCurrency(summary.totalDiscountAmount), `${summary.effectiveDiscountPercent.toFixed(1)}% savings`, '#22c55e')],
+              },
+              {
+                fillColor: '#1e293b',
+                stack: [summaryCard('Net Commercial Investment', formatCurrency(summary.totalNetPrice), 'Target price (excl tax)', '#38bdf8')],
+              },
+              {
+                fillColor: '#1e293b',
+                stack: [
+                  summaryCard(
+                    'Line Items Active',
+                    `${summary.activeLineCount} SKUs`,
+                    excludeOptics ? `(${summary.allLineCount - summary.activeLineCount} optics omitted)` : 'All BOM items included',
+                    '#a855f7',
+                  ),
+                ],
               },
             ],
-          },
-          {
-            width: 170,
-            stack: [
-              { text: `Quote: ${quoteNumber}`, fontSize: 9, bold: true, alignment: 'right', color: '#111827' },
-              { text: `POSID: ${posId}`, fontSize: 8, alignment: 'right', color: '#374151' },
-              { text: `Created Date: ${createdDateStr}`, fontSize: 8, alignment: 'right', color: '#374151' },
-              { text: `Expires On: ${expiresOnStr}`, fontSize: 8, alignment: 'right', color: '#374151' },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 8],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#334155',
+          vLineColor: () => '#334155',
+        },
+        margin: [0, 0, 0, 14],
       },
 
-      // ── Sales Rep & Commercial Terms Row ──
+      // ── Category Summary Mini-Table ──
       {
-        columns: [
-          {
-            width: '*',
-            stack: [
-              { text: 'Sales Rep:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: salesRep, fontSize: 7.5, color: '#374151' },
-              { text: salesRepEmail, fontSize: 7.5, color: '#1d4ed8' },
-            ],
-          },
-          {
-            width: 170,
-            stack: [
-              { text: `Payment Terms: ${paymentTerms}`, fontSize: 7.5, alignment: 'right', color: '#374151' },
-              { text: `Billing Frequency: ${billingFrequency}`, fontSize: 7.5, alignment: 'right', color: '#374151' },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 10],
+        text: 'CATEGORY PRICING SUMMARY',
+        fontSize: 8,
+        bold: true,
+        color: '#94a3b8',
+        margin: [0, 0, 0, 4],
       },
-
-      // ── 3-Column Stakeholders Block ──
       {
-        columns: [
-          {
-            width: '*',
-            stack: [
-              { text: 'End Customer:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: endCustomer, fontSize: 7.5, color: '#374151', margin: [0, 1, 0, 6] },
-              { text: 'Ship To:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: endCustomer, fontSize: 7.5, color: '#374151' },
+        table: {
+          widths: ['*', 70, 110, 130, 120],
+          body: [
+            [
+              { text: 'Category', style: 'tableHeader' },
+              { text: 'Total Qty', style: 'tableHeader', alignment: 'center' },
+              { text: 'List Price', style: 'tableHeader', alignment: 'right' },
+              { text: 'Discount Savings', style: 'tableHeader', alignment: 'right' },
+              { text: 'Net Price', style: 'tableHeader', alignment: 'right' },
             ],
-          },
-          {
-            width: '*',
-            stack: [
-              { text: 'Reseller:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: reseller, fontSize: 7.5, color: '#374151' },
-              { text: resellerContact, fontSize: 7.5, color: '#374151' },
-              { text: resellerEmail, fontSize: 7.5, color: '#1d4ed8' },
-              { text: resellerPhone, fontSize: 7.5, color: '#374151', margin: [0, 0, 0, 6] },
-              { text: 'Support Provider:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: 'Gigamon Inc.', fontSize: 7.5, color: '#374151' },
-            ],
-          },
-          {
-            width: '*',
-            stack: [
-              { text: 'Bill To:', fontSize: 7.5, bold: true, color: '#111827' },
-              { text: distributor, fontSize: 7.5, color: '#374151' },
-              { text: distributorContact, fontSize: 7.5, color: '#374151' },
-              { text: distributorEmail, fontSize: 7.5, color: '#1d4ed8' },
-              { text: distributorPhone, fontSize: 7.5, color: '#374151', margin: [0, 0, 0, 6] },
-              { text: 'Bill To Address:', fontSize: 7.5, bold: true, color: '#111827' },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 12],
+            ...categoryRows,
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#334155',
+          vLineColor: () => '#334155',
+          fillColor: (rowIndex: number) => (rowIndex === 0 ? '#1e293b' : '#0f172a'),
+        },
+        margin: [0, 0, 0, 14],
       },
 
       // ── Itemized Line Items Table ──
       {
+        text: 'ITEMISED BILL OF MATERIALS & COMMERCIAL BREAKDOWN',
+        fontSize: 8,
+        bold: true,
+        color: '#94a3b8',
+        margin: [0, 0, 0, 4],
+      },
+      {
         table: {
           headerRows: 1,
-          widths: [14, 82, 38, '*', 20, 52, 52, 28, 54],
-          body: cpqTableBody,
+          widths: [48, 85, '*', 32, 28, 78, 80, 42, 85],
+          body: tableBody,
         },
         layout: {
-          hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length ? 0.75 : 0.4),
-          vLineWidth: () => 0.4,
-          hLineColor: () => '#d1d5db',
-          vLineColor: () => '#e5e7eb',
-          fillColor: (rowIndex: number) => (rowIndex === 0 ? '#f3f4f6' : '#ffffff'),
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#334155',
+          vLineColor: () => '#334155',
         },
         margin: [0, 0, 0, 10],
       },
 
-      // ── Subtotal & Total Block ──
+      // ── Notes & Commercial Disclaimer ──
       {
-        stack: [
-          {
-            text: `SUBTOTAL: ${formatCurrency(summary.totalNetPrice)}`,
-            fontSize: 8.5,
-            bold: true,
-            alignment: 'right',
-            color: '#111827',
-            margin: [0, 4, 0, 3],
-          },
-          {
-            text: `QUOTE TOTAL: USD ${formatCurrency(summary.totalNetPrice).replace('$', '')}`,
-            fontSize: 9.5,
-            bold: true,
-            alignment: 'right',
-            color: '#111827',
-            margin: [0, 0, 0, 3],
-          },
-          {
-            text: 'All dollar amounts shown above are in USD.',
-            fontSize: 7.5,
-            bold: true,
-            color: '#111827',
-            margin: [0, 6, 0, 0],
-          },
-        ],
-        unbreakable: true,
-        margin: [0, 0, 0, 16],
+        text: 'IMPORTANT COMMERCIAL NOTICE & NON-BINDING DISCLAIMER',
+        fontSize: 7.5,
+        bold: true,
+        color: '#f59e0b',
+        margin: [0, 4, 0, 2],
       },
-
-      // ── Page Break to Official Terms & Conditions Page ──
       {
-        text: '',
-        pageBreak: 'before',
-      },
-
-      // ── Official Gigamon Terms & Conditions Page ──
-      {
-        stack: [
-          {
-            text: 'By placing an order with Gigamon based on this quote, the channel partner listed above, if any, shall require, or shall require any sub-reseller to require, the above End Customer to agree to the Terms and Conditions and, to the extent applicable, the Supplemental Terms set forth below.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 6],
-          },
-          {
-            text: 'If the End Customer listed above is placing an order directly with Gigamon based on this quote, by submitting a purchase order, installing or using the Gigamon products and/or services, End Customer agrees (i) the products and/or services set forth herein are governed by the Terms and Conditions set forth below unless End Customer has entered into a separate written agreement signed by Gigamon ("Signed Agreement"), which shall govern, and (ii) to the extent applicable the Supplemental Terms set forth below apply in addition to the terms of any Signed Agreement or the Terms and Conditions.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 6],
-          },
-          {
-            text: 'The purchaser named in the "Bill to" line of this quote will provide all reasonable assistance (such as documentation or approvals) requested by Gigamon to (i) facilitate the shipping of the order (e.g. proof of receipt & delivery) or (ii) comply with legal/regulatory requirements.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 10],
-          },
-          {
-            text: 'Terms & Conditions',
-            fontSize: 8,
-            bold: true,
-            color: '#111827',
-            margin: [0, 0, 0, 3],
-          },
-          {
-            text: 'End Customer\'s access and use of the Gigamon products and / or services shall be governed by the applicable terms and conditions set forth at https://www.gigamon.com/support/terms-and-conditions.html. Any additional or different pre-printed terms on any purchase order or other document are rejected and have no force or effect on Gigamon. All pricing in this quote does not include shipping costs, insurance, customs duty, tariffs, or taxes.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 6],
-          },
-          {
-            text: 'Late Renewals. For any late-renewals of support or term license subscriptions, Customer will be charged a reinstatement fee equal to fifteen (15%) percent of the annual value of the renewal fee, in addition to retroactive fees to cover the renewed support or term-license subscription, commencing from the prior expiration date through the expiration of the applicable renewal period.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 10],
-          },
-          {
-            text: 'Supplemental Terms',
-            fontSize: 8,
-            bold: true,
-            color: '#111827',
-            margin: [0, 0, 0, 3],
-          },
-          {
-            text: 'Term-Licensed Software: If this quote includes products offered on a term license basis, such software is provided for the duration of the term license set forth in this quote, beginning on the date the license keys are provided to End Customer, the date the Software is made available for download by End Customer, or for embedded software the date the hardware is delivered. At the expiration of the term license, End Customer shall have no further right to use such Gigamon products and shall remove the Gigamon software from its network infrastructure and not use it or transfer it to any third party.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 6],
-          },
-          {
-            text: 'Data Use Limits Software: If this quote includes products with data consumption limits (e.g. with the SKU prefix of "VBL" or "GEM" or that are otherwise designated as data metered products) such products are governed by the Supplemental Terms set forth at https://www.gigamon.com/DataUseTerms.pdf.',
-            fontSize: 6.8,
-            color: '#374151',
-            margin: [0, 0, 0, 6],
-          },
-        ],
+        text:
+          'This document and the associated figures represent an indicative, illustrative order of magnitude quotation generated as an informal engineering and budgetary aid for systems engineers, sales directors, and customers. It is strictly non-binding, non-contractual, and does not constitute a formal commercial offer or binding commitment by Gigamon. Gigamon reserves the right to modify, adjust, or decline any indicated quantities, configurations, part numbers, list prices, discounts, or terms. Formal, binding commercial proposals must be requested and issued through official Gigamon sales channels and authorised partners.',
+        fontSize: 6.5,
+        color: '#9ca3af',
+        lineHeight: 1.25,
       },
     ],
     styles: {
       tableHeader: {
-        fontSize: 6.8,
+        fontSize: 6.5,
         bold: true,
-        color: '#111827',
-        fillColor: '#f3f4f6',
-        margin: [0, 2, 0, 2],
+        color: '#ffffff',
+        fillColor: '#1e293b',
+        margin: [1, 2, 1, 2],
       },
     },
   };
 }
+
 

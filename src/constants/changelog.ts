@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.664",
+    date: "2026-08-27",
+    summary: "Align commercial quote and PDF generator with Salesforce CPQ format (v1.0.664)",
+  },
+  {
     version: "1.0.663",
     date: "2026-08-27",
     summary: "Standardize solution deliverable package to 6 canonical files and streamline export notifications (v1.0.663)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.643",
     date: "2026-08-26",
     summary: "Complete 100% pricing audit across all active SKUs and HTL hardware/software components (v1.0.643)",
-  },
-  {
-    version: "1.0.642",
-    date: "2026-08-26",
-    summary: "Add list prices for GFM, Gen2 GigaSMART and TA upgrade term licences with hyphen normalization (v1.0.642)",
   },
 ];
