@@ -8,6 +8,7 @@ import { getChassisPorts, getPortOpticMap, getOpticCage, allowedBreakoutLcOptics
 import { isParallelBreakoutOptic, boardFeedsBreakoutPanel } from '../../../utils/breakoutRules';
 import { SUPPORTED_TAP_OPTICS, NODE_TYPES } from '../../../constants/nodeTypes';
 import { getCandidateReplacementOptics, performOpticBulkReplace } from '../../../utils/opticBulkReplace';
+import { reallocateChassisOpticsAndPorts } from '../../../utils/opticReallocation';
 
 /** How long a newly-fitted port stays highlighted on the canvas node's port map. */
 const FLASH_DURATION_MS = 2500;
@@ -301,6 +302,22 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     }
   };
 
+  const handleAutoReallocate = () => {
+    try {
+      const result = reallocateChassisOpticsAndPorts(selectedNode.id, nodes, edges);
+      useStore.getState().setNodes(result.updatedNodes);
+      useStore.getState().setEdges(result.updatedEdges);
+      setReplaceFeedback({
+        type: 'success',
+        message: `Successfully re-allocated ${result.totalOpticsCount} optic(s) and re-aligned ${result.reallocatedLinksCount} port link(s) across ${result.affectedBoards.join(', ') || 'available boards'}.`,
+      });
+      setTimeout(() => setReplaceFeedback(null), 6000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setReplaceFeedback({ type: 'error', message: `Re-allocation failed: ${msg}` });
+    }
+  };
+
   // ─── Tool links check for suggestions ─────────────────────────────
   const toolsReached = new Set<string>();
   const visited = new Set<string>();
@@ -367,10 +384,36 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             {totalOptics < totalOpticsNeeded
               ? `Insufficient transceivers: Missing ${totalOpticsNeeded - totalOptics} optics`
               : (missingMM > 0 || missingSM > 0 || missingCopper > 0)
-                ? 'Fiber type or speed mismatch on TAP links'
+                ? 'Fibre type or speed mismatch on TAP links'
                 : 'All links fully allocated and verified'}
           </strong>
         </div>
+
+        <button
+          onClick={handleAutoReallocate}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            width: '100%',
+            marginTop: '10px',
+            padding: '7px 12px',
+            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(30, 58, 138, 0.35))',
+            border: '1px solid #38bdf8',
+            borderRadius: '5px',
+            color: '#38bdf8',
+            fontWeight: 600,
+            fontSize: '11px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(56, 189, 248, 0.15)',
+            transition: 'all 0.15s ease',
+          }}
+          title="Automatically re-allocate transceivers cleanly across physical boards (Base board and expansion slots), eliminate surplus unlinked optics, and re-align all port links in sequential order."
+        >
+          <span>⚡</span>
+          <span>Auto-Reallocate & Re-align Optics</span>
+        </button>
       </div>
 
       {/* Optics Deployment Status */}

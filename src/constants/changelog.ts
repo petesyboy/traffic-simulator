@@ -18,7 +18,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.0.656",
     date: "2026-08-26",
-    summary: "Add missing SMT-HC3-C08 dependency to HTL SSL Decrypt licence (v1.0.656)",
+    summary: "Refine CPQ eligibility rules and 41% calculation for GSS-HW-AHR-GMO (v1.0.656)",
   },
   {
     version: "1.0.655",

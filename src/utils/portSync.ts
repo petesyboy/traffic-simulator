@@ -152,7 +152,9 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
       return edge;
     }
 
-    const required = getRequiredPortCount(sourceNode, targetNode);
+    const required = isTapNode(sourceNode) || isTapNode(targetNode)
+      ? getRequiredPortCount(sourceNode, targetNode)
+      : Math.max(1, existing.length);
     const pinned = existing.filter(l => l.pinned).slice(0, required);
     const autoCount = Math.max(0, required - pinned.length);
 

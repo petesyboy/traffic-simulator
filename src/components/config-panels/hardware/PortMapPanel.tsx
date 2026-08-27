@@ -10,6 +10,7 @@ import type { Edge } from '@xyflow/react';
 import { useStore } from '../../../store/store';
 import type { CustomNode, HardwareNodeData, PortLink } from '../../../store/types';
 import { getChassisPorts, getPortOpticMap } from '../../../utils/ports';
+import { reallocateChassisOpticsAndPorts } from '../../../utils/opticReallocation';
 
 interface PortMapPanelProps {
   selectedNode: CustomNode;
@@ -101,25 +102,44 @@ export const PortMapPanel: React.FC<PortMapPanelProps> = ({ selectedNode }) => {
     );
   };
 
+  const handleReallocateAll = () => {
+    const result = reallocateChassisOpticsAndPorts(selectedNode.id, nodes, edges);
+    useStore.getState().setNodes(result.updatedNodes);
+    useStore.getState().setEdges(result.updatedEdges);
+  };
+
   const pinnedCount = rows.filter((r) => r.pinned).length;
 
   return (
     <div className="panel-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h3 className="text-base font-semibold m-0">🗺️ Port Map</h3>
-        {pinnedCount > 0 && (
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <button
-            onClick={handleResetAll}
+            onClick={handleReallocateAll}
             style={{
-              fontSize: '9px', background: 'transparent', color: '#00e5ff',
-              border: '1px solid rgba(0,229,255,0.4)', borderRadius: '3px',
-              padding: '2px 6px', cursor: 'pointer',
+              fontSize: '9px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '3px',
+              padding: '2px 6px', cursor: 'pointer', fontWeight: 600,
             }}
-            title="Clear manual pins and let ports be allocated automatically again"
+            title="Re-allocate optics cleanly across physical boards and re-align port links in sequential order"
           >
-            Reset to auto
+            ⚡ Re-align optics & ports
           </button>
-        )}
+          {pinnedCount > 0 && (
+            <button
+              onClick={handleResetAll}
+              style={{
+                fontSize: '9px', background: 'transparent', color: '#00e5ff',
+                border: '1px solid rgba(0,229,255,0.4)', borderRadius: '3px',
+                padding: '2px 6px', cursor: 'pointer',
+              }}
+              title="Clear manual pins and let ports be allocated automatically again"
+            >
+              Reset to auto
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ background: '#111', padding: '8px', borderRadius: '4px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {rows.map((row) => {
