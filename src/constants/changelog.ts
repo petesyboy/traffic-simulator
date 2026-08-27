@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.667",
+    date: "2026-08-27",
+    summary: "Add 20-pack vs discrete optics toggle in QuoteModal (v1.0.667)",
+  },
+  {
     version: "1.0.666",
     date: "2026-08-27",
     summary: "Add AHR qualification badge to eligible hardware in QuoteModal (v1.0.666)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.645",
     date: "2026-08-26",
     summary: "Add semantic English description validation for hardware vs software category resolution (v1.0.645)",
-  },
-  {
-    version: "1.0.644",
-    date: "2026-08-26",
-    summary: "Ensure hardware modules (PRT-*-HW, SMT-*-HW) are classified as Module rather than Software (v1.0.644)",
   },
 ];

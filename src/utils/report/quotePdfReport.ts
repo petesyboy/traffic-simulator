@@ -85,10 +85,22 @@ export function buildQuotePdfDocDefinition(
   summary.items.forEach((item, index) => {
     const isZebra = index % 2 === 1;
     const bg = isZebra ? '#1f2937' : '#111827';
+    const isAhrEligible = Boolean(item.inclInSupport);
+
+    const skuCell: Content = isAhrEligible
+      ? {
+          text: [
+            { text: item.sku, bold: true, color: '#38bdf8' },
+            { text: ' [AHR]', bold: true, color: '#f472b6', fontSize: 5.5 },
+          ],
+          fontSize: 6.5,
+          fillColor: bg,
+        }
+      : { text: item.sku, fontSize: 6.5, bold: true, color: '#38bdf8', fillColor: bg };
 
     tableBody.push([
       { text: item.category, fontSize: 6.5, color: '#9ca3af', fillColor: bg },
-      { text: item.sku, fontSize: 6.5, bold: true, color: '#38bdf8', fillColor: bg },
+      skuCell,
       {
         text: item.description + (item.note ? `\nNote: ${item.note}` : ''),
         fontSize: 6.5,
@@ -121,6 +133,13 @@ export function buildQuotePdfDocDefinition(
     pageSize: 'A4',
     pageOrientation: 'landscape',
     pageMargins: [24, 24, 24, 26],
+    watermark: {
+      text: 'DRAFT',
+      color: '#38bdf8',
+      opacity: 0.05,
+      bold: true,
+      italics: false,
+    },
     background: () => ({
       canvas: [
         {
