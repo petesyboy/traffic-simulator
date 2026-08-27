@@ -3,6 +3,7 @@ import { useStore } from '../../store/store';
 import { PRESET_SCENARIOS } from '../../constants/presets';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { exportSolutionToDirectoryOrZip } from '../../utils/solutionPackage';
 import pkg from '../../../package.json';
 
 const SLOT_PREFIX = 'fm-simulator-slot-';
@@ -100,6 +101,51 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
       localStorage.setItem('fm-simulator-last-slot', name);
       onSaved(name);
       onClose();
+    }
+  };
+
+  const [isExportingAll, setIsExportingAll] = useState(false);
+  const [exportAllStatus, setExportAllStatus] = useState<string | null>(null);
+
+  const handleExportAllPackage = async () => {
+    const name = slotName.trim() || currentScenarioName || 'Solution';
+    setIsExportingAll(true);
+    setExportAllStatus('Preparing deliverables (all reports, CSVs, JSON, diagram)...');
+    try {
+      const res = await exportSolutionToDirectoryOrZip({
+        nodes,
+        edges,
+        trafficStreams,
+        currentScenarioName: name,
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        disableDcWarnings,
+        panelTextScale,
+        showGrid,
+        snapToGrid,
+        onProgress: (status) => setExportAllStatus(status),
+      });
+
+      if (res.success) {
+        setCurrentScenarioName(name);
+        localStorage.setItem('fm-simulator-last-slot', name);
+        onSaved(name);
+        setExportAllStatus(
+          res.directoryName
+            ? `Successfully dumped all ${res.fileCount} files into folder "${res.directoryName}"!`
+            : `Successfully exported all ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+        );
+        setTimeout(() => onClose(), 1500);
+      } else {
+        setExportAllStatus(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setExportAllStatus(err instanceof Error ? err.message : 'Export failed.');
+    } finally {
+      setIsExportingAll(false);
     }
   };
 
@@ -360,29 +406,62 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
             {/* Email / Share Topology File Row */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', color: '#888', marginBottom: '6px' }}>
-                Export Shareable Scenario File (Email to others)
+                Export Deliverables (Folder / ZIP / JSON)
               </label>
-              <button
-                onClick={handleExportFile}
-                style={{
-                  width: '100%',
-                  padding: '9px',
-                  background: 'rgba(76,175,80,0.15)',
-                  border: '1px solid rgba(76,175,80,0.4)',
-                  borderRadius: '4px',
-                  color: '#81c784',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                }}
-                title="Download JSON scenario file"
-              >
-                ✉️ Export Topology JSON File
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleExportAllPackage}
+                  disabled={isExportingAll}
+                  style={{
+                    width: '100%',
+                    padding: '9px',
+                    background: 'rgba(225, 89, 42, 0.15)',
+                    border: '1px solid rgba(225, 89, 42, 0.4)',
+                    borderRadius: '4px',
+                    color: '#E1592A',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: isExportingAll ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                  title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
+                >
+                  📁 {isExportingAll ? 'Dumping All Deliverables...' : 'Dump All to Folder (Directory Chooser)...'}
+                </button>
+
+                <button
+                  onClick={handleExportFile}
+                  disabled={isExportingAll}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    background: 'rgba(76,175,80,0.15)',
+                    border: '1px solid rgba(76,175,80,0.4)',
+                    borderRadius: '4px',
+                    color: '#81c784',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: isExportingAll ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                  title="Download JSON scenario file"
+                >
+                  ✉️ Export Topology JSON File Only
+                </button>
+              </div>
+
+              {exportAllStatus && (
+                <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '6px', textAlign: 'center' }}>
+                  {exportAllStatus}
+                </div>
+              )}
               <span
                 style={{
                   display: 'block',
@@ -392,7 +471,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                   textAlign: 'center',
                 }}
               >
-                Downloads a file that you can attach to an email so others can import it.
+                Dump All exports all 8 deliverables (PDF reports, CSVs, quotes, diagrams, JSON) directly into your chosen folder.
               </span>
             </div>
           </div>

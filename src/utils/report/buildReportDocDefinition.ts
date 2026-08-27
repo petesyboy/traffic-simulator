@@ -705,7 +705,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     margin: [0, 0, 0, 8],
   });
 
-  content.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
+  if (diagramDataUrl) {
+    content.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
+  }
 
   // Helper to calculate schematic metrics for any site subset
   const getSiteSchematicMetrics = (_siteName: string, siteNodes: CustomNode[]) => {

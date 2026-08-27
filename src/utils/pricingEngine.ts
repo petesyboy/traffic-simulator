@@ -511,7 +511,8 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
     const skuItem = skuService.getSKUByPartNumber(row.sku);
     const category = mapBomTypeToQuoteCategory(row.type, row.sku, row.description || skuItem?.description);
 
-    const isTermSku = row.sku.includes('-SW-TM') || row.sku.endsWith('-TM');
+    const skuStr = row.sku || '';
+    const isTermSku = skuStr.includes('-SW-TM') || skuStr.endsWith('-TM');
     const isMonthly = Boolean(
       isTermSku ||
         (row.term &&

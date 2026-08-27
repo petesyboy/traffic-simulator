@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.659",
+    date: "2026-08-27",
+    summary: "Ensure architecture PDF filename strictly defaults to Gigamon_Architecture_<solution>.pdf (v1.0.659)",
+  },
+  {
     version: "1.0.658",
     date: "2026-08-27",
     summary: "Standardize export and report naming across BOM, architecture PDFs, topology JSON, quotes, and diagrams (v1.0.658)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.639",
     date: "2026-08-26",
     summary: "Add catalogue list prices for HC3A3/A4 & Gen3 perpetual licences, categorize GigaSMART licences as Software (v1.0.639)",
-  },
-  {
-    version: "1.0.638",
-    date: "2026-08-26",
-    summary: "Honour SKU types, terms, and capital vs term pricing when switching between Perpetual and HTL (v1.0.638)",
   },
 ];

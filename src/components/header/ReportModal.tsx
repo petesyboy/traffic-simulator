@@ -27,6 +27,7 @@ import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename, type ExportDocumentType } from '../../utils/exportNaming';
+import { exportSolutionToDirectoryOrZip } from '../../utils/solutionPackage';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
@@ -251,6 +252,46 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     }
   };
 
+  const [isExportingAll, setIsExportingAll] = useState(false);
+  const [exportAllStatus, setExportAllStatus] = useState<string | null>(null);
+
+  const handleExportAll = async () => {
+    setIsExportingAll(true);
+    setError(null);
+    setExportAllStatus('Preparing deliverables (all reports, CSVs, JSON, diagram)...');
+    try {
+      const res = await exportSolutionToDirectoryOrZip({
+        nodes,
+        edges,
+        trafficStreams,
+        currentScenarioName,
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        peakNodeRxMbps,
+        nodeMetrics,
+        isRunning,
+        onProgress: (status) => setExportAllStatus(status),
+      });
+
+      if (res.success) {
+        setExportAllStatus(
+          res.directoryName
+            ? `Successfully dumped all ${res.fileCount} files into folder "${res.directoryName}"!`
+            : `Successfully exported all ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+        );
+      } else {
+        setExportAllStatus(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export deliverables package.');
+      setExportAllStatus(null);
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
   const buttonLabel = {
     idle: 'Generate Report',
     capturing: 'Capturing diagram…',
@@ -365,12 +406,35 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           />
         </div>
 
-        <button className="btn btn-primary" onClick={handleGenerate} disabled={busy}>
-          {buttonLabel}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleGenerate} disabled={busy || isExportingAll}>
+            {buttonLabel}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleExportAll}
+            disabled={busy || isExportingAll}
+            title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
+            style={{
+              padding: '0 14px',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              border: '1px solid #E1592A',
+              color: '#E1592A',
+              background: 'rgba(225, 89, 42, 0.08)',
+            }}
+          >
+            {isExportingAll ? 'Dumping All...' : '📁 Dump All to Folder...'}
+          </button>
+        </div>
 
         {error && <div style={{ fontSize: '11px', color: '#ff5252', lineHeight: 1.4 }}>{error}</div>}
-        {step === 'done' && !error && <div style={{ fontSize: '11px', color: '#4caf50' }}>Report downloaded.</div>}
+        {exportAllStatus && <div style={{ fontSize: '11px', color: '#4caf50', lineHeight: 1.4 }}>{exportAllStatus}</div>}
+        {step === 'done' && !error && !exportAllStatus && <div style={{ fontSize: '11px', color: '#4caf50' }}>Report downloaded.</div>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
           <button className="btn btn-ghost" onClick={onClose}>

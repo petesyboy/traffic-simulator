@@ -14,6 +14,7 @@ import { validateConfiguration, detectMixedSiteAssignment } from '../utils/bomEn
 import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagram';
 import { getStandardExportFilename } from '../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
+import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
@@ -81,6 +82,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const currentScenarioName = useStore((state) => state.currentScenarioName);
   const setCurrentScenarioName = useStore((state) => state.setCurrentScenarioName);
   const projectRegion = useStore((state) => state.projectRegion);
+  const trafficStreams = useStore((state) => state.trafficStreams);
+  const projectLicenseMode = useStore((state) => state.projectLicenseMode);
+  const defaultTermDuration = useStore((state) => state.defaultTermDuration);
+  const disableDcWarnings = useStore((state) => state.disableDcWarnings);
+  const showGrid = useStore((state) => state.showGrid);
+  const snapToGrid = useStore((state) => state.snapToGrid);
+  const peakNodeRxMbps = useStore((state) => state.peakNodeRxMbps);
+  const nodeMetrics = useStore((state) => state.nodeMetrics);
   const duplicateSolution = useStore((state) => state.duplicateSolution);
   const isTradeShowDemoActive = useStore((state) => state.isTradeShowDemoActive);
   const setTradeShowDemoActive = useStore((state) => state.setTradeShowDemoActive);
@@ -109,6 +118,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [nameDraft, setNameDraft] = useState('');
   const [showDemoMenu, setShowDemoMenu] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [isExportingPackage, setIsExportingPackage] = useState(false);
+  const [exportPackageStatus, setExportPackageStatus] = useState<string | null>(null);
   const demoMenuRef = React.useRef<HTMLDivElement>(null);
   const projectMenuRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -196,6 +207,47 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       .catch((err) => {
         console.error('oops, something went wrong!', err);
       });
+  };
+
+  const handleDumpAllToDirectory = async () => {
+    setIsExportingPackage(true);
+    setExportPackageStatus('Preparing all solution files (PDFs, CSVs, JSON, PNG)...');
+    try {
+      const res = await exportSolutionToDirectoryOrZip({
+        nodes,
+        edges,
+        trafficStreams,
+        currentScenarioName,
+        advancedMode,
+        projectLicenseMode,
+        defaultTermDuration,
+        projectRegion,
+        disableDcWarnings,
+        panelTextScale,
+        showGrid,
+        snapToGrid,
+        peakNodeRxMbps,
+        nodeMetrics,
+        isRunning,
+        onProgress: (status) => setExportPackageStatus(status),
+      });
+      if (res.success) {
+        setExportPackageStatus(
+          res.directoryName
+            ? `Successfully dumped all ${res.fileCount} files into folder "${res.directoryName}"!`
+            : `Successfully saved all ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+        );
+        setTimeout(() => setExportPackageStatus(null), 5000);
+      } else {
+        setExportPackageStatus(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setExportPackageStatus(err instanceof Error ? err.message : 'Export failed.');
+      setTimeout(() => setExportPackageStatus(null), 5000);
+    } finally {
+      setIsExportingPackage(false);
+    }
   };
 
   return (
@@ -512,6 +564,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   <div className="header-dropdown-menu right-aligned">
                     <button
                       className="header-dropdown-item"
+                      disabled={isExportingPackage}
+                      onClick={() => {
+                        setShowProjectMenu(false);
+                        handleDumpAllToDirectory();
+                      }}
+                      style={{ color: '#E1592A', fontWeight: 600 }}
+                      title="Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram"
+                    >
+                      <FolderOpenIcon size={14} />
+                      <span>{isExportingPackage ? 'Dumping All Files...' : '📁 Dump All to Folder (Directory Chooser)...'}</span>
+                    </button>
+                    <div className="header-dropdown-divider" />
+                    <button
+                      className="header-dropdown-item"
                       onClick={() => {
                         onSaveFileClick();
                         setShowProjectMenu(false);
@@ -603,6 +669,46 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           </div>
         </header>
       </div>
+
+      {exportPackageStatus && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 9999,
+            background: '#1E293B',
+            color: '#F8FAFC',
+            border: '1px solid #38BDF8',
+            borderRadius: '8px',
+            padding: '12px 18px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            fontSize: '13px',
+            fontWeight: 500,
+            maxWidth: '450px',
+            animation: 'fadeIn 0.2s ease-in-out',
+          }}
+        >
+          {isExportingPackage ? (
+            <div
+              style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid #38BDF8',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+          ) : (
+            <span style={{ fontSize: '18px' }}>📦</span>
+          )}
+          <span>{exportPackageStatus}</span>
+        </div>
+      )}
     </>
   );
 };
