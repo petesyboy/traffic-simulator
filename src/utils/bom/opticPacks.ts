@@ -109,7 +109,13 @@ export function optimizeOpticPacks(rows: BomRow[], skus: Record<string, string>)
   return result;
 }
 
-/** The project-wide, pack-optimized BOM: aggregate every row by SKU, then roll big quantities up into packs. */
-export function buildProjectWideOpticBom(rows: BomRow[], skus: Record<string, string>): BomRow[] {
-  return optimizeOpticPacks(aggregateBomRowsBySku(rows), skus);
+/** The project-wide BOM: aggregate every row by SKU, and optionally roll quantities up into 20-packs. */
+export function buildProjectWideOpticBom(
+  rows: BomRow[],
+  skus: Record<string, string>,
+  useOpticPacks: boolean = true,
+): BomRow[] {
+  const aggregated = aggregateBomRowsBySku(rows);
+  return useOpticPacks ? optimizeOpticPacks(aggregated, skus) : aggregated;
 }
+

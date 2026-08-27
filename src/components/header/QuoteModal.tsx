@@ -100,6 +100,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const [includeELearning, setIncludeELearning] = useState<boolean>(
     initialWorkspace?.includeELearning ?? true,
   );
+  const [useOpticPacks, setUseOpticPacks] = useState<boolean>(
+    initialWorkspace?.useOpticPacks ?? true,
+  );
 
   // CPQ Metadata State (Collapsible drawer for customer/partner headers)
   const [isCpqDetailsOpen, setIsCpqDetailsOpen] = useState<boolean>(false);
@@ -126,7 +129,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     const rawBom = consolidateSimpleDeviceRows(
       generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
     );
-    const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
+    const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), initialWorkspace?.useOpticPacks ?? true);
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
     return createQuoteItemsFromBom(masterBom, defaultTerm, {
       includeAhr: initialWorkspace?.includeAhr ?? (globalLicenseMode === 'HTL'),
@@ -144,7 +147,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       const rawBom = consolidateSimpleDeviceRows(
         generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
       );
-      const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
+      const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), useOpticPacks);
       const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
       const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm, {
         includeAhr,
@@ -159,7 +162,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       // Clear out stale buffered inputs
       setRawRowInputs({});
     }
-  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning]);
+  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning, useOpticPacks]);
 
   // Track term duration changes: update term for all monthly subscription items
   const prevTermDurationRef = useRef(globalTermDuration);
@@ -214,6 +217,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       excludeOptics,
       freePowerCords,
       spanOnlyMode,
+      useOpticPacks,
       includeAhr,
       includeFmPrime,
       includeELearning,
@@ -226,6 +230,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     excludeOptics,
     freePowerCords,
     spanOnlyMode,
+    useOpticPacks,
     includeAhr,
     includeFmPrime,
     includeELearning,
@@ -663,6 +668,25 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     }
   };
 
+  const handleToggleOpticPacks = (checked: boolean) => {
+    setUseOpticPacks(checked);
+    const rawBom = consolidateSimpleDeviceRows(
+      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+    );
+    const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), checked);
+    const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
+    const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm, {
+      includeAhr,
+      includeFmPrime,
+      includeELearning,
+      chassisCount: nodes.filter(isRackableGigamonEquipment).length,
+    });
+    setItems((prevItems) =>
+      convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm),
+    );
+    setRawRowInputs({});
+  };
+
   // PDF Export handler
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
@@ -925,6 +949,51 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   title="Total commercial investment savings achieved by excluding all transceivers"
                 >
                   ⬇ {formatCurrency(toggleSavings.optics.net)} ({toggleSavings.optics.pct.toFixed(1)}% off)
+                </div>
+              )}
+            </div>
+
+            {/* 20-Pack Optics vs Discrete Singles Checkbox */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: useOpticPacks ? 'rgba(59, 130, 246, 0.15)' : '#1f2937',
+                  border: `1px solid ${useOpticPacks ? '#3b82f6' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: useOpticPacks ? '#60a5fa' : '#9ca3af',
+                  userSelect: 'none',
+                }}
+                title="Toggle between 20-packs (round up for volume multipack savings) and individual/discrete transceivers"
+              >
+                <input
+                  type="checkbox"
+                  checked={useOpticPacks}
+                  onChange={(e) => handleToggleOpticPacks(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#3b82f6' }}
+                />
+                📦 20-Pack Optics
+              </label>
+              {!useOpticPacks && (
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: '#9ca3af',
+                    fontWeight: 'bold',
+                    marginTop: '3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                  }}
+                  title="Discrete mode: quoting exact individual optic counts without multipack bundling"
+                >
+                  Exact Singles
                 </div>
               )}
             </div>

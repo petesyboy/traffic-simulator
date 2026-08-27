@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.666",
+    date: "2026-08-27",
+    summary: "Add AHR qualification badge to eligible hardware in QuoteModal (v1.0.666)",
+  },
+  {
     version: "1.0.664",
     date: "2026-08-27",
     summary: "Align commercial quote and PDF generator with Salesforce CPQ format (v1.0.664)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.644",
     date: "2026-08-26",
     summary: "Ensure hardware modules (PRT-*-HW, SMT-*-HW) are classified as Module rather than Software (v1.0.644)",
-  },
-  {
-    version: "1.0.643",
-    date: "2026-08-26",
-    summary: "Complete 100% pricing audit across all active SKUs and HTL hardware/software components (v1.0.643)",
   },
 ];

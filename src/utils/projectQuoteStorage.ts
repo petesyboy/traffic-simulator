@@ -23,6 +23,7 @@ export interface ProjectQuoteWorkspace {
   excludeOptics: boolean;
   freePowerCords: boolean;
   spanOnlyMode: boolean;
+  useOpticPacks?: boolean;
   includeAhr?: boolean;
   includeFmPrime?: boolean;
   includeELearning?: boolean;
@@ -81,6 +82,7 @@ export function isQuoteDiscountApplied(workspace?: ProjectQuoteWorkspace | null)
     workspace.excludeOptics ||
     workspace.freePowerCords ||
     workspace.spanOnlyMode ||
+    workspace.useOpticPacks === false ||
     workspace.includeAhr ||
     workspace.includeFmPrime ||
     workspace.includeELearning
@@ -102,6 +104,7 @@ export function saveProjectQuoteWorkspace(
     excludeOptics: boolean;
     freePowerCords: boolean;
     spanOnlyMode: boolean;
+    useOpticPacks?: boolean;
     includeAhr?: boolean;
     includeFmPrime?: boolean;
     includeELearning?: boolean;
@@ -133,6 +136,7 @@ export function saveProjectQuoteWorkspace(
     config.excludeOptics ||
     config.freePowerCords ||
     config.spanOnlyMode ||
+    config.useOpticPacks === false ||
     config.includeAhr ||
     config.includeFmPrime ||
     config.includeELearning;
@@ -144,6 +148,7 @@ export function saveProjectQuoteWorkspace(
     excludeOptics: config.excludeOptics,
     freePowerCords: config.freePowerCords,
     spanOnlyMode: config.spanOnlyMode,
+    useOpticPacks: config.useOpticPacks,
     includeAhr: config.includeAhr,
     includeFmPrime: config.includeFmPrime,
     includeELearning: config.includeELearning,

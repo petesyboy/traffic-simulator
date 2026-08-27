@@ -199,4 +199,26 @@ describe('generateBom stays raw per-node/site - no pack optimization baked in', 
     expect(projectWide.find((r) => r.sku === 'SFP-532T-20P')?.qty).toBe(2);
     expect(projectWide.find((r) => r.sku === 'SFP-532T')?.qty).toBe(7);
   });
+
+  it('keeps flat individual optic counts when useOpticPacks is false', () => {
+    const chassis: CustomNode = {
+      id: 'ta',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Core TA25E',
+        model: 'GigaVUE-TA25E',
+        sku: 'TA25E-BASE',
+        powerSupply: 'AC',
+        optics: [{ board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 70 }],
+      },
+    } as CustomNode;
+
+    const rawBom = generateBom([chassis], [], 'HTL', '12');
+    const flatProjectWide = buildProjectWideOpticBom(rawBom, getSkus(), false);
+
+    expect(flatProjectWide.find((r) => r.sku === 'SFP-532T')?.qty).toBe(70);
+    expect(flatProjectWide.find((r) => r.sku === 'SFP-532T-20P')).toBeUndefined();
+  });
 });
+
