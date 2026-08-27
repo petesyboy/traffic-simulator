@@ -132,12 +132,15 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
         setCurrentScenarioName(name);
         localStorage.setItem('fm-simulator-last-slot', name);
         onSaved(name);
+        const quoteNote = res.hasCommercialQuote
+          ? ' (including discounted commercial quote)'
+          : ' (Commercial quote omitted: no discounting configured)';
         setExportAllStatus(
           res.directoryName
-            ? `Successfully dumped all ${res.fileCount} files into folder "${res.directoryName}"!`
-            : `Successfully exported all ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+            ? `Successfully dumped ${res.fileCount} files into folder "${res.directoryName}"${quoteNote}!`
+            : `Successfully exported ${res.fileCount} files in ZIP package "${res.zipFilename}"${quoteNote}!`
         );
-        setTimeout(() => onClose(), 1500);
+        setTimeout(() => onClose(), 2200);
       } else {
         setExportAllStatus(null);
       }

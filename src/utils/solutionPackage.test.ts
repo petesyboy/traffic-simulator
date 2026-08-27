@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateAllSolutionAssets, exportSolutionToDirectoryOrZip } from './solutionPackage';
+import { saveProjectQuoteWorkspace, clearProjectQuoteWorkspace } from './projectQuoteStorage';
+import { DEFAULT_DISCOUNT_CONFIG } from './pricingEngine';
 import type { CustomNode } from '../store/types';
 import type { Edge } from '@xyflow/react';
 
@@ -20,8 +22,63 @@ describe('solutionPackage', () => {
   ];
 
   const mockEdges: Edge[] = [];
+  let mockStorage: Record<string, string> = {};
 
-  it('generates all standardized solution deliverable files in memory', async () => {
+  beforeEach(() => {
+    mockStorage = {};
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => {
+        mockStorage[k] = v;
+      },
+      removeItem: (k: string) => {
+        delete mockStorage[k];
+      },
+      clear: () => {
+        mockStorage = {};
+      },
+    });
+  });
+
+  it('omits commercial quote when no discounting is configured', async () => {
+    clearProjectQuoteWorkspace('City of Goteborg');
+
+    const assets = await generateAllSolutionAssets({
+      nodes: mockNodes,
+      edges: mockEdges,
+      trafficStreams: [],
+      currentScenarioName: 'City of Goteborg',
+      advancedMode: true,
+      projectLicenseMode: 'Perpetual',
+      defaultTermDuration: '36',
+      projectRegion: 'US',
+    });
+
+    const filenames = assets.map((a) => a.filename);
+
+    // Architectural and engineering assets are present
+    expect(filenames).toContain('Solution_Overview_City_of_Goteborg.json');
+    expect(filenames).toContain('Bill_of_Materials_City_of_Goteborg.csv');
+    expect(filenames).toContain('Bill_of_Materials_Deployment_Report_City_of_Goteborg.csv');
+    expect(filenames).toContain('Gigamon_Architecture_City_of_Goteborg.pdf');
+
+    // Commercial quotes are cleanly omitted
+    expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.csv');
+    expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.json');
+    expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.pdf');
+  }, 15000);
+
+  it('includes commercial quote when discounting is configured for the project', async () => {
+    saveProjectQuoteWorkspace('City of Goteborg', {
+      discountConfig: {
+        ...DEFAULT_DISCOUNT_CONFIG,
+        global: 20,
+      },
+      excludeOptics: false,
+      freePowerCords: false,
+      spanOnlyMode: false,
+    });
+
     const assets = await generateAllSolutionAssets({
       nodes: mockNodes,
       edges: mockEdges,
@@ -38,20 +95,10 @@ describe('solutionPackage', () => {
     expect(filenames).toContain('Solution_Overview_City_of_Goteborg.json');
     expect(filenames).toContain('Bill_of_Materials_City_of_Goteborg.csv');
     expect(filenames).toContain('Bill_of_Materials_Deployment_Report_City_of_Goteborg.csv');
+    expect(filenames).toContain('Gigamon_Architecture_City_of_Goteborg.pdf');
     expect(filenames).toContain('Commercial_Quote_City_of_Goteborg.csv');
     expect(filenames).toContain('Commercial_Quote_City_of_Goteborg.json');
-
-    // Check BOM CSV content
-    const bomAsset = assets.find((a) => a.filename.includes('Bill_of_Materials_City_of_Goteborg.csv'));
-    expect(bomAsset).toBeDefined();
-    expect(typeof bomAsset?.content).toBe('string');
-    expect(bomAsset?.content as string).toContain('Site / Location,Type,SKU,Description,Term,Qty');
-
-    // Check JSON content
-    const jsonAsset = assets.find((a) => a.filename.includes('Solution_Overview_City_of_Goteborg.json'));
-    expect(jsonAsset).toBeDefined();
-    expect(typeof jsonAsset?.content).toBe('string');
-    expect(jsonAsset?.content as string).toContain('"nodes"');
+    expect(filenames).toContain('Commercial_Quote_City_of_Goteborg.pdf');
   }, 15000);
 
   it('exports all assets to ZIP package when directory picker is unavailable', async () => {

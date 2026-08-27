@@ -36,6 +36,11 @@ import {
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import { buildQuotePdfDocDefinition } from '../../utils/report/quotePdfReport';
+import {
+  getProjectQuoteWorkspace,
+  saveProjectQuoteWorkspace,
+  clearProjectQuoteWorkspace,
+} from '../../utils/projectQuoteStorage';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 
 export interface QuoteModalProps {
@@ -121,26 +126,61 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     }
   }, [globalTermDuration]);
 
+  // Project-specific quote workspace restoration
+  const initialWorkspace = useMemo(
+    () => getProjectQuoteWorkspace(currentScenarioName),
+    [currentScenarioName],
+  );
+
   // Category discount matrix
-  const [discountConfig, setDiscountConfig] = useState<DiscountCategoryConfig>(DEFAULT_DISCOUNT_CONFIG);
+  const [discountConfig, setDiscountConfig] = useState<DiscountCategoryConfig>(
+    initialWorkspace?.discountConfig || DEFAULT_DISCOUNT_CONFIG,
+  );
   // Raw string state for discount inputs to comply with React number input rules
-  const [rawDiscountInputs, setRawDiscountInputs] = useState<Record<string, string>>({
-    global: '0',
-    software: '0',
-    chassis: '0',
-    modules: '0',
-    optics: '0',
-    taps: '0',
-    support: '0',
-    accessories: '0',
-  });
+  const [rawDiscountInputs, setRawDiscountInputs] = useState<Record<string, string>>(
+    initialWorkspace?.rawDiscountInputs || {
+      global: '0',
+      software: '0',
+      chassis: '0',
+      modules: '0',
+      optics: '0',
+      taps: '0',
+      support: '0',
+      accessories: '0',
+    },
+  );
 
   // Exclude all optics toggle
-  const [excludeOptics, setExcludeOptics] = useState<boolean>(false);
+  const [excludeOptics, setExcludeOptics] = useState<boolean>(
+    initialWorkspace?.excludeOptics ?? false,
+  );
   // Free power cords (100% discount) toggle
-  const [freePowerCords, setFreePowerCords] = useState<boolean>(false);
+  const [freePowerCords, setFreePowerCords] = useState<boolean>(
+    initialWorkspace?.freePowerCords ?? false,
+  );
   // SPAN-only mode toggle (removes TAPs & trays, halves TAP termination optics)
-  const [spanOnlyMode, setSpanOnlyMode] = useState<boolean>(false);
+  const [spanOnlyMode, setSpanOnlyMode] = useState<boolean>(
+    initialWorkspace?.spanOnlyMode ?? false,
+  );
+
+  // Auto-persist discount configuration per project scenario
+  useEffect(() => {
+    saveProjectQuoteWorkspace(currentScenarioName, {
+      discountConfig,
+      rawDiscountInputs,
+      excludeOptics,
+      freePowerCords,
+      spanOnlyMode,
+    });
+  }, [
+    currentScenarioName,
+    discountConfig,
+    rawDiscountInputs,
+    excludeOptics,
+    freePowerCords,
+    spanOnlyMode,
+  ]);
+
   // Collapsible discount schedule for smaller laptop screens
   const [isDiscountsCollapsed, setIsDiscountsCollapsed] = useState<boolean>(false);
 
@@ -372,6 +412,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setExcludeOptics(false);
     setFreePowerCords(false);
     setSpanOnlyMode(false);
+    clearProjectQuoteWorkspace(currentScenarioName);
   };
 
   // Quote Save/Load JSON Notification and File Input Ref
