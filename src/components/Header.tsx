@@ -232,15 +232,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
         onProgress: (status) => setExportPackageStatus(status),
       });
       if (res.success) {
-        const quoteNote = res.hasCommercialQuote
-          ? ' (including discounted commercial quote)'
-          : ' (Commercial quote omitted: no discounting configured)';
         setExportPackageStatus(
           res.directoryName
-            ? `Successfully dumped ${res.fileCount} files into folder "${res.directoryName}"${quoteNote}!`
-            : `Successfully saved ${res.fileCount} files in ZIP package "${res.zipFilename}"${quoteNote}!`
+            ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
+            : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
         );
-        setTimeout(() => setExportPackageStatus(null), 6000);
+        setTimeout(() => setExportPackageStatus(null), 5000);
       } else {
         setExportPackageStatus(null);
       }

@@ -276,13 +276,10 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       });
 
       if (res.success) {
-        const quoteNote = res.hasCommercialQuote
-          ? ' (including discounted commercial quote)'
-          : ' (Commercial quote omitted: no discounting configured)';
         setExportAllStatus(
           res.directoryName
-            ? `Successfully dumped ${res.fileCount} files into folder "${res.directoryName}"${quoteNote}!`
-            : `Successfully exported ${res.fileCount} files in ZIP package "${res.zipFilename}"${quoteNote}!`
+            ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
+            : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
         );
       } else {
         setExportAllStatus(null);

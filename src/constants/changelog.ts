@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.662",
+    date: "2026-08-27",
+    summary: "Conditionally omit commercial quotes from package dump unless project discounting is configured (v1.0.662)",
+  },
+  {
     version: "1.0.660",
     date: "2026-08-27",
     summary: "Add native directory chooser & solution package dump for all deliverables (v1.0.660)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.641",
     date: "2026-08-26",
     summary: "Preserve and convert manually added ad-hoc SKUs between HTL and Perpetual modes (v1.0.641)",
-  },
-  {
-    version: "1.0.640",
-    date: "2026-08-26",
-    summary: "Refactor top header navigation with dropdowns and responsive layout for Mac and laptop screens (v1.0.640)",
   },
 ];

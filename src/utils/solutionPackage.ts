@@ -28,20 +28,12 @@ import { buildProjectWideOpticBom } from './bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from './bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions } from './bom/physicalItems';
 import { buildReportDocDefinition } from './report/buildReportDocDefinition';
-import { buildQuotePdfDocDefinition } from './report/quotePdfReport';
+import { buildUplinkReportDocDefinition } from './report/uplinkReport';
 import { captureTopologyDiagramForReport, captureSiteTopologyDiagramForReport } from './report/captureTopologyDiagram';
 import { captureChassisFrontPanelPng } from './report/captureChassisFrontPanel';
 import { captureRackElevationPng } from './report/captureRackElevation';
 import { autoDeployRack } from './autoRack';
 import { isRackableGigamonEquipment, getModuleSlotPositions, getChassisImagePath } from './hardwareUtils';
-import {
-  createQuoteItemsFromBom,
-  calculateQuoteSummary,
-  DEFAULT_DISCOUNT_CONFIG,
-  type DiscountCategoryConfig,
-  type QuoteLineItem,
-} from './pricingEngine';
-import { getProjectQuoteWorkspace, isQuoteDiscountApplied } from './projectQuoteStorage';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
@@ -283,118 +275,7 @@ export async function generateAllSolutionAssets(
     category: 'csv',
   });
 
-  // ── 4. Commercial Quotation Items, CSV & JSON (Only generated if discounting is configured) ──
-  const quoteWorkspace = getProjectQuoteWorkspace(scenarioName);
-  const includeCommercialQuote = isQuoteDiscountApplied(quoteWorkspace);
-
-  let quoteItems: QuoteLineItem[] = [];
-  let discountConfig: DiscountCategoryConfig = { ...DEFAULT_DISCOUNT_CONFIG };
-  let excludeOptics = false;
-  let freePowerCords = false;
-  let spanOnlyMode = false;
-
-  if (includeCommercialQuote && quoteWorkspace) {
-    onProgress?.('Generating Commercial Quotation Files (Discounted)...');
-    quoteItems = createQuoteItemsFromBom(
-      finalBom,
-      parseInt(defaultTermDuration || '36', 10),
-    );
-    discountConfig = quoteWorkspace.discountConfig || DEFAULT_DISCOUNT_CONFIG;
-    excludeOptics = quoteWorkspace.excludeOptics || false;
-    freePowerCords = quoteWorkspace.freePowerCords || false;
-    spanOnlyMode = quoteWorkspace.spanOnlyMode || false;
-
-    const quoteSummary = calculateQuoteSummary(
-      quoteItems,
-      discountConfig,
-      excludeOptics,
-      freePowerCords,
-      spanOnlyMode,
-    );
-
-    // Quote CSV
-    const quoteHeaders = [
-      'Category',
-      'SKU',
-      'Description',
-      'Qty',
-      'Term (Months)',
-      'Unit List Price',
-      'Ext List Price',
-      'Discount %',
-      'Discount Amount',
-      'Ext Net Price',
-      'Site / Location',
-      'Notes',
-    ].join(',');
-
-    const quoteRowLines = quoteSummary.items.map((i) =>
-      [
-        escapeCsv(i.category),
-        escapeCsv(i.sku),
-        escapeCsv(i.description),
-        i.qty,
-        i.termMonths || '',
-        i.unitListPrice.toFixed(2),
-        i.extendedListPrice.toFixed(2),
-        i.effectiveDiscountPercent.toFixed(1) + '%',
-        i.discountAmount.toFixed(2),
-        i.extendedNetPrice.toFixed(2),
-        escapeCsv(i.site || 'Global / Unassigned'),
-        escapeCsv(i.note || (i.isCustomOrAdHoc ? 'Ad-hoc SKU' : '')),
-      ].join(','),
-    );
-
-    const quoteSummaryRows = [
-      '',
-      `Total Extended List Price,,,,,${quoteSummary.totalListPrice.toFixed(2)}`,
-      `Total Discount Savings,,,,,${quoteSummary.totalDiscountAmount.toFixed(2)},(${quoteSummary.effectiveDiscountPercent.toFixed(1)}% Overall Discount)`,
-      `Total Commercial Net Investment,,,,,${quoteSummary.totalNetPrice.toFixed(2)}`,
-      '',
-      'IMPORTANT DISCLAIMER & NON-BINDING NOTICE: This document and the associated figures represent an indicative illustrative order of magnitude quotation generated as an informal engineering and budgetary aid. It is strictly non-binding and non-contractual. Gigamon is under no obligation to honour indicated quantities configurations part numbers list prices or discount rates. Official binding proposals and terms must be obtained directly through formal Gigamon sales channels and authorised partners.',
-    ];
-
-    const quoteCsv = [quoteHeaders, ...quoteRowLines, ...quoteSummaryRows].join('\n');
-    files.push({
-      filename: getStandardExportFilename('quote-csv', scenarioName),
-      content: quoteCsv,
-      mimeType: 'text/csv',
-      category: 'csv',
-    });
-
-    // Quote JSON
-    const quoteJsonData = {
-      version: '1.0',
-      type: 'commercial-quote',
-      savedAt: new Date().toISOString(),
-      scenarioName,
-      projectLicenseMode,
-      defaultTermDuration,
-      projectRegion,
-      items: quoteItems,
-      discountConfig,
-      rawDiscountInputs: quoteWorkspace.rawDiscountInputs || {},
-      excludeOptics,
-      freePowerCords,
-      spanOnlyMode,
-      summarySnapshot: {
-        totalListPrice: quoteSummary.totalListPrice,
-        totalDiscountAmount: quoteSummary.totalDiscountAmount,
-        totalNetPrice: quoteSummary.totalNetPrice,
-        effectiveDiscountPercent: quoteSummary.effectiveDiscountPercent,
-        activeLineCount: quoteSummary.activeLineCount,
-        totalQty: quoteSummary.totalQty,
-      },
-    };
-    files.push({
-      filename: getStandardExportFilename('quote-json', scenarioName),
-      content: JSON.stringify(quoteJsonData, null, 2),
-      mimeType: 'application/json',
-      category: 'json',
-    });
-  }
-
-  // ── 5. Diagram PNG Screenshot ──
+  // ── 4. Diagram PNG Screenshot ──
   onProgress?.('Capturing Topology Diagram PNG...');
   let diagramDataUrl: string | undefined;
   try {
@@ -412,8 +293,8 @@ export async function generateAllSolutionAssets(
     console.warn('Topology PNG capture failed, continuing:', err);
   }
 
-  // ── 6. PDF Rendering (Architecture Spec & Commercial Quote) ──
-  onProgress?.('Rendering PDF Reports via pdfmake...');
+  // ── 5. PDF Technical Spec & Executive Brief Rendering ──
+  onProgress?.('Rendering Architecture Spec & Uplink PDFs via pdfmake...');
   try {
     const pdfMake = await loadPdfMake();
     const logoDataUrl = await fetchAsDataUrl(gigamonLogo).catch(() => undefined);
@@ -470,14 +351,13 @@ export async function generateAllSolutionAssets(
       }
     }
 
-    // A. Architecture PDF
-    const archDocDef = buildReportDocDefinition({
+    const reportInput: import('./report/buildReportDocDefinition').ReportInput = {
       nodes: currentNodes,
       edges,
       trafficStreams: trafficStreams || [],
       projectName: scenarioName,
       projectRegion: projectRegion || 'US',
-      projectLicenseMode: (projectLicenseMode === 'HTL' ? 'HTL' : 'Perpetual'),
+      projectLicenseMode: projectLicenseMode === 'HTL' ? 'HTL' : 'Perpetual',
       defaultTermDuration: defaultTermDuration || '36',
       peakNodeRxMbps: peakNodeRxMbps || {},
       advancedMode: Boolean(advancedMode),
@@ -488,10 +368,11 @@ export async function generateAllSolutionAssets(
       chassisFrontPanelImages,
       siteRackImages,
       siteDiagrams,
-    });
+    };
 
+    // A. Signal Path Engineering Technical Spec PDF
+    const archDocDef = buildReportDocDefinition(reportInput);
     const archBlob = await renderPdfDocToBlob(pdfMake.createPdf(archDocDef));
-
     files.push({
       filename: getStandardExportFilename('architecture-pdf', scenarioName),
       content: archBlob,
@@ -499,31 +380,15 @@ export async function generateAllSolutionAssets(
       category: 'pdf',
     });
 
-    // B. Commercial Quote PDF (Only generated if discounting is configured)
-    if (includeCommercialQuote && quoteItems.length > 0) {
-      const quoteDocDef = buildQuotePdfDocDefinition(
-        quoteItems,
-        discountConfig,
-        excludeOptics,
-        freePowerCords,
-        spanOnlyMode,
-        {
-          scenarioName,
-          projectLicenseMode,
-          defaultTermDuration,
-          projectRegion,
-        },
-      );
-
-      const quotePdfBlob = await renderPdfDocToBlob(pdfMake.createPdf(quoteDocDef));
-
-      files.push({
-        filename: getStandardExportFilename('quote-pdf', scenarioName),
-        content: quotePdfBlob,
-        mimeType: 'application/pdf',
-        category: 'pdf',
-      });
-    }
+    // B. Uplink Executive Outcome Brief PDF
+    const uplinkDocDef = buildUplinkReportDocDefinition(reportInput);
+    const uplinkBlob = await renderPdfDocToBlob(pdfMake.createPdf(uplinkDocDef));
+    files.push({
+      filename: getStandardExportFilename('uplink-pdf', scenarioName),
+      content: uplinkBlob,
+      mimeType: 'application/pdf',
+      category: 'pdf',
+    });
   } catch (err) {
     console.warn('PDF generation in solution package encountered an error:', err);
   }
@@ -543,13 +408,9 @@ export async function exportSolutionToDirectoryOrZip(
   directoryName?: string;
   zipFilename?: string;
   fileCount: number;
-  hasCommercialQuote: boolean;
 }> {
   const scenarioName = options.currentScenarioName || 'Solution';
   options.onProgress?.('Preparing solution deliverables...');
-
-  const quoteWorkspace = getProjectQuoteWorkspace(scenarioName);
-  const hasCommercialQuote = isQuoteDiscountApplied(quoteWorkspace);
 
   const assets = await generateAllSolutionAssets(options);
 
@@ -578,12 +439,11 @@ export async function exportSolutionToDirectoryOrZip(
         success: true,
         directoryName: dirHandle.name,
         fileCount: assets.length,
-        hasCommercialQuote,
       };
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
         // User cancelled folder chooser
-        return { success: false, fileCount: 0, hasCommercialQuote };
+        return { success: false, fileCount: 0 };
       }
       // Otherwise fall through to ZIP package fallback
       console.warn('showDirectoryPicker unavailable or threw, falling back to ZIP package:', err);
@@ -628,6 +488,5 @@ export async function exportSolutionToDirectoryOrZip(
     success: saveRes.saved,
     zipFilename: saveRes.filename,
     fileCount: assets.length,
-    hasCommercialQuote,
   };
 }
