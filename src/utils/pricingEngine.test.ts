@@ -956,5 +956,57 @@ describe('pricingEngine', () => {
       const ahrLine = summary.items.find((i) => i.sku === 'GSS-HW-AHR-GMO');
       expect(ahrLine!.extendedListPrice).toBe(6000);
     });
+
+    it('creates CPQ AHR, FM Prime, and eLearning promo lines when enabled in createQuoteItemsFromBom', () => {
+      const bomRows: BomRow[] = [
+        {
+          sku: 'GVS-HC1P1-HW',
+          description: 'GigaVUE-HC1-Plus chassis',
+          type: 'Hardware',
+          qty: 1,
+          site: 'DC1',
+        },
+        {
+          sku: 'GVS-TAX21E-HW',
+          description: 'GigaVUE-TA25E node',
+          type: 'Hardware',
+          qty: 3,
+          site: 'DC2',
+        },
+      ];
+
+      const quoteItems = createQuoteItemsFromBom(bomRows, 36, {
+        includeAhr: true,
+        includeFmPrime: true,
+        includeELearning: true,
+        chassisCount: 4,
+      });
+
+      const skus = quoteItems.map((i) => i.sku);
+      expect(skus).toContain('GVS-HC1P1-HW');
+      expect(skus).toContain('GVS-TAX21E-HW');
+      expect(skus).toContain('GSS-HW-AHR-GMO');
+      expect(skus).toContain('GFM-FM000-SW-TM');
+      expect(skus).toContain('GES-LMS-ACD');
+
+      // Verify eLearning qty matches chassis count
+      const elearning = quoteItems.find((i) => i.sku === 'GES-LMS-ACD');
+      expect(elearning?.qty).toBe(4);
+      expect(elearning?.discountOverride).toBe(100);
+
+      // Verify FM Prime 36m promo
+      const fmPrime = quoteItems.find((i) => i.sku === 'GFM-FM000-SW-TM');
+      expect(fmPrime?.termMonths).toBe(36);
+      expect(fmPrime?.discountOverride).toBe(100);
+
+      // Calculate summary and verify 41% AHR calculation:
+      // GVS-HC1P1-HW ($24,245) + 3 * GVS-TAX21E-HW ($8,755 * 3 = $26,265) = $50,510 total HW list
+      // 41% of $50,510 = $20,709.10
+      const summary = calculateQuoteSummary(quoteItems, DEFAULT_DISCOUNT_CONFIG, false);
+      const ahr = summary.items.find((i) => i.sku === 'GSS-HW-AHR-GMO');
+      expect(ahr?.extendedListPrice).toBe(20709.1);
+      expect(ahr?.discountAmount).toBeCloseTo(3106.365, 2); // 15% discount
+      expect(ahr?.extendedNetPrice).toBeCloseTo(17602.735, 2);
+    });
   });
 });

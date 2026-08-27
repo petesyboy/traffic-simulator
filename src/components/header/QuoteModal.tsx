@@ -19,6 +19,7 @@ import { generateBom, getSkus } from '../../utils/bomEngine';
 import { consolidateSimpleDeviceRows } from '../../utils/bom/consolidateSimpleDevices';
 import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { skuService } from '../../services/skuService';
+import { isRackableGigamonEquipment } from '../../utils/hardwareUtils';
 import {
   type QuoteLineItem,
   type DiscountCategoryConfig,
@@ -32,6 +33,7 @@ import {
   exportQuoteToCsv,
   exportCommercialQuoteToJson,
   parseCommercialQuoteJson,
+  isSupportEnabledHardware,
 } from '../../utils/pricingEngine';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
@@ -82,6 +84,43 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
 
+  // Project-specific quote workspace restoration
+  const initialWorkspace = useMemo(
+    () => getProjectQuoteWorkspace(currentScenarioName),
+    [currentScenarioName],
+  );
+
+  // CPQ Automated Service & Promo Toggles
+  const [includeAhr, setIncludeAhr] = useState<boolean>(
+    initialWorkspace?.includeAhr ?? (globalLicenseMode === 'HTL'),
+  );
+  const [includeFmPrime, setIncludeFmPrime] = useState<boolean>(
+    initialWorkspace?.includeFmPrime ?? (globalLicenseMode === 'HTL'),
+  );
+  const [includeELearning, setIncludeELearning] = useState<boolean>(
+    initialWorkspace?.includeELearning ?? true,
+  );
+
+  // CPQ Metadata State (Collapsible drawer for customer/partner headers)
+  const [isCpqDetailsOpen, setIsCpqDetailsOpen] = useState<boolean>(false);
+  const [quoteMetadata, setQuoteMetadata] = useState({
+    quoteNumber: initialWorkspace?.quoteMetadata?.quoteNumber || 'Q-207013-1',
+    posId: initialWorkspace?.quoteMetadata?.posId || 'POS0258668',
+    endCustomer: initialWorkspace?.quoteMetadata?.endCustomer || currentScenarioName || 'Göteborgs Stad',
+    reseller: initialWorkspace?.quoteMetadata?.reseller || 'Atea Sverige AB',
+    resellerContact: initialWorkspace?.quoteMetadata?.resellerContact || 'Peter Thuresson',
+    resellerEmail: initialWorkspace?.quoteMetadata?.resellerEmail || 'peter.thuresson@atea.se',
+    resellerPhone: initialWorkspace?.quoteMetadata?.resellerPhone || '+46 31 748 20 15',
+    distributor: initialWorkspace?.quoteMetadata?.distributor || 'Exclusive Networks Sweden AB',
+    distributorContact: initialWorkspace?.quoteMetadata?.distributorContact || 'Johan Bjorn',
+    distributorEmail: initialWorkspace?.quoteMetadata?.distributorEmail || 'jbjorn@exclusive-networks.com',
+    distributorPhone: initialWorkspace?.quoteMetadata?.distributorPhone || '+33 141315304',
+    salesRep: initialWorkspace?.quoteMetadata?.salesRep || 'Marko Ramo',
+    salesRepEmail: initialWorkspace?.quoteMetadata?.salesRepEmail || 'marko.ramo@gigamon.com',
+    paymentTerms: initialWorkspace?.quoteMetadata?.paymentTerms || 'Net 45',
+    billingFrequency: initialWorkspace?.quoteMetadata?.billingFrequency || 'All in Advance',
+  });
+
   // Initialize quote items from project-wide consolidated Master BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
     const rawBom = consolidateSimpleDeviceRows(
@@ -89,7 +128,12 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
-    return createQuoteItemsFromBom(masterBom, defaultTerm);
+    return createQuoteItemsFromBom(masterBom, defaultTerm, {
+      includeAhr: initialWorkspace?.includeAhr ?? (globalLicenseMode === 'HTL'),
+      includeFmPrime: initialWorkspace?.includeFmPrime ?? (globalLicenseMode === 'HTL'),
+      includeELearning: initialWorkspace?.includeELearning ?? true,
+      chassisCount: nodes.filter(isRackableGigamonEquipment).length,
+    });
   });
 
   // Track license mode switches: re-generate BOM items to reflect Perpetual vs HTL SKUs/pricing
@@ -102,7 +146,12 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       );
       const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
       const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
-      const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm);
+      const newBomItems = createQuoteItemsFromBom(masterBom, defaultTerm, {
+        includeAhr,
+        includeFmPrime,
+        includeELearning,
+        chassisCount: nodes.filter(isRackableGigamonEquipment).length,
+      });
 
       setItems((prevItems) =>
         convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm),
@@ -110,7 +159,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       // Clear out stale buffered inputs
       setRawRowInputs({});
     }
-  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps]);
+  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning]);
 
   // Track term duration changes: update term for all monthly subscription items
   const prevTermDurationRef = useRef(globalTermDuration);
@@ -125,12 +174,6 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       );
     }
   }, [globalTermDuration]);
-
-  // Project-specific quote workspace restoration
-  const initialWorkspace = useMemo(
-    () => getProjectQuoteWorkspace(currentScenarioName),
-    [currentScenarioName],
-  );
 
   // Category discount matrix
   const [discountConfig, setDiscountConfig] = useState<DiscountCategoryConfig>(
@@ -171,6 +214,10 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       excludeOptics,
       freePowerCords,
       spanOnlyMode,
+      includeAhr,
+      includeFmPrime,
+      includeELearning,
+      quoteMetadata,
     });
   }, [
     currentScenarioName,
@@ -179,6 +226,10 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     excludeOptics,
     freePowerCords,
     spanOnlyMode,
+    includeAhr,
+    includeFmPrime,
+    includeELearning,
+    quoteMetadata,
   ]);
 
   // Collapsible discount schedule for smaller laptop screens
@@ -517,6 +568,101 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     }
   };
 
+  // CPQ Service & Promo Toggle Handlers
+  const handleToggleAhr = (checked: boolean) => {
+    setIncludeAhr(checked);
+    if (checked) {
+      if (!items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
+        const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
+        if (hasEligibleHw) {
+          setItems((prev) => [
+            ...prev,
+            {
+              id: `bom-ahr-${Date.now()}`,
+              sku: 'GSS-HW-AHR-GMO',
+              description:
+                'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
+              type: 'Support',
+              category: 'Support',
+              qty: 1,
+              termMonths: 60,
+              unitListPrice: 0,
+              isMonthlyPrice: false,
+              applyDiscount: true,
+              discountOverride: 15,
+              note: '60 months',
+            },
+          ]);
+        }
+      }
+    } else {
+      setItems((prev) => prev.filter((i) => i.sku !== 'GSS-HW-AHR-GMO'));
+    }
+  };
+
+  const handleToggleFmPrime = (checked: boolean) => {
+    setIncludeFmPrime(checked);
+    if (checked) {
+      if (!items.some((i) => i.sku.startsWith('GFM-FM000-SW-TM'))) {
+        const term = parseInt(globalTermDuration || '36', 10) || 36;
+        const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
+        setItems((prev) => [
+          ...prev,
+          {
+            id: `bom-fm-prime-${Date.now()}`,
+            sku: 'GFM-FM000-SW-TM',
+            description:
+              skuRecord?.description ||
+              'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
+            type: 'Software',
+            category: 'Software',
+            qty: 1,
+            termMonths: term,
+            unitListPrice: skuRecord?.listPriceMonthly || 2310.0,
+            isMonthlyPrice: true,
+            applyDiscount: true,
+            discountOverride: 100,
+            note: `${term} months`,
+          },
+        ]);
+      }
+    } else {
+      setItems((prev) => prev.filter((i) => !i.sku.startsWith('GFM-FM000-SW-TM')));
+    }
+  };
+
+  const handleToggleELearning = (checked: boolean) => {
+    setIncludeELearning(checked);
+    if (checked) {
+      if (!items.some((i) => i.sku === 'GES-LMS-ACD')) {
+        const chassisCount = items
+          .filter((i) => i.category === 'Chassis')
+          .reduce((sum, c) => sum + (c.qty || 1), 0);
+        const voucherQty = Math.max(1, chassisCount);
+        const skuRecord = skuService.getSKUByPartNumber('GES-LMS-ACD');
+        setItems((prev) => [
+          ...prev,
+          {
+            id: `bom-elearning-${Date.now()}`,
+            sku: 'GES-LMS-ACD',
+            description:
+              skuRecord?.description ||
+              'Single user access to an eLearning Voucher for the Gigamon Academy e-learning curriculum for a one-year term.',
+            type: 'Other',
+            category: 'Other',
+            qty: voucherQty,
+            unitListPrice: skuRecord?.listPrice || 1495.0,
+            isMonthlyPrice: false,
+            applyDiscount: true,
+            discountOverride: 100,
+          },
+        ]);
+      }
+    } else {
+      setItems((prev) => prev.filter((i) => i.sku !== 'GES-LMS-ACD'));
+    }
+  };
+
   // PDF Export handler
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
@@ -528,6 +674,21 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         projectLicenseMode: globalLicenseMode,
         defaultTermDuration: globalTermDuration,
         projectRegion: globalRegion,
+        quoteNumber: quoteMetadata.quoteNumber,
+        posId: quoteMetadata.posId,
+        customerName: quoteMetadata.endCustomer,
+        reseller: quoteMetadata.reseller,
+        resellerContact: quoteMetadata.resellerContact,
+        resellerEmail: quoteMetadata.resellerEmail,
+        resellerPhone: quoteMetadata.resellerPhone,
+        distributor: quoteMetadata.distributor,
+        distributorContact: quoteMetadata.distributorContact,
+        distributorEmail: quoteMetadata.distributorEmail,
+        distributorPhone: quoteMetadata.distributorPhone,
+        salesRep: quoteMetadata.salesRep,
+        salesRepEmail: quoteMetadata.salesRepEmail,
+        paymentTerms: quoteMetadata.paymentTerms,
+        billingFrequency: quoteMetadata.billingFrequency,
       });
       const defaultFilename = getStandardExportFilename('quote-pdf', currentScenarioName);
 
@@ -573,7 +734,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       if (res.saved) {
         setQuoteNotification({
           type: 'success',
-          message: `Formal quote PDF saved successfully as "${res.filename}".`,
+          message: `Official Salesforce CPQ quote PDF saved successfully as "${res.filename}".`,
         });
         setTimeout(() => setQuoteNotification(null), 4000);
       }
@@ -826,6 +987,111 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 </div>
               )}
             </div>
+
+            {/* AHR Support Service Checkbox (GSS-HW-AHR-GMO) */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: includeAhr ? 'rgba(236, 72, 153, 0.15)' : '#1f2937',
+                  border: `1px solid ${includeAhr ? '#ec4899' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: includeAhr ? '#f472b6' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Include 60-Month Advance Hardware Replacement (GSS-HW-AHR-GMO) at 41% of covered hardware list price with 15% discount"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeAhr}
+                  onChange={(e) => handleToggleAhr(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#ec4899' }}
+                />
+                🛡️ 60m AHR (41%)
+              </label>
+            </div>
+
+            {/* GigaVUE-FM Prime 36m Promotional License Checkbox */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: includeFmPrime ? 'rgba(168, 85, 247, 0.15)' : '#1f2937',
+                  border: `1px solid ${includeFmPrime ? '#a855f7' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: includeFmPrime ? '#c084fc' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Include 36-Month GigaVUE-FM Prime Edition License (GFM-FM000-SW-TM) with 100% promotional discount ($0.00 Net)"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeFmPrime}
+                  onChange={(e) => handleToggleFmPrime(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#a855f7' }}
+                />
+                🌐 FM Prime ($0)
+              </label>
+            </div>
+
+            {/* Gigamon Academy eLearning Vouchers Checkbox */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: includeELearning ? 'rgba(56, 189, 248, 0.15)' : '#1f2937',
+                  border: `1px solid ${includeELearning ? '#38bdf8' : '#374151'}`,
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: includeELearning ? '#38bdf8' : '#d1d5db',
+                  userSelect: 'none',
+                }}
+                title="Include Gigamon Academy eLearning Vouchers (GES-LMS-ACD, 1 voucher per active chassis node) with 100% promotional discount ($0.00 Net)"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeELearning}
+                  onChange={(e) => handleToggleELearning(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
+                />
+                🎓 Academy eLearning ($0)
+              </label>
+            </div>
+
+            {/* Edit CPQ Header Metadata Drawer Button */}
+            <button
+              onClick={() => setIsCpqDetailsOpen((prev) => !prev)}
+              className="btn btn-secondary"
+              style={{
+                fontSize: '11px',
+                padding: '5px 9px',
+                background: isCpqDetailsOpen ? 'rgba(234, 88, 12, 0.2)' : '#1f2937',
+                border: `1px solid ${isCpqDetailsOpen ? '#f97316' : '#4b5563'}`,
+                color: isCpqDetailsOpen ? '#fb923c' : '#d1d5db',
+                fontWeight: 600,
+              }}
+              title="Edit Salesforce CPQ Header Information (Quote #, POSID, End Customer, Reseller, Distributor, Sales Rep)"
+            >
+              📋 CPQ Metadata {isCpqDetailsOpen ? '▲' : '▼'}
+            </button>
+
             <button
               onClick={handleSaveQuoteJson}
               className="btn btn-secondary"
@@ -899,25 +1165,135 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             <div
               style={{
                 padding: '8px 14px',
-                marginBottom: '12px',
                 borderRadius: '6px',
                 fontSize: '12px',
-                fontWeight: 600,
-                background: quoteNotification.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                border: `1px solid ${quoteNotification.type === 'success' ? '#22c55e' : '#ef4444'}`,
-                color: quoteNotification.type === 'success' ? '#4ade80' : '#f87171',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
+                justifyContent: 'space-between',
+                background: quoteNotification.type === 'success' ? '#064e3b' : '#7f1d1d',
+                color: quoteNotification.type === 'success' ? '#a7f3d0' : '#fecaca',
+                border: `1px solid ${quoteNotification.type === 'success' ? '#059669' : '#dc2626'}`,
               }}
             >
-              <span>{quoteNotification.type === 'success' ? '✓ ' : '⚠️ '}{quoteNotification.message}</span>
+              <span>{quoteNotification.message}</span>
               <button
                 onClick={() => setQuoteNotification(null)}
-                style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '14px' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  lineHeight: 1,
+                  padding: '0 4px',
+                }}
               >
                 ✕
               </button>
+            </div>
+          )}
+
+          {/* ── Collapsible CPQ Header Metadata Panel ── */}
+          {isCpqDetailsOpen && (
+            <div
+              style={{
+                background: '#111827',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#f97316' }}>
+                  📋 Salesforce CPQ Quote Header & Account Information
+                </span>
+                <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                  Populates the official Salesforce CPQ PDF header and stakeholder blocks
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '10px',
+                }}
+              >
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Quote #</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.quoteNumber}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, quoteNumber: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>POSID</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.posId}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, posId: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>End Customer (Ship To)</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.endCustomer}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, endCustomer: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Reseller Partner</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.reseller}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, reseller: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Distributor (Bill To)</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.distributor}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, distributor: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Sales Rep</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.salesRep}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, salesRep: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Payment Terms</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.paymentTerms}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, paymentTerms: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Billing Frequency</label>
+                  <input
+                    type="text"
+                    value={quoteMetadata.billingFrequency}
+                    onChange={(e) => setQuoteMetadata((m) => ({ ...m, billingFrequency: e.target.value }))}
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                  />
+                </div>
+              </div>
             </div>
           )}
           {/* ── Section 1: Discount Schedule Matrix ── */}

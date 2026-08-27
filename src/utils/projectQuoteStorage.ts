@@ -23,6 +23,26 @@ export interface ProjectQuoteWorkspace {
   excludeOptics: boolean;
   freePowerCords: boolean;
   spanOnlyMode: boolean;
+  includeAhr?: boolean;
+  includeFmPrime?: boolean;
+  includeELearning?: boolean;
+  quoteMetadata?: {
+    quoteNumber?: string;
+    posId?: string;
+    endCustomer?: string;
+    reseller?: string;
+    resellerContact?: string;
+    resellerEmail?: string;
+    resellerPhone?: string;
+    distributor?: string;
+    distributorContact?: string;
+    distributorEmail?: string;
+    distributorPhone?: string;
+    salesRep?: string;
+    salesRepEmail?: string;
+    paymentTerms?: string;
+    billingFrequency?: string;
+  };
   savedAt: string;
   isDiscountConfigured: boolean;
 }
@@ -57,7 +77,14 @@ export function isQuoteDiscountApplied(workspace?: ProjectQuoteWorkspace | null)
   if (hasCategoryDiscount) return true;
 
   // Check if any special pricing modifier toggle is active
-  if (workspace.excludeOptics || workspace.freePowerCords || workspace.spanOnlyMode) {
+  if (
+    workspace.excludeOptics ||
+    workspace.freePowerCords ||
+    workspace.spanOnlyMode ||
+    workspace.includeAhr ||
+    workspace.includeFmPrime ||
+    workspace.includeELearning
+  ) {
     return true;
   }
 
@@ -75,6 +102,26 @@ export function saveProjectQuoteWorkspace(
     excludeOptics: boolean;
     freePowerCords: boolean;
     spanOnlyMode: boolean;
+    includeAhr?: boolean;
+    includeFmPrime?: boolean;
+    includeELearning?: boolean;
+    quoteMetadata?: {
+      quoteNumber?: string;
+      posId?: string;
+      endCustomer?: string;
+      reseller?: string;
+      resellerContact?: string;
+      resellerEmail?: string;
+      resellerPhone?: string;
+      distributor?: string;
+      distributorContact?: string;
+      distributorEmail?: string;
+      distributorPhone?: string;
+      salesRep?: string;
+      salesRepEmail?: string;
+      paymentTerms?: string;
+      billingFrequency?: string;
+    };
   },
 ): void {
   if (typeof localStorage === 'undefined') return;
@@ -85,7 +132,10 @@ export function saveProjectQuoteWorkspace(
     Object.values(cfg).some((val) => typeof val === 'number' && val > 0) ||
     config.excludeOptics ||
     config.freePowerCords ||
-    config.spanOnlyMode;
+    config.spanOnlyMode ||
+    config.includeAhr ||
+    config.includeFmPrime ||
+    config.includeELearning;
 
   const workspace: ProjectQuoteWorkspace = {
     scenarioName: scenarioName || 'Solution',
@@ -94,8 +144,12 @@ export function saveProjectQuoteWorkspace(
     excludeOptics: config.excludeOptics,
     freePowerCords: config.freePowerCords,
     spanOnlyMode: config.spanOnlyMode,
+    includeAhr: config.includeAhr,
+    includeFmPrime: config.includeFmPrime,
+    includeELearning: config.includeELearning,
+    quoteMetadata: config.quoteMetadata,
     savedAt: new Date().toISOString(),
-    isDiscountConfigured: hasDiscount,
+    isDiscountConfigured: Boolean(hasDiscount),
   };
 
   try {

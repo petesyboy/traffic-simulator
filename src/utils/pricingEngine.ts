@@ -66,6 +66,14 @@ export interface QuoteLineItem {
   nodeId?: string;
   note?: string;
   linkType?: 'tap-termination';
+  inclInSupport?: boolean;
+}
+
+export interface CreateQuoteItemsOptions {
+  includeAhr?: boolean;
+  includeFmPrime?: boolean;
+  includeELearning?: boolean;
+  chassisCount?: number;
 }
 
 export interface CalculatedLineItem extends QuoteLineItem {
@@ -490,12 +498,15 @@ export function calculateLineFinancials(
   const extendedNetPrice = Math.max(0, extendedListPrice - discountAmount);
   const unitNetPrice = effectiveQty > 0 ? extendedNetPrice / effectiveQty : 0;
 
+  const inclInSupport = isSupportEnabledHardware(resolvedCategory, normalizedItem.sku);
+
   return {
     ...normalizedItem,
     category: resolvedCategory,
     unitListPrice: dynamicUnitList,
     note: dynamicNote,
     qty: effectiveQty,
+    inclInSupport,
     effectiveDiscountPercent,
     effectiveUnitList,
     extendedListPrice,
@@ -505,9 +516,13 @@ export function calculateLineFinancials(
   };
 }
 
-/** Generates initial quote items array from BOM rows. */
-export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: number = 12): QuoteLineItem[] {
-  return bomRows.map((row, idx) => {
+/** Generates initial quote items array from BOM rows, with optional CPQ service and promo additions. */
+export function createQuoteItemsFromBom(
+  bomRows: BomRow[],
+  defaultTermDuration: number = 12,
+  options: CreateQuoteItemsOptions = {},
+): QuoteLineItem[] {
+  const items: QuoteLineItem[] = bomRows.map((row, idx) => {
     const skuItem = skuService.getSKUByPartNumber(row.sku);
     const category = mapBomTypeToQuoteCategory(row.type, row.sku, row.description || skuItem?.description);
 
@@ -534,6 +549,7 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
     }
 
     const termMonths = isMonthly ? (row.term ? parseInt(row.term, 10) : defaultTermDuration) : undefined;
+    const inclInSupport = isSupportEnabledHardware(category, row.sku);
 
     return {
       id: `bom-${row.sku}-${idx}`,
@@ -546,12 +562,85 @@ export function createQuoteItemsFromBom(bomRows: BomRow[], defaultTermDuration: 
       unitListPrice,
       isMonthlyPrice: isMonthly,
       applyDiscount: true,
+      inclInSupport,
       site: row.site,
       nodeId: row.nodeId,
       note: row.note,
       linkType: row.linkType,
     };
   });
+
+  // 1. Optional Advanced Hardware Replacement (GSS-HW-AHR-GMO, 60m at 41% of eligible hardware list price)
+  if (options.includeAhr && !items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
+    const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
+    if (hasEligibleHw) {
+      items.push({
+        id: `bom-ahr-${Date.now()}`,
+        sku: 'GSS-HW-AHR-GMO',
+        description:
+          'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
+        type: 'Support',
+        category: 'Support',
+        qty: 1,
+        termMonths: 60,
+        unitListPrice: 0, // Dynamically computed at 41% of covered hardware
+        isMonthlyPrice: false,
+        applyDiscount: true,
+        discountOverride: 15, // Standard CPQ 15% discount for AHR
+        note: '60 months',
+      });
+    }
+  }
+
+  // 2. Optional GigaVUE-FM Prime 36m Promotional License (100% Discount -> $0.00 Net)
+  if (options.includeFmPrime && !items.some((i) => i.sku.startsWith('GFM-FM000-SW-TM'))) {
+    const term = defaultTermDuration || 36;
+    const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
+    const monthlyList = skuRecord?.listPriceMonthly || 2310.0;
+    items.push({
+      id: `bom-fm-prime-${Date.now()}`,
+      sku: 'GFM-FM000-SW-TM',
+      description:
+        skuRecord?.description ||
+        'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
+      type: 'Software',
+      category: 'Software',
+      qty: 1,
+      termMonths: term,
+      unitListPrice: monthlyList,
+      isMonthlyPrice: true,
+      applyDiscount: true,
+      discountOverride: 100, // 100% Promotional Discount ($0 Net)
+      note: `${term} months`,
+    });
+  }
+
+  // 3. Optional Gigamon Academy eLearning Voucher Promo (100% Discount -> $0.00 Net)
+  if (options.includeELearning && !items.some((i) => i.sku === 'GES-LMS-ACD')) {
+    const chassisCount =
+      options.chassisCount ??
+      items
+        .filter((i) => i.category === 'Chassis')
+        .reduce((sum, c) => sum + (c.qty || 1), 0);
+    const voucherQty = Math.max(1, chassisCount);
+    const skuRecord = skuService.getSKUByPartNumber('GES-LMS-ACD');
+    items.push({
+      id: `bom-elearning-${Date.now()}`,
+      sku: 'GES-LMS-ACD',
+      description:
+        skuRecord?.description ||
+        'Single user access to an eLearning Voucher for the Gigamon Academy e-learning curriculum for a one-year term.',
+      type: 'Other',
+      category: 'Other',
+      qty: voucherQty,
+      unitListPrice: skuRecord?.listPrice || 1495.0,
+      isMonthlyPrice: false,
+      applyDiscount: true,
+      discountOverride: 100, // 100% Promotional Discount ($0 Net)
+    });
+  }
+
+  return items;
 }
 
 /** Builds an ad-hoc quote line item for any SKU selected from the catalogue. */

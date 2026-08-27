@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.663",
+    date: "2026-08-27",
+    summary: "Standardize solution deliverable package to 6 canonical files and streamline export notifications (v1.0.663)",
+  },
+  {
     version: "1.0.662",
     date: "2026-08-27",
     summary: "Conditionally omit commercial quotes from package dump unless project discounting is configured (v1.0.662)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.642",
     date: "2026-08-26",
     summary: "Add list prices for GFM, Gen2 GigaSMART and TA upgrade term licences with hyphen normalization (v1.0.642)",
-  },
-  {
-    version: "1.0.641",
-    date: "2026-08-26",
-    summary: "Preserve and convert manually added ad-hoc SKUs between HTL and Perpetual modes (v1.0.641)",
   },
 ];
