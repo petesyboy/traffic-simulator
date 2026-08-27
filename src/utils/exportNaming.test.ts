@@ -36,16 +36,16 @@ describe('exportNaming', () => {
 
     it('generates standard Architecture PDF report filenames starting with Gigamon_Architecture_', () => {
       expect(getStandardExportFilename('architecture-pdf', solution)).toBe(
-        'Gigamon_Architecture_Solution_Report_City_of_Gothenburg.pdf',
+        'Gigamon_Architecture_City_of_Gothenburg.pdf',
       );
       expect(getStandardExportFilename('uplink-pdf', solution)).toBe(
-        'Gigamon_Architecture_Uplink_Report_City_of_Gothenburg.pdf',
+        'Gigamon_Architecture_Uplink_City_of_Gothenburg.pdf',
       );
       expect(getStandardExportFilename('patch-sheet-pdf', solution)).toBe(
         'Gigamon_Architecture_Patch_Sheet_City_of_Gothenburg.pdf',
       );
       expect(getStandardExportFilename('crossover-pdf', solution)).toBe(
-        'Gigamon_Architecture_Crossover_Report_City_of_Gothenburg.pdf',
+        'Gigamon_Architecture_Crossover_City_of_Gothenburg.pdf',
       );
     });
 

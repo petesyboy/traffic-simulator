@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.658",
+    date: "2026-08-27",
+    summary: "Standardize export and report naming across BOM, architecture PDFs, topology JSON, quotes, and diagrams (v1.0.658)",
+  },
+  {
     version: "1.0.657",
     date: "2026-08-27",
     summary: "Add intelligent auto-reallocation and re-alignment of optics and port links across chassis boards (v1.0.657)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.638",
     date: "2026-08-26",
     summary: "Honour SKU types, terms, and capital vs term pricing when switching between Perpetual and HTL (v1.0.638)",
-  },
-  {
-    version: "1.0.637",
-    date: "2026-08-26",
-    summary: "Scale power cord quantities with HC3 PSU count (v1.0.637)",
   },
 ];

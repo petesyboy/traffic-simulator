@@ -71,13 +71,13 @@ export function getStandardExportFilename(
     case 'bom-deployment-csv':
       return `Bill_of_Materials_Deployment_Report_${cleanName}.csv`;
     case 'architecture-pdf':
-      return `Gigamon_Architecture_Solution_Report_${cleanName}.pdf`;
+      return `Gigamon_Architecture_${cleanName}.pdf`;
     case 'uplink-pdf':
-      return `Gigamon_Architecture_Uplink_Report_${cleanName}.pdf`;
+      return `Gigamon_Architecture_Uplink_${cleanName}.pdf`;
     case 'patch-sheet-pdf':
       return `Gigamon_Architecture_Patch_Sheet_${cleanName}.pdf`;
     case 'crossover-pdf':
-      return `Gigamon_Architecture_Crossover_Report_${cleanName}.pdf`;
+      return `Gigamon_Architecture_Crossover_${cleanName}.pdf`;
     case 'quote-pdf':
       return `Commercial_Quote_${cleanName}.pdf`;
     case 'quote-csv':
