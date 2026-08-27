@@ -1,7 +1,7 @@
 {
     "name": "traffic-simulator",
     "private": true,
-    "version": "1.0.660",
+    "version": "1.0.661",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -10,6 +10,8 @@
         "pretest": "npm run generate:data",
         "build": "tsc -b && vite build",
         "postbuild": "node scripts/generate-checksums.mjs dist/index.html",
+        "deploy": "npm run build && wrangler pages deploy dist --project-name=traffic-simulator",
+        "deploy:preview": "npm run build && wrangler pages deploy dist --project-name=traffic-simulator",
         "changelog": "node scripts/generate-changelog.mjs",
         "checksums": "node scripts/generate-checksums.mjs",
         "lint": "eslint .",
@@ -52,6 +54,7 @@
         "typescript-eslint": "^8.59.2",
         "vite": "^8.0.12",
         "vite-plugin-singlefile": "^2.3.3",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.9",
+        "wrangler": "^4.127.0"
     }
 }

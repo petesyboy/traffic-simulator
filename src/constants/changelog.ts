@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.660",
+    date: "2026-08-27",
+    summary: "Add native directory chooser & solution package dump for all deliverables (v1.0.660)",
+  },
+  {
     version: "1.0.659",
     date: "2026-08-27",
     summary: "Ensure architecture PDF filename strictly defaults to Gigamon_Architecture_<solution>.pdf (v1.0.659)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.640",
     date: "2026-08-26",
     summary: "Refactor top header navigation with dropdowns and responsive layout for Mac and laptop screens (v1.0.640)",
-  },
-  {
-    version: "1.0.639",
-    date: "2026-08-26",
-    summary: "Add catalogue list prices for HC3A3/A4 & Gen3 perpetual licences, categorize GigaSMART licences as Software (v1.0.639)",
   },
 ];
