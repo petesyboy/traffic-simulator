@@ -14,6 +14,7 @@
 import { skuService } from '../services/skuService';
 import type { BomRow } from './bom/bomGenerator';
 import { saveWithFilePickerOrPrompt, type SaveFileResult } from './fileSaveHelper';
+import { getStandardExportFilename } from './exportNaming';
 
 export type QuoteCategory =
   | 'Software'
@@ -912,8 +913,7 @@ export async function exportQuoteToCsv(
   ];
 
   const csvContent = [headers, ...rows, ...summaryRows].join('\n');
-  const cleanName = scenarioName ? scenarioName.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Quote';
-  const defaultFilename = `Commercial_Quote_${cleanName}.csv`;
+  const defaultFilename = getStandardExportFilename('quote-csv', scenarioName);
 
   return saveWithFilePickerOrPrompt(csvContent, defaultFilename, {
     description: 'Commercial Quote CSV File',
@@ -989,10 +989,7 @@ export async function exportCommercialQuoteToJson(
   };
 
   const jsonString = JSON.stringify(quoteData, null, 2);
-  const cleanName = metadata.scenarioName
-    ? metadata.scenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
-    : 'Solution';
-  const defaultFilename = `${cleanName}_Commercial_Quote.json`;
+  const defaultFilename = getStandardExportFilename('quote-json', metadata.scenarioName);
 
   return saveWithFilePickerOrPrompt(jsonString, defaultFilename, {
     description: 'Commercial Quote JSON File',

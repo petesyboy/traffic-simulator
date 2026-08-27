@@ -37,6 +37,8 @@ import RackElevationView from './components/RackElevationView';
 import SimulationEngine from './components/SimulationEngine';
 import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
+import { getStandardExportFilename } from './utils/exportNaming';
+import { saveWithFilePickerOrPrompt } from './utils/fileSaveHelper';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TradeShowDemo } from './components/TradeShowDemo';
 import { MissionDemo } from './components/MissionDemo';
@@ -75,11 +77,7 @@ function App() {
   const [saveToast, setSaveToast] = useState('');
 
   const handleExportStateToFile = useCallback(async () => {
-    // Matches the header's own "Untitled Project" fallback (Header.tsx) so the
-    // suggested filename always tracks whatever project name is shown on screen.
-    // Characters invalid in Windows/macOS filenames are stripped since the name
-    // comes from a free-text rename field with no character restrictions.
-    const name = (currentScenarioName || 'Untitled Project').replace(/[<>:"/\\|?*]+/g, '_').trim() || 'Untitled Project';
+    const filename = getStandardExportFilename('topology-json', currentScenarioName);
     const flow = {
       nodes,
       edges,
@@ -92,61 +90,34 @@ function App() {
         disableDcWarnings,
         panelTextScale,
         showGrid,
-        snapToGrid
-      }
+        snapToGrid,
+      },
     };
     const json = JSON.stringify(flow, null, 2);
-    const filename = `${name}.json`;
 
-    // Chromium browsers support showSaveFilePicker, which brings up the native
-    // "Save As" dialog so the user can pick a location/filename instead of it
-    // silently landing in the default downloads folder. Firefox/Safari don't
-    // implement it, and this app is mainly distributed as a standalone HTML
-    // file opened directly via file:// - where the picker API can exist on
-    // `window` but throw when actually invoked (no real origin to attach the
-    // permission to) - so any failure other than the user cancelling falls
-    // through to the anchor-download approach below rather than failing silently.
-    if ('showSaveFilePicker' in window) {
-      try {
-        const handle = await (window as unknown as {
-          showSaveFilePicker: (options: {
-            suggestedName: string;
-            types: { description: string; accept: Record<string, string[]> }[];
-          }) => Promise<FileSystemFileHandle>;
-        }).showSaveFilePicker({
-          suggestedName: filename,
-          types: [{ description: 'JSON Topology File', accept: { 'application/json': ['.json'] } }],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(json);
-        await writable.close();
-        setSaveToast(`Saved topology to "${handle.name}"`);
-        setTimeout(() => setSaveToast(''), 5000);
-        return;
-      } catch (err) {
-        // AbortError means the user cancelled the picker - respect that instead
-        // of falling back to a download they didn't ask for.
-        if (err instanceof Error && err.name === 'AbortError') return;
-        console.warn('showSaveFilePicker unavailable, falling back to anchor download:', err);
-      }
+    const res = await saveWithFilePickerOrPrompt(json, filename, {
+      description: 'JSON Topology File',
+      mimeType: 'application/json',
+      extension: '.json',
+    });
+
+    if (res.saved) {
+      setSaveToast(`Saved topology to "${res.filename}"`);
+      setTimeout(() => setSaveToast(''), 5000);
     }
-
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', filename);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    URL.revokeObjectURL(url);
-
-    setSaveToast(`Saved topology to "${filename}"`);
-    setTimeout(() => setSaveToast(''), 5000);
   }, [
-    nodes, edges, trafficStreams, advancedMode, projectLicenseMode, defaultTermDuration,
-    projectRegion, disableDcWarnings, panelTextScale, showGrid, snapToGrid,
-    currentScenarioName
+    nodes,
+    edges,
+    trafficStreams,
+    advancedMode,
+    projectLicenseMode,
+    defaultTermDuration,
+    projectRegion,
+    disableDcWarnings,
+    panelTextScale,
+    showGrid,
+    snapToGrid,
+    currentScenarioName,
   ]);
 
   const handleImportStateFromFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -18,6 +18,27 @@ export interface SaveFileResult {
   cancelled?: boolean;
 }
 
+function convertContentToBlob(content: Blob | string, defaultMime: string): Blob {
+  if (content instanceof Blob) return content;
+  if (typeof content === 'string' && content.startsWith('data:')) {
+    try {
+      const arr = content.split(',');
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : defaultMime;
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch {
+      // Fall through to plain text blob on failure
+    }
+  }
+  return new Blob([content], { type: defaultMime });
+}
+
 /**
  * Saves a Blob or string to disk, asking the user for a filename / location.
  *
@@ -25,7 +46,7 @@ export interface SaveFileResult {
  *    allowing the user to overwrite existing files or select a target folder.
  * 2. Falls back to window.prompt() to ask for a filename before triggering a standard download.
  *
- * @param content The file content as a Blob or UTF-8 string
+ * @param content The file content as a Blob, UTF-8 string, or base64 data URL
  * @param defaultFilename The suggested initial filename
  * @param options Description, MIME type, and extension for the file picker
  */
@@ -38,7 +59,7 @@ export async function saveWithFilePickerOrPrompt(
   const mime = options?.mimeType || (content instanceof Blob ? content.type : 'application/octet-stream') || 'application/octet-stream';
   const desc = options?.description || 'File';
 
-  const blob = typeof content === 'string' ? new Blob([content], { type: mime }) : content;
+  const blob = convertContentToBlob(content, mime);
 
   // 1. Try modern File System Access API (supported in Chrome/Edge on macOS, Windows, Linux)
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {

@@ -12,6 +12,7 @@ import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { getStandardExportFilename } from '../../utils/exportNaming';
 import type { HardwareNodeData } from '../../store/types';
 import QuoteModal from './QuoteModal';
 
@@ -81,10 +82,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         ),
       )
       .join('\n');
-    const cleanName = currentScenarioName
-      ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
-      : '';
-    const defaultFilename = cleanName ? `BOM_${cleanName}.csv` : 'BOM.csv';
+    const defaultFilename = getStandardExportFilename('bom-csv', currentScenarioName);
 
     await saveWithFilePickerOrPrompt(csv, defaultFilename, {
       description: 'BOM CSV File',
@@ -109,10 +107,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,-,${totalWeight.toFixed(1)} lbs,${(totalWeight * 0.45359237).toFixed(1)} kg,${totalPower} W,${totalHeat} BTU/hr,-`,
       ])
       .join('\n');
-    const cleanName = currentScenarioName
-      ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^bom[_-]?/i, '')
-      : '';
-    const defaultFilename = cleanName ? `BOM_${cleanName}_deployment_report.csv` : 'BOM_deployment_report.csv';
+    const defaultFilename = getStandardExportFilename('bom-deployment-csv', currentScenarioName);
 
     await saveWithFilePickerOrPrompt(csv, defaultFilename, {
       description: 'Deployment Report CSV File',

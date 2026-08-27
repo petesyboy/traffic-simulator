@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.657",
+    date: "2026-08-27",
+    summary: "Add intelligent auto-reallocation and re-alignment of optics and port links across chassis boards (v1.0.657)",
+  },
+  {
     version: "1.0.656",
     date: "2026-08-26",
     summary: "Refine CPQ eligibility rules and 41% calculation for GSS-HW-AHR-GMO (v1.0.656)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.637",
     date: "2026-08-26",
     summary: "Scale power cord quantities with HC3 PSU count (v1.0.637)",
-  },
-  {
-    version: "1.0.636",
-    date: "2026-08-26",
-    summary: "Add 2 vs 4 PSU chassis configuration for GigaVUE-HC3 (v1.0.636)",
   },
 ];

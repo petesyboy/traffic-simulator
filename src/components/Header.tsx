@@ -12,6 +12,8 @@ import { useStore } from '../store/store';
 import pkg from '../../package.json';
 import { validateConfiguration, detectMixedSiteAssignment } from '../utils/bomEngine';
 import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagram';
+import { getStandardExportFilename } from '../utils/exportNaming';
+import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
@@ -183,14 +185,13 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
   const handleExportScreenshot = () => {
     captureTopologyDiagramPng()
-      .then((dataUrl) => {
-        const a = document.createElement('a');
-        const filename = currentScenarioName
-          ? `${currentScenarioName} - export.png`
-          : 'Flow Mapping Example - export.png';
-        a.setAttribute('download', filename);
-        a.setAttribute('href', dataUrl);
-        a.click();
+      .then(async (dataUrl) => {
+        const filename = getStandardExportFilename('diagram-png', currentScenarioName);
+        await saveWithFilePickerOrPrompt(dataUrl, filename, {
+          description: 'PNG Topology Diagram',
+          mimeType: 'image/png',
+          extension: '.png',
+        });
       })
       .catch((err) => {
         console.error('oops, something went wrong!', err);

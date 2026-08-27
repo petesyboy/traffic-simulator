@@ -34,6 +34,7 @@ import {
   parseCommercialQuoteJson,
 } from '../../utils/pricingEngine';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { getStandardExportFilename } from '../../utils/exportNaming';
 import { buildQuotePdfDocDefinition } from '../../utils/report/quotePdfReport';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 
@@ -487,10 +488,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         defaultTermDuration: globalTermDuration,
         projectRegion: globalRegion,
       });
-      const cleanName = currentScenarioName
-        ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
-        : 'Quote';
-      const defaultFilename = `Commercial_Quote_${cleanName}.pdf`;
+      const defaultFilename = getStandardExportFilename('quote-pdf', currentScenarioName);
 
       const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
         try {

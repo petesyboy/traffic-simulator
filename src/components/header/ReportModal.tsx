@@ -26,6 +26,7 @@ import { autoDeployRack } from '../../utils/autoRack';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { getStandardExportFilename, type ExportDocumentType } from '../../utils/exportNaming';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
@@ -178,33 +179,30 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       };
 
       let docDefinition: TDocumentDefinitions;
-      let filenamePrefix = 'SignalPath';
+      let exportDocType: ExportDocumentType = 'architecture-pdf';
 
       switch (reportFormat) {
         case 'uplink':
           docDefinition = buildUplinkReportDocDefinition(reportInput);
-          filenamePrefix = 'Uplink';
+          exportDocType = 'uplink-pdf';
           break;
         case 'patch-sheet':
           docDefinition = buildPatchSheetReportDocDefinition(reportInput);
-          filenamePrefix = 'PatchSheet';
+          exportDocType = 'patch-sheet-pdf';
           break;
         case 'crossover':
           docDefinition = buildCrossoverReportDocDefinition(reportInput);
-          filenamePrefix = 'Crossover';
+          exportDocType = 'crossover-pdf';
           break;
         case 'signal-path':
         default:
           docDefinition = buildReportDocDefinition(reportInput);
-          filenamePrefix = 'SignalPath';
+          exportDocType = 'architecture-pdf';
           break;
       }
 
       const pdfMake = await loadPdfMake();
-      const cleanName = currentScenarioName
-        ? currentScenarioName.replace(/[^a-zA-Z0-9_-]/g, '_')
-        : 'solution_report';
-      const defaultFilename = `${filenamePrefix}_${cleanName}.pdf`;
+      const defaultFilename = getStandardExportFilename(exportDocType, currentScenarioName);
 
       const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
         try {

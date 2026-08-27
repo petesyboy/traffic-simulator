@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { PRESET_SCENARIOS } from '../../constants/presets';
+import { getStandardExportFilename } from '../../utils/exportNaming';
+import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import pkg from '../../../package.json';
 
 const SLOT_PREFIX = 'fm-simulator-slot-';
@@ -67,8 +69,8 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
     onSaved(name);
   };
 
-  const handleExportFile = () => {
-    const name = slotName.trim() || 'my-topology';
+  const handleExportFile = async () => {
+    const name = slotName.trim() || 'Solution';
     const flow = {
       nodes,
       edges,
@@ -84,19 +86,21 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
         snapToGrid,
       },
     };
-    const blob = new Blob([JSON.stringify(flow, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `${name}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    URL.revokeObjectURL(url);
-    setCurrentScenarioName(name);
-    localStorage.setItem('fm-simulator-last-slot', name);
-    onSaved(name);
-    onClose();
+    const defaultFilename = getStandardExportFilename('topology-json', name);
+    const json = JSON.stringify(flow, null, 2);
+
+    const res = await saveWithFilePickerOrPrompt(json, defaultFilename, {
+      description: 'JSON Topology File',
+      mimeType: 'application/json',
+      extension: '.json',
+    });
+
+    if (res.saved) {
+      setCurrentScenarioName(name);
+      localStorage.setItem('fm-simulator-last-slot', name);
+      onSaved(name);
+      onClose();
+    }
   };
 
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
