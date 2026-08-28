@@ -185,15 +185,15 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNod
 }
 
 /**
- * Automatically adjusts the vertical spacing of nodes in columns so that
- * description boxes rendered below nodes in Export Diagram Mode never overlap
- * or obscure nodes below them.
+ * Automatically adjusts the vertical and horizontal spacing of nodes in columns
+ * so that description boxes rendered below nodes in Export Diagram Mode never overlap
+ * or obscure nodes below or adjacent to them.
  */
 export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
   const topLevelNodes = nodes.filter((n) => !n.parentId);
   if (topLevelNodes.length <= 1) return nodes;
 
-  // Measure or estimate height for each node with export description box
+  // Measure or estimate height for each node including export description box
   function getNodeHeight(n: CustomNode): number {
     const domEl =
       typeof document !== 'undefined'
@@ -205,13 +205,32 @@ export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
     const model = String(n.data?.model || '').toUpperCase();
     const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
     const isTap = model.includes('TAP');
-    if (isChassis) return 290;
-    if (isTap) return 140;
-    if (n.type === 'toolNode') return 160;
-    return n.measured?.height || 150;
+    if (n.type === 'clusterNode') return 310;
+    if (isChassis) return 370;
+    if (isTap) return 190;
+    if (n.type === 'toolNode') return 190;
+    if (n.type === 'mapNode' || n.type === 'filterNode') return 220;
+    return n.measured?.height || 180;
   }
 
-  // Cluster nodes into columns based on X position (within 110px tolerance)
+  function getNodeWidth(n: CustomNode): number {
+    const domEl =
+      typeof document !== 'undefined'
+        ? (document.querySelector(`[data-id="${n.id}"]`) as HTMLElement)
+        : null;
+    if (domEl && domEl.offsetWidth > 50) {
+      return domEl.offsetWidth;
+    }
+    const model = String(n.data?.model || '').toUpperCase();
+    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
+    if (isChassis) return 330;
+    if (n.type === 'clusterNode') return 310;
+    if (n.type === 'toolNode') return 210;
+    if (model.includes('TAP')) return 200;
+    return n.measured?.width || 240;
+  }
+
+  // Cluster nodes into columns based on X position (within 80px tolerance)
   const columns: CustomNode[][] = [];
   const sortedByX = [...topLevelNodes].sort((a, b) => a.position.x - b.position.x);
 
@@ -219,7 +238,7 @@ export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
     let placed = false;
     for (const col of columns) {
       const avgX = col.reduce((sum, n) => sum + n.position.x, 0) / col.length;
-      if (Math.abs(node.position.x - avgX) < 110) {
+      if (Math.abs(node.position.x - avgX) < 80) {
         col.push(node);
         placed = true;
         break;
@@ -230,24 +249,42 @@ export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
     }
   });
 
+  // Sort columns left to right by their average X
+  columns.sort((a, b) => {
+    const avgA = a.reduce((sum, n) => sum + n.position.x, 0) / a.length;
+    const avgB = b.reduce((sum, n) => sum + n.position.x, 0) / b.length;
+    return avgA - avgB;
+  });
+
   const newPositions = new Map<string, { x: number; y: number }>();
-  const VERTICAL_GAP = 30;
+  const VERTICAL_GAP = 40;
+  const HORIZONTAL_GAP = 70;
+
+  let prevColRight = -Infinity;
 
   columns.forEach((col) => {
     // Sort vertically by current Y position
     col.sort((a, b) => a.position.y - b.position.y);
 
+    const colWidth = Math.max(...col.map(getNodeWidth));
+    const originalColX = Math.min(...col.map((n) => n.position.x));
+    const colX = isFinite(prevColRight) && prevColRight > -Infinity
+      ? Math.max(originalColX, prevColRight + HORIZONTAL_GAP)
+      : originalColX;
+
     let currentY = col[0].position.y;
     col.forEach((node, idx) => {
       if (idx === 0) {
-        newPositions.set(node.id, { x: node.position.x, y: node.position.y });
-        currentY = node.position.y + getNodeHeight(node) + VERTICAL_GAP;
+        newPositions.set(node.id, { x: colX, y: currentY });
+        currentY = currentY + getNodeHeight(node) + VERTICAL_GAP;
       } else {
         const targetY = Math.max(node.position.y, currentY);
-        newPositions.set(node.id, { x: node.position.x, y: targetY });
+        newPositions.set(node.id, { x: colX, y: targetY });
         currentY = targetY + getNodeHeight(node) + VERTICAL_GAP;
       }
     });
+
+    prevColRight = colX + colWidth;
   });
 
   return nodes.map((n) => {

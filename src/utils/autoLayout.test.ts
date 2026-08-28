@@ -120,8 +120,44 @@ describe('autoSpaceNodesForExport', () => {
     const pos2 = result.find((n) => n.id === 'ta25_2')!.position;
 
     expect(pos1.y).toBe(100);
-    // TA25E has height ~290px with description + 30px gap, so pos2.y should be >= 420px
-    expect(pos2.y).toBeGreaterThanOrEqual(420);
+    // TA25E has height ~370px with description + 40px gap, so pos2.y should be >= 500px
+    expect(pos2.y).toBeGreaterThanOrEqual(500);
+  });
+
+  it('spaces stacked cluster nodes and ensures adequate vertical breathing room', () => {
+    const cluster1 = node('cluster1', 50, 100, {
+      type: 'clusterNode',
+      data: { label: '8x TAP Cluster', clusterType: 'tap' } as unknown as CustomNode['data'],
+    });
+    const cluster2 = node('cluster2', 50, 200, {
+      type: 'clusterNode',
+      data: { label: '4x Tool Cluster', clusterType: 'tool' } as unknown as CustomNode['data'],
+    });
+
+    const result = autoSpaceNodesForExport([cluster1, cluster2]);
+    const pos1 = result.find((n) => n.id === 'cluster1')!.position;
+    const pos2 = result.find((n) => n.id === 'cluster2')!.position;
+
+    expect(pos1.y).toBe(100);
+    expect(pos2.y).toBeGreaterThanOrEqual(440);
+  });
+
+  it('guarantees minimum horizontal gap between adjacent columns', () => {
+    const tapCol = node('tap1', 50, 100, {
+      type: 'clusterNode',
+      data: { label: 'TAP Stack', clusterType: 'tap' } as unknown as CustomNode['data'],
+    });
+    const chassisCol = node('chassis1', 200, 100, {
+      type: 'hardwareNode',
+      data: { label: 'TA25E', model: 'GigaVUE-TA25E' } as unknown as CustomNode['data'],
+    });
+
+    const result = autoSpaceNodesForExport([tapCol, chassisCol]);
+    const posTap = result.find((n) => n.id === 'tap1')!.position;
+    const posChassis = result.find((n) => n.id === 'chassis1')!.position;
+
+    // TAP cluster width (310) + horizontal gap (70) means chassis must start at >= 50 + 310 + 70 = 430
+    expect(posChassis.x).toBeGreaterThanOrEqual(posTap.x + 310 + 70);
   });
 });
 

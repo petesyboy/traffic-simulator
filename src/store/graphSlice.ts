@@ -15,7 +15,7 @@ import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
 import { getRequiredPortCount, isTapUnconfigured, getOpticCage } from '../utils/ports';
-import { computeTidyLayout } from '../utils/autoLayout';
+import { computeTidyLayout, autoSpaceNodesForExport } from '../utils/autoLayout';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
@@ -281,7 +281,19 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   },
   setShowGrid: (show) => set({ showGrid: show }),
   setSnapToGrid: (snap) => set({ snapToGrid: snap }),
-  setExportDiagramMode: (val) => set({ exportDiagramMode: val }),
+  setExportDiagramMode: (val) => {
+    if (val) {
+      get().pushHistory();
+      const spacedNodes = autoSpaceNodesForExport(get().nodes);
+      set({
+        exportDiagramMode: true,
+        nodes: spacedNodes,
+        fitViewTrigger: get().fitViewTrigger + 1,
+      });
+    } else {
+      set({ exportDiagramMode: false });
+    }
+  },
   snapAllNodesToGrid: () => { get().pushHistory(); set({ nodes: get().nodes.map((node) => ({ ...node, position: { x: Math.round(node.position.x / 15) * 15, y: Math.round(node.position.y / 15) * 15 } })) }); },
   tidyLayout: () => { get().pushHistory(); set({ nodes: computeTidyLayout(get().nodes, get().edges), fitViewTrigger: get().fitViewTrigger + 1 }); },
   clearCanvas: () => {
