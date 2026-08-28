@@ -12,11 +12,12 @@ import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import type { GigaSmartNodeData } from '../store/types';
-import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode } from './nodes';
+import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode, ClusterNode } from './nodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
 import { isAutoTrayModel } from '../utils/trayModels';
+import { isTapNode, isToolNode } from '../utils/clusterUtils';
 import { FederatedEnclosures } from './canvas/FederatedEnclosures';
 import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { GroupingBanner } from './canvas/GroupingBanner';
@@ -33,6 +34,7 @@ const nodeTypes = {
   [NODE_TYPES.GIGASMART]:  GigaSmartNode,
   [NODE_TYPES.GROUP]:      GroupNode,
   [NODE_TYPES.HARDWARE]:   HardwareNode,
+  [NODE_TYPES.CLUSTER]:    ClusterNode,
   missionPipelineNode:     MissionPipelineNode,
   missionCloudNode:        MissionCloudNode,
 };
@@ -374,13 +376,17 @@ const CanvasArea: React.FC = () => {
   
   const selectedInputCount = nodes.filter(n => n.selected && n.type === 'inputNode').length;
   const selectedGroupCount = nodes.filter(n => n.selected && n.type === 'groupNode').length;
+  const selectedTapCount = nodes.filter(n => n.selected && isTapNode(n)).length;
+  const selectedToolCount = nodes.filter(n => n.selected && isToolNode(n)).length;
+  const selectedClusterCount = nodes.filter(n => n.selected && n.type === 'clusterNode').length;
   const selectedEdges = edges.filter(e => e.selected);
 
   // TAP-M100T/M200T/M202ULT trays are auto-generated placement aids for Rack
   // View only (see traySync.ts) - they're real nodes so save/load and rack
   // placement keep working, but never appear on the canvas diagram itself.
+  // Also hide member nodes of collapsed clusters.
   const canvasNodes = useMemo(
-    () => nodes.filter(n => !(n.type === 'hardwareNode' && isAutoTrayModel(String(n.data?.model || '')))),
+    () => nodes.filter(n => !n.hidden && !(n.type === 'hardwareNode' && isAutoTrayModel(String(n.data?.model || '')))),
     [nodes],
   );
 
@@ -407,8 +413,14 @@ const CanvasArea: React.FC = () => {
       </ReactFlow>
 
       <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
-      {(selectedInputCount >= 2 || selectedGroupCount >= 1) && <GroupingBanner selectedInputCount={selectedInputCount} selectedGroupCount={selectedGroupCount} />}
-      {selectedEdges.length > 0 && <EdgeBanner selectedEdges={selectedEdges} onDelete={() => onEdgesChange(selectedEdges.map(e => ({ id: e.id, type: 'remove' })))} topOffset={selectedInputCount >= 2 || selectedGroupCount >= 1} />}
+      <GroupingBanner
+        selectedInputCount={selectedInputCount}
+        selectedGroupCount={selectedGroupCount}
+        selectedTapCount={selectedTapCount}
+        selectedToolCount={selectedToolCount}
+        selectedClusterCount={selectedClusterCount}
+      />
+      {selectedEdges.length > 0 && <EdgeBanner selectedEdges={selectedEdges} onDelete={() => onEdgesChange(selectedEdges.map(e => ({ id: e.id, type: 'remove' })))} topOffset={selectedInputCount >= 2 || selectedGroupCount >= 1 || selectedTapCount >= 2 || selectedToolCount >= 2 || selectedClusterCount >= 1} />}
       {showDashboard && <FederatedDashboard onClose={() => setShowDashboard(false)} />}
     </div>
   );

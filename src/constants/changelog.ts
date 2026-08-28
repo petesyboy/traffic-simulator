@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.683",
+    date: "2026-08-28",
+    summary: "Sync manually overridden and racked M200T trays to Bill of Materials (v1.0.683)",
+  },
+  {
     version: "1.0.682",
     date: "2026-08-28",
     summary: "Add TAP tray allocation preference and manual M200T override support (v1.0.682)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.660",
     date: "2026-08-27",
     summary: "Add native directory chooser & solution package dump for all deliverables (v1.0.660)",
-  },
-  {
-    version: "1.0.659",
-    date: "2026-08-27",
-    summary: "Ensure architecture PDF filename strictly defaults to Gigamon_Architecture_<solution>.pdf (v1.0.659)",
   },
 ];

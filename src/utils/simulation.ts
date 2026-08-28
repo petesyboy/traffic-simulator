@@ -33,6 +33,19 @@ const processDefaultNode: NodeProcessor = (node, item, nodeMetric) => {
   return { forwardStream: item.stream };
 };
 
+const processClusterNode: NodeProcessor = (node, item, _nodeMetric, toolReceivedStreams, deliveredStreamIds) => {
+  const isTool = (node.data as any)?.clusterType === 'tool';
+  if (isTool) {
+    if (!toolReceivedStreams[node.id]) {
+      toolReceivedStreams[node.id] = [];
+    }
+    toolReceivedStreams[node.id].push(item.stream);
+    deliveredStreamIds.add(item.stream.id);
+    return { forwardStream: null, handledQueueExternally: true };
+  }
+  return { forwardStream: item.stream };
+};
+
 const PROCESSORS: Record<string, NodeProcessor> = {
   toolNode: processToolNode,
   filterNode: processFilterNode,
@@ -41,6 +54,7 @@ const PROCESSORS: Record<string, NodeProcessor> = {
   gigaStreamNode: processGigaStreamNode,
   hardwareNode: processHardwareNode,
   missionPipelineNode: processHardwareNode,
+  clusterNode: processClusterNode,
 };
 
 // The GigaSMART Appliance (GSA) only returns processed packets to a GigaVUE

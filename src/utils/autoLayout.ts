@@ -153,7 +153,7 @@ function assignPositions(columns: string[][], sizeOf: Map<string, NodeSize>): Ma
  * their parent, which moves with the rest of its column as a single unit.
  */
 export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
-  const topLevelNodes = nodes.filter((n) => !n.parentId);
+  const topLevelNodes = nodes.filter((n) => !n.parentId && !n.hidden);
   if (topLevelNodes.length === 0) return nodes;
 
   const parentOf = new Map<string, string>();

@@ -33,6 +33,7 @@ export const NODE_TYPES = {
   GIGASTREAM: 'gigaStreamNode',
   GROUP:      'groupNode',
   HARDWARE:   'hardwareNode',
+  CLUSTER:    'clusterNode',
 } as const;
 
 /** Union of all valid node type strings. */

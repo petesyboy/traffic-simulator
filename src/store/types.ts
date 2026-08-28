@@ -186,7 +186,37 @@ export type NodeType =
   | 'gigaSmartNode'
   | 'gigaStreamNode'
   | 'groupNode'
-  | 'hardwareNode';
+  | 'hardwareNode'
+  | 'clusterNode';
+
+export interface ClusterBreakdownItem {
+  model: string;
+  count: number;
+  fiberType?: string;
+  splitRatio?: string;
+  linksCount?: number;
+  totalLinks?: number;
+  toolName?: string;
+  ingestLimitMbps?: number;
+}
+
+export interface ClusterNodeData extends BaseNodeData {
+  configType: 'Cluster Group';
+  clusterType: 'tap' | 'tool';
+  isCollapsed: boolean;
+  memberNodeIds: string[];
+  expandedLayout?: Record<string, { x: number; y: number }>;
+  summary: {
+    count: number;
+    totalLinks?: number;
+    fiberTypes?: string[];
+    splitRatios?: string[];
+    isMixed?: boolean;
+    breakdown: ClusterBreakdownItem[];
+    toolNames?: string[];
+    totalIngestLimitMbps?: number;
+  };
+}
 
 export interface BaseNodeData {
   label: string;
@@ -458,6 +488,9 @@ export interface RFState {
   loadDemo: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
+  createCluster: (nodeIds?: string[], clusterType?: 'tap' | 'tool') => void;
+  toggleClusterCollapse: (clusterNodeId: string) => void;
+  dissolveCluster: (clusterNodeId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
   autoScaleToolForFeed: (nodeId: string) => { ok: boolean; message: string };
 

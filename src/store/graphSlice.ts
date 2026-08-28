@@ -19,6 +19,12 @@ import { computeTidyLayout } from '../utils/autoLayout';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
+import {
+  buildClusterNode,
+  expandClusterNode,
+  collapseClusterNode,
+  dissolveClusterNode,
+} from '../utils/clusterUtils';
 
 export interface GraphSlice {
   nodes: CustomNode[];
@@ -54,6 +60,9 @@ export interface GraphSlice {
   clearCanvas: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
+  createCluster: (nodeIds?: string[], clusterType?: 'tap' | 'tool') => void;
+  toggleClusterCollapse: (clusterNodeId: string) => void;
+  dissolveCluster: (clusterNodeId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
   autoScaleToolForFeed: (nodeId: string) => { ok: boolean; message: string };
 }
@@ -296,6 +305,58 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const updatedNodes = get().nodes.map((node) => node.parentId === groupId ? { ...node, parentId: undefined, position: { x: node.position.x + pX, y: node.position.y + pY }, extent: undefined } : node).filter((n) => n.id !== groupId);
     const updatedEdges = get().edges.filter((edge) => edge.source !== groupId && edge.target !== groupId);
     set({ nodes: syncSplunkLabels(updatedNodes, updatedEdges), edges: updatedEdges, selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId });
+  },
+  createCluster: (nodeIds, typeOverride) => {
+    const state = get();
+    let targetNodes: CustomNode[] = [];
+    if (nodeIds && nodeIds.length >= 2) {
+      targetNodes = state.nodes.filter((n) => nodeIds.includes(n.id));
+    } else {
+      // Default to selected nodes
+      const selected = state.nodes.filter((n) => n.selected);
+      if (selected.length >= 2) {
+        targetNodes = selected;
+      }
+    }
+    if (targetNodes.length < 2) return;
+
+    state.pushHistory();
+    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(targetNodes, state.edges, typeOverride);
+    const updatedNodeIds = new Set(updatedNodes.map((n) => n.id));
+    const allRemainingNodes = state.nodes.filter((n) => !updatedNodeIds.has(n.id));
+    set({
+      nodes: [clusterNode, ...allRemainingNodes, ...updatedNodes],
+      edges: updatedEdges,
+      selectedNodeId: clusterNode.id,
+    });
+  },
+  toggleClusterCollapse: (clusterNodeId) => {
+    const state = get();
+    const clusterNode = state.nodes.find((n) => n.id === clusterNodeId);
+    if (!clusterNode || clusterNode.type !== NODE_TYPES.CLUSTER) return;
+
+    state.pushHistory();
+    const isCurrentlyCollapsed = clusterNode.data?.isCollapsed !== false;
+    if (isCurrentlyCollapsed) {
+      const { nodes, edges } = expandClusterNode(clusterNode, state.nodes, state.edges);
+      set({ nodes, edges });
+    } else {
+      const { nodes, edges } = collapseClusterNode(clusterNode, state.nodes, state.edges);
+      set({ nodes, edges });
+    }
+  },
+  dissolveCluster: (clusterNodeId) => {
+    const state = get();
+    const clusterNode = state.nodes.find((n) => n.id === clusterNodeId);
+    if (!clusterNode || clusterNode.type !== NODE_TYPES.CLUSTER) return;
+
+    state.pushHistory();
+    const { nodes, edges } = dissolveClusterNode(clusterNodeId, state.nodes, state.edges);
+    set({
+      nodes,
+      edges,
+      selectedNodeId: state.selectedNodeId === clusterNodeId ? null : state.selectedNodeId,
+    });
   },
   duplicateSolution: (newSiteName) => {
     const result = performDuplicateSolution(newSiteName, get().nodes, get().edges, get().trafficStreams);
