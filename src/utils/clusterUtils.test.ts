@@ -271,4 +271,66 @@ describe('clusterUtils', () => {
       expect(e?.targetHandle).toBe('in');
     });
   });
+
+  it('preserves multi-destination links from 8 TAPs targeting 2 distinct TA25E chassis through expand, collapse, and dissolve', () => {
+    const taps = Array.from({ length: 8 }, (_, i) =>
+      createMockTap(`tap-${i + 1}`, 'TAP-M273T', 'TAP-M273T', 6),
+    );
+    // TAPs 1-4 connect to TA25E #1, TAPs 5-8 connect to TA25E #2
+    const edges: Edge[] = taps.map((tap, i) => ({
+      id: `e-tap-${i + 1}-ta`,
+      source: tap.id,
+      sourceHandle: 'out',
+      target: i < 4 ? 'ta-site-a-1' : 'ta-site-a-2',
+      targetHandle: 'in',
+    }));
+
+    // 1. Build cluster
+    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(taps, edges, 'tap');
+    expect(updatedEdges).toHaveLength(8);
+    // 4 edges to ta1, 4 edges to ta2
+    expect(updatedEdges.filter(e => e.target === 'ta-site-a-1')).toHaveLength(4);
+    expect(updatedEdges.filter(e => e.target === 'ta-site-a-2')).toHaveLength(4);
+
+    let currentNodes = [clusterNode, ...updatedNodes];
+    let currentEdges = updatedEdges;
+
+    // 2. Expand
+    const exp = expandClusterNode(currentNodes[0], currentNodes, currentEdges);
+    currentNodes = exp.nodes;
+    currentEdges = exp.edges;
+    expect(currentEdges).toHaveLength(8);
+    for (let i = 0; i < 4; i++) {
+      const e = currentEdges.find(edge => edge.id === `e-tap-${i + 1}-ta`);
+      expect(e?.source).toBe(`tap-${i + 1}`);
+      expect(e?.target).toBe('ta-site-a-1');
+    }
+    for (let i = 4; i < 8; i++) {
+      const e = currentEdges.find(edge => edge.id === `e-tap-${i + 1}-ta`);
+      expect(e?.source).toBe(`tap-${i + 1}`);
+      expect(e?.target).toBe('ta-site-a-2');
+    }
+
+    // 3. Collapse
+    const col = collapseClusterNode(currentNodes[0], currentNodes, currentEdges);
+    currentNodes = col.nodes;
+    currentEdges = col.edges;
+    expect(currentEdges).toHaveLength(8);
+    expect(currentEdges.every(e => e.source === clusterNode.id)).toBe(true);
+
+    // 4. Dissolve
+    const dissolved = dissolveClusterNode(clusterNode.id, currentNodes, currentEdges);
+    expect(dissolved.nodes).toHaveLength(8);
+    expect(dissolved.edges).toHaveLength(8);
+    for (let i = 0; i < 4; i++) {
+      const e = dissolved.edges.find(edge => edge.id === `e-tap-${i + 1}-ta`);
+      expect(e?.source).toBe(`tap-${i + 1}`);
+      expect(e?.target).toBe('ta-site-a-1');
+    }
+    for (let i = 4; i < 8; i++) {
+      const e = dissolved.edges.find(edge => edge.id === `e-tap-${i + 1}-ta`);
+      expect(e?.source).toBe(`tap-${i + 1}`);
+      expect(e?.target).toBe('ta-site-a-2');
+    }
+  });
 });

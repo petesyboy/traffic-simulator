@@ -304,7 +304,10 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const { x: pX, y: pY } = parentNode.position;
     const updatedNodes = get().nodes.map((node) => node.parentId === groupId ? { ...node, parentId: undefined, position: { x: node.position.x + pX, y: node.position.y + pY }, extent: undefined } : node).filter((n) => n.id !== groupId);
     const updatedEdges = get().edges.filter((edge) => edge.source !== groupId && edge.target !== groupId);
-    set({ nodes: syncSplunkLabels(updatedNodes, updatedEdges), edges: updatedEdges, selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId });
+    let nextNodes = syncSplunkLabels(updatedNodes, updatedEdges);
+    nextNodes = syncOpticsOnTapConnection(nextNodes, updatedEdges);
+    const nextEdges = syncPortAssignments(nextNodes, updatedEdges);
+    set({ nodes: nextNodes, edges: nextEdges, selectedNodeId: get().selectedNodeId === groupId ? null : get().selectedNodeId });
   },
   createCluster: (nodeIds, typeOverride) => {
     const state = get();

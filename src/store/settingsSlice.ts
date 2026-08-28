@@ -65,11 +65,11 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   },
 
   restoreState: (nodes, edges, trafficStreams, settings) => {
-    // Filter out duplicate edges that connect the exact same source/target handles
+    // Deduplicate only truly duplicate edge IDs to preserve intentional parallel links and clustered links
     const uniqueEdges: Edge[] = [];
     const seen = new Set<string>();
     edges.forEach((edge) => {
-      const key = `${edge.source}_${edge.sourceHandle || ''}_${edge.target}_${edge.targetHandle || ''}`;
+      const key = edge.id ? `id:${edge.id}` : `${edge.source}_${edge.sourceHandle || ''}_${edge.target}_${edge.targetHandle || ''}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueEdges.push(edge);

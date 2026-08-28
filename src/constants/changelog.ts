@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.685",
+    date: "2026-08-28",
+    summary: "Restore tool and tap link terminations during expand/collapse cycles (v1.0.685)",
+  },
+  {
     version: "1.0.684",
     date: "2026-08-28",
     summary: "Add stacked cluster cards with expand/collapse for TAPs and Tools (v1.0.684)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.663",
     date: "2026-08-27",
     summary: "Standardize solution deliverable package to 6 canonical files and streamline export notifications (v1.0.663)",
-  },
-  {
-    version: "1.0.662",
-    date: "2026-08-27",
-    summary: "Conditionally omit commercial quotes from package dump unless project discounting is configured (v1.0.662)",
   },
 ];
