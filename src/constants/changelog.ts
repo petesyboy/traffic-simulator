@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.688",
+    date: "2026-08-28",
+    summary: "Center collapsed cluster cards vertically to align with chassis (v1.0.688)",
+  },
+  {
     version: "1.0.687",
     date: "2026-08-28",
     summary: "Position cluster cards strictly at member nodes bounding box (v1.0.687)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.667",
     date: "2026-08-27",
     summary: "Add 20-pack vs discrete optics toggle in QuoteModal (v1.0.667)",
-  },
-  {
-    version: "1.0.666",
-    date: "2026-08-27",
-    summary: "Add AHR qualification badge to eligible hardware in QuoteModal (v1.0.666)",
   },
 ];

@@ -19,6 +19,9 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
   const dissolveCluster = useStore((s) => s.dissolveCluster);
   const nodeMetrics = useStore((s) => s.nodeMetrics);
   const isRunning = useStore((s) => s.isRunning);
+  const exportDiagramMode = useStore((s) => s.exportDiagramMode);
+  const nodes = useStore((s) => s.nodes);
+  const edges = useStore((s) => s.edges);
 
   const isCollapsed = cData.isCollapsed !== false;
   const clusterType = cData.clusterType || 'tap';
@@ -54,60 +57,198 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
   const themeBg = isTap ? 'rgba(0, 229, 255, 0.08)' : 'rgba(168, 85, 247, 0.08)';
   const themeBorder = isTap ? 'rgba(0, 229, 255, 0.45)' : 'rgba(168, 85, 247, 0.45)';
 
+  const renderDiagramModeDetails = () => {
+    if (!exportDiagramMode) return null;
+    const memberIds = new Set(cData.memberNodeIds || []);
+
+    if (isTap) {
+      const lines: string[] = [];
+      lines.push(`📦 TAP Architecture Stack: ${summary.count}x modules`);
+      lines.push(`⚡ Total Links Monitored: ${summary.totalLinks || summary.count * 6} network links`);
+      
+      if (summary.isMixed) {
+        summary.breakdown.forEach((b) => {
+          lines.push(` • ${b.count}x ${b.model} (${b.fiberType || 'Fiber'} ${b.splitRatio || ''} · ${b.totalLinks || b.linksCount || 0} links)`);
+        });
+      } else {
+        const b = summary.breakdown[0];
+        if (b) lines.push(`Optics: ${b.fiberType || 'Fiber'} · ${b.splitRatio || '50/50'} Split`);
+      }
+
+      // Calculate tray occupancy
+      const m200Trays = Math.floor(summary.count / 6);
+      const rem = summary.count % 6;
+      const m100Trays = rem > 0 ? (rem <= 3 ? 1 : 0) : 0;
+      const extraM200 = rem > 3 ? 1 : 0;
+      const totalM200 = m200Trays + extraM200;
+      const trayParts: string[] = [];
+      if (totalM200 > 0) trayParts.push(`${totalM200}x TAP-M200T`);
+      if (m100Trays > 0) trayParts.push(`${m100Trays}x TAP-M100T`);
+      if (trayParts.length > 0) lines.push(`Rack Trays: ${trayParts.join(' + ')}`);
+
+      // Outbound connections
+      const outbound = edges.filter((e) => e.source === id || memberIds.has(e.source));
+      const destCounts = new Map<string, number>();
+      outbound.forEach((e) => {
+        const targetNode = nodes.find((n) => n.id === e.target);
+        if (targetNode && targetNode.id !== id && !memberIds.has(targetNode.id)) {
+          const lbl = (targetNode.data?.label as string) || (targetNode.data?.model as string) || 'Chassis';
+          destCounts.set(lbl, (destCounts.get(lbl) || 0) + 1);
+        }
+      });
+      if (destCounts.size > 0) {
+        const destStr = Array.from(destCounts.entries())
+          .map(([name, count]) => `${name} (${count} link${count > 1 ? 's' : ''})`)
+          .join(', ');
+        lines.push(`Feeds: ${destStr}`);
+      } else {
+        lines.push(`Feeds: Standalone`);
+      }
+
+      return (
+        <div
+          style={{
+            background: 'var(--node-desc-bg, rgba(16, 20, 28, 0.96))',
+            border: '1px solid #00e5ff',
+            borderRadius: '4px',
+            padding: '6px 8px',
+            minWidth: '220px',
+            maxWidth: '320px',
+            boxSizing: 'border-box',
+            color: 'var(--text-primary, #fff)',
+            fontSize: '9px',
+            fontFamily: 'monospace',
+            boxShadow: '0 2px 8px rgba(0, 229, 255, 0.25)',
+            pointerEvents: 'none',
+            whiteSpace: 'pre-wrap',
+            marginTop: '6px',
+            lineHeight: '1.35',
+          }}
+        >
+          {lines.join('\n')}
+        </div>
+      );
+    } else {
+      const lines: string[] = [];
+      lines.push(`🛠️ Tool Receiver Array: ${summary.count}x instances`);
+      
+      if (summary.isMixed) {
+        summary.breakdown.forEach((b) => {
+          const limitStr = b.ingestLimitMbps ? `${(b.ingestLimitMbps / 1000).toFixed(0)} Gbps each` : 'Packet Tool';
+          lines.push(` • ${b.count}x ${b.toolName || b.model} (${limitStr})`);
+        });
+      } else {
+        const b = summary.breakdown[0];
+        const limitStr = b?.ingestLimitMbps ? `${(b.ingestLimitMbps / 1000).toFixed(0)} Gbps limit each` : 'Standard Ingest';
+        lines.push(`Target: ${b?.toolName || 'Packet Analysis Tool'} (${limitStr})`);
+      }
+
+      if (summary.totalIngestLimitMbps) {
+        lines.push(`Total Ingest Rating: ${(summary.totalIngestLimitMbps / 1000).toFixed(0)} Gbps`);
+      }
+
+      // Inbound connections
+      const inbound = edges.filter((e) => e.target === id || memberIds.has(e.target));
+      const srcCounts = new Map<string, number>();
+      inbound.forEach((e) => {
+        const srcNode = nodes.find((n) => n.id === e.source);
+        if (srcNode && srcNode.id !== id && !memberIds.has(srcNode.id)) {
+          const lbl = (srcNode.data?.label as string) || (srcNode.data?.model as string) || 'Chassis';
+          srcCounts.set(lbl, (srcCounts.get(lbl) || 0) + 1);
+        }
+      });
+      if (srcCounts.size > 0) {
+        const srcStr = Array.from(srcCounts.entries())
+          .map(([name, count]) => `${name} (${count} link${count > 1 ? 's' : ''})`)
+          .join(', ');
+        lines.push(`Ingests from: ${srcStr}`);
+      } else {
+        lines.push(`Ingests from: Unconnected`);
+      }
+
+      return (
+        <div
+          style={{
+            background: 'var(--node-desc-bg, rgba(22, 16, 32, 0.96))',
+            border: '1px solid #a855f7',
+            borderRadius: '4px',
+            padding: '6px 8px',
+            minWidth: '220px',
+            maxWidth: '320px',
+            boxSizing: 'border-box',
+            color: 'var(--text-primary, #fff)',
+            fontSize: '9px',
+            fontFamily: 'monospace',
+            boxShadow: '0 2px 8px rgba(168, 85, 247, 0.25)',
+            pointerEvents: 'none',
+            whiteSpace: 'pre-wrap',
+            marginTop: '6px',
+            lineHeight: '1.35',
+          }}
+        >
+          {lines.join('\n')}
+        </div>
+      );
+    }
+  };
+
   if (!isCollapsed) {
     // ── EXPANDED BOUNDING HEADER ──
     return (
-      <div
-        style={{
-          background: 'rgba(18, 22, 30, 0.92)',
-          border: `1px dashed ${themeColor}`,
-          borderRadius: '8px',
-          padding: '8px 12px',
-          boxShadow: `0 0 16px ${themeBg}`,
-          minWidth: '220px',
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px' }}>{isTap ? '⚡' : '🛠️'}</span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: themeColor }}>
-              {cData.label} (Expanded)
-            </span>
+      <div style={{ position: 'relative' }}>
+        <div
+          style={{
+            background: 'rgba(18, 22, 30, 0.92)',
+            border: `1px dashed ${themeColor}`,
+            borderRadius: '8px',
+            padding: '8px 12px',
+            boxShadow: `0 0 16px ${themeBg}`,
+            minWidth: '220px',
+            position: 'relative',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px' }}>{isTap ? '⚡' : '🛠️'}</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: themeColor }}>
+                {cData.label} (Expanded)
+              </span>
+            </div>
+            <button
+              onClick={() => toggleClusterCollapse(id)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '2px 8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title="Collapse back into stacked card"
+            >
+              <span>⤡</span> Collapse Stack
+            </button>
           </div>
-          <button
-            onClick={() => toggleClusterCollapse(id)}
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              color: '#fff',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '2px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-            title="Collapse back into stacked card"
-          >
-            <span>⤡</span> Collapse Stack
-          </button>
+          {/* Handles to ensure ReactFlow always has registered endpoints */}
+          <Handle
+            type="target"
+            position={Position.Left}
+            id="in"
+            style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
+          />
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="out"
+            style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
+          />
         </div>
-        {/* Handles to ensure ReactFlow always has registered endpoints */}
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="in"
-          style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
-        />
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="out"
-          style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
-        />
+        {renderDiagramModeDetails()}
       </div>
     );
   }
@@ -376,6 +517,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
           </button>
         </div>
       </div>
+      {renderDiagramModeDetails()}
     </div>
   );
 };
