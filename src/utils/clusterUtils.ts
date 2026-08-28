@@ -194,10 +194,14 @@ export function buildClusterNode(
     ? (clusterType === 'tap' ? `${summary.count}x TAP Modules (Mixed)` : `${summary.count}x Tools (Mixed)`)
     : `${summary.count}x ${primaryModel}`;
 
+  // Center the compact cluster card vertically relative to the span of its member nodes
+  const centerY = isFinite(minY) && isFinite(maxY) ? (minY + maxY) / 2 - 70 : minY;
+  const posX = isFinite(minX) ? minX : 0;
+
   const clusterNode: CustomNode = {
     id: clusterId,
     type: NODE_TYPES.CLUSTER,
-    position: { x: minX, y: minY },
+    position: { x: posX, y: Math.max(0, centerY) },
     data: {
       label,
       configType: 'Cluster Group',
@@ -273,11 +277,26 @@ export function expandClusterNode(
   const spacingY = 110;
   const offsetX = 280;
 
+  let minSavedX = Infinity;
+  let minSavedY = Infinity;
+  memberIdList.forEach((id) => {
+    const s = data.expandedLayout?.[id];
+    if (s) {
+      minSavedX = Math.min(minSavedX, s.x);
+      minSavedY = Math.min(minSavedY, s.y);
+    }
+  });
+
+  const headerPos = isFinite(minSavedX) && isFinite(minSavedY)
+    ? { x: minSavedX, y: Math.max(0, minSavedY - 50) }
+    : { x: basePos.x, y: Math.max(0, basePos.y - 50) };
+
   let idx = 0;
   const updatedNodes = allNodes.map((node) => {
     if (node.id === clusterNode.id) {
       return {
         ...node,
+        position: headerPos,
         data: {
           ...node.data,
           isCollapsed: false,
@@ -348,11 +367,21 @@ export function collapseClusterNode(
   const memberIdList = data.memberNodeIds || [];
   const memberIds = new Set(memberIdList);
 
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
   // Save current expanded positions and hide member nodes
   const currentExpandedLayout: Record<string, { x: number; y: number }> = {};
   allNodes.forEach((n) => {
     if (memberIds.has(n.id)) {
-      currentExpandedLayout[n.id] = { x: n.position.x, y: n.position.y };
+      const { x, y } = n.position;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+      currentExpandedLayout[n.id] = { x, y };
     }
   });
 
@@ -360,10 +389,14 @@ export function collapseClusterNode(
   const members = allNodes.filter((n) => memberIds.has(n.id));
   const summary = buildClusterSummary(members, data.clusterType || 'tap');
 
+  const centerY = isFinite(minY) && isFinite(maxY) ? (minY + maxY) / 2 - 70 : clusterNode.position.y;
+  const posX = isFinite(minX) ? minX : clusterNode.position.x;
+
   const updatedNodes = allNodes.map((node) => {
     if (node.id === clusterNode.id) {
       return {
         ...node,
+        position: { x: posX, y: Math.max(0, centerY) },
         data: {
           ...node.data,
           isCollapsed: true,

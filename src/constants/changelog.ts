@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.687",
+    date: "2026-08-28",
+    summary: "Position cluster cards strictly at member nodes bounding box (v1.0.687)",
+  },
+  {
     version: "1.0.686",
     date: "2026-08-28",
     summary: "Preserve parallel and clustered links across restoreState and grouping operations (v1.0.686)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.666",
     date: "2026-08-27",
     summary: "Add AHR qualification badge to eligible hardware in QuoteModal (v1.0.666)",
-  },
-  {
-    version: "1.0.664",
-    date: "2026-08-27",
-    summary: "Align commercial quote and PDF generator with Salesforce CPQ format (v1.0.664)",
   },
 ];
