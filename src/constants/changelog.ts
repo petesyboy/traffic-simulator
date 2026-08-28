@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.689",
+    date: "2026-08-28",
+    summary: "Add architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters (v1.0.689)",
+  },
+  {
     version: "1.0.688",
     date: "2026-08-28",
     summary: "Center collapsed cluster cards vertically to align with chassis (v1.0.688)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.670",
     date: "2026-08-28",
     summary: "Add New Project menu action, quotation workspace reset, and project naming prompt before generation",
-  },
-  {
-    version: "1.0.667",
-    date: "2026-08-27",
-    summary: "Add 20-pack vs discrete optics toggle in QuoteModal (v1.0.667)",
   },
 ];
