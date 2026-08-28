@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.675",
+    date: "2026-08-28",
+    summary: "Introduce dedicated .gvp project file format with full quote state persistence (v1.0.675)",
+  },
+  {
     version: "1.0.674",
     date: "2026-08-28",
     summary: "Prevent phantom high-speed uplink optics when interconnecting chassis (v1.0.674)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.651",
     date: "2026-08-26",
     summary: "Synchronize master SKU catalog and all prices against latest WWPL_20260731 (v1.0.651)",
-  },
-  {
-    version: "1.0.650",
-    date: "2026-08-26",
-    summary: "Support percent-of-total hardware support SKU GSS-HW-AHR-GMO (41% of covered hardware list price) (v1.0.650)",
   },
 ];

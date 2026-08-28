@@ -54,5 +54,35 @@ describe('areActionsCompatible', () => {
     expect(areActionsCompatible('Load Balancing (Stateful)', 'GTP Flow Filtering').compatible).toBe(true);
     expect(areActionsCompatible('IP FlowVUE', 'Advanced Flow Slicing').compatible).toBe(true);
   });
+
+  it('allows combining FlowVUE with GTP filtering, whitelisting, and correlation on a single HC3 GigaSMART card', () => {
+    const singleCardModules = ['SMT-HC3-C08'];
+    const resultFlowVueGtpFilter = areActionsCompatible(
+      'IP FlowVUE',
+      'GTP Flow Filtering',
+      1,
+      'GigaVUE-HC3',
+      singleCardModules,
+    );
+    expect(resultFlowVueGtpFilter.compatible).toBe(true);
+
+    const resultFlowVueGtpWhitelist = areActionsCompatible(
+      'IP FlowVUE',
+      'GTP Whitelisting',
+      1,
+      'GigaVUE-HC3',
+      singleCardModules,
+    );
+    expect(resultFlowVueGtpWhitelist.compatible).toBe(true);
+
+    const resultFlowVueGtpSample = areActionsCompatible(
+      'IP FlowVUE',
+      'GTP Flow Sampling',
+      1,
+      'GigaVUE-HC3',
+      singleCardModules,
+    );
+    expect(resultFlowVueGtpSample.compatible).toBe(true);
+  });
 });
 

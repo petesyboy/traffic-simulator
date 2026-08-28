@@ -85,19 +85,19 @@ export const GIGASMART_MATRIX: GigaSmartRule[] = [
   },
   {
     actionType: 'GTP Flow Filtering',
-    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: false, HC1PLUS_REAR_GEN3_SMT_HC1A_R: false, HC1PLUS_FRONT_GEN3_SMT_HC1_S: false, HCT_GEN3_SMT_HC1_S: false }
+    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
   },
   {
     actionType: 'GTP Rotational Sampling',
-    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: false, HC1PLUS_REAR_GEN3_SMT_HC1A_R: false, HC1PLUS_FRONT_GEN3_SMT_HC1_S: false, HCT_GEN3_SMT_HC1_S: false }
+    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
   },
   {
     actionType: 'GTP Whitelisting',
-    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: false, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
+    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
   },
   {
     actionType: 'GTP Flow Sampling',
-    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: false, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
+    supportedOn: { HC1_GEN2_ONBOARD: false, HC1_GEN3_SMT_HC1_S: false, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: false }
   },
   {
     actionType: 'Adaptive Packet Filtering',
@@ -243,6 +243,8 @@ export function getCanonicalGsopName(actionType: string): string | null {
       return 'FlowVUE';
     case 'GTP Flow Filtering':
       return 'GTP Flow Filter';
+    case 'GTP Rotational Sampling':
+      return 'GTP Rotational Sampling';
     case 'GTP Whitelisting':
       return 'GTP Whitelist';
     case 'GTP Flow Sampling':
@@ -284,7 +286,8 @@ export function getCanonicalGsopName(actionType: string): string | null {
 export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   'Masking': [
     'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 'A SF', 'AFI (ASF)', 
-    'FlowVUE', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
+    'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 'GTP Rotational Sampling',
+    'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 
     'Advanced Flow Slicing', 'Tunnel Encap', 'Tunnel Decap'
   ],
   'Source Port Labelling': [
@@ -294,18 +297,20 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   ],
   'De-Dup': [
     'Masking', 'Source Port Labelling', 'Load Balance', 'APF', 'A SF', 'AFI (ASF)', 
-    'AMI', 'FlowVUE', 'Strip Headers', 'Add Headers', 'Remove H/T', 'NetFlow 1st level', 
+    'AMI', 'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 'GTP Rotational Sampling',
+    'Strip Headers', 'Add Headers', 'Remove H/T', 'NetFlow 1st level', 
     'NetFlow 2nd level', 'Slicing', 'Advanced Flow Slicing', 'SSL Decrypt', 
     'Tunnel Encap', 'Tunnel Decap'
   ],
   'Load Balance': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'APF', 'A SF', 'AFI (ASF)', 
-    'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 
+    'FlowVUE', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 'GTP Rotational Sampling',
     'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing', 'Advanced Flow Slicing', 
     'Tunnel Encap', 'Tunnel Decap'
   ],
   'APF': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'FlowVUE', 
+    'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling', 'GTP Rotational Sampling',
     'Strip Headers', 'Add Headers', 'Slicing', 'Advanced Flow Slicing', 
     'Tunnel Encap'
   ],
@@ -324,16 +329,28 @@ export const GSOP_COMPATIBILITY: Record<string, string[]> = {
   'FlowVUE': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF',
     'A SF', 'Strip Headers', 'Add Headers', 'Remove H/T', 'Slicing',
-    'Advanced Flow Slicing'
+    'Advanced Flow Slicing', 'GTP Flow Filter', 'GTP Whitelist',
+    'GTP Flow Sampling', 'GTP Rotational Sampling'
   ],
   'GTP Flow Filter': [
-    'Load Balance', 'GTP Whitelist', 'Slicing'
+    'Load Balance', 'GTP Whitelist', 'GTP Flow Sampling', 'GTP Rotational Sampling',
+    'FlowVUE', 'Slicing', 'Masking', 'APF', 'De-Dup', 'Advanced Flow Slicing',
+    'Tunnel Encap', 'Tunnel Decap'
   ],
   'GTP Whitelist': [
-    'Load Balance', 'GTP Flow Filter', 'Slicing'
+    'Load Balance', 'GTP Flow Filter', 'GTP Flow Sampling', 'GTP Rotational Sampling',
+    'FlowVUE', 'Slicing', 'Masking', 'APF', 'De-Dup', 'Advanced Flow Slicing',
+    'Tunnel Encap', 'Tunnel Decap'
   ],
   'GTP Flow Sampling': [
-    'Load Balance', 'Slicing'
+    'Load Balance', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Rotational Sampling',
+    'FlowVUE', 'Slicing', 'Masking', 'APF', 'De-Dup', 'Advanced Flow Slicing',
+    'Tunnel Encap', 'Tunnel Decap'
+  ],
+  'GTP Rotational Sampling': [
+    'Load Balance', 'GTP Flow Filter', 'GTP Whitelist', 'GTP Flow Sampling',
+    'FlowVUE', 'Slicing', 'Masking', 'APF', 'De-Dup', 'Advanced Flow Slicing',
+    'Tunnel Encap', 'Tunnel Decap'
   ],
   'Strip Headers': [
     'Masking', 'Source Port Labelling', 'De-Dup', 'Load Balance', 'APF', 
