@@ -80,6 +80,16 @@ export const getNodeValueProposition = (
     if (actionType === ACTION_TYPES.SSL_DECRYPT) {
       return "Decrypts SSL/TLS traffic once and forwards the cleartext to multiple security tools, eliminating duplicate decryption overhead.";
     }
+    if (
+      actionType === ACTION_TYPES.ERSPAN_DECAP ||
+      actionType === ACTION_TYPES.TUNNELING ||
+      actionType === ACTION_TYPES.L2GRE_DECAP ||
+      actionType === ACTION_TYPES.VXLAN_DECAP ||
+      actionType === 'Tunneling' ||
+      actionType === 'Tunneling (ERSPAN Decap)'
+    ) {
+      return "Terminates and decapsulates ERSPAN, L2GRE, and VXLAN tunnels at wire speed, stripping tunnel headers to allow tools to inspect genuine inner payload traffic from remote branches and cloud environments.";
+    }
     return `Applies GigaSMART ${actionType || 'processing'} to optimise, protect, and scale downstream monitoring tools.`;
   }
 

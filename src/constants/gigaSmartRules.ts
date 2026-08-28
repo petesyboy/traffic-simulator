@@ -64,6 +64,14 @@ export const GIGASMART_MATRIX: GigaSmartRule[] = [
     supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
   },
   {
+    actionType: 'Tunneling',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
+    actionType: 'Tunneling (ERSPAN Decap)',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
     actionType: 'Header Stripping',
     supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
   },
@@ -264,6 +272,8 @@ export function getCanonicalGsopName(actionType: string): string | null {
     case 'VXLAN Tunnel Decapsulation':
     case 'ERSPAN Tunnel Decapsulation':
     case 'GRE-In-UDP Tunnel Decapsulation':
+    case 'Tunneling':
+    case 'Tunneling (ERSPAN Decap)':
       return 'Tunnel Decap';
     default:
       return null;

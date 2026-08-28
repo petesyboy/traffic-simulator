@@ -9,7 +9,7 @@ import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import { formatBandwidth } from '../../utils/format';
 import { AppIcon } from '../Icons';
-import { ACTION_TYPES, isMetadataAction, isDedupAction, isGtpAction, isHeaderStripAction } from '../../constants/nodeTypes';
+import { ACTION_TYPES, isMetadataAction, isDedupAction, isGtpAction, isHeaderStripAction, isTunnelingAction } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { useGlowClass } from './nodeStyles';
 
@@ -77,6 +77,7 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
           {isDedupAction(actionType) && 'Action: Drop'}
           {actionType === ACTION_TYPES.PACKET_SLICING && `Action: Slice (${(data.sliceSize as number) || 128}B)`}
           {isHeaderStripAction(actionType) && `Action: Strip ${String(data.headerStripProtocol || 'VXLAN')}`}
+          {isTunnelingAction(actionType) && `Action: Decap ${String(data.tunnelMode || 'ERSPAN')}`}
           {actionType === ACTION_TYPES.GTP_WHITELISTING && 'Action: GTP Whitelist'}
           {actionType === ACTION_TYPES.GTP_FLOW_SAMPLING && `Action: GTP Sample (${(data.gtpSamplePercent as number) ?? 10}%)`}
           {actionType === ACTION_TYPES.GTP_FLOW_FILTERING && 'Action: GTP Correlation'}
@@ -84,6 +85,7 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
           {!isDedupAction(actionType) &&
             actionType !== ACTION_TYPES.PACKET_SLICING &&
             !isHeaderStripAction(actionType) &&
+            !isTunnelingAction(actionType) &&
             !isGtpAction(actionType) &&
             !isMetadataAction(actionType) &&
             `Action: ${actionType}`}
@@ -96,6 +98,17 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
               <span style={{ color: '#ef5350', textDecoration: 'line-through', opacity: 0.85 }}>[{String(data.headerStripProtocol || 'VXLAN')}]</span>
               <span style={{ color: '#888' }}>➔</span>
               <span style={{ color: '#81c784', fontWeight: 600 }}>[IP/Data]</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tunneling / ERSPAN Decap packet breakdown chip */}
+        {isTunnelingAction(actionType) && (
+          <div style={{ marginTop: '4px' }}>
+            <div style={{ padding: '2px 6px', background: 'rgba(0,0,0,0.4)', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '8.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: '#ef5350', textDecoration: 'line-through', opacity: 0.85 }}>[{String(data.tunnelMode || 'ERSPAN / GRE')}]</span>
+              <span style={{ color: '#888' }}>➔</span>
+              <span style={{ color: '#81c784', fontWeight: 600 }}>[Inner Payload]</span>
             </div>
           </div>
         )}

@@ -140,6 +140,12 @@ export const GIGASMART_ACTION_DESCRIPTIONS: Record<string, string> = {
   [ACTION_TYPES.HEADER_ADDITION]:
     'Inserts custom header fields (e.g. site or link identifiers) into forwarded packets, giving downstream tools extra origin context carried in-band with the traffic itself rather than needing a separate metadata channel.',
 
+  [ACTION_TYPES.TUNNELING]:
+    'Terminates and decapsulates incoming ERSPAN (Type II and Type III), L2GRE, and VXLAN tunnels at wire speed, stripping outer encapsulation headers to expose the genuine payload packets. This enables local monitoring and security tools to inspect remote or virtualised traffic feeds that were forwarded across Layer 3 network infrastructure.',
+
+  'Tunneling':
+    'Terminates and decapsulates incoming ERSPAN (Type II and Type III), L2GRE, and VXLAN tunnels at wire speed, stripping outer encapsulation headers to expose the genuine payload packets. This enables local monitoring and security tools to inspect remote or virtualised traffic feeds that were forwarded across Layer 3 network infrastructure.',
+
   'GTP Correlation':
     "Correlates GTP-C signalling with GTP-U user tunnels, statefully tracking mobile subscriber sessions across tool ports. This ensures every monitoring tool sees complete, consistent subscriber sessions rather than partial views.",
 

@@ -84,6 +84,7 @@ export const ACTION_TYPES = {
   TCP_TUNNEL:               'TCP Tunnel',
   SECURE_TUNNELS:           'Secure Tunnels',
   GRE_IN_UDP_DECAP:         'GRE-In-UDP Tunnel Decapsulation',
+  TUNNELING:                'Tunneling (ERSPAN Decap)',
 } as const;
 
 /** Union of all valid GigaSMART action type strings. */
@@ -147,6 +148,23 @@ export const isMetadataAction = (actionType: string): boolean =>
  */
 export const isDedupAction = (actionType: string): boolean =>
   actionType === ACTION_TYPES.DEDUPLICATION;
+
+/**
+ * Returns true for Tunneling and ERSPAN decapsulation actions.
+ */
+export const isTunnelingAction = (actionType: string): boolean =>
+  actionType === ACTION_TYPES.TUNNELING ||
+  actionType === ACTION_TYPES.ERSPAN_DECAP ||
+  actionType === ACTION_TYPES.L2GRE_DECAP ||
+  actionType === ACTION_TYPES.VXLAN_DECAP ||
+  actionType === ACTION_TYPES.GRE_IN_UDP_DECAP ||
+  actionType === ACTION_TYPES.L2GRE_ENCAP ||
+  actionType === ACTION_TYPES.VXLAN_ENCAP ||
+  actionType === ACTION_TYPES.TCP_TUNNEL ||
+  actionType === ACTION_TYPES.SECURE_TUNNELS ||
+  actionType === 'Tunneling' ||
+  actionType.includes('Tunnel') ||
+  actionType.includes('ERSPAN');
 
 /**
  * Returns true for any GigaSMART GTP flow intelligence action

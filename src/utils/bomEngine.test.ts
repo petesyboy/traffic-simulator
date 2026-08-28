@@ -506,5 +506,43 @@ describe('MPO breakout panel validation', () => {
       const ukCordRow4 = singleRow4.find(r => r.sku === 'PCD-00005');
       expect(ukCordRow4?.qty).toBe(4);
     });
+
+    it('generates monthly subscription (HTL) and perpetual (Perpetual) Tunneling / ERSPAN decapsulation licenses on HC1', () => {
+      const hc1Node: CustomNode = {
+        id: 'hc1-node-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          sku: 'GVS-HC101-HW',
+          gigaSmartApps: [
+            {
+              id: 'app-tun-1',
+              label: 'Tunneling (ERSPAN Decap)',
+              actionType: 'ERSPAN Tunnel Decapsulation',
+              tunnelMode: 'ERSPAN Decapsulation',
+            },
+          ],
+        },
+      };
+
+      // HTL mode: SMT-HC1-GEN2-TUN-SW-TM with 36 month term
+      const htlBom = generateBom([hc1Node], [], 'HTL', '36', 'US');
+      const htlTunRow = htlBom.find(r => r.sku === 'SMT-HC1-GEN2-TUN-SW-TM');
+      expect(htlTunRow).toBeDefined();
+      expect(htlTunRow?.qty).toBe(1);
+      expect(htlTunRow?.type).toBe('License');
+      expect(htlTunRow?.term).toBe('36');
+
+      // Perpetual mode: SMT-HC1-TUN
+      const perpBom = generateBom([hc1Node], [], 'Perpetual', '12', 'US');
+      const perpTunRow = perpBom.find(r => r.sku === 'SMT-HC1-TUN');
+      expect(perpTunRow).toBeDefined();
+      expect(perpTunRow?.qty).toBe(1);
+      expect(perpTunRow?.type).toBe('License');
+    });
   });
 });
+

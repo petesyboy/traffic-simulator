@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.670",
+    date: "2026-08-28",
+    summary: "Add New Project menu action, quotation workspace reset, and project naming prompt before generation",
+  },
+  {
     version: "1.0.667",
     date: "2026-08-27",
     summary: "Add 20-pack vs discrete optics toggle in QuoteModal (v1.0.667)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.646",
     date: "2026-08-26",
     summary: "Dynamically sanitize and enforce module category and discount on all line calculations (v1.0.646)",
-  },
-  {
-    version: "1.0.645",
-    date: "2026-08-26",
-    summary: "Add semantic English description validation for hardware vs software category resolution (v1.0.645)",
   },
 ];

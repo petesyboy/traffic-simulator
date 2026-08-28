@@ -144,6 +144,13 @@ const appsList = [
     skuBadge: 'GTP+FVU',
     initial: { actionType: ACTION_TYPES.GTP_FLOW_SAMPLING, configType: ACTION_TYPES.GTP_FLOW_SAMPLING, gtpSamplePercent: 10 },
   },
+  {
+    label: 'Tunneling (ERSPAN Decap)',
+    type: NODE_TYPES.GIGASMART,
+    tooltip: 'Terminate and decapsulate ERSPAN (Type II/III), L2GRE, and VXLAN tunnels to inspect inner payloads. Generates GigaSMART Tunneling licence (SMT-HC1-GEN2-TUN-SW-TM / SMT-HC1-TUN).',
+    skuBadge: 'TUN',
+    initial: { actionType: ACTION_TYPES.ERSPAN_DECAP, configType: 'Tunneling', tunnelMode: 'ERSPAN Decapsulation' },
+  },
 ] as const;
 
 // ─── Sidebar component ────────────────────────────────────────────────────────

@@ -221,6 +221,23 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
           <path d="M8 8l8 8M7 16h3M14 8h3" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       );
+    case 'tunneling':
+    case 'tunnel':
+    case 'tunneling-(erspan-decap)':
+    case 'erspan-tunnel-decapsulation':
+    case 'erspan-decap':
+    case 'tunnel-decap':
+    case 'tunnel-encap':
+    case 'l2gre-tunnel-decapsulation':
+    case 'vxlan-tunnel-decapsulation':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <rect width="24" height="24" rx="4" fill="#0091ea"/>
+          <ellipse cx="12" cy="7.5" rx="6" ry="2.5" stroke="white" strokeWidth="1.3" fill="none"/>
+          <path d="M6 7.5v9c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-9" stroke="white" strokeWidth="1.3" fill="none"/>
+          <path d="M12 4.5v9M9.5 11l2.5 2.5 2.5-2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
     default:
       // Generic fallback: a simple blue square with a white inner square.
       return (

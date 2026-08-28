@@ -291,11 +291,55 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
+            {/* Tunneling / ERSPAN Decapsulation config */}
+            {(actionType === 'Tunneling' ||
+              actionType === 'Tunneling (ERSPAN Decap)' ||
+              actionType === 'ERSPAN Tunnel Decapsulation' ||
+              actionType === 'L2GRE Tunnel Decapsulation' ||
+              actionType === 'VXLAN Tunnel Decapsulation' ||
+              actionType === 'GRE-In-UDP Tunnel Decapsulation' ||
+              actionType === 'L2GRE Tunnel Encapsulation' ||
+              actionType === 'VXLAN Tunnel Encapsulation') && (() => {
+              const currentMode = (app.tunnelMode as string) || (actionType === 'L2GRE Tunnel Encapsulation' ? 'L2GRE Encapsulation' : (actionType === 'VXLAN Tunnel Encapsulation' ? 'VXLAN Encapsulation' : (actionType === 'L2GRE Tunnel Decapsulation' ? 'L2GRE Decapsulation' : (actionType === 'VXLAN Tunnel Decapsulation' ? 'VXLAN Decapsulation' : 'ERSPAN Decapsulation'))));
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>Tunneling Protocol &amp; Operation</label>
+                  <select
+                    value={currentMode}
+                    onChange={e => {
+                      const newMode = e.target.value;
+                      const mappedAction = newMode === 'L2GRE Encapsulation'
+                        ? 'L2GRE Tunnel Encapsulation'
+                        : (newMode === 'VXLAN Encapsulation'
+                          ? 'VXLAN Tunnel Encapsulation'
+                          : (newMode === 'L2GRE Decapsulation'
+                            ? 'L2GRE Tunnel Decapsulation'
+                            : (newMode === 'VXLAN Decapsulation'
+                              ? 'VXLAN Tunnel Decapsulation'
+                              : 'ERSPAN Tunnel Decapsulation')));
+                      handleUpdateApp(idx, { tunnelMode: newMode, actionType: mappedAction });
+                    }}
+                    style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                  >
+                    <option value="ERSPAN Decapsulation">ERSPAN Decapsulation (Strip GRE / ERSPAN Type II/III)</option>
+                    <option value="VXLAN Decapsulation">VXLAN Decapsulation (Terminate &amp; Strip VXLAN Overlay)</option>
+                    <option value="L2GRE Decapsulation">L2GRE Decapsulation (Terminate &amp; Strip L2GRE Tunnel)</option>
+                    <option value="VXLAN Encapsulation">VXLAN Encapsulation (Encapsulate into VXLAN UDP Tunnel)</option>
+                    <option value="L2GRE Encapsulation">L2GRE Encapsulation (Encapsulate into L2GRE Tunnel)</option>
+                  </select>
+                  <div style={{ padding: '6px', background: 'rgba(0, 145, 234, 0.08)', border: '1px solid rgba(0, 145, 234, 0.25)', borderRadius: '4px', fontSize: '10px', color: '#00e5ff' }}>
+                    🛡️ Terminates tunnel encapsulation to extract inner packet payloads for downstream tool analysis. Generates GigaSMART Tunneling licence.
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Default — no additional config */}
             {actionType !== 'Deduplication' &&
               actionType !== 'Dedup' &&
               actionType !== 'Application Metadata' &&
               actionType !== 'AMX' &&
+              actionType !== 'AMI' &&
               actionType !== 'Packet Slicing' &&
               actionType !== 'Advanced Flow Slicing' &&
               actionType !== 'Slicing' &&
@@ -305,7 +349,15 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               actionType !== 'Application Visualization' &&
               actionType !== 'GTP Flow Filtering' &&
               actionType !== 'GTP Flow Sampling' &&
-              actionType !== 'GTP Whitelisting' && (
+              actionType !== 'GTP Whitelisting' &&
+              actionType !== 'Tunneling' &&
+              actionType !== 'Tunneling (ERSPAN Decap)' &&
+              actionType !== 'ERSPAN Tunnel Decapsulation' &&
+              actionType !== 'L2GRE Tunnel Decapsulation' &&
+              actionType !== 'VXLAN Tunnel Decapsulation' &&
+              actionType !== 'GRE-In-UDP Tunnel Decapsulation' &&
+              actionType !== 'L2GRE Tunnel Encapsulation' &&
+              actionType !== 'VXLAN Tunnel Encapsulation' && (
               <div style={{ fontSize: '11px', color: '#aaa' }}>
                 No additional configuration required for {actionType}.
               </div>

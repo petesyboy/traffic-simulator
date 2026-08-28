@@ -68,6 +68,18 @@ export function runGigaSmartApps(
       const drop = stream.bandwidth * (1 - passRate);
       nodeMetric.droppedPackets += drop * 250;
       stream.bandwidth *= passRate;
+    } else if (
+      actionType === 'Tunneling' ||
+      actionType === 'Tunneling (ERSPAN Decap)' ||
+      actionType === 'ERSPAN Tunnel Decapsulation' ||
+      actionType === 'L2GRE Tunnel Decapsulation' ||
+      actionType === 'VXLAN Tunnel Decapsulation' ||
+      actionType === 'GRE-In-UDP Tunnel Decapsulation'
+    ) {
+      const scale = 0.955; // strips ~42B ERSPAN/GRE or ~50B VXLAN outer encapsulation overhead
+      const drop = stream.bandwidth * (1 - scale);
+      nodeMetric.droppedPackets += drop * 250;
+      stream.bandwidth *= scale;
     } else {
       let scale = 1.0;
       if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;

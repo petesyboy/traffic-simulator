@@ -471,6 +471,20 @@ function resolveGigaSmartSku(
       if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-GTPMAX-SW-TM' : 'SMT-HC1P-GEN3-GTPMAX-PL';
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-GTPMAX-SW-TM' : 'SMT-HC3-GEN3-GTPMAX';
       return '';
+    case 'Tunneling':
+    case 'Tunneling (ERSPAN Decap)':
+    case 'ERSPAN Tunnel Decapsulation':
+    case 'L2GRE Tunnel Decapsulation':
+    case 'VXLAN Tunnel Decapsulation':
+    case 'GRE-In-UDP Tunnel Decapsulation':
+    case 'L2GRE Tunnel Encapsulation':
+    case 'VXLAN Tunnel Encapsulation':
+    case 'TCP Tunnel':
+    case 'Secure Tunnels':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-TUN-SW-TM' : 'SMT-HC1-TUN';
+      if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-TUN-SW-TM' : 'SMT-HC1P-GEN3-TUN-PL';
+      if (isHc3) return isHtl ? 'SMT-HC3-GEN3-TUN-SW-TM' : 'SMT-HC3-GEN3-TUN';
+      return isHtl ? 'SMT-HC1-GEN2-TUN-SW-TM' : 'SMT-HC1-TUN';
     default:
       return '';
   }
