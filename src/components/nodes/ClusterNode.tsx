@@ -108,17 +108,17 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
       return (
         <div
           style={{
-            background: 'var(--node-desc-bg, rgba(20, 20, 20, 0.95))',
+            background: 'rgba(20, 20, 20, 0.95)',
             border: '1px solid #ff9800',
             borderRadius: '4px',
             padding: '6px 8px',
             minWidth: '220px',
             maxWidth: '320px',
             boxSizing: 'border-box',
-            color: 'var(--text-primary, #fff)',
+            color: '#ffffff',
             fontSize: '9px',
             fontFamily: 'monospace',
-            boxShadow: 'var(--shadow-md, 0 2px 8px rgba(0,0,0,0.8))',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
             pointerEvents: 'none',
             whiteSpace: 'pre-wrap',
             marginTop: '6px',
@@ -169,17 +169,17 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
       return (
         <div
           style={{
-            background: 'var(--node-desc-bg, rgba(20, 20, 20, 0.95))',
+            background: 'rgba(20, 20, 20, 0.95)',
             border: '1px solid #ff9800',
             borderRadius: '4px',
             padding: '6px 8px',
             minWidth: '220px',
             maxWidth: '320px',
             boxSizing: 'border-box',
-            color: 'var(--text-primary, #fff)',
+            color: '#ffffff',
             fontSize: '9px',
             fontFamily: 'monospace',
-            boxShadow: 'var(--shadow-md, 0 2px 8px rgba(0,0,0,0.8))',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
             pointerEvents: 'none',
             whiteSpace: 'pre-wrap',
             marginTop: '6px',
