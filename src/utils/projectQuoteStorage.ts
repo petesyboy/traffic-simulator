@@ -176,3 +176,23 @@ export function clearProjectQuoteWorkspace(scenarioName?: string | null): void {
     console.warn(`Failed to clear quote workspace for ${scenarioName}:`, err);
   }
 }
+
+/**
+ * Clears all saved commercial quote workspaces in localStorage.
+ */
+export function clearAllProjectQuoteWorkspaces(): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(QUOTE_STORAGE_PREFIX)) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (err) {
+    console.warn('Failed to clear quote workspaces:', err);
+  }
+}
+

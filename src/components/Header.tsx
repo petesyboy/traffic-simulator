@@ -15,12 +15,15 @@ import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagra
 import { getStandardExportFilename } from '../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
 import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
+import { clearAllProjectQuoteWorkspaces } from '../utils/projectQuoteStorage';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
   ConfirmModal,
   DuplicateModal,
   ProjectSettingsModal,
+  ProjectNamePromptModal,
+  isUntitledProject,
   BomModal,
   AboutModal,
   SkuUpdateModal,
@@ -47,6 +50,7 @@ import {
   SunIcon,
   MoonIcon,
   ChevronDownIcon,
+  FilePlusIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -105,6 +109,9 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
   // Local UI state for modals & dropdowns
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showNewProjectConfirm, setShowNewProjectConfirm] = useState(false);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [pendingNameAction, setPendingNameAction] = useState<((confirmedName: string) => void) | null>(null);
   const [showBom, setShowBom] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -144,6 +151,50 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
     }
   };
 
+  /** Ensures a project has a descriptive name (not 'Untitled Project') before generation or export */
+  const ensureProjectNamed = (action: (confirmedName: string) => void) => {
+    if (isUntitledProject(currentScenarioName)) {
+      setPendingNameAction(() => action);
+      setShowNamePrompt(true);
+    } else {
+      action(currentScenarioName!);
+    }
+  };
+
+  const handleNamePromptConfirm = (newName: string) => {
+    setCurrentScenarioName(newName);
+    setShowNamePrompt(false);
+    if (pendingNameAction) {
+      const action = pendingNameAction;
+      setPendingNameAction(null);
+      setTimeout(() => {
+        action(newName);
+      }, 50);
+    }
+  };
+
+  const handleNewProjectClick = () => {
+    if (
+      nodes.length > 0 ||
+      edges.length > 0 ||
+      trafficStreams.length > 0 ||
+      (currentScenarioName && !isUntitledProject(currentScenarioName))
+    ) {
+      setShowNewProjectConfirm(true);
+    } else {
+      handleNewProjectExecute();
+    }
+  };
+
+  const handleNewProjectExecute = () => {
+    clearCanvas();
+    setCurrentScenarioName(null);
+    clearAllProjectQuoteWorkspaces();
+    setActiveView('canvas');
+    setShowNewProjectConfirm(false);
+    setExportPackageStatus(null);
+  };
+
   const handleOpenBom = () => {
     const siteCheck = detectMixedSiteAssignment(nodes);
     if (siteCheck.hasMixedSites) {
@@ -155,13 +206,15 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   };
 
   const handleOpenReport = () => {
-    const siteCheck = detectMixedSiteAssignment(nodes);
-    if (siteCheck.hasMixedSites) {
-      setPendingSiteAction('report');
-      setShowMixedSiteConfirm(true);
-    } else {
-      setShowReport(true);
-    }
+    ensureProjectNamed(() => {
+      const siteCheck = detectMixedSiteAssignment(nodes);
+      if (siteCheck.hasMixedSites) {
+        setPendingSiteAction('report');
+        setShowMixedSiteConfirm(true);
+      } else {
+        setShowReport(true);
+      }
+    });
   };
 
   const handleLogoClick = () => {
@@ -195,59 +248,63 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const cancelNameEdit = () => setIsEditingName(false);
 
   const handleExportScreenshot = () => {
-    captureTopologyDiagramPng()
-      .then(async (dataUrl) => {
-        const filename = getStandardExportFilename('diagram-png', currentScenarioName);
-        await saveWithFilePickerOrPrompt(dataUrl, filename, {
-          description: 'PNG Topology Diagram',
-          mimeType: 'image/png',
-          extension: '.png',
+    ensureProjectNamed((resolvedName) => {
+      captureTopologyDiagramPng()
+        .then(async (dataUrl) => {
+          const filename = getStandardExportFilename('diagram-png', resolvedName);
+          await saveWithFilePickerOrPrompt(dataUrl, filename, {
+            description: 'PNG Topology Diagram',
+            mimeType: 'image/png',
+            extension: '.png',
+          });
+        })
+        .catch((err) => {
+          console.error('oops, something went wrong!', err);
         });
-      })
-      .catch((err) => {
-        console.error('oops, something went wrong!', err);
-      });
+    });
   };
 
-  const handleDumpAllToDirectory = async () => {
-    setIsExportingPackage(true);
-    setExportPackageStatus('Preparing all solution files (PDFs, CSVs, JSON, PNG)...');
-    try {
-      const res = await exportSolutionToDirectoryOrZip({
-        nodes,
-        edges,
-        trafficStreams,
-        currentScenarioName,
-        advancedMode,
-        projectLicenseMode,
-        defaultTermDuration,
-        projectRegion,
-        disableDcWarnings,
-        panelTextScale,
-        showGrid,
-        snapToGrid,
-        peakNodeRxMbps,
-        nodeMetrics,
-        isRunning,
-        onProgress: (status) => setExportPackageStatus(status),
-      });
-      if (res.success) {
-        setExportPackageStatus(
-          res.directoryName
-            ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
-            : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
-        );
+  const handleDumpAllToDirectory = () => {
+    ensureProjectNamed(async (resolvedName) => {
+      setIsExportingPackage(true);
+      setExportPackageStatus('Preparing all solution files (PDFs, CSVs, JSON, PNG)...');
+      try {
+        const res = await exportSolutionToDirectoryOrZip({
+          nodes,
+          edges,
+          trafficStreams,
+          currentScenarioName: resolvedName,
+          advancedMode,
+          projectLicenseMode,
+          defaultTermDuration,
+          projectRegion,
+          disableDcWarnings,
+          panelTextScale,
+          showGrid,
+          snapToGrid,
+          peakNodeRxMbps,
+          nodeMetrics,
+          isRunning,
+          onProgress: (status) => setExportPackageStatus(status),
+        });
+        if (res.success) {
+          setExportPackageStatus(
+            res.directoryName
+              ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
+              : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+          );
+          setTimeout(() => setExportPackageStatus(null), 5000);
+        } else {
+          setExportPackageStatus(null);
+        }
+      } catch (err) {
+        console.error(err);
+        setExportPackageStatus(err instanceof Error ? err.message : 'Export failed.');
         setTimeout(() => setExportPackageStatus(null), 5000);
-      } else {
-        setExportPackageStatus(null);
+      } finally {
+        setIsExportingPackage(false);
       }
-    } catch (err) {
-      console.error(err);
-      setExportPackageStatus(err instanceof Error ? err.message : 'Export failed.');
-      setTimeout(() => setExportPackageStatus(null), 5000);
-    } finally {
-      setIsExportingPackage(false);
-    }
+    });
   };
 
   return (
@@ -257,6 +314,26 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           message="Are you sure you want to clear the canvas? All nodes, edges, and traffic streams will be removed."
           onConfirm={handleClearConfirm}
           onCancel={handleClearCancel}
+        />
+      )}
+
+      {showNewProjectConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to create a new project? All items will be removed from the canvas, all quotations will be reset, and the project name will return to Untitled Project."
+          confirmLabel="New Project"
+          onConfirm={handleNewProjectExecute}
+          onCancel={() => setShowNewProjectConfirm(false)}
+        />
+      )}
+
+      {showNamePrompt && (
+        <ProjectNamePromptModal
+          defaultName=""
+          onConfirm={handleNamePromptConfirm}
+          onCancel={() => {
+            setShowNamePrompt(false);
+            setPendingNameAction(null);
+          }}
         />
       )}
 
@@ -564,6 +641,19 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   <div className="header-dropdown-menu right-aligned">
                     <button
                       className="header-dropdown-item"
+                      onClick={() => {
+                        setShowProjectMenu(false);
+                        handleNewProjectClick();
+                      }}
+                      style={{ color: '#38bdf8', fontWeight: 600 }}
+                      title="Clear canvas, reset all quotations, and start a fresh project"
+                    >
+                      <FilePlusIcon size={14} />
+                      <span>✨ New Project...</span>
+                    </button>
+                    <div className="header-dropdown-divider" />
+                    <button
+                      className="header-dropdown-item"
                       disabled={isExportingPackage}
                       onClick={() => {
                         setShowProjectMenu(false);
@@ -579,8 +669,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                     <button
                       className="header-dropdown-item"
                       onClick={() => {
-                        onSaveFileClick();
                         setShowProjectMenu(false);
+                        ensureProjectNamed(() => {
+                          onSaveFileClick();
+                        });
                       }}
                     >
                       <SaveIcon size={14} />
@@ -600,8 +692,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                     <button
                       className="header-dropdown-item"
                       onClick={() => {
-                        onSaveClick();
                         setShowProjectMenu(false);
+                        ensureProjectNamed(() => {
+                          onSaveClick();
+                        });
                       }}
                     >
                       <SaveIcon size={14} />

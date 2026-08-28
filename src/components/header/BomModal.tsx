@@ -15,6 +15,7 @@ import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import type { HardwareNodeData } from '../../store/types';
 import QuoteModal from './QuoteModal';
+import { ProjectNamePromptModal, isUntitledProject } from './index';
 
 export interface BomModalProps {
   onClose: () => void;
@@ -31,12 +32,36 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const globalTermDuration = useStore((s) => s.defaultTermDuration);
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
+  const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
   const [showQuoteModal, setShowQuoteModal] = useState<boolean>(false);
+  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(false);
+  const [pendingNameAction, setPendingNameAction] = useState<((confirmedName: string) => void) | null>(null);
+
+  const ensureProjectNamed = (action: (confirmedName: string) => void) => {
+    if (isUntitledProject(currentScenarioName)) {
+      setPendingNameAction(() => action);
+      setShowNamePrompt(true);
+    } else {
+      action(currentScenarioName!);
+    }
+  };
+
+  const handleNamePromptConfirm = (newName: string) => {
+    setCurrentScenarioName(newName);
+    setShowNamePrompt(false);
+    if (pendingNameAction) {
+      const action = pendingNameAction;
+      setPendingNameAction(null);
+      setTimeout(() => {
+        action(newName);
+      }, 50);
+    }
+  };
 
   // Nodes that only ever contribute a single BOM row (standalone TAP modules,
   // breakout panels, ...) are merged into one shared line per SKU per site -
@@ -72,47 +97,51 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   );
 
   // ── Export handlers ──
-  const handleExportBomCsv = async () => {
-    const headers = 'Site,Type,SKU,Description,Term(Months),Qty';
-    const csv = [headers]
-      .concat(
-        items.map(
-          (i) =>
-            `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`,
-        ),
-      )
-      .join('\n');
-    const defaultFilename = getStandardExportFilename('bom-csv', currentScenarioName);
+  const handleExportBomCsv = () => {
+    ensureProjectNamed(async (resolvedName) => {
+      const headers = 'Site,Type,SKU,Description,Term(Months),Qty';
+      const csv = [headers]
+        .concat(
+          items.map(
+            (i) =>
+              `${escapeCsv(i.site || 'Global / Unassigned')},${escapeCsv(i.type)},${escapeCsv(i.sku)},${escapeCsv(i.description)},${i.term || ''},${i.qty}`,
+          ),
+        )
+        .join('\n');
+      const defaultFilename = getStandardExportFilename('bom-csv', resolvedName);
 
-    await saveWithFilePickerOrPrompt(csv, defaultFilename, {
-      description: 'BOM CSV File',
-      mimeType: 'text/csv',
-      extension: '.csv',
+      await saveWithFilePickerOrPrompt(csv, defaultFilename, {
+        description: 'BOM CSV File',
+        mimeType: 'text/csv',
+        extension: '.csv',
+      });
     });
   };
 
-  const handleExportPhysicalCsv = async () => {
-    const csv = [
-      'Node/Chassis,Qty,Rack Space,Dimensions (Imperial),Dimensions (Metric),Weight (Imperial),Weight (Metric),Power,Heat,Airflow',
-    ]
-      .concat(
-        physicalItems.map((p) => {
-          const { inches, cm } = parseAndConvertDimensions(p.dimensions);
-          const lbs = `${p.weightNum.toFixed(1)} lbs`;
-          const kg = `${(p.weightNum * 0.45359237).toFixed(2)} kg`;
-          return `${escapeCsv(p.name)},${p.qty},${escapeCsv(p.ru)},${escapeCsv(inches)},${escapeCsv(cm)},${escapeCsv(lbs)},${escapeCsv(kg)},${escapeCsv(p.power)},${escapeCsv(p.heat)},${escapeCsv(p.airflow)}`;
-        }),
-      )
-      .concat([
-        `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,-,${totalWeight.toFixed(1)} lbs,${(totalWeight * 0.45359237).toFixed(1)} kg,${totalPower} W,${totalHeat} BTU/hr,-`,
-      ])
-      .join('\n');
-    const defaultFilename = getStandardExportFilename('bom-deployment-csv', currentScenarioName);
+  const handleExportPhysicalCsv = () => {
+    ensureProjectNamed(async (resolvedName) => {
+      const csv = [
+        'Node/Chassis,Qty,Rack Space,Dimensions (Imperial),Dimensions (Metric),Weight (Imperial),Weight (Metric),Power,Heat,Airflow',
+      ]
+        .concat(
+          physicalItems.map((p) => {
+            const { inches, cm } = parseAndConvertDimensions(p.dimensions);
+            const lbs = `${p.weightNum.toFixed(1)} lbs`;
+            const kg = `${(p.weightNum * 0.45359237).toFixed(2)} kg`;
+            return `${escapeCsv(p.name)},${p.qty},${escapeCsv(p.ru)},${escapeCsv(inches)},${escapeCsv(cm)},${escapeCsv(lbs)},${escapeCsv(kg)},${escapeCsv(p.power)},${escapeCsv(p.heat)},${escapeCsv(p.airflow)}`;
+          }),
+        )
+        .concat([
+          `Total,${physicalItems.reduce((acc, p) => acc + p.qty, 0)},${totalRU} RU,-,-,${totalWeight.toFixed(1)} lbs,${(totalWeight * 0.45359237).toFixed(1)} kg,${totalPower} W,${totalHeat} BTU/hr,-`,
+        ])
+        .join('\n');
+      const defaultFilename = getStandardExportFilename('bom-deployment-csv', resolvedName);
 
-    await saveWithFilePickerOrPrompt(csv, defaultFilename, {
-      description: 'Deployment Report CSV File',
-      mimeType: 'text/csv',
-      extension: '.csv',
+      await saveWithFilePickerOrPrompt(csv, defaultFilename, {
+        description: 'Deployment Report CSV File',
+        mimeType: 'text/csv',
+        extension: '.csv',
+      });
     });
   };
 
@@ -181,7 +210,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="text-sm text-muted">{currentScenarioName || 'Layout'} specs</span>
             <button
-              onClick={() => setShowQuoteModal(true)}
+              onClick={() => ensureProjectNamed(() => setShowQuoteModal(true))}
               style={{
                 width: '7px',
                 height: '7px',
@@ -201,6 +230,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
                 e.currentTarget.style.opacity = '0.5';
                 e.currentTarget.style.background = '#3a3a3a';
               }}
+              title="Open Commercial Quote"
             />
           </div>
         </div>
@@ -415,6 +445,17 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
           </button>
         </div>
       </div>
+
+      {showNamePrompt && (
+        <ProjectNamePromptModal
+          defaultName=""
+          onConfirm={handleNamePromptConfirm}
+          onCancel={() => {
+            setShowNamePrompt(false);
+            setPendingNameAction(null);
+          }}
+        />
+      )}
 
       {showQuoteModal && <QuoteModal onClose={() => setShowQuoteModal(false)} />}
     </div>
@@ -780,3 +821,5 @@ function renderPhysicalTab(
 }
 
 export default BomModal;
+
+
