@@ -76,9 +76,9 @@ export function buildQuotePdfDocDefinition(
       { text: 'Term', style: 'tableHeader', alignment: 'center' },
       { text: 'Qty', style: 'tableHeader', alignment: 'center' },
       { text: 'Unit List', style: 'tableHeader', alignment: 'right' },
-      { text: 'Ext List', style: 'tableHeader', alignment: 'right' },
+      { text: 'Cost Before Disc', style: 'tableHeader', alignment: 'right' },
       { text: 'Disc %', style: 'tableHeader', alignment: 'center' },
-      { text: 'Ext Net Price', style: 'tableHeader', alignment: 'right' },
+      { text: 'Cost After Disc', style: 'tableHeader', alignment: 'right' },
     ],
   ];
 

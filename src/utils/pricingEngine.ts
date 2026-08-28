@@ -968,10 +968,10 @@ export async function exportQuoteToCsv(
     'Qty',
     'Term (Months)',
     'Unit List Price',
-    'Ext List Price',
+    'Cost Before Discount',
     'Discount %',
     'Discount Amount',
-    'Ext Net Price',
+    'Cost After Discount',
     'Site / Location',
     'Notes',
   ].join(',');

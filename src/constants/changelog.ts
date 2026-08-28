@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.671",
+    date: "2026-08-28",
+    summary: "Add GigaSMART Tunneling & ERSPAN Decapsulation app and licensing (v1.0.671)",
+  },
+  {
     version: "1.0.670",
     date: "2026-08-28",
     summary: "Add New Project menu action, quotation workspace reset, and project naming prompt before generation",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.647",
     date: "2026-08-26",
     summary: "Align SMT-HC3-C08-SW-TM pricing to WWPL_20260731 (,400/mo) and add -SW normalization (v1.0.647)",
-  },
-  {
-    version: "1.0.646",
-    date: "2026-08-26",
-    summary: "Dynamically sanitize and enforce module category and discount on all line calculations (v1.0.646)",
   },
 ];

@@ -107,21 +107,21 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   // CPQ Metadata State (Collapsible drawer for customer/partner headers)
   const [isCpqDetailsOpen, setIsCpqDetailsOpen] = useState<boolean>(false);
   const [quoteMetadata, setQuoteMetadata] = useState({
-    quoteNumber: initialWorkspace?.quoteMetadata?.quoteNumber || 'Q-207013-1',
-    posId: initialWorkspace?.quoteMetadata?.posId || 'POS0258668',
-    endCustomer: initialWorkspace?.quoteMetadata?.endCustomer || currentScenarioName || 'Göteborgs Stad',
-    reseller: initialWorkspace?.quoteMetadata?.reseller || 'Atea Sverige AB',
-    resellerContact: initialWorkspace?.quoteMetadata?.resellerContact || 'Peter Thuresson',
-    resellerEmail: initialWorkspace?.quoteMetadata?.resellerEmail || 'peter.thuresson@atea.se',
-    resellerPhone: initialWorkspace?.quoteMetadata?.resellerPhone || '+46 31 748 20 15',
-    distributor: initialWorkspace?.quoteMetadata?.distributor || 'Exclusive Networks Sweden AB',
-    distributorContact: initialWorkspace?.quoteMetadata?.distributorContact || 'Johan Bjorn',
-    distributorEmail: initialWorkspace?.quoteMetadata?.distributorEmail || 'jbjorn@exclusive-networks.com',
-    distributorPhone: initialWorkspace?.quoteMetadata?.distributorPhone || '+33 141315304',
-    salesRep: initialWorkspace?.quoteMetadata?.salesRep || 'Marko Ramo',
-    salesRepEmail: initialWorkspace?.quoteMetadata?.salesRepEmail || 'marko.ramo@gigamon.com',
-    paymentTerms: initialWorkspace?.quoteMetadata?.paymentTerms || 'Net 45',
-    billingFrequency: initialWorkspace?.quoteMetadata?.billingFrequency || 'All in Advance',
+    quoteNumber: initialWorkspace?.quoteMetadata?.quoteNumber || '',
+    posId: initialWorkspace?.quoteMetadata?.posId || '',
+    endCustomer: initialWorkspace?.quoteMetadata?.endCustomer || '',
+    reseller: initialWorkspace?.quoteMetadata?.reseller || '',
+    resellerContact: initialWorkspace?.quoteMetadata?.resellerContact || '',
+    resellerEmail: initialWorkspace?.quoteMetadata?.resellerEmail || '',
+    resellerPhone: initialWorkspace?.quoteMetadata?.resellerPhone || '',
+    distributor: initialWorkspace?.quoteMetadata?.distributor || '',
+    distributorContact: initialWorkspace?.quoteMetadata?.distributorContact || '',
+    distributorEmail: initialWorkspace?.quoteMetadata?.distributorEmail || '',
+    distributorPhone: initialWorkspace?.quoteMetadata?.distributorPhone || '',
+    salesRep: initialWorkspace?.quoteMetadata?.salesRep || '',
+    salesRepEmail: initialWorkspace?.quoteMetadata?.salesRepEmail || '',
+    paymentTerms: initialWorkspace?.quoteMetadata?.paymentTerms || '',
+    billingFrequency: initialWorkspace?.quoteMetadata?.billingFrequency || '',
   });
 
   // Initialize quote items from project-wide consolidated Master BOM rows
@@ -1281,6 +1281,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.quoteNumber}
+                    placeholder="e.g. Q-100201-1"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, quoteNumber: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1290,6 +1291,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.posId}
+                    placeholder="e.g. POS0258100"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, posId: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1299,6 +1301,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.endCustomer}
+                    placeholder="e.g. Customer Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, endCustomer: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1308,6 +1311,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.reseller}
+                    placeholder="e.g. Reseller Partner Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, reseller: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1317,6 +1321,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.distributor}
+                    placeholder="e.g. Distributor Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, distributor: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1326,6 +1331,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.salesRep}
+                    placeholder="e.g. Gigamon Sales Rep"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, salesRep: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1335,6 +1341,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.paymentTerms}
+                    placeholder="e.g. Net 30"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, paymentTerms: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1344,6 +1351,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   <input
                     type="text"
                     value={quoteMetadata.billingFrequency}
+                    placeholder="e.g. All in Advance"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, billingFrequency: e.target.value }))}
                     style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
                   />
@@ -1789,16 +1797,17 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Term</th>
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Qty</th>
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Unit List ($)</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>Cost Before Discount</th>
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Apply Disc?</th>
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Disc %</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Ext Net ($)</th>
+                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>Cost After Discount</th>
                     <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Actions</th>
                   </tr>
                 </thead>
               <tbody>
                 {summary.items.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ padding: '28px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
+                    <td colSpan={11} style={{ padding: '28px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
                       No items currently present in quote.
                     </td>
                   </tr>
@@ -1950,6 +1959,20 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                           {item.isMonthlyPrice && (
                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>/mo</div>
                           )}
+                        </td>
+
+                        {/* Cost Before Discount (Extended List Price) */}
+                        <td
+                          style={{
+                            padding: '10px 12px',
+                            textAlign: 'right',
+                            fontFamily: 'monospace',
+                            color: '#cbd5e1',
+                            fontSize: '12.5px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {formatCurrency(item.extendedListPrice)}
                         </td>
 
                         {/* Apply Discount Checkbox (Selective hardware discounts!) */}
