@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.676",
+    date: "2026-08-28",
+    summary: "Allow combining FlowVUE and GTP-Max correlation/filtering on a single HC3 GigaSMART card (v1.0.676)",
+  },
+  {
     version: "1.0.675",
     date: "2026-08-28",
     summary: "Introduce dedicated .gvp project file format with full quote state persistence (v1.0.675)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.652",
     date: "2026-08-26",
     summary: "Consolidate optic pack optimization across all links into unified 20-packs (v1.0.652)",
-  },
-  {
-    version: "1.0.651",
-    date: "2026-08-26",
-    summary: "Synchronize master SKU catalog and all prices against latest WWPL_20260731 (v1.0.651)",
   },
 ];

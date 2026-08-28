@@ -112,7 +112,12 @@ export function buildQuotePdfDocDefinition(
       { text: formatCurrency(item.effectiveUnitList), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
       { text: formatCurrency(item.extendedListPrice), fontSize: 6.5, alignment: 'right', color: '#d1d5db', fillColor: bg },
       {
-        text: item.effectiveDiscountPercent > 0 ? `${item.effectiveDiscountPercent.toFixed(1)}%` : '—',
+        text:
+          item.effectiveDiscountPercent > 0
+            ? `${item.effectiveDiscountPercent.toFixed(1)}%${item.discountOverride === undefined ? ' (A)' : ''}`
+            : item.discountOverride === undefined && item.applyDiscount
+              ? '0% (A)'
+              : '—',
         fontSize: 6.5,
         alignment: 'center',
         color: item.effectiveDiscountPercent > 0 ? '#22c55e' : '#9ca3af',

@@ -976,8 +976,12 @@ export async function exportQuoteToCsv(
     'Notes',
   ].join(',');
 
-  const rows = summary.items.map((i) =>
-    [
+  const rows = summary.items.map((i) => {
+    const isAuto = i.discountOverride === undefined;
+    const discStr = isAuto
+      ? `${i.effectiveDiscountPercent.toFixed(1)}% (A)`
+      : `${i.effectiveDiscountPercent.toFixed(1)}%`;
+    return [
       escapeCsv(i.category),
       escapeCsv(i.sku),
       escapeCsv(i.description),
@@ -985,13 +989,13 @@ export async function exportQuoteToCsv(
       i.termMonths || '',
       i.unitListPrice.toFixed(2),
       i.extendedListPrice.toFixed(2),
-      i.effectiveDiscountPercent.toFixed(1) + '%',
+      discStr,
       i.discountAmount.toFixed(2),
       i.extendedNetPrice.toFixed(2),
       escapeCsv(i.site || 'Global / Unassigned'),
       escapeCsv(i.note || (i.isCustomOrAdHoc ? 'Ad-hoc SKU' : '')),
-    ].join(','),
-  );
+    ].join(',');
+  });
 
   const summaryRows = [
     '',

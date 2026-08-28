@@ -410,10 +410,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       ...prev,
       [id]: { ...prev[id], discountOverride: val },
     }));
-    if (val.trim() === '') {
+    const clean = val.replace(/[^0-9.]/g, '').trim();
+    if (clean === '' || val.trim() === '') {
       handleUpdateItem(id, { discountOverride: undefined });
     } else {
-      const parsed = parseFloat(val);
+      const parsed = parseFloat(clean);
       if (!isNaN(parsed)) {
         handleUpdateItem(id, { discountOverride: Math.max(0, Math.min(100, parsed)) });
       }
@@ -423,10 +424,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const handleRowDiscountBlur = (id: string) => {
     const rawVal = rawRowInputs[id]?.discountOverride;
     if (rawVal !== undefined) {
-      if (rawVal.trim() === '') {
+      const clean = rawVal.replace(/[^0-9.]/g, '').trim();
+      if (clean === '' || rawVal.trim() === '') {
         handleUpdateItem(id, { discountOverride: undefined });
       } else {
-        const parsed = parseFloat(rawVal);
+        const parsed = parseFloat(clean);
         if (!isNaN(parsed)) {
           handleUpdateItem(id, { discountOverride: Math.max(0, Math.min(100, parsed)) });
         }
@@ -1994,23 +1996,29 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                               rawRowInputs[item.id]?.discountOverride !== undefined
                                 ? rawRowInputs[item.id]!.discountOverride!
                                 : item.discountOverride !== undefined
-                                  ? String(item.discountOverride)
-                                  : item.effectiveDiscountPercent > 0
-                                    ? String(item.effectiveDiscountPercent)
-                                    : ''
+                                  ? `${item.discountOverride}%`
+                                  : item.applyDiscount
+                                    ? `${item.effectiveDiscountPercent}% (A)`
+                                    : '0%'
                             }
                             onChange={(e) => handleRowDiscountChange(item.id, e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={() => handleRowDiscountBlur(item.id)}
                             disabled={!item.applyDiscount}
-                            placeholder={item.applyDiscount ? 'Auto' : '0'}
+                            title={
+                              item.discountOverride !== undefined
+                                ? `Manual Override: ${item.discountOverride}% discount applied to this line. Clear value to restore auto.`
+                                : `Auto: ${item.effectiveDiscountPercent}% discount applied from ${item.category} category configuration. Click to enter a custom override.`
+                            }
                             style={{
-                              width: '48px',
+                              width: '74px',
                               padding: '4px 6px',
                               borderRadius: '4px',
                               background: !item.applyDiscount ? '#374151' : '#111827',
-                              border: '1px solid #4b5563',
+                              border: item.discountOverride !== undefined ? '1px solid #38bdf8' : '1px solid #4b5563',
                               color: item.effectiveDiscountPercent > 0 ? '#34d399' : '#9ca3af',
                               fontSize: '12px',
+                              fontWeight: item.discountOverride !== undefined ? 'bold' : 'normal',
                               textAlign: 'center',
                             }}
                           />
