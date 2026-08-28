@@ -18,3 +18,7 @@ export const useStore = create<RFState>()((...a) => ({
   ...createUISlice(...a),
   ...createHistorySlice(...a),
 }));
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { __FM_STORE__: typeof useStore }).__FM_STORE__ = useStore;
+}

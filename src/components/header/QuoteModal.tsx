@@ -83,6 +83,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const globalRegion = useStore((s) => s.projectRegion);
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
+  const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
 
   // Project-specific quote workspace restoration
   const initialWorkspace = useMemo(
@@ -127,7 +128,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   // Initialize quote items from project-wide consolidated Master BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), initialWorkspace?.useOpticPacks ?? true);
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -145,7 +146,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     if (prevLicenseModeRef.current !== globalLicenseMode) {
       prevLicenseModeRef.current = globalLicenseMode;
       const rawBom = consolidateSimpleDeviceRows(
-        generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+        generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
       );
       const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), useOpticPacks);
       const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -162,7 +163,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       // Clear out stale buffered inputs
       setRawRowInputs({});
     }
-  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning, useOpticPacks]);
+  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning, useOpticPacks, trayAllocationPreference]);
 
   // Track term duration changes: update term for all monthly subscription items
   const prevTermDurationRef = useRef(globalTermDuration);
@@ -450,7 +451,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
   const handleResetToBom = () => {
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -730,7 +731,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const handleToggleOpticPacks = (checked: boolean) => {
     setUseOpticPacks(checked);
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), checked);
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;

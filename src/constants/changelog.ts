@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.682",
+    date: "2026-08-28",
+    summary: "Add TAP tray allocation preference and manual M200T override support (v1.0.682)",
+  },
+  {
     version: "1.0.681",
     date: "2026-08-28",
     summary: "Prevent optic doubling on TA25E and chassis by tagging TAP reallocated optics as isAutoAdded (v1.0.681)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.659",
     date: "2026-08-27",
     summary: "Ensure architecture PDF filename strictly defaults to Gigamon_Architecture_<solution>.pdf (v1.0.659)",
-  },
-  {
-    version: "1.0.658",
-    date: "2026-08-27",
-    summary: "Standardize export and report naming across BOM, architecture PDFs, topology JSON, quotes, and diagrams (v1.0.658)",
   },
 ];

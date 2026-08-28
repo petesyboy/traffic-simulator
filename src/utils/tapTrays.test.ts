@@ -156,4 +156,35 @@ describe('MPO breakout panel BOM/tray allocation', () => {
     expect(trayQty(bom, 'TAP-M200T')).toBe(1);
     expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
   });
+
+  it('respects a racked TAP-M200T tray node in BOM generation', () => {
+    const rackedTray: CustomNode = {
+      id: 'tray-racked-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'TAP-M200T #1',
+        configType: 'Hardware',
+        model: 'TAP-M200T',
+        sku: 'TAP-M200T',
+        rackId: 'rack_global',
+        rackU: 40,
+      },
+    };
+    const t1 = tapModule('t1', 'TAP-M251T');
+    const t2 = tapModule('t2', 'TAP-M251T');
+    const bom = generateBom([rackedTray, t1, t2], [], 'HTL', '12');
+
+    expect(trayQty(bom, 'TAP-M200T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
+  });
+
+  it('respects trayPreferenceOverride parameter in generateBom', () => {
+    const t1 = tapModule('t1', 'TAP-M251T');
+    const t2 = tapModule('t2', 'TAP-M251T');
+    const bom = generateBom([t1, t2], [], 'HTL', '12', 'US', false, {}, 'TAP-M200T');
+
+    expect(trayQty(bom, 'TAP-M200T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
+  });
 });

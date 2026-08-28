@@ -17,12 +17,25 @@ export function requiresUltTray(sku: string, model = ''): boolean {
   return /M\d*1ULT/i.test(`${sku} ${model}`);
 }
 
-const TRAY_MODELS = ['TAP-M100T', 'TAP-M200T', ULT_TRAY_SKU] as const;
-
 /** True for the three tray/chassis models that hold tap modules - these are
  *  auto-generated (see traySync.ts) rather than placed manually from the sidebar. */
-export function isAutoTrayModel(model: string): boolean {
-  return (TRAY_MODELS as readonly string[]).includes(model);
+export function isAutoTrayModel(model: string, sku = ''): boolean {
+  if (!model && !sku) return false;
+  const s = `${model} ${sku}`.toUpperCase();
+  return (
+    s.includes('M100T') ||
+    s.includes('M200T') ||
+    s.includes('M202ULT') ||
+    s.includes('TAP-M100') ||
+    s.includes('TAP-M200')
+  );
+}
+
+export function getCanonicalTrayModel(model: string, sku = ''): 'TAP-M100T' | 'TAP-M200T' | 'TAP-M202ULT' {
+  const s = `${model} ${sku}`.toUpperCase();
+  if (s.includes('ULT') || s.includes('202')) return 'TAP-M202ULT';
+  if (s.includes('200')) return 'TAP-M200T';
+  return 'TAP-M100T';
 }
 
 export type TrayAllocationPreference = 'auto' | 'TAP-M200T' | 'TAP-M100T';

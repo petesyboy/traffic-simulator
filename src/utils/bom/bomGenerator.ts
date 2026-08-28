@@ -7,7 +7,7 @@ import { resolveNodeSkus, type HardwareNodeSkuData } from '../skuResolver';
 import { resolveOpticSku, getSkus } from './skuUtils';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { resolveTapAllocations } from '../ports';
-import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, packTapTrayTargets } from '../trayModels';
+import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, getCanonicalTrayModel, packTapTrayTargets, type TrayAllocationPreference } from '../trayModels';
 import { isBreakoutPanelModel } from '../hardwareUtils';
 import { optimizeOpticPacks } from './opticPacks';
 
@@ -171,7 +171,8 @@ export function generateBom(
   globalTermDuration: string,
   globalRegion: 'US' | 'EU' | 'UK' = 'US',
   groupByNode: boolean = false,
-  peakNodeRxMbps: Record<string, number> = {}
+  peakNodeRxMbps: Record<string, number> = {},
+  trayPreferenceOverride?: TrayAllocationPreference,
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -238,11 +239,12 @@ export function generateBom(
     if (node.type !== 'hardwareNode') return;
 
     const model = (node.data?.model as string) || '';
+    const sku = (node.data?.sku as string) || '';
     // TAP-M100T/M200T/M202ULT trays are auto-generated placement aids (see
     // traySync.ts) - the tapModulesPerSite/ultTapModulesPerSite math below
     // already accounts for exactly how many are needed, so a tray that exists
     // as a real node here would otherwise double up its own BOM row on top.
-    if (isAutoTrayModel(model)) return;
+    if (isAutoTrayModel(model, sku)) return;
     const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
     const licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual' : globalLicenseMode;
     const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
@@ -348,14 +350,23 @@ export function generateBom(
   syncedNodes.forEach(node => {
     if (node.type !== 'hardwareNode') return;
     const model = String(node.data?.model || '');
+    const sku = String(node.data?.sku || '');
     const siteKey = (node.data?.site as string) || 'Unassigned';
-    if (isAutoTrayModel(model) && (node.data as HardwareNodeData)?.isManualOverride) {
-      if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
-      manualTraysPerSite[siteKey][model] = (manualTraysPerSite[siteKey][model] || 0) + 1;
+    if (isAutoTrayModel(model, sku)) {
+      const canonical = getCanonicalTrayModel(model, sku);
+      const isOverride = Boolean((node.data as HardwareNodeData)?.isManualOverride);
+      const isRacked = typeof node.data?.rackU === 'number' && Boolean(node.data?.rackId);
+      if (isOverride || isRacked) {
+        if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
+        manualTraysPerSite[siteKey][canonical] = (manualTraysPerSite[siteKey][canonical] || 0) + 1;
+      }
     }
   });
 
-  const trayPreference = (syncedNodes.find(n => (n.data as HardwareNodeData)?.trayPreference)?.data as HardwareNodeData)?.trayPreference || 'auto';
+  const trayPreference: TrayAllocationPreference = trayPreferenceOverride
+    || (syncedNodes.find(n => (n.data as HardwareNodeData)?.trayPreference)?.data as HardwareNodeData)?.trayPreference
+    || (typeof window !== 'undefined' && (window as unknown as { __FM_STORE__?: { getState?: () => { trayAllocationPreference?: TrayAllocationPreference } } }).__FM_STORE__?.getState?.()?.trayAllocationPreference)
+    || 'auto';
   const trayTargetsPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite, trayPreference, manualTraysPerSite);
   Object.entries(trayTargetsPerSite).forEach(([siteKey, targets]) => {
     Object.entries(targets).forEach(([traySku, qty]) => {

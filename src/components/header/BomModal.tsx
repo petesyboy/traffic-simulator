@@ -34,6 +34,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
+  const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
@@ -68,7 +69,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   // a chassis with multiple line items (modules/optics/licenses) keeps its
   // own per-node breakdown, since that detail is still useful there.
   const items = consolidateSimpleDeviceRows(
-    generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps),
+    generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
   );
   const validationErrors = validateConfiguration(nodes, edges);
   const siteCheck = detectMixedSiteAssignment(nodes);

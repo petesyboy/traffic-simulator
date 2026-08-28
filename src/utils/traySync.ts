@@ -16,9 +16,15 @@ import { v4 as uuidv4 } from 'uuid';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { isTapModule } from './hardwareUtils';
-import { requiresUltTray, isAutoTrayModel, packTapTrayTargets, type TrayAllocationPreference } from './trayModels';
+import {
+  requiresUltTray,
+  isAutoTrayModel,
+  getCanonicalTrayModel,
+  packTapTrayTargets,
+  type TrayAllocationPreference,
+} from './trayModels';
 
-export { isAutoTrayModel };
+export { isAutoTrayModel, getCanonicalTrayModel };
 
 export function syncTapTrays(
   nodes: CustomNode[],
@@ -31,13 +37,18 @@ export function syncTapTrays(
   nodes.forEach(node => {
     if (node.type !== 'hardwareNode') return;
     const model = String(node.data?.model || '');
-    const sku = node.data?.sku as string | undefined;
+    const sku = String(node.data?.sku || '');
     const siteKey = (node.data?.site as string) || 'Unassigned';
 
-    if (isAutoTrayModel(model) && (node.data as HardwareNodeData)?.isManualOverride) {
-      if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
-      manualTraysPerSite[siteKey][model] = (manualTraysPerSite[siteKey][model] || 0) + 1;
-      return;
+    if (isAutoTrayModel(model, sku)) {
+      const canonical = getCanonicalTrayModel(model, sku);
+      const isOverride = Boolean((node.data as HardwareNodeData)?.isManualOverride);
+      const isRacked = typeof node.data?.rackU === 'number' && Boolean(node.data?.rackId);
+      if (isOverride || isRacked) {
+        if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
+        manualTraysPerSite[siteKey][canonical] = (manualTraysPerSite[siteKey][canonical] || 0) + 1;
+        return;
+      }
     }
 
     if (!isTapModule(model, sku)) return;
