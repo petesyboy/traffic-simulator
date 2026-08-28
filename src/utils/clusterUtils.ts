@@ -209,7 +209,8 @@ export function buildClusterNode(
     } as ClusterNodeData,
   };
 
-  const memberIds = new Set(memberNodes.map((n) => n.id));
+  const memberIdList = memberNodes.map((n) => n.id);
+  const memberIds = new Set(memberIdList);
 
   // Hide member nodes and assign clusterId
   const updatedNodes = memberNodes.map((node) => ({
@@ -232,7 +233,7 @@ export function buildClusterNode(
         data: {
           ...edge.data,
           originalSource: edge.source,
-          originalSourceHandle: edge.sourceHandle,
+          originalSourceHandle: edge.sourceHandle || 'out',
         },
       };
     }
@@ -244,7 +245,7 @@ export function buildClusterNode(
         data: {
           ...edge.data,
           originalTarget: edge.target,
-          originalTargetHandle: edge.targetHandle,
+          originalTargetHandle: edge.targetHandle || 'in',
         },
       };
     }
@@ -264,7 +265,8 @@ export function expandClusterNode(
   allEdges: Edge[],
 ): { nodes: CustomNode[]; edges: Edge[] } {
   const data = clusterNode.data as ClusterNodeData;
-  const memberIds = new Set(data.memberNodeIds || []);
+  const memberIdList = data.memberNodeIds || [];
+  const memberIds = new Set(memberIdList);
   const basePos = clusterNode.position;
 
   // Unhide member nodes and arrange neatly relative to cluster anchor
@@ -297,21 +299,38 @@ export function expandClusterNode(
     return node;
   });
 
+  let unassignedSourceIdx = 0;
+  let unassignedTargetIdx = 0;
+
   // Restore edge endpoints to original individual nodes
   const updatedEdges = allEdges.map((edge) => {
     let e = { ...edge };
-    if (edge.source === clusterNode.id && edge.data?.originalSource) {
+    if (edge.source === clusterNode.id) {
+      const targetMemberId = (edge.data?.originalSource as string) || (memberIdList.length > 0 ? memberIdList[unassignedSourceIdx % memberIdList.length] : clusterNode.id);
+      unassignedSourceIdx++;
       e = {
         ...e,
-        source: edge.data.originalSource as string,
-        sourceHandle: (edge.data.originalSourceHandle as string) || undefined,
+        source: targetMemberId,
+        sourceHandle: (edge.data?.originalSourceHandle as string) || 'out',
+        data: {
+          ...edge.data,
+          originalSource: targetMemberId,
+          originalSourceHandle: (edge.data?.originalSourceHandle as string) || 'out',
+        },
       };
     }
-    if (edge.target === clusterNode.id && edge.data?.originalTarget) {
+    if (edge.target === clusterNode.id) {
+      const targetMemberId = (edge.data?.originalTarget as string) || (memberIdList.length > 0 ? memberIdList[unassignedTargetIdx % memberIdList.length] : clusterNode.id);
+      unassignedTargetIdx++;
       e = {
         ...e,
-        target: edge.data.originalTarget as string,
-        targetHandle: (edge.data.originalTargetHandle as string) || undefined,
+        target: targetMemberId,
+        targetHandle: (edge.data?.originalTargetHandle as string) || 'in',
+        data: {
+          ...edge.data,
+          originalTarget: targetMemberId,
+          originalTargetHandle: (edge.data?.originalTargetHandle as string) || 'in',
+        },
       };
     }
     return e;
@@ -326,7 +345,8 @@ export function collapseClusterNode(
   allEdges: Edge[],
 ): { nodes: CustomNode[]; edges: Edge[] } {
   const data = clusterNode.data as ClusterNodeData;
-  const memberIds = new Set(data.memberNodeIds || []);
+  const memberIdList = data.memberNodeIds || [];
+  const memberIds = new Set(memberIdList);
 
   // Save current expanded positions and hide member nodes
   const currentExpandedLayout: Record<string, { x: number; y: number }> = {};
@@ -371,7 +391,7 @@ export function collapseClusterNode(
         data: {
           ...edge.data,
           originalSource: edge.source,
-          originalSourceHandle: edge.sourceHandle,
+          originalSourceHandle: edge.sourceHandle || 'out',
         },
       };
     }
@@ -383,7 +403,7 @@ export function collapseClusterNode(
         data: {
           ...edge.data,
           originalTarget: edge.target,
-          originalTargetHandle: edge.targetHandle,
+          originalTargetHandle: edge.targetHandle || 'in',
         },
       };
     }
@@ -402,7 +422,8 @@ export function dissolveClusterNode(
   if (!clusterNode) return { nodes: allNodes, edges: allEdges };
 
   const data = clusterNode.data as ClusterNodeData;
-  const memberIds = new Set(data.memberNodeIds || []);
+  const memberIdList = data.memberNodeIds || [];
+  const memberIds = new Set(memberIdList);
   const basePos = clusterNode.position;
 
   let idx = 0;
@@ -429,21 +450,28 @@ export function dissolveClusterNode(
       return node;
     });
 
+  let unassignedSourceIdx = 0;
+  let unassignedTargetIdx = 0;
+
   // Restore edge endpoints to original member nodes
   const updatedEdges = allEdges.map((edge) => {
     let e = { ...edge };
-    if (edge.source === clusterNodeId && edge.data?.originalSource) {
+    if (edge.source === clusterNodeId) {
+      const targetMemberId = (edge.data?.originalSource as string) || (memberIdList.length > 0 ? memberIdList[unassignedSourceIdx % memberIdList.length] : edge.source);
+      unassignedSourceIdx++;
       e = {
         ...e,
-        source: edge.data.originalSource as string,
-        sourceHandle: (edge.data.originalSourceHandle as string) || undefined,
+        source: targetMemberId,
+        sourceHandle: (edge.data?.originalSourceHandle as string) || 'out',
       };
     }
-    if (edge.target === clusterNodeId && edge.data?.originalTarget) {
+    if (edge.target === clusterNodeId) {
+      const targetMemberId = (edge.data?.originalTarget as string) || (memberIdList.length > 0 ? memberIdList[unassignedTargetIdx % memberIdList.length] : edge.target);
+      unassignedTargetIdx++;
       e = {
         ...e,
-        target: edge.data.originalTarget as string,
-        targetHandle: (edge.data.originalTargetHandle as string) || undefined,
+        target: targetMemberId,
+        targetHandle: (edge.data?.originalTargetHandle as string) || 'in',
       };
     }
     return e;

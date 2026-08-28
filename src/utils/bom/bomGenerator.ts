@@ -83,23 +83,30 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
       const otherId = e.source === node.id ? e.target : e.source;
       const sourceNode = nodes.find(n => n.id === otherId);
       if (sourceNode) {
+        const isClusterTap = sourceNode.type === NODE_TYPES.CLUSTER && sourceNode.data?.clusterType === 'tap';
         const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
         const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
-        if (isHardwareTap || isInputTap) {
-          const isSMTap = isHardwareTap 
-            ? (String(sourceNode.data?.sku || '').includes('253') || String(sourceNode.data?.sku || '').includes('273') || String(sourceNode.data?.sku || '').includes('453') || String(sourceNode.data?.model || '').toLowerCase().includes('single-mode') || String(sourceNode.data?.model || '').toLowerCase().includes('sm'))
-            : (sourceNode.data?.tapFiberMode === 'Singlemode');
+        
+        const tapNodesToProcess: CustomNode[] = isClusterTap
+          ? nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id))
+          : (isHardwareTap || isInputTap ? [sourceNode] : []);
+
+        tapNodesToProcess.forEach(tapN => {
+          const isHw = tapN.type === NODE_TYPES.HARDWARE && String(tapN.data?.model || '').includes('TAP');
+          const isSMTap = isHw 
+            ? (String(tapN.data?.sku || '').includes('253') || String(tapN.data?.sku || '').includes('273') || String(tapN.data?.sku || '').includes('453') || String(tapN.data?.model || '').toLowerCase().includes('single-mode') || String(tapN.data?.model || '').toLowerCase().includes('sm'))
+            : (tapN.data?.tapFiberMode === 'Singlemode');
           
-          const isM506T = String(sourceNode.data?.model || '').includes('TAP-M506T') || String(sourceNode.data?.sku || '').includes('TAP-M506T');
+          const isM506T = String(tapN.data?.model || '').includes('TAP-M506T') || String(tapN.data?.sku || '').includes('TAP-M506T');
           const defaultOptic = isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533T' : 'SFP-532T');
-          const allocations = resolveTapAllocations(sourceNode.data as HardwareNodeData, defaultOptic);
+          const allocations = resolveTapAllocations(tapN.data as HardwareNodeData, defaultOptic);
 
           for (const alloc of allocations) {
             let selectedOpticVal = alloc.toolOptic || alloc.optic;
             if (isPassiveSplitterLabel(selectedOpticVal) || (isM506T && selectedOpticVal.startsWith('SFP'))) selectedOpticVal = defaultOptic;
             tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + alloc.qty * 2;
           }
-        }
+        });
       }
     });
 

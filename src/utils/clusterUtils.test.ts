@@ -205,4 +205,70 @@ describe('clusterUtils', () => {
     expect(m200Row?.qty).toBe(1);
     expect(m100Row?.qty).toBe(1);
   });
+
+  it('reliably preserves incoming links across repeated expand/collapse cycles for Tool clusters', () => {
+    const probes = Array.from({ length: 10 }, (_, i) =>
+      createMockTool(`probe-${i}`, 'Ericsson Probe', 10000),
+    );
+    const edges: Edge[] = probes.map((p, i) => ({
+      id: `e-hc3-probe-${i}`,
+      source: 'hc3-node',
+      sourceHandle: 'out',
+      target: p.id,
+      targetHandle: 'in',
+    }));
+
+    // 1. Build cluster (starts collapsed)
+    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(probes, edges, 'tool');
+    expect(updatedEdges).toHaveLength(10);
+    expect(updatedEdges.every(e => e.target === clusterNode.id)).toBe(true);
+    expect(updatedEdges.every(e => e.targetHandle === 'in')).toBe(true);
+
+    let currentNodes = [clusterNode, ...updatedNodes];
+    let currentEdges = updatedEdges;
+
+    // 2. Expand cycle 1
+    const exp1 = expandClusterNode(currentNodes[0], currentNodes, currentEdges);
+    currentNodes = exp1.nodes;
+    currentEdges = exp1.edges;
+    expect(currentNodes.filter(n => n.id !== clusterNode.id).every(n => !n.hidden)).toBe(true);
+    probes.forEach((p, i) => {
+      const e = currentEdges.find(edge => edge.id === `e-hc3-probe-${i}`);
+      expect(e).toBeDefined();
+      expect(e?.target).toBe(p.id);
+      expect(e?.targetHandle).toBe('in');
+      expect(e?.sourceHandle).toBe('out');
+    });
+
+    // 3. Collapse cycle 1
+    const col1 = collapseClusterNode(currentNodes[0], currentNodes, currentEdges);
+    currentNodes = col1.nodes;
+    currentEdges = col1.edges;
+    expect(currentNodes.filter(n => n.id !== clusterNode.id).every(n => n.hidden)).toBe(true);
+    expect(currentEdges.every(e => e.target === clusterNode.id)).toBe(true);
+    expect(currentEdges.every(e => e.targetHandle === 'in')).toBe(true);
+
+    // 4. Expand cycle 2
+    const exp2 = expandClusterNode(currentNodes[0], currentNodes, currentEdges);
+    currentNodes = exp2.nodes;
+    currentEdges = exp2.edges;
+    expect(currentNodes.filter(n => n.id !== clusterNode.id).every(n => !n.hidden)).toBe(true);
+    probes.forEach((p, i) => {
+      const e = currentEdges.find(edge => edge.id === `e-hc3-probe-${i}`);
+      expect(e).toBeDefined();
+      expect(e?.target).toBe(p.id);
+      expect(e?.targetHandle).toBe('in');
+    });
+
+    // 5. Dissolve
+    const dissolved = dissolveClusterNode(clusterNode.id, currentNodes, currentEdges);
+    expect(dissolved.nodes).toHaveLength(10);
+    expect(dissolved.edges).toHaveLength(10);
+    probes.forEach((p, i) => {
+      const e = dissolved.edges.find(edge => edge.id === `e-hc3-probe-${i}`);
+      expect(e).toBeDefined();
+      expect(e?.target).toBe(p.id);
+      expect(e?.targetHandle).toBe('in');
+    });
+  });
 });

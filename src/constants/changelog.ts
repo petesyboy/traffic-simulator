@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.684",
+    date: "2026-08-28",
+    summary: "Add stacked cluster cards with expand/collapse for TAPs and Tools (v1.0.684)",
+  },
+  {
     version: "1.0.683",
     date: "2026-08-28",
     summary: "Sync manually overridden and racked M200T trays to Bill of Materials (v1.0.683)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.662",
     date: "2026-08-27",
     summary: "Conditionally omit commercial quotes from package dump unless project discounting is configured (v1.0.662)",
-  },
-  {
-    version: "1.0.660",
-    date: "2026-08-27",
-    summary: "Add native directory chooser & solution package dump for all deliverables (v1.0.660)",
   },
 ];

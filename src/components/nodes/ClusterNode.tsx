@@ -95,6 +95,19 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
             <span>⤡</span> Collapse Stack
           </button>
         </div>
+        {/* Handles to ensure ReactFlow always has registered endpoints */}
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="in"
+          style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="out"
+          style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
+        />
       </div>
     );
   }

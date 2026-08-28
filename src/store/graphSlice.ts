@@ -324,9 +324,13 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(targetNodes, state.edges, typeOverride);
     const updatedNodeIds = new Set(updatedNodes.map((n) => n.id));
     const allRemainingNodes = state.nodes.filter((n) => !updatedNodeIds.has(n.id));
+    let nextNodes = [clusterNode, ...allRemainingNodes, ...updatedNodes];
+    nextNodes = syncSplunkLabels(nextNodes, updatedEdges);
+    nextNodes = syncOpticsOnTapConnection(nextNodes, updatedEdges);
+    const nextEdges = syncPortAssignments(nextNodes, updatedEdges);
     set({
-      nodes: [clusterNode, ...allRemainingNodes, ...updatedNodes],
-      edges: updatedEdges,
+      nodes: nextNodes,
+      edges: nextEdges,
       selectedNodeId: clusterNode.id,
     });
   },
@@ -337,13 +341,21 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
 
     state.pushHistory();
     const isCurrentlyCollapsed = clusterNode.data?.isCollapsed !== false;
+    let nextNodes: CustomNode[];
+    let nextEdges: Edge[];
     if (isCurrentlyCollapsed) {
-      const { nodes, edges } = expandClusterNode(clusterNode, state.nodes, state.edges);
-      set({ nodes, edges });
+      const expanded = expandClusterNode(clusterNode, state.nodes, state.edges);
+      nextNodes = expanded.nodes;
+      nextEdges = expanded.edges;
     } else {
-      const { nodes, edges } = collapseClusterNode(clusterNode, state.nodes, state.edges);
-      set({ nodes, edges });
+      const collapsed = collapseClusterNode(clusterNode, state.nodes, state.edges);
+      nextNodes = collapsed.nodes;
+      nextEdges = collapsed.edges;
     }
+    nextNodes = syncSplunkLabels(nextNodes, nextEdges);
+    nextNodes = syncOpticsOnTapConnection(nextNodes, nextEdges);
+    nextEdges = syncPortAssignments(nextNodes, nextEdges);
+    set({ nodes: nextNodes, edges: nextEdges });
   },
   dissolveCluster: (clusterNodeId) => {
     const state = get();
@@ -352,9 +364,12 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
 
     state.pushHistory();
     const { nodes, edges } = dissolveClusterNode(clusterNodeId, state.nodes, state.edges);
+    let nextNodes = syncSplunkLabels(nodes, edges);
+    nextNodes = syncOpticsOnTapConnection(nextNodes, edges);
+    const nextEdges = syncPortAssignments(nextNodes, edges);
     set({
-      nodes,
-      edges,
+      nodes: nextNodes,
+      edges: nextEdges,
       selectedNodeId: state.selectedNodeId === clusterNodeId ? null : state.selectedNodeId,
     });
   },
