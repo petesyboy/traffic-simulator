@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.677",
+    date: "2026-08-28",
+    summary: "Display % (A) for auto-generated discounts in quote line items and reports (v1.0.677)",
+  },
+  {
     version: "1.0.676",
     date: "2026-08-28",
     summary: "Allow combining FlowVUE and GTP-Max correlation/filtering on a single HC3 GigaSMART card (v1.0.676)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.653",
     date: "2026-08-26",
     summary: "Resolve PDF generation hanging on promise resolution and table widths (v1.0.653)",
-  },
-  {
-    version: "1.0.652",
-    date: "2026-08-26",
-    summary: "Consolidate optic pack optimization across all links into unified 20-packs (v1.0.652)",
   },
 ];

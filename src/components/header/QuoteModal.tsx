@@ -579,31 +579,66 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const handleToggleAhr = (checked: boolean) => {
     setIncludeAhr(checked);
     if (checked) {
-      if (!items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
-        const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
-        if (hasEligibleHw) {
+      if (globalLicenseMode === 'Perpetual') {
+        if (!items.some((i) => i.sku.startsWith('GSS-FYS-') || i.sku.startsWith('GSS-RNL-'))) {
+          const term = parseInt(globalTermDuration || '12', 10) || 12;
+          const skuRecord = skuService.getSKUByPartNumber('GSS-FYS-ELT-PSS');
           setItems((prev) => [
             ...prev,
             {
-              id: `bom-ahr-${Date.now()}`,
-              sku: 'GSS-HW-AHR-GMO',
+              id: `bom-support-${Date.now()}`,
+              sku: 'GSS-FYS-ELT-PSS',
               description:
-                'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
+                skuRecord?.description ||
+                'Initial Gigamon Pass-through Support Type with ELITE Support Level (24x7/AHR), bought with product or within 1 year of original purchase of product.',
               type: 'Support',
               category: 'Support',
               qty: 1,
-              termMonths: 60,
+              termMonths: term,
               unitListPrice: 0,
               isMonthlyPrice: false,
               applyDiscount: true,
               discountOverride: 15,
-              note: '60 months',
+              note: `${term} months`,
             },
           ]);
         }
+      } else {
+        // HTL Model: GSS-HW-AHR-GMO (Software subscriptions include embedded Elite-Plus support)
+        if (!items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
+          const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
+          if (hasEligibleHw) {
+            setItems((prev) => [
+              ...prev,
+              {
+                id: `bom-ahr-${Date.now()}`,
+                sku: 'GSS-HW-AHR-GMO',
+                description:
+                  'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
+                type: 'Support',
+                category: 'Support',
+                qty: 1,
+                termMonths: 60,
+                unitListPrice: 0,
+                isMonthlyPrice: false,
+                applyDiscount: true,
+                discountOverride: 15,
+                note: '60 months',
+              },
+            ]);
+          }
+        }
       }
     } else {
-      setItems((prev) => prev.filter((i) => i.sku !== 'GSS-HW-AHR-GMO'));
+      setItems((prev) =>
+        prev.filter(
+          (i) =>
+            i.sku !== 'GSS-HW-AHR-GMO' &&
+            i.sku !== 'GSS-RNL-HW-AHR-GMO' &&
+            !i.sku.startsWith('GSS-FYS-') &&
+            !i.sku.startsWith('GSS-RNL-'),
+        ),
+      );
     }
   };
 
@@ -1045,7 +1080,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               )}
             </div>
 
-            {/* AHR Support Service Checkbox (GSS-HW-AHR-GMO) */}
+            {/* AHR / Traditional Support Service Checkbox */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <label
                 style={{
@@ -1062,7 +1097,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   color: includeAhr ? '#f472b6' : '#d1d5db',
                   userSelect: 'none',
                 }}
-                title="Include 60-Month Advance Hardware Replacement (GSS-HW-AHR-GMO) at 41% of covered hardware list price with 15% discount"
+                title={
+                  globalLicenseMode === 'Perpetual'
+                    ? 'Include Traditional Elite 24x7 Support with AHR (GSS-FYS-ELT-PSS) at 18% per year of covered hardware and perpetual software list price with 15% discount.'
+                    : 'Include 60-Month Advance Hardware Replacement (GSS-HW-AHR-GMO) at 41% of covered hardware list price with 15% discount. Software subscriptions include embedded Elite-Plus support.'
+                }
               >
                 <input
                   type="checkbox"
@@ -1070,7 +1109,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   onChange={(e) => handleToggleAhr(e.target.checked)}
                   style={{ cursor: 'pointer', accentColor: '#ec4899' }}
                 />
-                🛡️ 60m AHR (41%)
+                {globalLicenseMode === 'Perpetual' ? '🛡️ Elite 24x7/AHR Support' : '🛡️ 60m AHR (41%)'}
               </label>
             </div>
 
@@ -1767,10 +1806,16 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                     alignItems: 'center',
                     gap: '4px',
                   }}
-                  title="Items tagged with 🛡️ AHR are covered hardware qualifying for the 41% Advance Hardware Replacement calculation"
+                  title={
+                    globalLicenseMode === 'Perpetual'
+                      ? 'Items tagged with 🛡️ SUPPORT are qualifying hardware and perpetual software products covered under Traditional Support (GSS-FYS-* / GSS-RNL-*)'
+                      : 'Items tagged with 🛡️ AHR are covered hardware qualifying for the 41% Advance Hardware Replacement calculation (GSS-HW-AHR-GMO)'
+                  }
                 >
-                  <span>🛡️ AHR</span>
-                  <span style={{ color: '#d1d5db' }}>= Eligible Hardware ({summary.items.filter((i) => i.inclInSupport).length} SKUs)</span>
+                  <span>🛡️ {globalLicenseMode === 'Perpetual' ? 'SUPPORT' : 'AHR'}</span>
+                  <span style={{ color: '#d1d5db' }}>
+                    = Covered {globalLicenseMode === 'Perpetual' ? 'HW & SW' : 'Hardware'} ({summary.items.filter((i) => i.inclInSupport).length} SKUs)
+                  </span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                   Showing all <strong>{summary.activeLineCount}</strong> items ({summary.totalQty} total units)
@@ -1866,9 +1911,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                                   gap: '2px',
                                   cursor: 'help',
                                 }}
-                                title="AHR Eligible Hardware: Qualifies for 41% Advance Hardware Replacement support calculation"
+                                title={
+                                  globalLicenseMode === 'Perpetual'
+                                    ? 'Covered product included in Traditional Support calculation (GSS-FYS-* / GSS-RNL-*)'
+                                    : 'AHR Eligible Hardware: Qualifies for 41% Advance Hardware Replacement support calculation'
+                                }
                               >
-                                🛡️ AHR
+                                🛡️ {globalLicenseMode === 'Perpetual' ? 'SUPPORT' : 'AHR'}
                               </span>
                             )}
                           </div>

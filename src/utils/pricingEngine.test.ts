@@ -1008,5 +1008,107 @@ describe('pricingEngine', () => {
       expect(ahr?.discountAmount).toBeCloseTo(3106.365, 2); // 15% discount
       expect(ahr?.extendedNetPrice).toBeCloseTo(17602.735, 2);
     });
+
+    it('calculates Perpetual deal Traditional Support (GSS-FYS-ELT-PSS) at 18%/yr covering HW + Perpetual SW', () => {
+      const items: QuoteLineItem[] = [
+        {
+          id: 'hw-chassis',
+          sku: 'GVS-HC301',
+          description: 'GigaVUE-HC3 Chassis',
+          type: 'Chassis',
+          category: 'Chassis',
+          qty: 1,
+          unitListPrice: 96990,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'hw-module',
+          sku: 'SMT-HC3-C08',
+          description: 'GigaSMART Gen3 Module',
+          type: 'Module',
+          category: 'Module',
+          qty: 1,
+          unitListPrice: 87520,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'sw-perpetual',
+          sku: 'SMT-HC3-GEN3-FVU',
+          description: 'FlowVUE Perpetual License',
+          type: 'License',
+          category: 'Software',
+          qty: 1,
+          unitListPrice: 52465,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'optic-line',
+          sku: 'SFP-532',
+          description: '10G Transceiver',
+          type: 'Optic',
+          category: 'Optic',
+          qty: 4,
+          unitListPrice: 500,
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+        {
+          id: 'support-perpetual',
+          sku: 'GSS-FYS-ELT-PSS',
+          description: 'Elite 24x7 Support with AHR',
+          type: 'Support',
+          category: 'Support',
+          qty: 1,
+          termMonths: 12, // 1 year term
+          unitListPrice: 0, // Dynamic calculation
+          isMonthlyPrice: false,
+          applyDiscount: true,
+        },
+      ];
+
+      // Covered HW & SW = 96990 (HC3) + 87520 (SMT-HC3-C08) + 52465 (FlowVUE) = $236,975.00
+      // 18.0% of $236,975.00 = $42,655.50
+      const summary = calculateQuoteSummary(items, { global: 0, software: 0, optics: 0, chassis: 0, modules: 0, taps: 0, support: 15, accessories: 0 }, false);
+      const support = summary.items.find((i) => i.sku === 'GSS-FYS-ELT-PSS');
+
+      expect(support).toBeDefined();
+      expect(support!.unitListPrice).toBe(42655.5);
+      expect(support!.extendedListPrice).toBe(42655.5);
+      expect(support!.effectiveDiscountPercent).toBe(15);
+      expect(support!.extendedNetPrice).toBeCloseTo(36257.175, 2);
+      expect(support!.note).toContain('18.0% of Covered HW & SW List Price ($236,975.00)');
+    });
+
+    it('converts GSS-HW-AHR-GMO to GSS-FYS-ELT-PSS when switching from HTL to Perpetual deal', () => {
+      expect(resolveLicenseModeSku('GSS-HW-AHR-GMO', 'Perpetual')).toBe('GSS-FYS-ELT-PSS');
+      expect(resolveLicenseModeSku('GSS-RNL-HW-AHR-GMO', 'Perpetual')).toBe('GSS-RNL-ELT-PSS');
+      expect(resolveLicenseModeSku('GSS-FYS-ELT-PSS', 'HTL')).toBe('GSS-HW-AHR-GMO');
+      expect(resolveLicenseModeSku('GSS-FYS-ENH-PSS', 'HTL')).toBe('GSS-HW-AHR-GMO');
+      expect(resolveLicenseModeSku('GSS-RNL-ELT-PSS', 'HTL')).toBe('GSS-RNL-HW-AHR-GMO');
+    });
+
+    it('creates GSS-FYS-ELT-PSS for Perpetual quotes when includeAhr is true in createQuoteItemsFromBom', () => {
+      const bomRows: BomRow[] = [
+        {
+          sku: 'GVS-HC301',
+          description: 'GigaVUE-HC3 chassis',
+          type: 'Hardware',
+          qty: 1,
+        },
+      ];
+
+      const quoteItems = createQuoteItemsFromBom(bomRows, 12, {
+        licenseMode: 'Perpetual',
+        includeAhr: true,
+      });
+
+      const skus = quoteItems.map((i) => i.sku);
+      expect(skus).toContain('GVS-HC301');
+      expect(skus).toContain('GSS-FYS-ELT-PSS');
+      expect(skus).not.toContain('GSS-HW-AHR-GMO');
+    });
   });
 });

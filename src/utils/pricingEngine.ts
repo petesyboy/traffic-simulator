@@ -70,6 +70,7 @@ export interface QuoteLineItem {
 }
 
 export interface CreateQuoteItemsOptions {
+  licenseMode?: 'HTL' | 'Perpetual';
   includeAhr?: boolean;
   includeFmPrime?: boolean;
   includeELearning?: boolean;
@@ -215,20 +216,70 @@ export function isHardwareDescription(description: string): boolean {
   );
 }
 
-/** Identifies whether a SKU is a percent-of-total support SKU (e.g. GSS-HW-AHR-GMO). */
+/** Identifies whether a SKU is a percent-of-total support SKU (e.g. GSS-HW-AHR-GMO or GSS-FYS-ELT-PSS). */
 export function isPercentOfTotalSupportSku(sku: string): boolean {
   const s = (sku || '').trim().toUpperCase();
-  return s === 'GSS-HW-AHR-GMO' || s.startsWith('GSS-HW-AHR');
+  return (
+    s.startsWith('GSS-HW-AHR') ||
+    s.startsWith('GSS-RNL-HW-AHR') ||
+    s.startsWith('GSS-FYS-') ||
+    s.startsWith('GSS-RNL-')
+  );
 }
 
 /**
  * Resolves the percentage rate for percent-of-total support SKUs.
- * GSS-HW-AHR-GMO is 41.0% (5-year / 60-month all-in AHR term: Years 1-3 @ 8%/yr = 24%, Years 4-5 @ 8.5%/yr = 17%).
+ * - GSS-HW-AHR-GMO: 41.0% (5-year / 60-month all-in AHR term for HTL hardware: Years 1-3 @ 8%/yr = 24%, Years 4-5 @ 8.5%/yr = 17%).
+ * - GSS-RNL-HW-AHR-GMO: 8.5% of covered HW per year.
+ * - GSS-FYS-ELT-PSS: 18.0% of covered HW & perpetual SW per year (Elite 24x7 with AHR).
+ * - GSS-FYS-ENH-PSS: 15.0% of covered HW & perpetual SW per year (Enhanced 8x5 with AHR).
+ * - GSS-FYS-BAS-PSS: 12.0% of covered HW & perpetual SW per year (Basic 8x5 with R&R).
+ * - GSS-RNL-ELT-PSS: 20.0% of covered HW & perpetual SW per year (Renewal Elite 24x7 with AHR).
+ * - GSS-RNL-ENH-PSS: 17.0% of covered HW & perpetual SW per year (Renewal Enhanced 8x5 with AHR).
+ * - GSS-RNL-BAS-PSS: 14.0% of covered HW & perpetual SW per year (Renewal Basic 8x5 with R&R).
  */
-export function getPercentOfTotalSupportRate(sku: string): number {
+export function getPercentOfTotalSupportRate(sku: string, termMonths?: number): number {
   const s = (sku || '').trim().toUpperCase();
-  if (s === 'GSS-HW-AHR-GMO' || s.startsWith('GSS-HW-AHR')) {
+  const termMultiplier = termMonths && termMonths > 0 ? termMonths / 12 : 1;
+
+  if (s === 'GSS-HW-AHR-GMO') {
     return 0.41;
+  }
+  if (s === 'GSS-RNL-HW-AHR-GMO') {
+    return 0.085 * termMultiplier;
+  }
+  if (s.startsWith('GSS-FYS-ELT') || s === 'GSS-FYS-ELT-PSS') {
+    return 0.18 * termMultiplier;
+  }
+  if (s.startsWith('GSS-FYS-ENH') || s === 'GSS-FYS-ENH-PSS') {
+    return 0.15 * termMultiplier;
+  }
+  if (s.startsWith('GSS-FYS-BAS') || s === 'GSS-FYS-BAS-PSS') {
+    return 0.12 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-ELT') || s === 'GSS-RNL-ELT-PSS') {
+    return 0.20 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-ENH') || s === 'GSS-RNL-ENH-PSS') {
+    return 0.17 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-BAS') || s === 'GSS-RNL-BAS-PSS') {
+    return 0.14 * termMultiplier;
+  }
+  if (s.startsWith('GSS-FYS-SP-ELT')) {
+    return 0.09 * termMultiplier;
+  }
+  if (s.startsWith('GSS-FYS-SP-ENH')) {
+    return 0.07 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-SP-ELT')) {
+    return 0.11 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-SP-ENH')) {
+    return 0.09 * termMultiplier;
+  }
+  if (s.startsWith('GSS-RNL-E4HPT')) {
+    return 0.24 * termMultiplier;
   }
   return 0;
 }
@@ -272,6 +323,32 @@ export function isSupportEnabledHardware(category: QuoteCategory, sku: string): 
 
   // Active hardware chassis and physical modules / control cards
   return category === 'Chassis' || category === 'Module';
+}
+
+/**
+ * Identifies whether a line item is an eligible perpetual software product.
+ * In Gigamon CPQ / WWPL, traditional perpetual support (GSS-FYS-*, GSS-RNL-*) covers perpetual software licenses.
+ */
+export function isSupportEnabledPerpetualSoftware(category: QuoteCategory, sku: string): boolean {
+  const s = (sku || '').trim().toUpperCase();
+  if (category !== 'Software') return false;
+  if (s.includes('-SW-TM') || s.endsWith('-TM') || s.startsWith('GES-') || s.startsWith('GSS-')) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Returns whether a line item is covered under a given support SKU.
+ * For GSS-HW-AHR-*: covers support-enabled hardware only.
+ * For GSS-FYS-* / GSS-RNL-*: covers support-enabled hardware AND perpetual software licenses.
+ */
+export function isCoveredBySupport(category: QuoteCategory, sku: string, supportSku?: string): boolean {
+  const s = (supportSku || '').trim().toUpperCase();
+  if (s.startsWith('GSS-HW-AHR') || s.startsWith('GSS-RNL-HW-AHR')) {
+    return isSupportEnabledHardware(category, sku);
+  }
+  return isSupportEnabledHardware(category, sku) || isSupportEnabledPerpetualSoftware(category, sku);
 }
 
 /** Determines quote category from SKU, BOM type, and catalogue metadata. */
@@ -458,6 +535,7 @@ export function calculateLineFinancials(
   freePowerCords: boolean = false,
   spanOnlyMode: boolean = false,
   eligibleHardwareListTotal?: number,
+  eligiblePerpetualSoftwareListTotal?: number,
 ): CalculatedLineItem {
   // Always dynamically re-resolve category so loaded quote items or stale state are guaranteed 100% accurate
   const resolvedCategory = mapBomTypeToQuoteCategory(item.category || item.type, item.sku, item.description);
@@ -481,16 +559,25 @@ export function calculateLineFinancials(
   let dynamicNote = normalizedItem.note;
 
   if (isPercentOfTotal && !normalizedItem.isPriceOverridden && eligibleHardwareListTotal !== undefined) {
-    const rate = getPercentOfTotalSupportRate(normalizedItem.sku);
-    const computedTotal = Math.round(eligibleHardwareListTotal * rate * 100) / 100;
+    const isHwOnlyAhr = normalizedItem.sku.startsWith('GSS-HW-AHR') || normalizedItem.sku.startsWith('GSS-RNL-HW-AHR');
+    const coveredBaseList = isHwOnlyAhr
+      ? eligibleHardwareListTotal
+      : (eligibleHardwareListTotal + (eligiblePerpetualSoftwareListTotal || 0));
+
+    const rate = getPercentOfTotalSupportRate(normalizedItem.sku, normalizedItem.termMonths);
+    const computedTotal = Math.round(coveredBaseList * rate * 100) / 100;
     dynamicUnitList = effectiveQty > 0 ? computedTotal / effectiveQty : computedTotal;
-    dynamicNote = `41.0% of Covered Hardware List Price (${formatCurrency(eligibleHardwareListTotal)})`;
+
+    const pctLabel = (rate * 100).toFixed(1) + '%';
+    const coverageLabel = isHwOnlyAhr ? 'Covered Hardware' : 'Covered HW & SW';
+    const termLabel = normalizedItem.termMonths ? ` (${normalizedItem.termMonths}m)` : '';
+    dynamicNote = `${pctLabel} of ${coverageLabel} List Price (${formatCurrency(coveredBaseList)})${termLabel}`;
   }
 
   const term = isMonthly && normalizedItem.termMonths && normalizedItem.termMonths > 0 ? normalizedItem.termMonths : 1;
   const effectiveUnitList = dynamicUnitList * (isMonthly ? term : 1);
   const extendedListPrice = isPercentOfTotal && !normalizedItem.isPriceOverridden && eligibleHardwareListTotal !== undefined
-    ? Math.round(eligibleHardwareListTotal * getPercentOfTotalSupportRate(normalizedItem.sku) * 100) / 100
+    ? dynamicUnitList * effectiveQty
     : effectiveUnitList * effectiveQty;
 
   const effectiveDiscountPercent = resolveLineDiscount(normalizedItem, config, freePowerCords);
@@ -570,25 +657,51 @@ export function createQuoteItemsFromBom(
     };
   });
 
-  // 1. Optional Advanced Hardware Replacement (GSS-HW-AHR-GMO, 60m at 41% of eligible hardware list price)
-  if (options.includeAhr && !items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
-    const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
-    if (hasEligibleHw) {
-      items.push({
-        id: `bom-ahr-${Date.now()}`,
-        sku: 'GSS-HW-AHR-GMO',
-        description:
-          'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
-        type: 'Support',
-        category: 'Support',
-        qty: 1,
-        termMonths: 60,
-        unitListPrice: 0, // Dynamically computed at 41% of covered hardware
-        isMonthlyPrice: false,
-        applyDiscount: true,
-        discountOverride: 15, // Standard CPQ 15% discount for AHR
-        note: '60 months',
-      });
+  // 1. Support & Advanced Hardware Replacement (HTL vs Perpetual)
+  if (options.includeAhr) {
+    if (options.licenseMode === 'Perpetual') {
+      if (!items.some((i) => i.sku.startsWith('GSS-FYS-') || i.sku.startsWith('GSS-RNL-'))) {
+        const term = defaultTermDuration || 12;
+        const skuRecord = skuService.getSKUByPartNumber('GSS-FYS-ELT-PSS');
+        items.push({
+          id: `bom-support-${Date.now()}`,
+          sku: 'GSS-FYS-ELT-PSS',
+          description:
+            skuRecord?.description ||
+            'Initial Gigamon Pass-through Support Type with ELITE Support Level (24x7/AHR), bought with product or within 1 year of original purchase of product.',
+          type: 'Support',
+          category: 'Support',
+          qty: 1,
+          termMonths: term,
+          unitListPrice: 0, // Dynamically computed based on annual rate (18%) * covered HW/SW
+          isMonthlyPrice: false,
+          applyDiscount: true,
+          discountOverride: 15,
+          note: `${term} months`,
+        });
+      }
+    } else {
+      // HTL model: GSS-HW-AHR-GMO (Software subscriptions include embedded Elite-Plus support)
+      if (!items.some((i) => i.sku === 'GSS-HW-AHR-GMO')) {
+        const hasEligibleHw = items.some((i) => isSupportEnabledHardware(i.category, i.sku));
+        if (hasEligibleHw) {
+          items.push({
+            id: `bom-ahr-${Date.now()}`,
+            sku: 'GSS-HW-AHR-GMO',
+            description:
+              'Gigamon Advance Hardware Replacement with direct Gigamon support, available with Subscription enabled hardware products at time of product purchase.',
+            type: 'Support',
+            category: 'Support',
+            qty: 1,
+            termMonths: 60,
+            unitListPrice: 0, // Dynamically computed at 41% of covered hardware
+            isMonthlyPrice: false,
+            applyDiscount: true,
+            discountOverride: 15, // Standard CPQ 15% discount for AHR
+            note: '60 months',
+          });
+        }
+      }
     }
   }
 
@@ -649,9 +762,10 @@ export function createAdHocQuoteItem(sku: string, qty: number = 1, termDuration:
   const description = skuItem?.description || sku;
   const category = mapBomTypeToQuoteCategory(skuItem?.category || 'Other', sku, description);
 
+  const skuStr = sku || '';
+  const isTermSku = skuStr.includes('-SW-TM') || skuStr.endsWith('-TM');
   const isMonthly = Boolean(
-    sku.includes('-SW-TM') ||
-      sku.endsWith('-TM') ||
+    isTermSku ||
       (skuItem?.listPriceMonthly !== undefined && skuItem.listPriceMonthly > 0 && !skuItem?.listPrice),
   );
 
@@ -666,36 +780,45 @@ export function createAdHocQuoteItem(sku: string, qty: number = 1, termDuration:
     unitListPrice = skuItem.listPrice;
   }
 
+  const isPercentOfTotal = isPercentOfTotalSupportSku(sku);
+  const inclInSupport = isSupportEnabledHardware(category, sku);
+
   return {
-    id: `adhoc-${sku}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    sku: sku.toUpperCase().trim(),
+    id: `adhoc-${sku}-${Date.now()}`,
+    sku,
     description,
-    type: skuItem?.category || 'Other',
+    type: skuItem?.category || 'Ad-hoc',
     category,
-    qty: Math.max(1, qty),
-    termMonths: isMonthly ? termDuration : undefined,
+    qty,
+    termMonths: isMonthly || isPercentOfTotal ? termDuration : undefined,
     unitListPrice,
     isMonthlyPrice: isMonthly,
     applyDiscount: true,
     isCustomOrAdHoc: true,
+    inclInSupport,
+    note: isPercentOfTotal ? `${termDuration} months` : undefined,
   };
 }
 
-/**
- * Maps an SKU to its matching Perpetual SKU if converting to Perpetual,
- * or matching HTL SKU if converting to HTL.
- */
-export function resolveLicenseModeSku(
-  currentSku: string,
-  targetMode: 'HTL' | 'Perpetual',
-): string {
-  const upper = currentSku.toUpperCase().trim();
+/** Resolves the equivalent license/hardware SKU when switching between HTL and Perpetual modes. */
+export function resolveLicenseModeSku(sku: string, targetMode: 'HTL' | 'Perpetual'): string {
+  const upper = (sku || '').trim().toUpperCase();
 
+  // Support SKUs: HTL (GSS-HW-AHR-GMO) <-> Perpetual (GSS-FYS-ELT-PSS)
   if (targetMode === 'Perpetual') {
-    // 1. If ends with -SW-TM, try finding perpetual counterpart
+    if (upper === 'GSS-HW-AHR-GMO') return 'GSS-FYS-ELT-PSS';
+    if (upper === 'GSS-RNL-HW-AHR-GMO') return 'GSS-RNL-ELT-PSS';
+  } else if (targetMode === 'HTL') {
+    if (upper.startsWith('GSS-FYS-')) return 'GSS-HW-AHR-GMO';
+    if (upper.startsWith('GSS-RNL-') && upper !== 'GSS-RNL-HW-AHR-GMO') return 'GSS-RNL-HW-AHR-GMO';
+  }
+
+  // targetMode === 'Perpetual'
+  if (targetMode === 'Perpetual') {
+    // 1. If ends with -SW-TM, replace with -PL if exists, else strip -SW-TM
     if (upper.endsWith('-SW-TM')) {
       const base = upper.replace(/-SW-TM$/i, '');
-      // Try -PL variant first (e.g. SMT-HC1P-GEN3-FVU-PL, SMT-HC3-GEN3-AFS-PL, SMT-GSA110-AMI-100G-PL)
+      // Try with -PL (e.g. SMT-HC1P-GEN3-DD1-PL, SMT-HC1P-GEN3-INSSL-PL, SMT-HC3-GEN3-INSSL-PL)
       const plCandidate = `${base}-PL`;
       if (skuService.getSKUByPartNumber(plCandidate)) {
         return plCandidate;
@@ -822,7 +945,7 @@ export function convertQuoteItemsLicenseMode(
     if (!prev.isCustomOrAdHoc) {
       prevBomMap.set(prev.id, prev);
       prevBomMap.set(prev.sku, prev);
-      // Also map without suffix
+      // Also map without suffix so -HW / -SW-TM / -PL variants match their counterpart
       const baseSku = prev.sku.replace(/-SW-TM$/i, '').replace(/-HW$/i, '').replace(/-PL$/i, '');
       prevBomMap.set(baseSku, prev);
     }
@@ -834,8 +957,12 @@ export function convertQuoteItemsLicenseMode(
     if (prev) {
       return {
         ...newItem,
+        qty: prev.qty !== undefined ? prev.qty : newItem.qty,
         discountOverride: prev.discountOverride,
+        unitListPrice: prev.isPriceOverridden ? prev.unitListPrice : newItem.unitListPrice,
+        isPriceOverridden: prev.isPriceOverridden,
         applyDiscount: prev.applyDiscount,
+        termMonths: newItem.isMonthlyPrice ? (prev.termMonths || newItem.termMonths) : undefined,
       };
     }
     return newItem;
@@ -881,10 +1008,33 @@ export function calculateQuoteSummary(
     return sum;
   }, 0);
 
-  // 4. Compute line financials with eligibleHardwareListTotal passed in
-  const calculatedItems = activeRawItems.map((item) =>
-    calculateLineFinancials(item, config, freePowerCords, spanOnlyMode, eligibleHardwareListTotal),
-  );
+  // 4. Compute total list price of eligible perpetual software lines
+  const eligiblePerpetualSoftwareListTotal = activeRawItems.reduce((sum, rawItem) => {
+    const resolvedCat = mapBomTypeToQuoteCategory(rawItem.category || rawItem.type, rawItem.sku, rawItem.description);
+    if (isSupportEnabledPerpetualSoftware(resolvedCat, rawItem.sku)) {
+      const swLine = calculateLineFinancials(rawItem, config, freePowerCords, spanOnlyMode);
+      return sum + (swLine.extendedListPrice || 0);
+    }
+    return sum;
+  }, 0);
+
+  const activeSupportSku = activeRawItems.find((i) => isPercentOfTotalSupportSku(i.sku))?.sku;
+
+  // 5. Compute line financials with eligible totals passed in
+  const calculatedItems = activeRawItems.map((item) => {
+    const calc = calculateLineFinancials(
+      item,
+      config,
+      freePowerCords,
+      spanOnlyMode,
+      eligibleHardwareListTotal,
+      eligiblePerpetualSoftwareListTotal,
+    );
+    return {
+      ...calc,
+      inclInSupport: isCoveredBySupport(calc.category, calc.sku, activeSupportSku),
+    };
+  });
 
   const categoryBreakdown = CATEGORY_LIST.reduce(
     (acc, cat) => {
