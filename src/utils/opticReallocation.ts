@@ -377,33 +377,44 @@ export function distributeOpticsAcrossBoards(
     }
   });
 
-  // Track allocations: Map<boardName, Map<opticLabel, number>>
-  const placedMap = new Map<string, Map<string, number>>();
-  boardSlots.forEach((b) => placedMap.set(b.boardName, new Map<string, number>()));
+  // Track allocations: Map<boardName, { autoMap: Map<opticLabel, number>, manualMap: Map<opticLabel, number> }>
+  const placedMap = new Map<string, { autoMap: Map<string, number>; manualMap: Map<string, number> }>();
+  boardSlots.forEach((b) =>
+    placedMap.set(b.boardName, { autoMap: new Map<string, number>(), manualMap: new Map<string, number>() }),
+  );
 
-  // Consolidate required optics by optic label
-  const consolidated = new Map<string, number>();
+  // Consolidate required optics by key: `${optic}:::${isAuto ? '1' : '0'}`
+  const consolidated = new Map<string, { optic: string; isAuto: boolean; qty: number }>();
   requiredOptics.forEach((item) => {
-    consolidated.set(item.optic, (consolidated.get(item.optic) || 0) + item.qty);
+    const isAuto = item.purpose === 'tap';
+    const key = `${item.optic}:::${isAuto ? '1' : '0'}`;
+    const cur = consolidated.get(key);
+    if (cur) {
+      cur.qty += item.qty;
+    } else {
+      consolidated.set(key, { optic: item.optic, isAuto, qty: item.qty });
+    }
   });
 
   // Sort optics: Place QSFP optics first, then SFP optics
-  const sortedOptics = Array.from(consolidated.entries()).sort(([optA], [optB]) => {
-    const cageA = getOpticCage(optA);
-    const cageB = getOpticCage(optB);
+  const sortedOptics = Array.from(consolidated.values()).sort((a, b) => {
+    const cageA = getOpticCage(a.optic);
+    const cageB = getOpticCage(b.optic);
     if (cageA === 'QSFP' && cageB !== 'QSFP') return -1;
     if (cageA !== 'QSFP' && cageB === 'QSFP') return 1;
-    return optA.localeCompare(optB);
+    return a.optic.localeCompare(b.optic);
   });
 
   // Distribute each optic into the best available board
-  for (const [opticLabel, totalNeeded] of sortedOptics) {
-    let unitsRemaining = totalNeeded;
-    const cage = getOpticCage(opticLabel);
+  for (const item of sortedOptics) {
+    let unitsRemaining = item.qty;
+    const cage = getOpticCage(item.optic);
 
     for (const board of boardSlots) {
       if (unitsRemaining <= 0) break;
-      const isSupported = board.supportedOptics.some((opt) => opt.split(' ')[0] === opticLabel.split(' ')[0] || opt === opticLabel);
+      const isSupported = board.supportedOptics.some(
+        (opt) => opt.split(' ')[0] === item.optic.split(' ')[0] || opt === item.optic,
+      );
       if (!isSupported) continue;
 
       const freeCages = cage === 'QSFP' ? board.remainingQsfp : board.remainingSfp;
@@ -417,16 +428,19 @@ export function distributeOpticsAcrossBoards(
       }
       unitsRemaining -= toPlace;
 
-      const boardOptics = placedMap.get(board.boardName)!;
-      boardOptics.set(opticLabel, (boardOptics.get(opticLabel) || 0) + toPlace);
+      const boardMaps = placedMap.get(board.boardName)!;
+      const targetMap = item.isAuto ? boardMaps.autoMap : boardMaps.manualMap;
+      targetMap.set(item.optic, (targetMap.get(item.optic) || 0) + toPlace);
     }
 
     // If units still remain because all boards are full, place on first board with capacity as fallback
     if (unitsRemaining > 0 && boardSlots.length > 0) {
-      const fallbackBoard = boardSlots.find(b => b.totalSfp > 0 || b.totalQsfp > 0)?.boardName || boardSlots[0].boardName;
-      const boardOptics = placedMap.get(fallbackBoard);
-      if (boardOptics) {
-        boardOptics.set(opticLabel, (boardOptics.get(opticLabel) || 0) + unitsRemaining);
+      const fallbackBoard =
+        boardSlots.find((b) => b.totalSfp > 0 || b.totalQsfp > 0)?.boardName || boardSlots[0].boardName;
+      const boardMaps = placedMap.get(fallbackBoard);
+      if (boardMaps) {
+        const targetMap = item.isAuto ? boardMaps.autoMap : boardMaps.manualMap;
+        targetMap.set(item.optic, (targetMap.get(item.optic) || 0) + unitsRemaining);
       }
     }
   }
@@ -436,14 +450,29 @@ export function distributeOpticsAcrossBoards(
   const affectedBoards = new Set<string>();
 
   boardSlots.forEach((b) => {
-    const boardOptics = placedMap.get(b.boardName);
-    if (!boardOptics) return;
-    boardOptics.forEach((qty, optic) => {
+    const boardMaps = placedMap.get(b.boardName);
+    if (!boardMaps) return;
+
+    // First push manual/tool/uplink optics
+    boardMaps.manualMap.forEach((qty, optic) => {
       if (qty > 0) {
         installedOptics.push({
           board: b.boardName,
           optic,
           qty,
+        });
+        affectedBoards.add(b.boardName);
+      }
+    });
+
+    // Then push auto-added TAP optics
+    boardMaps.autoMap.forEach((qty, optic) => {
+      if (qty > 0) {
+        installedOptics.push({
+          board: b.boardName,
+          optic,
+          qty,
+          isAutoAdded: true,
         });
         affectedBoards.add(b.boardName);
       }

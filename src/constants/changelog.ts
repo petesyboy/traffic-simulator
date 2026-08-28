@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.680",
+    date: "2026-08-28",
+    summary: "Resolve optic and port allocation misalignment and orphan fitted optics on modular chassis (v1.0.680)",
+  },
+  {
     version: "1.0.679",
     date: "2026-08-28",
     summary: "Map GFM-FM000-SW-TM to perpetual GFM-FM000 in license mode conversions and quotes (v1.0.679)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.657",
     date: "2026-08-27",
     summary: "Add intelligent auto-reallocation and re-alignment of optics and port links across chassis boards (v1.0.657)",
-  },
-  {
-    version: "1.0.656",
-    date: "2026-08-26",
-    summary: "Refine CPQ eligibility rules and 41% calculation for GSS-HW-AHR-GMO (v1.0.656)",
   },
 ];

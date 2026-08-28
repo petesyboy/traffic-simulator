@@ -297,4 +297,57 @@ describe('opticReallocation', () => {
       expect(toolLinks[0].opticSku).toBe('SFP-532T (10G SFP+ SR)');
     }
   });
+
+  it('prevents optic doubling on TA25E when reallocated and synchronized with TAP links', async () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'tap-m251t',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'G-TAP M Series TAP-M251T',
+          configType: 'Hardware',
+          model: 'G-TAP M Series TAP-M251T',
+          sku: 'TAP-M251T',
+          tappedLinksCount: 24,
+          tappedLinkOptic: 'SFP-532T',
+          tapFiberMode: 'Multimode',
+          tappedLinkAllocations: [{ qty: 24, optic: 'SFP-532T' }],
+        },
+      },
+      {
+        id: 'ta25e-test',
+        type: 'hardwareNode',
+        position: { x: 300, y: 0 },
+        data: {
+          label: 'GigaVUE-TA25E',
+          configType: 'Hardware',
+          model: 'GigaVUE-TA25E',
+          sku: 'TA25E-BASE',
+        },
+      },
+    ];
+
+    const edges: Edge[] = [
+      { id: 'e-tap-ta25e', source: 'tap-m251t', target: 'ta25e-test' },
+    ];
+
+    // 1. Reallocate optics and ports
+    const reallocated = reallocateChassisOpticsAndPorts('ta25e-test', nodes, edges);
+    const taNode = reallocated.updatedNodes.find((n) => n.id === 'ta25e-test')!;
+    const optics = taNode.data.optics || [];
+
+    // 24 TAP links * 2 = 48 optics
+    expect(optics.reduce((sum: number, o: any) => sum + o.qty, 0)).toBe(48);
+    expect(optics[0].isAutoAdded).toBe(true);
+
+    // 2. Subsequent syncOpticsOnTapConnection must NOT double to 96
+    const { syncOpticsOnTapConnection } = await import('./bom/bomGenerator');
+    const syncedNodes = syncOpticsOnTapConnection(reallocated.updatedNodes, reallocated.updatedEdges);
+    const syncedTa = syncedNodes.find((n) => n.id === 'ta25e-test')!;
+    const syncedOptics = syncedTa.data.optics || [];
+
+    const totalSyncedOptics = syncedOptics.reduce((sum: number, o: any) => sum + o.qty, 0);
+    expect(totalSyncedOptics).toBe(48); // Still exactly 48, never 96!
+  });
 });
