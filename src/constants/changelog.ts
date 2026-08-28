@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.691",
+    date: "2026-08-28",
+    summary: "Enforce explicit pure white #ffffff and #ff9800 border on all diagram descriptors (v1.0.691)",
+  },
+  {
     version: "1.0.689",
     date: "2026-08-28",
     summary: "Add architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters (v1.0.689)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.671",
     date: "2026-08-28",
     summary: "Add GigaSMART Tunneling & ERSPAN Decapsulation app and licensing (v1.0.671)",
-  },
-  {
-    version: "1.0.670",
-    date: "2026-08-28",
-    summary: "Add New Project menu action, quotation workspace reset, and project naming prompt before generation",
   },
 ];

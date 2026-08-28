@@ -108,12 +108,13 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
       return (
         <div
           style={{
+            position: 'relative',
+            zIndex: 10,
             background: 'rgba(20, 20, 20, 0.95)',
             border: '1px solid #ff9800',
             borderRadius: '4px',
             padding: '6px 8px',
-            minWidth: '220px',
-            maxWidth: '320px',
+            width: '100%',
             boxSizing: 'border-box',
             color: '#ffffff',
             fontSize: '9px',
@@ -121,7 +122,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
             pointerEvents: 'none',
             whiteSpace: 'pre-wrap',
-            marginTop: '6px',
+            marginTop: '14px',
             lineHeight: '1.35',
           }}
         >
@@ -169,12 +170,13 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
       return (
         <div
           style={{
+            position: 'relative',
+            zIndex: 10,
             background: 'rgba(20, 20, 20, 0.95)',
             border: '1px solid #ff9800',
             borderRadius: '4px',
             padding: '6px 8px',
-            minWidth: '220px',
-            maxWidth: '320px',
+            width: '100%',
             boxSizing: 'border-box',
             color: '#ffffff',
             fontSize: '9px',
@@ -182,7 +184,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
             pointerEvents: 'none',
             whiteSpace: 'pre-wrap',
-            marginTop: '6px',
+            marginTop: '14px',
             lineHeight: '1.35',
           }}
         >
@@ -255,21 +257,23 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
 
   // ── COLLAPSED 3D STACKED CARD DECK ──
   return (
-    <div style={{ position: 'relative', minWidth: '260px', maxWidth: '320px' }}>
-      {/* 3D Under-layer Card 2 (Bottommost) */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          transform: 'translate(8px, 8px)',
-          background: '#0a0e17',
-          border: `1px solid ${themeBorder}`,
-          borderRadius: '10px',
-          zIndex: 1,
-          opacity: 0.5,
-          pointerEvents: 'none',
-        }}
-      />
+    <div style={{ minWidth: '260px', maxWidth: '320px' }}>
+      {/* 3D DECK CONTAINER */}
+      <div style={{ position: 'relative' }}>
+        {/* 3D Under-layer Card 2 (Bottommost) */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            transform: 'translate(8px, 8px)',
+            background: '#0a0e17',
+            border: `1px solid ${themeBorder}`,
+            borderRadius: '10px',
+            zIndex: 1,
+            opacity: 0.5,
+            pointerEvents: 'none',
+          }}
+        />
 
       {/* 3D Under-layer Card 1 (Middle) */}
       <div
@@ -516,6 +520,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
             Ungroup Stack
           </button>
         </div>
+      </div>
       </div>
       {renderDiagramModeDetails()}
     </div>
