@@ -351,37 +351,94 @@ export function generateBom(
     });
   });
 
-  const getChassisMaxOpticSpeed = (chassisModel: string): '100G' | '40G' | '10G' => {
-    const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
-    if (!rules) return '10G';
-    let has100G = false, has40G = false;
-    for (const group of Object.values(rules)) { if (Array.isArray(group)) { for (const opt of group) { if (opt.includes('100G')) has100G = true; if (opt.includes('40G')) has40G = true; } } }
-    return has100G ? '100G' : (has40G ? '40G' : '10G');
+  const getNodeActiveOpticRules = (node: CustomNode): string[] => {
+    const model = String(node.data?.model || '');
+    const rules = (opticRules as Record<string, Record<string, string[]>>)[model];
+    if (!rules) return [];
+
+    const activeBoardKeys: string[] = [];
+    const mainBoardKey = getMainBoardKey(rules);
+    if (mainBoardKey && rules[mainBoardKey]) {
+      activeBoardKeys.push(mainBoardKey);
+    } else {
+      const firstKey = Object.keys(rules)[0];
+      if (firstKey) activeBoardKeys.push(firstKey);
+    }
+
+    // Include explicitly installed expansion boards on this node
+    const installedBoards = (node.data?.installedBoards as Record<string, string>) || {};
+    Object.values(installedBoards).forEach(boardSku => {
+      if (boardSku && rules[boardSku]) {
+        activeBoardKeys.push(boardSku);
+      }
+    });
+
+    const activeOptics: string[] = [];
+    activeBoardKeys.forEach(bk => {
+      if (Array.isArray(rules[bk])) {
+        activeOptics.push(...rules[bk]);
+      }
+    });
+    return activeOptics;
   };
 
-  const findOpticSkuForSpeed = (chassisModel: string, speed: '100G' | '40G' | '10G'): string | null => {
-    const rules = (opticRules as Record<string, Record<string, string[]>>)[chassisModel];
-    if (!rules) return null;
-    for (const group of Object.values(rules)) if (Array.isArray(group)) for (const opt of group) if (opt.includes(speed) && (opt.includes('SR') || opt.includes('SX') || opt.includes('SR4'))) return opt.split(' ')[0];
-    for (const group of Object.values(rules)) if (Array.isArray(group)) for (const opt of group) if (opt.includes(speed)) return opt.split(' ')[0];
+  const findOpticSkuForNodeSpeed = (node: CustomNode, speed: string): string | null => {
+    const optics = getNodeActiveOpticRules(node);
+    const speedOptics = optics.filter(opt => opt.includes(speed));
+    // Prefer TAA variants ending in 'T' and SR/SX/SR4 multimode
+    const srTaa = speedOptics.find(opt => (opt.includes('SR') || opt.includes('SX') || opt.includes('SR4')) && opt.split(' ')[0].endsWith('T'));
+    if (srTaa) return srTaa.split(' ')[0];
+    const srAny = speedOptics.find(opt => opt.includes('SR') || opt.includes('SX') || opt.includes('SR4'));
+    if (srAny) return srAny.split(' ')[0];
+    const anyTaa = speedOptics.find(opt => opt.split(' ')[0].endsWith('T'));
+    if (anyTaa) return anyTaa.split(' ')[0];
+    if (speedOptics.length > 0) return speedOptics[0].split(' ')[0];
     return null;
   };
 
   edges.forEach(edge => {
-    const sourceNode = syncedNodes.find(n => n.id === edge.source), targetNode = syncedNodes.find(n => n.id === edge.target);
+    const sourceNode = syncedNodes.find(n => n.id === edge.source);
+    const targetNode = syncedNodes.find(n => n.id === edge.target);
     if (sourceNode?.type === NODE_TYPES.HARDWARE && targetNode?.type === NODE_TYPES.HARDWARE) {
-      const srcModel = String(sourceNode.data?.model || ''), dstModel = String(targetNode.data?.model || '');
-      if ((srcModel.includes('TA') && !srcModel.includes('TAP') && dstModel.includes('HC')) || (srcModel.includes('HC') && dstModel.includes('TA') && !dstModel.includes('TAP'))) {
-        const srcSpeed = getChassisMaxOpticSpeed(srcModel), dstSpeed = getChassisMaxOpticSpeed(dstModel);
-        const mutualSpeed: '100G' | '40G' | '10G' = (srcSpeed === '100G' && dstSpeed === '100G') ? '100G' : ((srcSpeed === '100G' && dstSpeed === '40G' || srcSpeed === '40G' && dstSpeed === '100G' || srcSpeed === '40G' && dstSpeed === '40G') ? '40G' : '10G');
-        const srcOpticSku = findOpticSkuForSpeed(srcModel, mutualSpeed), dstOpticSku = findOpticSkuForSpeed(dstModel, mutualSpeed);
-        if (srcOpticSku) addRow(sourceNode.id, srcOpticSku, 1, 'Optic');
-        if (dstOpticSku) addRow(targetNode.id, dstOpticSku, 1, 'Optic');
+      const srcModel = String(sourceNode.data?.model || '');
+      const dstModel = String(targetNode.data?.model || '');
+      // Only consider interconnect uplinks between network aggregation (TA) and visibility engine (HC)
+      if (
+        (srcModel.includes('TA') && !srcModel.includes('TAP') && dstModel.includes('HC')) ||
+        (srcModel.includes('HC') && dstModel.includes('TA') && !dstModel.includes('TAP'))
+      ) {
+        // If either node or the edge already has explicitly configured optics or port links,
+        // do not auto-inject duplicate or phantom uplink optics.
+        const edgePortLinks = (edge.data?.portLinks as unknown[]) || [];
+        const srcHasOptics = ((sourceNode.data?.optics as unknown[]) || []).length > 0;
+        const dstHasOptics = ((targetNode.data?.optics as unknown[]) || []).length > 0;
+
+        if (edgePortLinks.length > 0 || srcHasOptics || dstHasOptics) {
+          return;
+        }
+
+        const srcOptics = getNodeActiveOpticRules(sourceNode);
+        const dstOptics = getNodeActiveOpticRules(targetNode);
+
+        // Find mutual supported speed based strictly on installed boards / base ports
+        const speedHierarchy: ('100G' | '40G' | '25G' | '10G' | '1G')[] = ['100G', '40G', '25G', '10G', '1G'];
+        let mutualSpeed: '100G' | '40G' | '25G' | '10G' | '1G' | null = null;
+        for (const sp of speedHierarchy) {
+          if (srcOptics.some(o => o.includes(sp)) && dstOptics.some(o => o.includes(sp))) {
+            mutualSpeed = sp;
+            break;
+          }
+        }
+
+        if (mutualSpeed) {
+          const srcOpticSku = findOpticSkuForNodeSpeed(sourceNode, mutualSpeed);
+          const dstOpticSku = findOpticSkuForNodeSpeed(targetNode, mutualSpeed);
+          if (srcOpticSku) addRow(sourceNode.id, srcOpticSku, 1, 'Optic');
+          if (dstOpticSku) addRow(targetNode.id, dstOpticSku, 1, 'Optic');
+        }
       }
     }
   });
-
-  for (const [siteKey, series1RackTaps] of Object.entries(series1RackTapsPerSite)) if (series1RackTaps > 0) addRow(null, 'RMT-GTA03', Math.ceil(series1RackTaps / 3), 'Dependency', undefined, siteKey);
   for (const [siteKey, series1PstAcTaps] of Object.entries(series1PstAcTapsPerSite)) if (series1PstAcTaps > 0) {
     const numPstAC = Math.ceil(series1PstAcTaps / 24);
     addRow(null, 'PST-GTA01', numPstAC, 'Dependency', undefined, siteKey);

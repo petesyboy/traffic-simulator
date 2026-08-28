@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.673",
+    date: "2026-08-28",
+    summary: "Add sticky totals footer for Cost Before/After Discount in quote table (v1.0.673)",
+  },
+  {
     version: "1.0.672",
     date: "2026-08-28",
     summary: "Add Cost Before/After Discount columns to quote & reset CPQ metadata defaults (v1.0.672)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.649",
     date: "2026-08-26",
     summary: "Prompt for filename on quote PDF, JSON, and CSV exports to allow overwriting existing files (v1.0.649)",
-  },
-  {
-    version: "1.0.648",
-    date: "2026-08-26",
-    summary: "Fix dropdown overflow clipping and click propagation for Project and Demo menus on macOS Chrome (v1.0.648)",
   },
 ];

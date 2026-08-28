@@ -543,6 +543,60 @@ describe('MPO breakout panel validation', () => {
       expect(perpTunRow?.qty).toBe(1);
       expect(perpTunRow?.type).toBe('License');
     });
+
+    it('does not inject phantom 100G optics when connecting TA-25E to HC1 via 10G multimode', () => {
+      const taNode: CustomNode = {
+        id: 'ta25e-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-TA25E',
+          configType: 'Hardware',
+          model: 'GigaVUE-TA25E',
+          sku: 'TA25E-BASE',
+          optics: [
+            { board: 'Base Ports', optic: 'SFP-532T (10G SFP+ SR)', qty: 1 }
+          ]
+        }
+      };
+
+      const hcNode: CustomNode = {
+        id: 'hc1-1',
+        type: 'hardwareNode',
+        position: { x: 300, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          sku: 'HC1-BASE',
+          optics: [
+            { board: 'HC1-X12G4 (Main board)', optic: 'SFP-532T (10G SFP+ SR)', qty: 1 }
+          ]
+        }
+      };
+
+      const edge: Edge = {
+        id: 'e1',
+        source: 'ta25e-1',
+        target: 'hc1-1',
+        data: {
+          portLinks: [
+            { sourcePortId: '1/1/x1', targetPortId: '1/1/x1', opticSku: 'SFP-532T (10G SFP+ SR)' }
+          ]
+        }
+      };
+
+      const bom = generateBom([taNode, hcNode], [edge], 'HTL', '36', 'EU');
+      
+      // Should contain 10G optics (SFP-532T), total qty = 2 (1 for TA25E, 1 for HC1)
+      const tenGOptics = bom.filter(r => r.sku === 'SFP-532T');
+      const totalTenG = tenGOptics.reduce((sum, r) => sum + r.qty, 0);
+      expect(totalTenG).toBe(2);
+
+      // Should NEVER contain 100G optics (Q28-502-T or Q28-*)
+      const hundredGOptics = bom.filter(r => r.sku.startsWith('Q28-') || r.sku.startsWith('QSF-'));
+      expect(hundredGOptics.length).toBe(0);
+    });
   });
 });
 
