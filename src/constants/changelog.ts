@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.672",
+    date: "2026-08-28",
+    summary: "Add Cost Before/After Discount columns to quote & reset CPQ metadata defaults (v1.0.672)",
+  },
+  {
     version: "1.0.671",
     date: "2026-08-28",
     summary: "Add GigaSMART Tunneling & ERSPAN Decapsulation app and licensing (v1.0.671)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.648",
     date: "2026-08-26",
     summary: "Fix dropdown overflow clipping and click propagation for Project and Demo menus on macOS Chrome (v1.0.648)",
-  },
-  {
-    version: "1.0.647",
-    date: "2026-08-26",
-    summary: "Align SMT-HC3-C08-SW-TM pricing to WWPL_20260731 (,400/mo) and add -SW normalization (v1.0.647)",
   },
 ];

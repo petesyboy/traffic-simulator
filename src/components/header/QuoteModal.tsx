@@ -2052,6 +2052,87 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   })
                 )}
               </tbody>
+              <tfoot
+                style={{
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10,
+                  background: '#0f172a',
+                  borderTop: '2px solid #38bdf8',
+                  boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <tr style={{ fontWeight: 'bold' }}>
+                  <td
+                    colSpan={4}
+                    style={{
+                      padding: '12px 12px',
+                      textAlign: 'right',
+                      color: '#94a3b8',
+                      fontSize: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    Total ({summary.items.length} {summary.items.length === 1 ? 'line' : 'lines'}):
+                  </td>
+                  <td
+                    style={{
+                      padding: '12px 12px',
+                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      color: '#ffffff',
+                      fontSize: '12.5px',
+                    }}
+                  >
+                    {summary.totalQty}
+                  </td>
+                  <td style={{ padding: '12px 12px' }}></td>
+                  {/* Total Cost Before Discount */}
+                  <td
+                    style={{
+                      padding: '12px 12px',
+                      textAlign: 'right',
+                      fontFamily: 'monospace',
+                      color: '#cbd5e1',
+                      fontSize: '13.5px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatCurrency(summary.totalListPrice)}
+                  </td>
+                  <td style={{ padding: '12px 12px' }}></td>
+                  {/* Effective Discount % */}
+                  <td
+                    style={{
+                      padding: '12px 12px',
+                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      color: summary.effectiveDiscountPercent > 0 ? '#34d399' : '#9ca3af',
+                      fontSize: '12px',
+                    }}
+                  >
+                    {summary.effectiveDiscountPercent > 0
+                      ? `${summary.effectiveDiscountPercent.toFixed(1)}%`
+                      : '0%'}
+                  </td>
+                  {/* Total Cost After Discount */}
+                  <td
+                    style={{
+                      padding: '12px 12px',
+                      textAlign: 'right',
+                      fontFamily: 'monospace',
+                      color: '#38bdf8',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatCurrency(summary.totalNetPrice)}
+                  </td>
+                  <td style={{ padding: '12px 12px' }}></td>
+                </tr>
+              </tfoot>
             </table>
             </div>
           </div>
