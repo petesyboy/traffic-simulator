@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.679",
+    date: "2026-08-28",
+    summary: "Map GFM-FM000-SW-TM to perpetual GFM-FM000 in license mode conversions and quotes (v1.0.679)",
+  },
+  {
     version: "1.0.678",
     date: "2026-08-28",
     summary: "Replace HTL AHR with Traditional Support SKUs (GSS-FYS-*, GSS-RNL-*) in Perpetual deals (v1.0.678)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.656",
     date: "2026-08-26",
     summary: "Refine CPQ eligibility rules and 41% calculation for GSS-HW-AHR-GMO (v1.0.656)",
-  },
-  {
-    version: "1.0.655",
-    date: "2026-08-26",
-    summary: "Allow bulk replace to non-TAA optics without being reverted by TAP sync (v1.0.655)",
   },
 ];

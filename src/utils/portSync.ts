@@ -32,14 +32,31 @@ function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, Chassi
 
 /**
  * The cage a link into this node should land on. Driven by the optic the peer
- * TAP is using where there is one, so a 10G tapped link takes an SFP cage and a
+ * TAP/tool is using where there is one, so a 10G tapped or tool link takes an SFP cage and a
  * 100G one takes a QSFP cage rather than whatever happens to be free first.
  */
-function preferredCage(peer: CustomNode | undefined): ChassisPort['cage'] | undefined {
+function preferredCage(peer: CustomNode | undefined, edge?: Edge): ChassisPort['cage'] | undefined {
   if (!peer) return undefined;
   // A breakout panel's MPO side always takes a parallel optic, which is
   // always QSFP-family regardless of speed tier (40G/100G/400G) or MM/SM.
   if (peer.type === 'hardwareNode' && isBreakoutPanelModel(String(peer.data?.model || ''))) return 'QSFP';
+
+  // If edge already carries an opticSku on any link, respect that optic's cage
+  if (edge) {
+    const links = (edge.data?.portLinks as PortLink[]) || [];
+    const firstOptic = links.find(l => l.opticSku)?.opticSku;
+    if (firstOptic) {
+      return getOpticCage(firstOptic);
+    }
+  }
+
+  // If peer is a tool node, tool connections default to SFP (or tool optic if specified)
+  if (peer.type === 'toolNode') {
+    const optic = (peer.data as any)?.optic || (peer.data as any)?.toolOptic;
+    if (optic) return getOpticCage(String(optic));
+    return 'SFP';
+  }
+
   const data = peer.data as HardwareNodeData | undefined;
   const alloc = data?.tappedLinkAllocations?.[0];
   // The *tool*-side optic is the one that lands in the chassis cage, so it wins
@@ -219,10 +236,10 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
 
     const sourceAuto = sourceIsTap
       ? sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode)).map(p => p.id);
+      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode, edge)).map(p => p.id);
     const targetAuto = targetIsTap
       ? targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode)).map(p => p.id);
+      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode, edge)).map(p => p.id);
 
     const sourceOptics = opticsFor(sourceNode);
     const targetOptics = opticsFor(targetNode);

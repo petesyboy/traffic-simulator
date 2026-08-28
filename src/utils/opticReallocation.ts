@@ -75,9 +75,17 @@ export function deriveChassisRequiredOptics(
   const required: RequiredOpticItem[] = [];
 
   // 1. Incoming Tapped Links
-  const incomingTapEdges = edges.filter(
-    (e) => e.target === targetNode.id || (e.source === targetNode.id && isTapNode(nodes.find((n) => n.id === e.source))),
-  );
+  const incomingTapEdges = edges.filter((e) => {
+    if (e.target === targetNode.id) {
+      const src = nodes.find((n) => n.id === e.source);
+      return isTapNode(src);
+    }
+    if (e.source === targetNode.id) {
+      const tgt = nodes.find((n) => n.id === e.target);
+      return isTapNode(tgt);
+    }
+    return false;
+  });
   const uniqueTapSourceIds = Array.from(
     new Set(incomingTapEdges.map((e) => (e.target === targetNode.id ? e.source : e.target))),
   );
@@ -158,29 +166,36 @@ export function deriveChassisRequiredOptics(
 
   // 3. Outgoing Tool Links
   const toolEdges = edges.filter((e) => {
-    if (e.source !== targetNode.id) return false;
-    const peer = nodes.find((n) => n.id === e.target);
+    const isConnected = e.source === targetNode.id || e.target === targetNode.id;
+    if (!isConnected) return false;
+    const peerId = e.source === targetNode.id ? e.target : e.source;
+    const peer = nodes.find((n) => n.id === peerId);
     return peer && peer.type === 'toolNode';
   });
 
   toolEdges.forEach((edge) => {
+    const peerId = edge.source === targetNode.id ? edge.target : edge.source;
     const existingLinks = (edge.data?.portLinks as PortLink[]) || [];
-    const link = existingLinks[0];
-    let toolOptic = link?.opticSku || '';
-    if (!toolOptic || toolOptic === 'undefined') {
-      // Default tool ingest optic (10G SFP+ SR or 100G depending on tool node config)
-      toolOptic = resolveDefaultToolOptic(supportedBoards);
-    } else {
-      toolOptic = resolveOpticToChassisCatalogue(toolOptic, model, supportedBoards);
-    }
+    const linkCount = Math.max(1, existingLinks.length);
 
-    required.push({
-      optic: toolOptic,
-      qty: 1,
-      cage: getOpticCage(toolOptic),
-      purpose: 'tool',
-      peerNodeId: edge.target,
-    });
+    for (let i = 0; i < linkCount; i++) {
+      const link = existingLinks[i];
+      let toolOptic = link?.opticSku || '';
+      if (!toolOptic || toolOptic === 'undefined') {
+        // Default tool ingest optic (10G SFP+ SR or 100G depending on tool node config)
+        toolOptic = resolveDefaultToolOptic(supportedBoards);
+      } else {
+        toolOptic = resolveOpticToChassisCatalogue(toolOptic, model, supportedBoards);
+      }
+
+      required.push({
+        optic: toolOptic,
+        qty: 1,
+        cage: getOpticCage(toolOptic),
+        purpose: 'tool',
+        peerNodeId: peerId,
+      });
+    }
   });
 
   // 4. Breakout Panel Links
@@ -324,15 +339,17 @@ export function distributeOpticsAcrossBoards(
   const mainSfpCount = mainPorts.filter((p) => p.cage === 'SFP').length;
   const mainQsfpCount = mainPorts.filter((p) => p.cage === 'QSFP').length;
 
-  boardSlots.push({
-    boardName: mainBoardName,
-    slotIndex: 0,
-    totalSfp: mainSfpCount,
-    remainingSfp: mainSfpCount,
-    totalQsfp: mainQsfpCount,
-    remainingQsfp: mainQsfpCount,
-    supportedOptics: mainBoardObj ? mainBoardObj.supportedOptics : [],
-  });
+  if (mainPorts.length > 0) {
+    boardSlots.push({
+      boardName: mainBoardName,
+      slotIndex: 0,
+      totalSfp: mainSfpCount,
+      remainingSfp: mainSfpCount,
+      totalQsfp: mainQsfpCount,
+      remainingQsfp: mainQsfpCount,
+      supportedOptics: mainBoardObj ? mainBoardObj.supportedOptics : [],
+    });
+  }
 
   // Add installed expansion modules sorted by slot number (1, 2, 3...)
   const slotEntries = Object.entries(installedBoards)
@@ -347,15 +364,17 @@ export function distributeOpticsAcrossBoards(
     const modSfpCount = modulePorts.filter((p) => p.cage === 'SFP').length;
     const modQsfpCount = modulePorts.filter((p) => p.cage === 'QSFP').length;
 
-    boardSlots.push({
-      boardName: boardKey,
-      slotIndex: slotNum,
-      totalSfp: modSfpCount,
-      remainingSfp: modSfpCount,
-      totalQsfp: modQsfpCount,
-      remainingQsfp: modQsfpCount,
-      supportedOptics: moduleTemplate ? moduleTemplate.supportedOptics : [],
-    });
+    if (modulePorts.length > 0) {
+      boardSlots.push({
+        boardName: boardKey,
+        slotIndex: slotNum,
+        totalSfp: modSfpCount,
+        remainingSfp: modSfpCount,
+        totalQsfp: modQsfpCount,
+        remainingQsfp: modQsfpCount,
+        supportedOptics: moduleTemplate ? moduleTemplate.supportedOptics : [],
+      });
+    }
   });
 
   // Track allocations: Map<boardName, Map<opticLabel, number>>
@@ -402,11 +421,13 @@ export function distributeOpticsAcrossBoards(
       boardOptics.set(opticLabel, (boardOptics.get(opticLabel) || 0) + toPlace);
     }
 
-    // If units still remain because all boards are full, place on main board as fallback
-    if (unitsRemaining > 0) {
-      const fallbackBoard = boardSlots[0].boardName;
-      const boardOptics = placedMap.get(fallbackBoard)!;
-      boardOptics.set(opticLabel, (boardOptics.get(opticLabel) || 0) + unitsRemaining);
+    // If units still remain because all boards are full, place on first board with capacity as fallback
+    if (unitsRemaining > 0 && boardSlots.length > 0) {
+      const fallbackBoard = boardSlots.find(b => b.totalSfp > 0 || b.totalQsfp > 0)?.boardName || boardSlots[0].boardName;
+      const boardOptics = placedMap.get(fallbackBoard);
+      if (boardOptics) {
+        boardOptics.set(opticLabel, (boardOptics.get(opticLabel) || 0) + unitsRemaining);
+      }
     }
   }
 
@@ -476,14 +497,18 @@ export function reallocateChassisOpticsAndPorts(
     };
   });
 
-  // 4. Unpin connected edge port links for this chassis to allow fresh sequential auto-allocation
+  // 4. Reset connected edge port links for this chassis to allow fresh sequential auto-allocation
   let reallocatedLinksCount = 0;
   const unpinnedEdges = edges.map((edge) => {
     if (edge.source !== targetNodeId && edge.target !== targetNodeId) return edge;
+    const isSource = edge.source === targetNodeId;
+    const isTarget = edge.target === targetNodeId;
     const links = ((edge.data?.portLinks as PortLink[]) || []).map((link) => {
       reallocatedLinksCount++;
       return {
         ...link,
+        sourcePortId: isSource ? '' : link.sourcePortId,
+        targetPortId: isTarget ? '' : link.targetPortId,
         pinned: false,
       };
     });

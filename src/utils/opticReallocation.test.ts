@@ -200,4 +200,101 @@ describe('opticReallocation', () => {
     expect(result.totalOpticsCount).toBeGreaterThan(0);
     expect(result.updatedEdges.length).toBe(edges.length);
   });
+
+  it('correctly re-aligns modular GigaVUE-HC3 chassis with SMT and multiple PRT-X24 expansion cards', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'hc3-1',
+        type: 'hardwareNode',
+        position: { x: 300, y: 100 },
+        data: {
+          label: 'GigaVUE-HC3 - Site A',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC3',
+          sku: 'GVS-HC301',
+          installedBoards: {
+            '1': 'SMT-HC3-C08',
+            '2': 'PRT-HC3-X24',
+            '3': 'PRT-HC3-X24',
+          },
+          // Stale / fragmented optics: 1 unlinked QSFP in 1/1/c1, 10 unlinked SFPs in Slot 2
+          optics: [
+            { board: 'SMT-HC3-C08 (Slot 1)', optic: 'Q28-503 (100G QSFP28 LR4)', qty: 3 },
+            { board: 'PRT-HC3-X24 (Slot 2)', optic: 'SFP-532T (10G SFP+ SR) [MM] (TAA)', qty: 10 },
+          ],
+        },
+      },
+      {
+        id: 'ta25e-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 100 },
+        data: {
+          label: 'GigaVUE-TA25E',
+          configType: 'Hardware',
+          model: 'GigaVUE-TA25E',
+          sku: 'TA25E-BASE',
+        },
+      },
+      ...Array.from({ length: 10 }, (_, i) => ({
+        id: `tool-ericsson-${i + 1}`,
+        type: 'toolNode' as const,
+        position: { x: 700, y: i * 50 },
+        data: {
+          label: `Ericsson Probe #${i + 1}`,
+          configType: 'Tool',
+        },
+      })),
+    ];
+
+    // Edges where links were previously landed in Slot 3 (1/3/x1..1/3/x10) and QSFP in 1/1/c2, 1/1/c3
+    const edges: Edge[] = [
+      {
+        id: 'e-ta-hc3',
+        source: 'ta25e-1',
+        target: 'hc3-1',
+        data: {
+          portLinks: [
+            { sourcePortId: '1/1/c1', targetPortId: '1/1/c2', opticSku: 'Q28-503' },
+            { sourcePortId: '1/1/c2', targetPortId: '1/1/c3', opticSku: 'Q28-503' },
+          ],
+        },
+      },
+      ...Array.from({ length: 10 }, (_, i) => ({
+        id: `e-hc3-tool-${i + 1}`,
+        source: 'hc3-1',
+        target: `tool-ericsson-${i + 1}`,
+        data: {
+          portLinks: [
+            { sourcePortId: `1/3/x${i + 1}`, targetPortId: '', opticSku: 'SFP-532T' },
+          ],
+        },
+      })),
+    ];
+
+    const result = reallocateChassisOpticsAndPorts('hc3-1', nodes, edges);
+
+    expect(result.chassisUpdatedCount).toBe(1);
+    expect(result.totalOpticsCount).toBe(12); // 2 QSFP + 10 SFP
+
+    const updatedHc3 = result.updatedNodes.find((n) => n.id === 'hc3-1');
+    const hc3Optics = updatedHc3?.data?.optics || [];
+    expect(hc3Optics).toEqual([
+      { board: 'SMT-HC3-C08 (Slot 1)', optic: 'Q28-503 (100G QSFP28 LR4)', qty: 2 },
+      { board: 'PRT-HC3-X24 (Slot 2)', optic: 'SFP-532T (10G SFP+ SR)', qty: 10 },
+    ]);
+
+    // Check edge port links: QSFP uplinks should now cleanly occupy 1/1/c1 and 1/1/c2 on HC3
+    const taEdge = result.updatedEdges.find((e) => e.id === 'e-ta-hc3');
+    const taLinks = (taEdge?.data?.portLinks as PortLink[]) || [];
+    expect(taLinks[0].targetPortId).toBe('1/1/c1');
+    expect(taLinks[1].targetPortId).toBe('1/1/c2');
+
+    // Check tool links: should now cleanly occupy 1/2/x1 .. 1/2/x10 on HC3 (Slot 2, matching installed optics!)
+    for (let i = 0; i < 10; i++) {
+      const toolEdge = result.updatedEdges.find((e) => e.id === `e-hc3-tool-${i + 1}`);
+      const toolLinks = (toolEdge?.data?.portLinks as PortLink[]) || [];
+      expect(toolLinks[0].sourcePortId).toBe(`1/2/x${i + 1}`);
+      expect(toolLinks[0].opticSku).toBe('SFP-532T (10G SFP+ SR)');
+    }
+  });
 });
