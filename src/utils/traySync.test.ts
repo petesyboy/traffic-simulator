@@ -146,4 +146,31 @@ describe('syncTapTrays', () => {
     expect(traysOf(nodes, 'TAP-M100T')).toHaveLength(1);
     expect(traysOf(nodes, 'TAP-M100T')[0].id).toBe(trayId);
   });
+
+  it('allocates TAP-M200T for 2 TAPs when preference is TAP-M200T', () => {
+    const nodes = [tapModule('a', 'TAP-M251T'), tapModule('b', 'TAP-M251T')];
+    const synced = syncTapTrays(nodes, 'TAP-M200T');
+    expect(traysOf(synced, 'TAP-M200T')).toHaveLength(1);
+    expect(traysOf(synced, 'TAP-M100T')).toHaveLength(0);
+  });
+
+  it('preserves and accounts for a manually overridden TAP-M200T tray', () => {
+    const manualTray: CustomNode = {
+      id: 'manual-tray-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'TAP-M200T',
+        configType: 'Hardware',
+        model: 'TAP-M200T',
+        sku: 'TAP-M200T',
+        isManualOverride: true,
+      },
+    };
+    const nodes = [manualTray, tapModule('a', 'TAP-M251T'), tapModule('b', 'TAP-M251T')];
+    const synced = syncTapTrays(nodes, 'auto');
+    expect(traysOf(synced, 'TAP-M200T')).toHaveLength(1);
+    expect(traysOf(synced, 'TAP-M100T')).toHaveLength(0);
+    expect(synced.find(n => n.id === 'manual-tray-1')).toBeDefined();
+  });
 });

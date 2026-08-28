@@ -344,7 +344,19 @@ export function generateBom(
   // Tray quantities are bin-packed once, shared with traySync.ts's Rack View
   // tray-node generator, so tap modules and breakout panels (which pool into
   // the same tapModulesPerSite above) always agree on how many trays they need.
-  const trayTargetsPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite);
+  const manualTraysPerSite: Record<string, Record<string, number>> = {};
+  syncedNodes.forEach(node => {
+    if (node.type !== 'hardwareNode') return;
+    const model = String(node.data?.model || '');
+    const siteKey = (node.data?.site as string) || 'Unassigned';
+    if (isAutoTrayModel(model) && (node.data as HardwareNodeData)?.isManualOverride) {
+      if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
+      manualTraysPerSite[siteKey][model] = (manualTraysPerSite[siteKey][model] || 0) + 1;
+    }
+  });
+
+  const trayPreference = (syncedNodes.find(n => (n.data as HardwareNodeData)?.trayPreference)?.data as HardwareNodeData)?.trayPreference || 'auto';
+  const trayTargetsPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite, trayPreference, manualTraysPerSite);
   Object.entries(trayTargetsPerSite).forEach(([siteKey, targets]) => {
     Object.entries(targets).forEach(([traySku, qty]) => {
       if (qty > 0) addRow(null, traySku, qty, 'Dependency', undefined, siteKey);

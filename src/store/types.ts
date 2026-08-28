@@ -279,6 +279,9 @@ export interface HardwareNodeData extends BaseNodeData {
    *  Rack View, in place of rackId/rackU (its position is implied by its parent). */
   trayId?: string;
   traySlot?: number;
+  /** Explicit manual override on auto-generated trays (e.g. user forced M200T instead of M100T) */
+  isManualOverride?: boolean;
+  trayPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
 }
 
 export interface ToolNodeData extends BaseNodeData {
@@ -363,6 +366,7 @@ export interface RFState {
   projectRegion: 'US' | 'EU' | 'UK';
   disableDcWarnings: boolean;
   panelTextScale: number;
+  trayAllocationPreference: 'auto' | 'TAP-M200T' | 'TAP-M100T';
   activeView: 'canvas' | 'rack';
   sidebarMessage: string | null;
   currentScenarioName: string | null;
@@ -413,6 +417,7 @@ export interface RFState {
       panelTextScale?: number;
       showGrid?: boolean;
       snapToGrid?: boolean;
+      trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
     },
   ) => void;
   toggleSimulation: () => void;
@@ -423,6 +428,7 @@ export interface RFState {
   setDefaultTermDuration: (duration: string) => void;
   setProjectRegion: (region: 'US' | 'EU' | 'UK') => void;
   setDisableDcWarnings: (disable: boolean) => void;
+  setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
   setPanelTextScale: (scale: number) => void;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;

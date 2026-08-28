@@ -16,25 +16,36 @@ import { v4 as uuidv4 } from 'uuid';
 import type { CustomNode, HardwareNodeData } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { isTapModule } from './hardwareUtils';
-import { requiresUltTray, isAutoTrayModel, packTapTrayTargets } from './trayModels';
+import { requiresUltTray, isAutoTrayModel, packTapTrayTargets, type TrayAllocationPreference } from './trayModels';
 
 export { isAutoTrayModel };
 
-export function syncTapTrays(nodes: CustomNode[]): CustomNode[] {
+export function syncTapTrays(
+  nodes: CustomNode[],
+  preference: TrayAllocationPreference = 'auto',
+): CustomNode[] {
   const tapModulesPerSite: Record<string, number> = {};
   const ultTapModulesPerSite: Record<string, number> = {};
+  const manualTraysPerSite: Record<string, Record<string, number>> = {};
 
   nodes.forEach(node => {
     if (node.type !== 'hardwareNode') return;
     const model = String(node.data?.model || '');
     const sku = node.data?.sku as string | undefined;
-    if (!isTapModule(model, sku)) return;
     const siteKey = (node.data?.site as string) || 'Unassigned';
+
+    if (isAutoTrayModel(model) && (node.data as HardwareNodeData)?.isManualOverride) {
+      if (!manualTraysPerSite[siteKey]) manualTraysPerSite[siteKey] = {};
+      manualTraysPerSite[siteKey][model] = (manualTraysPerSite[siteKey][model] || 0) + 1;
+      return;
+    }
+
+    if (!isTapModule(model, sku)) return;
     const pool = requiresUltTray(sku || '', model) ? ultTapModulesPerSite : tapModulesPerSite;
     pool[siteKey] = (pool[siteKey] || 0) + 1;
   });
 
-  const targetPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite);
+  const targetPerSite = packTapTrayTargets(tapModulesPerSite, ultTapModulesPerSite, preference, manualTraysPerSite);
 
   const existingBySiteModel: Record<string, Record<string, CustomNode[]>> = {};
   nodes.forEach(node => {
@@ -81,9 +92,10 @@ export function syncTapTrays(nodes: CustomNode[]): CustomNode[] {
           } as CustomNode);
         }
       } else if (existing.length > target) {
-        // Never discard a tray the user has already placed/populated in Rack View,
+        // Never discard a tray the user has manually overridden or already placed/populated in Rack View,
         // even if the math now wants fewer - only trim ones still sitting empty.
         const removable = existing.filter(tray => {
+          if ((tray.data as HardwareNodeData)?.isManualOverride) return false;
           const isRacked = typeof tray.data?.rackU === 'number' && Boolean(tray.data?.rackId);
           const hasNested = nodes.some(n => n.data?.trayId === tray.id);
           return !isRacked && !hasNested;

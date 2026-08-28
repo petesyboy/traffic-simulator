@@ -125,4 +125,35 @@ describe('MPO breakout panel BOM/tray allocation', () => {
     expect(bom.find(r => r.sku === 'PNL-M343T')?.type).toBe('Module');
     expect(trayQty(bom, 'TAP-M100T')).toBe(1);
   });
+
+  it('forces TAP-M200T even for 2 TAPs when trayPreference is set to TAP-M200T', () => {
+    const t1 = tapModule('t1', 'TAP-M251T');
+    t1.data = { ...t1.data, trayPreference: 'TAP-M200T' };
+    const t2 = tapModule('t2', 'TAP-M251T');
+    const bom = generateBom([t1, t2], [], 'HTL', '12');
+
+    expect(trayQty(bom, 'TAP-M200T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
+  });
+
+  it('respects a manually overridden TAP-M200T tray node for 2 TAPs', () => {
+    const manualTray: CustomNode = {
+      id: 'tray-override-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'TAP-M200T',
+        configType: 'Hardware',
+        model: 'TAP-M200T',
+        sku: 'TAP-M200T',
+        isManualOverride: true,
+      },
+    };
+    const t1 = tapModule('t1', 'TAP-M251T');
+    const t2 = tapModule('t2', 'TAP-M251T');
+    const bom = generateBom([manualTray, t1, t2], [], 'HTL', '12');
+
+    expect(trayQty(bom, 'TAP-M200T')).toBe(1);
+    expect(trayQty(bom, 'TAP-M100T')).toBeUndefined();
+  });
 });

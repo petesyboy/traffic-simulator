@@ -4,6 +4,8 @@ import type { CustomNode, HardwareNodeData } from '../store/types';
 import { resolveHardwareIcon } from '../assets/hardwareIcons';
 import { getDeviceRU, getModuleSlotPositions, getTrayBayCount, getTrayLayout, isRackableGigamonEquipment, isTapModule } from '../utils/hardwareUtils';
 import { autoDeployRack, clearRackDeploy } from '../utils/autoRack';
+import { isAutoTrayModel } from '../utils/traySync';
+import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
 import { ChassisSummaryModal } from './nodes/ChassisSummaryModal';
@@ -18,6 +20,8 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
   const storeNodes = useStore((state) => state.nodes);
   const storeUpdateNodeData = useStore((state) => state.updateNodeData);
   const storeSetNodes = useStore((state) => state.setNodes);
+  const trayAllocationPreference = useStore((state) => state.trayAllocationPreference);
+  const setTrayAllocationPreference = useStore((state) => state.setTrayAllocationPreference);
   const nodes = props.nodes ?? storeNodes;
   const updateNodeData = props.updateNodeData ?? storeUpdateNodeData;
   const setNodes = props.setNodes ?? storeSetNodes;
@@ -176,6 +180,27 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
           <span style={{ fontSize: '11px', color: '#aaa' }}>
             Site: <strong style={{ color: '#00e5ff' }}>{activeSite}</strong>
           </span>
+          <div style={{ width: '1px', height: '14px', background: '#444', margin: '0 4px' }} />
+          <span style={{ fontSize: '11px', color: '#ff9800', fontWeight: 'bold' }}>📦 Tray Policy:</span>
+          <select
+            value={trayAllocationPreference}
+            onChange={(e) => setTrayAllocationPreference(e.target.value as 'auto' | 'TAP-M200T' | 'TAP-M100T')}
+            style={{
+              padding: '4px 8px',
+              background: '#121212',
+              border: '1px solid #444',
+              borderRadius: '4px',
+              color: '#e0e0e0',
+              fontSize: '11px',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+            title="TAP Chassis Tray Policy: Auto (Bin-pack), Force TAP-M200T (1RU 6-Slot), or Force TAP-M100T (0.5RU 3-Slot)"
+          >
+            <option value="auto">Auto (M100T ≤3, M200T 4–6)</option>
+            <option value="TAP-M200T">Force TAP-M200T (1RU 6-Slot)</option>
+            <option value="TAP-M100T">Force TAP-M100T (0.5RU 3-Slot)</option>
+          </select>
         </div>
 
         {/* ZOOM CONTROLS */}
@@ -263,7 +288,7 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
           <div style={{ width: '1px', height: '14px', background: '#444', margin: '0 6px' }} />
           <button
             className="btn btn-primary btn-sm"
-            onClick={() => setNodes(autoDeployRack(nodes, activeSite))}
+            onClick={() => setNodes(autoDeployRack(nodes, activeSite, trayAllocationPreference))}
             title="Automatically populate TAP trays and rack all equipment for this site using industry-standard weight hierarchy (heaviest chassis at bottom, TAPs at top)"
             style={{
               padding: '3px 10px',
@@ -311,7 +336,38 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                   onDragStart={(e) => handleDragStart(e, node.id)}
                   style={{ background: '#333', padding: '10px 12px', borderRadius: '4px', cursor: 'grab', border: '1px solid #444' }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>{node.data?.label || node.data?.model}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{node.data?.label || node.data?.model}</span>
+                    {isAutoTrayModel(String(node.data?.model || '')) && (
+                      <select
+                        value={String(node.data?.model || '')}
+                        onChange={(e) => {
+                          const newModel = e.target.value;
+                          const catEntry = hardwareCatalogue.taps.find(t => t.model === newModel);
+                          updateNodeData(node.id, {
+                            model: newModel,
+                            sku: catEntry?.sku || newModel,
+                            image: catEntry?.image,
+                            label: newModel,
+                            isManualOverride: true,
+                          });
+                        }}
+                        style={{
+                          background: '#222',
+                          border: '1px solid #4da6ff',
+                          color: '#00e5ff',
+                          fontSize: '10px',
+                          padding: '1px 4px',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                        }}
+                        title="Manually switch tray model (Overrides automatic bin-packing: TAP-M100T 0.5RU 3-slot vs TAP-M200T 1RU 6-slot)"
+                      >
+                        <option value="TAP-M100T">M100T (3-bay 0.5RU)</option>
+                        <option value="TAP-M200T">M200T (6-bay 1RU)</option>
+                      </select>
+                    )}
+                  </div>
                   <div style={{ fontSize: '11px', color: '#aaa' }}>
                     {isTapModule(String(node.data?.model || ''), node.data?.sku as string | undefined)
                       ? 'Tap/breakout module - drop into a tray bay'
@@ -553,16 +609,48 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
                           </div>
                         ))}
                       </div>
-                      <button
-                        onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
-                        style={{
-                          width: '14px', flexShrink: 0, background: 'transparent', border: 'none', color: '#fff',
-                          cursor: 'pointer', fontSize: '9px', padding: 0, position: 'relative', zIndex: 1, textShadow: '0 0 3px #000',
-                        }}
-                        title="Remove tray from rack"
-                      >
-                        ✕
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', position: 'relative', zIndex: 3 }}>
+                        {isAutoTrayModel(model) && (
+                          <select
+                            value={model}
+                            onChange={(e) => {
+                              const newModel = e.target.value;
+                              const catEntry = hardwareCatalogue.taps.find(t => t.model === newModel);
+                              updateNodeData(occupyingNode.id, {
+                                model: newModel,
+                                sku: catEntry?.sku || newModel,
+                                image: catEntry?.image,
+                                label: newModel,
+                                isManualOverride: true,
+                              });
+                            }}
+                            style={{
+                              background: 'rgba(0,0,0,0.85)',
+                              border: '1px solid #4da6ff',
+                              color: '#00e5ff',
+                              fontSize: '8px',
+                              padding: '1px 2px',
+                              borderRadius: '2px',
+                              cursor: 'pointer',
+                              lineHeight: 1,
+                            }}
+                            title="Manually switch tray model (Overrides automatic bin-packing: TAP-M100T 0.5RU 3-slot vs TAP-M200T 1RU 6-slot)"
+                          >
+                            <option value="TAP-M100T">M100T (3-bay)</option>
+                            <option value="TAP-M200T">M200T (6-bay)</option>
+                          </select>
+                        )}
+                        <button
+                          onClick={() => updateNodeData(occupyingNode.id, { rackId: undefined, rackU: undefined })}
+                          style={{
+                            width: '14px', flexShrink: 0, background: 'transparent', border: 'none', color: '#fff',
+                            cursor: 'pointer', fontSize: '9px', padding: 0, textShadow: '0 0 3px #000',
+                          }}
+                          title="Remove tray from rack"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   );
                 }

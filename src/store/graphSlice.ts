@@ -110,7 +110,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       );
       // A deleted node may have been a tap module (freeing up a tray) or a tray
       // itself (never happens today - trays have no delete UI - but harmless).
-      set({ nodes: syncTapTrays(nextNodes), trafficStreams: nextTraffic });
+      set({ nodes: syncTapTrays(nextNodes, get().trayAllocationPreference), trafficStreams: nextTraffic });
     } else {
       set({ nodes: nextNodes });
     }
@@ -250,10 +250,10 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   setNodes: (nodes) => {
     get().pushHistory();
     const syncedNodes = syncOpticsOnTapConnection(syncSplunkLabels(nodes, get().edges), get().edges);
-    set({ nodes: syncTapTrays(syncedNodes) });
+    set({ nodes: syncTapTrays(syncedNodes, get().trayAllocationPreference) });
   },
   setDraggedNodeType: (type) => set({ draggedNodeType: type }),
-  addNode: (node) => { get().pushHistory(); set({ nodes: syncTapTrays([...get().nodes, node]) }); },
+  addNode: (node) => { get().pushHistory(); set({ nodes: syncTapTrays([...get().nodes, node], get().trayAllocationPreference) }); },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
   setFlashPorts: (flash) => set({ flashPorts: flash }),
@@ -263,7 +263,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (data.optics === undefined) syncedNodes = syncOpticsOnTapConnection(syncedNodes, get().edges);
     // A tap module's site (or its own existence) can change here too, so the
     // set of auto-generated trays it needs is re-derived alongside everything else.
-    syncedNodes = syncTapTrays(syncedNodes);
+    syncedNodes = syncTapTrays(syncedNodes, get().trayAllocationPreference);
     // Editing optics, modules or the licence tier changes what ports exist and
     // what's fitted in them, so assignments are re-derived here too.
     set({ nodes: syncedNodes, edges: syncPortAssignments(syncedNodes, get().edges) });
@@ -301,7 +301,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const result = performDuplicateSolution(newSiteName, get().nodes, get().edges, get().trafficStreams);
     if (result) {
       get().pushHistory();
-      set({ nodes: syncTapTrays(result.nodes), edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
+      set({ nodes: syncTapTrays(result.nodes, get().trayAllocationPreference), edges: result.edges, trafficStreams: result.trafficStreams, fitViewTrigger: get().fitViewTrigger + 1 });
     }
   },
 

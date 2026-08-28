@@ -24,6 +24,8 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
   const setShowGrid = useStore((s) => s.setShowGrid);
   const snapToGrid = useStore((s) => s.snapToGrid);
   const setSnapToGrid = useStore((s) => s.setSnapToGrid);
+  const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
+  const setTrayAllocationPreference = useStore((s) => s.setTrayAllocationPreference);
 
   const handleTermBlur = () => {
     let parsed = parseInt(defaultTermDuration, 10);
@@ -68,6 +70,22 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
               <option value="US">North America (US)</option>
               <option value="EU">Europe (EU)</option>
               <option value="UK">United Kingdom (UK)</option>
+            </select>
+          </div>
+
+          {/* TAP Tray Allocation Preference */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>
+              TAP Chassis Tray Allocation
+            </label>
+            <select
+              className="form-select"
+              value={trayAllocationPreference}
+              onChange={(e) => setTrayAllocationPreference(e.target.value as 'auto' | 'TAP-M200T' | 'TAP-M100T')}
+            >
+              <option value="auto">Auto (Bin-Pack: M100T ≤3 bays, M200T 4–6)</option>
+              <option value="TAP-M200T">Force TAP-M200T (1RU 6-Slot Full-Width)</option>
+              <option value="TAP-M100T">Force TAP-M100T (0.5RU 3-Slot Half-Width)</option>
             </select>
           </div>
 

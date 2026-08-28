@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.681",
+    date: "2026-08-28",
+    summary: "Prevent optic doubling on TA25E and chassis by tagging TAP reallocated optics as isAutoAdded (v1.0.681)",
+  },
+  {
     version: "1.0.680",
     date: "2026-08-28",
     summary: "Resolve optic and port allocation misalignment and orphan fitted optics on modular chassis (v1.0.680)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.658",
     date: "2026-08-27",
     summary: "Standardize export and report naming across BOM, architecture PDFs, topology JSON, quotes, and diagrams (v1.0.658)",
-  },
-  {
-    version: "1.0.657",
-    date: "2026-08-27",
-    summary: "Add intelligent auto-reallocation and re-alignment of optics and port links across chassis boards (v1.0.657)",
   },
 ];

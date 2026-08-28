@@ -21,6 +21,7 @@
 import type { CustomNode } from '../store/types';
 import { getDeviceRU, getTrayBayCount, isTapModule, isBreakoutPanelModel, isRackableGigamonEquipment } from './hardwareUtils';
 import { syncTapTrays, isAutoTrayModel } from './traySync';
+import type { TrayAllocationPreference } from './trayModels';
 
 /** Weight / Hierarchy ranking: lower number = placed lower in the rack (bottom tier). */
 export const getDeviceHierarchyRank = (model: string, sku?: string): number => {
@@ -62,12 +63,16 @@ export const MAX_RACK_U = 42;
  * 3. Assigns non-overlapping rack units (1..42) to all site chassis and trays
  *    following datacenter weight/hierarchy standards.
  */
-export function autoDeployRack(nodes: CustomNode[], siteName: string): CustomNode[] {
+export function autoDeployRack(
+  nodes: CustomNode[],
+  siteName: string,
+  preference: TrayAllocationPreference = 'auto',
+): CustomNode[] {
   const effectiveSite = siteName === 'Global / Unassigned' ? undefined : siteName;
   const rackId = siteName === 'Global / Unassigned' ? 'rack_global' : `rack_${siteName}`;
 
   // 1. Ensure trays are synced
-  const currentNodes = syncTapTrays(nodes);
+  const currentNodes = syncTapTrays(nodes, preference);
 
   // 2. Identify site nodes
   const isNodeForSite = (n: CustomNode) => {

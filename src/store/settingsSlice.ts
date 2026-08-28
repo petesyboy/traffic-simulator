@@ -14,6 +14,7 @@ export interface SettingsSlice {
   projectRegion: 'US' | 'EU' | 'UK';
   disableDcWarnings: boolean;
   panelTextScale: number;
+  trayAllocationPreference: 'auto' | 'TAP-M200T' | 'TAP-M100T';
 
   setAdvancedMode: (mode: boolean) => void;
   setAdvancedModeUnlocked: (unlocked: boolean) => void;
@@ -22,6 +23,7 @@ export interface SettingsSlice {
   setProjectRegion: (region: 'US' | 'EU' | 'UK') => void;
   setDisableDcWarnings: (disable: boolean) => void;
   setPanelTextScale: (scale: number) => void;
+  setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
   restoreState: (
     nodes: CustomNode[],
     edges: Edge[],
@@ -35,6 +37,7 @@ export interface SettingsSlice {
       panelTextScale?: number;
       showGrid?: boolean;
       snapToGrid?: boolean;
+      trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
     }
   ) => void;
 }
@@ -47,6 +50,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   projectRegion: 'US',
   disableDcWarnings: false,
   panelTextScale: 1.0,
+  trayAllocationPreference: 'auto',
 
   setAdvancedMode: (mode) => set({ advancedMode: mode }),
   setAdvancedModeUnlocked: (unlocked) => set({ advancedModeUnlocked: unlocked }),
@@ -55,6 +59,10 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   setProjectRegion: (region) => set({ projectRegion: region }),
   setDisableDcWarnings: (disable) => set({ disableDcWarnings: disable }),
   setPanelTextScale: (scale) => set({ panelTextScale: scale }),
+  setTrayAllocationPreference: (pref) => {
+    const updatedNodes = syncTapTrays(get().nodes, pref);
+    set({ trayAllocationPreference: pref, nodes: updatedNodes });
+  },
 
   restoreState: (nodes, edges, trafficStreams, settings) => {
     // Filter out duplicate edges that connect the exact same source/target handles
@@ -68,11 +76,12 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
       }
     });
 
+    const pref = settings?.trayAllocationPreference || 'auto';
     let syncedNodes = syncSplunkLabels(nodes, uniqueEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, uniqueEdges);
     // Saves predating auto-generated trays have none stored either - backfill
     // them on load the same way port assignments are, below.
-    syncedNodes = syncTapTrays(syncedNodes);
+    syncedNodes = syncTapTrays(syncedNodes, pref);
 
     const updateObj: Partial<RFState> = {
       nodes: syncedNodes,
@@ -84,6 +93,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
       // Undoing "into" a previously-loaded, unrelated topology isn't meaningful.
       historyPast: [],
       historyFuture: [],
+      trayAllocationPreference: pref,
     };
 
     if (settings) {
