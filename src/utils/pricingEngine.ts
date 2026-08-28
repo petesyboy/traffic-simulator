@@ -705,27 +705,47 @@ export function createQuoteItemsFromBom(
     }
   }
 
-  // 2. Optional GigaVUE-FM Prime 36m Promotional License (100% Discount -> $0.00 Net)
-  if (options.includeFmPrime && !items.some((i) => i.sku.startsWith('GFM-FM000-SW-TM'))) {
-    const term = defaultTermDuration || 36;
-    const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
-    const monthlyList = skuRecord?.listPriceMonthly || 2310.0;
-    items.push({
-      id: `bom-fm-prime-${Date.now()}`,
-      sku: 'GFM-FM000-SW-TM',
-      description:
-        skuRecord?.description ||
-        'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
-      type: 'Software',
-      category: 'Software',
-      qty: 1,
-      termMonths: term,
-      unitListPrice: monthlyList,
-      isMonthlyPrice: true,
-      applyDiscount: true,
-      discountOverride: 100, // 100% Promotional Discount ($0 Net)
-      note: `${term} months`,
-    });
+  // 2. Optional GigaVUE-FM Prime Promotional License (100% Discount -> $0.00 Net)
+  if (options.includeFmPrime && !items.some((i) => i.sku.startsWith('GFM-FM000'))) {
+    if (options.licenseMode === 'Perpetual') {
+      const skuRecord = skuService.getSKUByPartNumber('GFM-FM000');
+      const listPrice = skuRecord?.listPrice || 57880.0;
+      items.push({
+        id: `bom-fm-prime-${Date.now()}`,
+        sku: 'GFM-FM000',
+        description:
+          skuRecord?.description ||
+          'Perpetual license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes VMware NSX Manager Integration (GFM-VM-NSX) add-ons. Software support at desired level must be purchased separately.',
+        type: 'Software',
+        category: 'Software',
+        qty: 1,
+        unitListPrice: listPrice,
+        isMonthlyPrice: false,
+        applyDiscount: true,
+        discountOverride: 100, // 100% Promotional Discount ($0 Net)
+        inclInSupport: true,
+      });
+    } else {
+      const term = defaultTermDuration || 36;
+      const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
+      const monthlyList = skuRecord?.listPriceMonthly || 2310.0;
+      items.push({
+        id: `bom-fm-prime-${Date.now()}`,
+        sku: 'GFM-FM000-SW-TM',
+        description:
+          skuRecord?.description ||
+          'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
+        type: 'Software',
+        category: 'Software',
+        qty: 1,
+        termMonths: term,
+        unitListPrice: monthlyList,
+        isMonthlyPrice: true,
+        applyDiscount: true,
+        discountOverride: 100, // 100% Promotional Discount ($0 Net)
+        note: `${term} months`,
+      });
+    }
   }
 
   // 3. Optional Gigamon Academy eLearning Voucher Promo (100% Discount -> $0.00 Net)
@@ -815,15 +835,15 @@ export function resolveLicenseModeSku(sku: string, targetMode: 'HTL' | 'Perpetua
 
   // targetMode === 'Perpetual'
   if (targetMode === 'Perpetual') {
-    // 1. If ends with -SW-TM, replace with -PL if exists, else strip -SW-TM
-    if (upper.endsWith('-SW-TM')) {
-      const base = upper.replace(/-SW-TM$/i, '');
+    // 1. If ends with -SW-TM or -SWTM, replace with -PL if exists, else strip -SW-TM
+    if (upper.endsWith('-SW-TM') || upper.endsWith('-SWTM')) {
+      const base = upper.replace(/-SW-?TM$/i, '');
       // Try with -PL (e.g. SMT-HC1P-GEN3-DD1-PL, SMT-HC1P-GEN3-INSSL-PL, SMT-HC3-GEN3-INSSL-PL)
       const plCandidate = `${base}-PL`;
       if (skuService.getSKUByPartNumber(plCandidate)) {
         return plCandidate;
       }
-      // Try base without -SW-TM (e.g. SMT-HC3-GEN3-FVU, SMT-HC3-GEN3-GTPMAX, SMT-HC3-GEN3-APF, UPG-TAC40EA, UPG-TAC20, CLS-TAX20)
+      // Try base without -SW-TM (e.g. GFM-FM000, SMT-HC3-GEN3-FVU, SMT-HC3-GEN3-GTPMAX, SMT-HC3-GEN3-APF, UPG-TAC40EA, UPG-TAC20, CLS-TAX20)
       if (skuService.getSKUByPartNumber(base)) {
         return base;
       }

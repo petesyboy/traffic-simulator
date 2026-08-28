@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.678",
+    date: "2026-08-28",
+    summary: "Replace HTL AHR with Traditional Support SKUs (GSS-FYS-*, GSS-RNL-*) in Perpetual deals (v1.0.678)",
+  },
+  {
     version: "1.0.677",
     date: "2026-08-28",
     summary: "Display % (A) for auto-generated discounts in quote line items and reports (v1.0.677)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.655",
     date: "2026-08-26",
     summary: "Allow bulk replace to non-TAA optics without being reverted by TAP sync (v1.0.655)",
-  },
-  {
-    version: "1.0.653",
-    date: "2026-08-26",
-    summary: "Resolve PDF generation hanging on promise resolution and table widths (v1.0.653)",
   },
 ];

@@ -1082,12 +1082,39 @@ describe('pricingEngine', () => {
       expect(support!.note).toContain('18.0% of Covered HW & SW List Price ($236,975.00)');
     });
 
-    it('converts GSS-HW-AHR-GMO to GSS-FYS-ELT-PSS when switching from HTL to Perpetual deal', () => {
+    it('converts GSS-HW-AHR-GMO to GSS-FYS-ELT-PSS and GFM-FM000-SW-TM to GFM-FM000 when switching from HTL to Perpetual deal', () => {
       expect(resolveLicenseModeSku('GSS-HW-AHR-GMO', 'Perpetual')).toBe('GSS-FYS-ELT-PSS');
       expect(resolveLicenseModeSku('GSS-RNL-HW-AHR-GMO', 'Perpetual')).toBe('GSS-RNL-ELT-PSS');
       expect(resolveLicenseModeSku('GSS-FYS-ELT-PSS', 'HTL')).toBe('GSS-HW-AHR-GMO');
       expect(resolveLicenseModeSku('GSS-FYS-ENH-PSS', 'HTL')).toBe('GSS-HW-AHR-GMO');
       expect(resolveLicenseModeSku('GSS-RNL-ELT-PSS', 'HTL')).toBe('GSS-RNL-HW-AHR-GMO');
+
+      expect(resolveLicenseModeSku('GFM-FM000-SW-TM', 'Perpetual')).toBe('GFM-FM000');
+      expect(resolveLicenseModeSku('GFM-FM000-SWTM', 'Perpetual')).toBe('GFM-FM000');
+      expect(resolveLicenseModeSku('GFM-FM000', 'HTL')).toBe('GFM-FM000-SW-TM');
+    });
+
+    it('creates GFM-FM000 ($57,880 list, 100% promo) for Perpetual quotes when includeFmPrime is true', () => {
+      const bomRows: BomRow[] = [
+        {
+          sku: 'GVS-HC301',
+          description: 'GigaVUE-HC3 chassis',
+          type: 'Hardware',
+          qty: 1,
+        },
+      ];
+
+      const quoteItems = createQuoteItemsFromBom(bomRows, 12, {
+        licenseMode: 'Perpetual',
+        includeFmPrime: true,
+      });
+
+      const fm = quoteItems.find((i) => i.sku === 'GFM-FM000');
+      expect(fm).toBeDefined();
+      expect(fm?.unitListPrice).toBe(57880);
+      expect(fm?.isMonthlyPrice).toBe(false);
+      expect(fm?.discountOverride).toBe(100);
+      expect(fm?.inclInSupport).toBe(true);
     });
 
     it('creates GSS-FYS-ELT-PSS for Perpetual quotes when includeAhr is true in createQuoteItemsFromBom', () => {

@@ -645,31 +645,53 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const handleToggleFmPrime = (checked: boolean) => {
     setIncludeFmPrime(checked);
     if (checked) {
-      if (!items.some((i) => i.sku.startsWith('GFM-FM000-SW-TM'))) {
-        const term = parseInt(globalTermDuration || '36', 10) || 36;
-        const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
-        setItems((prev) => [
-          ...prev,
-          {
-            id: `bom-fm-prime-${Date.now()}`,
-            sku: 'GFM-FM000-SW-TM',
-            description:
-              skuRecord?.description ||
-              'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
-            type: 'Software',
-            category: 'Software',
-            qty: 1,
-            termMonths: term,
-            unitListPrice: skuRecord?.listPriceMonthly || 2310.0,
-            isMonthlyPrice: true,
-            applyDiscount: true,
-            discountOverride: 100,
-            note: `${term} months`,
-          },
-        ]);
+      if (!items.some((i) => i.sku.startsWith('GFM-FM000'))) {
+        if (globalLicenseMode === 'Perpetual') {
+          const skuRecord = skuService.getSKUByPartNumber('GFM-FM000');
+          setItems((prev) => [
+            ...prev,
+            {
+              id: `bom-fm-prime-${Date.now()}`,
+              sku: 'GFM-FM000',
+              description:
+                skuRecord?.description ||
+                'Perpetual license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes VMware NSX Manager Integration (GFM-VM-NSX) add-ons. Software support at desired level must be purchased separately.',
+              type: 'Software',
+              category: 'Software',
+              qty: 1,
+              unitListPrice: skuRecord?.listPrice || 57880.0,
+              isMonthlyPrice: false,
+              applyDiscount: true,
+              discountOverride: 100,
+              inclInSupport: true,
+            },
+          ]);
+        } else {
+          const term = parseInt(globalTermDuration || '36', 10) || 36;
+          const skuRecord = skuService.getSKUByPartNumber('GFM-FM000-SW-TM');
+          setItems((prev) => [
+            ...prev,
+            {
+              id: `bom-fm-prime-${Date.now()}`,
+              sku: 'GFM-FM000-SW-TM',
+              description:
+                skuRecord?.description ||
+                'Monthly term license for GigaVUE-FM Prime Edition, manage up to 1,000 Physical Visibility Fabric Nodes. Includes Bundled Elite-Plus Software Support.',
+              type: 'Software',
+              category: 'Software',
+              qty: 1,
+              termMonths: term,
+              unitListPrice: skuRecord?.listPriceMonthly || 2310.0,
+              isMonthlyPrice: true,
+              applyDiscount: true,
+              discountOverride: 100,
+              note: `${term} months`,
+            },
+          ]);
+        }
       }
     } else {
-      setItems((prev) => prev.filter((i) => !i.sku.startsWith('GFM-FM000-SW-TM')));
+      setItems((prev) => prev.filter((i) => !i.sku.startsWith('GFM-FM000')));
     }
   };
 
@@ -1130,7 +1152,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   color: includeFmPrime ? '#c084fc' : '#d1d5db',
                   userSelect: 'none',
                 }}
-                title="Include 36-Month GigaVUE-FM Prime Edition License (GFM-FM000-SW-TM) with 100% promotional discount ($0.00 Net)"
+                title={
+                  globalLicenseMode === 'Perpetual'
+                    ? 'Include Perpetual GigaVUE-FM Prime Edition License (GFM-FM000) with 100% promotional discount ($0.00 Net)'
+                    : 'Include 36-Month GigaVUE-FM Prime Edition License (GFM-FM000-SW-TM) with 100% promotional discount ($0.00 Net)'
+                }
               >
                 <input
                   type="checkbox"
