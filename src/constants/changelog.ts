@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.692",
+    date: "2026-08-28",
+    summary: "Decouple 3D card deck background from Export Diagram description box (v1.0.692)",
+  },
+  {
     version: "1.0.691",
     date: "2026-08-28",
     summary: "Enforce explicit pure white #ffffff and #ff9800 border on all diagram descriptors (v1.0.691)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.672",
     date: "2026-08-28",
     summary: "Add Cost Before/After Discount columns to quote & reset CPQ metadata defaults (v1.0.672)",
-  },
-  {
-    version: "1.0.671",
-    date: "2026-08-28",
-    summary: "Add GigaSMART Tunneling & ERSPAN Decapsulation app and licensing (v1.0.671)",
   },
 ];

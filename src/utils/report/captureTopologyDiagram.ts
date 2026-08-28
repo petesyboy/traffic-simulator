@@ -147,6 +147,58 @@ export async function captureTopologyDiagramPng(
   });
 }
 
+import { isTapNode, isToolNode, buildClusterNode, collapseClusterNode } from '../clusterUtils';
+import { NODE_TYPES } from '../../constants/nodeTypes';
+
+/**
+ * Prepares the canvas topology for high-resolution diagram screenshots:
+ * 1. Collapses any existing expanded TAP or Tool cluster nodes into compact stacks.
+ * 2. If there are more than 4 unclustered TAP modules, groups them into a collapsed TAP stack.
+ * 3. If there are more than 4 unclustered Tool nodes, groups them into a collapsed Tool stack.
+ * 4. Auto-spaces nodes vertically in columns to eliminate description box overlaps.
+ */
+export function prepareTopologyForDiagramCapture(
+  nodes: CustomNode[],
+  edges: Edge[],
+): { nodes: CustomNode[]; edges: Edge[] } {
+  let currentNodes = [...nodes];
+  let currentEdges = [...edges];
+
+  // 1. Collapse any existing cluster nodes that are currently in expanded state
+  currentNodes.forEach((node) => {
+    if (node.type === NODE_TYPES.CLUSTER && node.data?.isCollapsed === false) {
+      const res = collapseClusterNode(node, currentNodes, currentEdges);
+      currentNodes = res.nodes;
+      currentEdges = res.edges;
+    }
+  });
+
+  // 2. Check for unclustered visible TAP nodes (> 4)
+  const visibleTaps = currentNodes.filter((n) => !n.hidden && isTapNode(n) && !n.data?.clusterId);
+  if (visibleTaps.length > 4) {
+    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(visibleTaps, currentEdges, 'tap');
+    const updatedIds = new Set(updatedNodes.map((n) => n.id));
+    const restNodes = currentNodes.filter((n) => !updatedIds.has(n.id));
+    currentNodes = [clusterNode, ...restNodes, ...updatedNodes];
+    currentEdges = updatedEdges;
+  }
+
+  // 3. Check for unclustered visible Tool nodes (> 4)
+  const visibleTools = currentNodes.filter((n) => !n.hidden && isToolNode(n) && !n.data?.clusterId);
+  if (visibleTools.length > 4) {
+    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(visibleTools, currentEdges, 'tool');
+    const updatedIds = new Set(updatedNodes.map((n) => n.id));
+    const restNodes = currentNodes.filter((n) => !updatedIds.has(n.id));
+    currentNodes = [clusterNode, ...restNodes, ...updatedNodes];
+    currentEdges = updatedEdges;
+  }
+
+  // 4. Auto-space nodes vertically in columns to eliminate any description box overlaps
+  currentNodes = autoSpaceNodesForExport(currentNodes);
+
+  return { nodes: currentNodes, edges: currentEdges };
+}
+
 /**
  * Report-specific capture flow: makes sure the whole topology is framed and
  * visible in Canvas View before capturing, then restores whatever view the
@@ -161,6 +213,7 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
   const originalView = useStore.getState().activeView;
   const originalExportDiagramMode = useStore.getState().exportDiagramMode;
   const originalNodes = useStore.getState().nodes;
+  const originalEdges = useStore.getState().edges;
 
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
@@ -168,10 +221,11 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
   // Ensure Export Diagram Ready Mode is turned on so descriptions and value propositions are included
   useStore.getState().setExportDiagramMode(true);
 
-  // Auto-space nodes vertically in columns to eliminate any description box overlaps
-  const spacedNodes = autoSpaceNodesForExport(originalNodes);
+  // Auto-collapse TAPs and Tools (>4) into stacks and space nodes for diagram export
+  const { nodes: preparedNodes, edges: preparedEdges } = prepareTopologyForDiagramCapture(originalNodes, originalEdges);
   useStore.setState((s) => ({
-    nodes: spacedNodes,
+    nodes: preparedNodes,
+    edges: preparedEdges,
     fitViewNodeIds: null,
     fitViewTrigger: s.fitViewTrigger + 1,
   }));
@@ -186,7 +240,7 @@ export async function captureTopologyDiagramForReport(): Promise<string> {
   try {
     return await captureTopologyDiagramPng();
   } finally {
-    useStore.setState({ nodes: originalNodes });
+    useStore.setState({ nodes: originalNodes, edges: originalEdges });
     if (originalView !== 'canvas') {
       useStore.getState().setActiveView(originalView);
     }
@@ -203,24 +257,37 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
   const originalView = useStore.getState().activeView;
   const originalExportDiagramMode = useStore.getState().exportDiagramMode;
   const originalNodes = useStore.getState().nodes;
-  const edges = useStore.getState().edges;
+  const originalEdges = useStore.getState().edges;
 
   if (originalView !== 'canvas') {
     useStore.getState().setActiveView('canvas');
   }
   useStore.getState().setExportDiagramMode(true);
 
-  // Auto-space nodes vertically in columns to eliminate any description box overlaps
-  const spacedNodes = autoSpaceNodesForExport(originalNodes);
+  const { nodes: preparedNodes, edges: preparedEdges } = prepareTopologyForDiagramCapture(originalNodes, originalEdges);
+
+  // Re-map allowed node IDs in case individual nodes were clustered
+  const allowedNodeIds = new Set<string>();
+  nodeIds.forEach((id) => {
+    const node = preparedNodes.find((n) => n.id === id);
+    if (node) {
+      if (node.hidden && node.data?.clusterId) {
+        allowedNodeIds.add(node.data.clusterId as string);
+      } else {
+        allowedNodeIds.add(id);
+      }
+    }
+  });
+
   useStore.setState((s) => ({
-    nodes: spacedNodes,
-    fitViewNodeIds: nodeIds,
+    nodes: preparedNodes,
+    edges: preparedEdges,
+    fitViewNodeIds: Array.from(allowedNodeIds),
     fitViewTrigger: s.fitViewTrigger + 1,
   }));
 
-  const allowedNodeIds = new Set(nodeIds);
   const allowedEdgeIds = new Set(
-    edges
+    preparedEdges
       .filter((e) => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target))
       .map((e) => e.id),
   );
@@ -232,6 +299,7 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
   } finally {
     useStore.setState((s) => ({
       nodes: originalNodes,
+      edges: originalEdges,
       fitViewNodeIds: null,
       fitViewTrigger: s.fitViewTrigger + 1,
     }));

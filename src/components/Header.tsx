@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/store';
 import pkg from '../../package.json';
 import { validateConfiguration, detectMixedSiteAssignment } from '../utils/bomEngine';
-import { captureTopologyDiagramPng } from '../utils/report/captureTopologyDiagram';
+import { captureTopologyDiagramForReport } from '../utils/report/captureTopologyDiagram';
 import { getStandardExportFilename } from '../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
 import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
@@ -249,7 +249,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
   const handleExportScreenshot = () => {
     ensureProjectNamed((resolvedName) => {
-      captureTopologyDiagramPng()
+      captureTopologyDiagramForReport()
         .then(async (dataUrl) => {
           const filename = getStandardExportFilename('diagram-png', resolvedName);
           await saveWithFilePickerOrPrompt(dataUrl, filename, {
