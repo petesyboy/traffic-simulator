@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.686",
+    date: "2026-08-28",
+    summary: "Preserve parallel and clustered links across restoreState and grouping operations (v1.0.686)",
+  },
+  {
     version: "1.0.685",
     date: "2026-08-28",
     summary: "Restore tool and tap link terminations during expand/collapse cycles (v1.0.685)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.664",
     date: "2026-08-27",
     summary: "Align commercial quote and PDF generator with Salesforce CPQ format (v1.0.664)",
-  },
-  {
-    version: "1.0.663",
-    date: "2026-08-27",
-    summary: "Standardize solution deliverable package to 6 canonical files and streamline export notifications (v1.0.663)",
   },
 ];

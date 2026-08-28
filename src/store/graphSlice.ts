@@ -24,6 +24,8 @@ import {
   expandClusterNode,
   collapseClusterNode,
   dissolveClusterNode,
+  isTapNode,
+  isToolNode,
 } from '../utils/clusterUtils';
 
 export interface GraphSlice {
@@ -315,19 +317,41 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (nodeIds && nodeIds.length >= 2) {
       targetNodes = state.nodes.filter((n) => nodeIds.includes(n.id));
     } else {
-      // Default to selected nodes
+      // Default to selected nodes filtered by typeOverride if present
       const selected = state.nodes.filter((n) => n.selected);
-      if (selected.length >= 2) {
-        targetNodes = selected;
+      if (typeOverride === 'tap') {
+        targetNodes = selected.filter(isTapNode);
+      } else if (typeOverride === 'tool') {
+        targetNodes = selected.filter(isToolNode);
+      } else if (selected.length >= 2) {
+        if (selected.every(isTapNode)) {
+          targetNodes = selected;
+          typeOverride = 'tap';
+        } else if (selected.every(isToolNode)) {
+          targetNodes = selected;
+          typeOverride = 'tool';
+        } else {
+          // If mixed selection and no typeOverride, prefer the larger subgroup
+          const taps = selected.filter(isTapNode);
+          const tools = selected.filter(isToolNode);
+          if (taps.length >= 2 && taps.length >= tools.length) {
+            targetNodes = taps;
+            typeOverride = 'tap';
+          } else if (tools.length >= 2) {
+            targetNodes = tools;
+            typeOverride = 'tool';
+          }
+        }
       }
     }
     if (targetNodes.length < 2) return;
 
     state.pushHistory();
     const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(targetNodes, state.edges, typeOverride);
-    const updatedNodeIds = new Set(updatedNodes.map((n) => n.id));
+    const updatedMemberNodes = updatedNodes.map((n) => ({ ...n, selected: false }));
+    const updatedNodeIds = new Set(updatedMemberNodes.map((n) => n.id));
     const allRemainingNodes = state.nodes.filter((n) => !updatedNodeIds.has(n.id));
-    let nextNodes = [clusterNode, ...allRemainingNodes, ...updatedNodes];
+    let nextNodes = [clusterNode, ...allRemainingNodes, ...updatedMemberNodes];
     nextNodes = syncSplunkLabels(nextNodes, updatedEdges);
     nextNodes = syncOpticsOnTapConnection(nextNodes, updatedEdges);
     const nextEdges = syncPortAssignments(nextNodes, updatedEdges);
