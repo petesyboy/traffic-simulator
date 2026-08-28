@@ -28,6 +28,12 @@ describe('exportNaming', () => {
       );
     });
 
+    it('generates standard GigaVUE Project (.gvp) filename starting with GigaVUE_Project_', () => {
+      expect(getStandardExportFilename('project-gvp', solution)).toBe(
+        'GigaVUE_Project_City_of_Gothenburg.gvp',
+      );
+    });
+
     it('generates standard canvas/topology JSON filename starting with Solution_Overview_', () => {
       expect(getStandardExportFilename('topology-json', solution)).toBe(
         'Solution_Overview_City_of_Gothenburg.json',

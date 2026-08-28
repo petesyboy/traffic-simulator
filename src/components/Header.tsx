@@ -674,9 +674,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                           onSaveFileClick();
                         });
                       }}
+                      style={{ color: '#38bdf8', fontWeight: 600 }}
+                      title="Save complete project file (.gvp) with canvas, optics, BOM, and commercial quotes"
                     >
                       <SaveIcon size={14} />
-                      <span>Export Project File (.json)</span>
+                      <span>💾 Save Project File (.gvp)...</span>
                     </button>
                     <button
                       className="header-dropdown-item"
@@ -684,9 +686,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         handleImportClick();
                         setShowProjectMenu(false);
                       }}
+                      style={{ color: '#38bdf8' }}
+                      title="Open a saved project file (.gvp, .json)"
                     >
                       <FolderOpenIcon size={14} />
-                      <span>Import Project File (.json)</span>
+                      <span>📂 Open Project File (.gvp, .json)...</span>
                     </button>
                     <div className="header-dropdown-divider" />
                     <button
@@ -717,7 +721,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json,application/json,text/plain,.txt"
+                accept=".gvp,.gvproj,.json,application/json,text/plain,.txt"
                 onChange={onLoadFileChange}
                 style={{
                   position: 'fixed',

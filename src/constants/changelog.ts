@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.674",
+    date: "2026-08-28",
+    summary: "Prevent phantom high-speed uplink optics when interconnecting chassis (v1.0.674)",
+  },
+  {
     version: "1.0.673",
     date: "2026-08-28",
     summary: "Add sticky totals footer for Cost Before/After Discount in quote table (v1.0.673)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.650",
     date: "2026-08-26",
     summary: "Support percent-of-total hardware support SKU GSS-HW-AHR-GMO (41% of covered hardware list price) (v1.0.650)",
-  },
-  {
-    version: "1.0.649",
-    date: "2026-08-26",
-    summary: "Prompt for filename on quote PDF, JSON, and CSV exports to allow overwriting existing files (v1.0.649)",
   },
 ];

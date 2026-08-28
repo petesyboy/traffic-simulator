@@ -43,6 +43,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { TradeShowDemo } from './components/TradeShowDemo';
 import { MissionDemo } from './components/MissionDemo';
 import { SaveSlotModal } from './components/header/SaveSlotModal';
+import { getProjectQuoteWorkspace, saveProjectQuoteWorkspace } from './utils/projectQuoteStorage';
+import pkg from '../package.json';
 import './App.css';
 
 
@@ -77,8 +79,15 @@ function App() {
   const [saveToast, setSaveToast] = useState('');
 
   const handleExportStateToFile = useCallback(async () => {
-    const filename = getStandardExportFilename('topology-json', currentScenarioName);
-    const flow = {
+    const resolvedName = currentScenarioName || 'Untitled Project';
+    const quoteWorkspace = getProjectQuoteWorkspace(currentScenarioName);
+    const filename = getStandardExportFilename('project-gvp', currentScenarioName);
+    const projectData = {
+      format: 'gigamon-project',
+      version: '2.0',
+      appVersion: pkg.version,
+      exportedAt: new Date().toISOString(),
+      projectName: resolvedName,
       nodes,
       edges,
       trafficStreams,
@@ -92,17 +101,18 @@ function App() {
         showGrid,
         snapToGrid,
       },
+      quoteWorkspace,
     };
-    const json = JSON.stringify(flow, null, 2);
+    const json = JSON.stringify(projectData, null, 2);
 
     const res = await saveWithFilePickerOrPrompt(json, filename, {
-      description: 'JSON Topology File',
+      description: 'GigaVUE Project File (*.gvp)',
       mimeType: 'application/json',
-      extension: '.json',
+      extension: '.gvp',
     });
 
     if (res.saved) {
-      setSaveToast(`Saved topology to "${res.filename}"`);
+      setSaveToast(`Saved project to "${res.filename}"`);
       setTimeout(() => setSaveToast(''), 5000);
     }
   }, [
@@ -137,19 +147,35 @@ function App() {
         });
       }
 
-      const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      const n = parsed.nodes;
+      const e_list = parsed.edges;
+      const t = parsed.trafficStreams || [];
+      const s_obj = parsed.settings;
+      const quoteWs = parsed.quoteWorkspace;
+      const resolvedName =
+        parsed.projectName ||
+        file.name
+          .replace(/\.(gvp|gvproj|json)$/i, '')
+          .replace(/^GigaVUE_Project_|^Solution_Overview_/i, '')
+          .replace(/_/g, ' ');
+
       if (n && e_list) {
-        restoreState(n, e_list, t || [], s_obj);
-        const scenarioName = file.name.replace(/\.json$/i, '');
-        setCurrentScenarioName(scenarioName);
-        setSaveToast(`Loaded "${scenarioName}"`);
+        restoreState(n, e_list, t, s_obj);
+        setCurrentScenarioName(resolvedName);
+
+        if (quoteWs) {
+          saveProjectQuoteWorkspace(resolvedName, quoteWs);
+        }
+
+        setSaveToast(`Loaded project "${resolvedName}"`);
         setTimeout(() => setSaveToast(''), 5000);
       } else {
-        alert("Invalid topology file structure.");
+        alert("Invalid project file structure.");
       }
     } catch (err) {
-      alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
-      console.error('Failed to import topology file:', err);
+      alert("Failed to parse the project file. Make sure it's a valid .gvp or .json scenario file.");
+      console.error('Failed to import project file:', err);
     } finally {
       // Safely reset input value ONLY AFTER file has been completely read
       if (event.target) {

@@ -4,6 +4,7 @@ import { PRESET_SCENARIOS } from '../../constants/presets';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { exportSolutionToDirectoryOrZip } from '../../utils/solutionPackage';
+import { getProjectQuoteWorkspace, saveProjectQuoteWorkspace } from '../../utils/projectQuoteStorage';
 import pkg from '../../../package.json';
 
 const SLOT_PREFIX = 'fm-simulator-slot-';
@@ -23,7 +24,7 @@ export interface SaveSlotModalProps {
 }
 
 /**
- * Modal for managing save slots, pre-baked scenarios, and sharing JSON topologies.
+ * Modal for managing save slots, pre-baked scenarios, and sharing GVP project files.
  */
 export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onSaved, onLoaded }) => {
   const [activeTab, setActiveTab] = useState<'slots' | 'presets'>('slots');
@@ -47,8 +48,14 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
   const snapToGrid = useStore((s) => s.snapToGrid);
 
   const handleSave = () => {
-    const name = slotName.trim() || 'default';
+    const name = slotName.trim() || currentScenarioName || 'default';
+    const quoteWorkspace = getProjectQuoteWorkspace(currentScenarioName || name);
     const flow = {
+      format: 'gigamon-project',
+      version: '2.0',
+      appVersion: pkg.version,
+      exportedAt: new Date().toISOString(),
+      projectName: name,
       nodes,
       edges,
       trafficStreams,
@@ -62,6 +69,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
         showGrid,
         snapToGrid,
       },
+      quoteWorkspace,
     };
     localStorage.setItem(`${SLOT_PREFIX}${name}`, JSON.stringify(flow));
     localStorage.setItem('fm-simulator-last-slot', name);
@@ -71,8 +79,14 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
   };
 
   const handleExportFile = async () => {
-    const name = slotName.trim() || 'Solution';
+    const name = slotName.trim() || currentScenarioName || 'Solution';
+    const quoteWorkspace = getProjectQuoteWorkspace(currentScenarioName || name);
     const flow = {
+      format: 'gigamon-project',
+      version: '2.0',
+      appVersion: pkg.version,
+      exportedAt: new Date().toISOString(),
+      projectName: name,
       nodes,
       edges,
       trafficStreams,
@@ -86,14 +100,15 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
         showGrid,
         snapToGrid,
       },
+      quoteWorkspace,
     };
-    const defaultFilename = getStandardExportFilename('topology-json', name);
+    const defaultFilename = getStandardExportFilename('project-gvp', name);
     const json = JSON.stringify(flow, null, 2);
 
     const res = await saveWithFilePickerOrPrompt(json, defaultFilename, {
-      description: 'JSON Topology File',
+      description: 'GigaVUE Project File (*.gvp)',
       mimeType: 'application/json',
-      extension: '.json',
+      extension: '.gvp',
     });
 
     if (res.saved) {
@@ -157,19 +172,35 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
     reader.onload = (e) => {
       try {
         const raw = e.target?.result as string;
-        const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        const n = parsed.nodes;
+        const e_list = parsed.edges;
+        const t = parsed.trafficStreams || [];
+        const s_obj = parsed.settings;
+        const quoteWs = parsed.quoteWorkspace;
+        const scenarioName =
+          parsed.projectName ||
+          file.name
+            .replace(/\.(gvp|gvproj|json)$/i, '')
+            .replace(/^GigaVUE_Project_|^Solution_Overview_/i, '')
+            .replace(/_/g, ' ');
+
         if (n && e_list) {
-          restoreState(n, e_list, t || [], s_obj);
-          const scenarioName = file.name.replace(/\.json$/i, '');
+          restoreState(n, e_list, t, s_obj);
           setCurrentScenarioName(scenarioName);
           localStorage.setItem('fm-simulator-last-slot', scenarioName);
+
+          if (quoteWs) {
+            saveProjectQuoteWorkspace(scenarioName, quoteWs);
+          }
+
           onLoaded();
           onClose();
         } else {
-          alert('Invalid topology file structure.');
+          alert('Invalid project file structure.');
         }
       } catch (err) {
-        alert("Failed to parse the topology file. Make sure it's a valid JSON scenario file.");
+        alert("Failed to parse the project file. Make sure it's a valid .gvp or .json scenario file.");
         console.error(err);
       }
     };
@@ -180,11 +211,17 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
     try {
       const raw = localStorage.getItem(`${SLOT_PREFIX}${name}`);
       if (!raw) return;
-      const { nodes: n, edges: e, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      const { nodes: n, edges: e, trafficStreams: t, settings: s_obj, quoteWorkspace } = parsed;
       if (n && e) {
-        restoreState(n, e, t, s_obj);
+        restoreState(n, e, t || [], s_obj);
         setCurrentScenarioName(name);
         localStorage.setItem('fm-simulator-last-slot', name);
+
+        if (quoteWorkspace) {
+          saveProjectQuoteWorkspace(name, quoteWorkspace);
+        }
+
         onLoaded();
       }
     } catch (err) {
@@ -501,10 +538,10 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
               >
                 <span style={{ fontSize: '20px' }}>✉️</span>
                 <span style={{ fontSize: '11px', color: '#00e5ff', fontWeight: 'bold' }}>
-                  Import Shareable JSON File
+                  Import GVP / JSON Project File
                 </span>
-                <span style={{ fontSize: '9px', color: '#666' }}>Upload a scenario file someone emailed to you</span>
-                <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
+                <span style={{ fontSize: '9px', color: '#666' }}>Upload a .gvp project or scenario file with canvas, optics & quotes</span>
+                <input type="file" accept=".gvp,.gvproj,.json,application/json,text/plain" onChange={handleImportFile} style={{ display: 'none' }} />
               </label>
             </div>
 

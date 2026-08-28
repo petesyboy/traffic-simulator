@@ -26,6 +26,7 @@ import { saveWithFilePickerOrPrompt } from './fileSaveHelper';
 import { generateBom, getSkus } from './bomEngine';
 import { buildProjectWideOpticBom } from './bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from './bom/consolidateSimpleDevices';
+import { getProjectQuoteWorkspace } from './projectQuoteStorage';
 import { buildPhysicalItems, parseAndConvertDimensions } from './bom/physicalItems';
 import { buildReportDocDefinition } from './report/buildReportDocDefinition';
 import { buildUplinkReportDocDefinition } from './report/uplinkReport';
@@ -197,6 +198,7 @@ export async function generateAllSolutionAssets(
   // ── 1. Topology JSON State ──
   onProgress?.('Generating Solution Topology JSON...');
   const flow = {
+    projectName: scenarioName,
     nodes,
     edges,
     trafficStreams,
@@ -210,6 +212,7 @@ export async function generateAllSolutionAssets(
       showGrid,
       snapToGrid,
     },
+    quoteWorkspace: getProjectQuoteWorkspace(scenarioName),
   };
   const jsonContent = JSON.stringify(flow, null, 2);
   files.push({

@@ -39,6 +39,7 @@ export function sanitizeSolutionName(scenarioName?: string | null, fallback = 'S
 }
 
 export type ExportDocumentType =
+  | 'project-gvp'
   | 'topology-json'
   | 'bom-csv'
   | 'bom-deployment-csv'
@@ -64,6 +65,8 @@ export function getStandardExportFilename(
   const cleanName = sanitizeSolutionName(scenarioName);
 
   switch (type) {
+    case 'project-gvp':
+      return `GigaVUE_Project_${cleanName}.gvp`;
     case 'topology-json':
       return `Solution_Overview_${cleanName}.json`;
     case 'bom-csv':
