@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.695",
+    date: "2026-08-29",
+    summary: "Resolve TAP cluster member optics accurately on chassis connections (v1.0.695)",
+  },
+  {
     version: "1.0.694",
     date: "2026-08-28",
     summary: "Expand vertical and horizontal node spacing with auto-fitView in Export Diagram Mode (v1.0.694)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.675",
     date: "2026-08-28",
     summary: "Introduce dedicated .gvp project file format with full quote state persistence (v1.0.675)",
-  },
-  {
-    version: "1.0.674",
-    date: "2026-08-28",
-    summary: "Prevent phantom high-speed uplink optics when interconnecting chassis (v1.0.674)",
   },
 ];

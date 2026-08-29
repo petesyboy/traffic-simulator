@@ -9,6 +9,8 @@ import {
   buildClusterSummary,
   isTapNode,
   isToolNode,
+  formatEdgeLinkPrefix,
+  getEdgeTapLinksCount,
 } from './clusterUtils';
 import { generateBom } from './bom/bomGenerator';
 
@@ -332,5 +334,84 @@ describe('clusterUtils', () => {
       expect(e?.source).toBe(`tap-${i + 1}`);
       expect(e?.target).toBe('ta-site-a-2');
     }
+  });
+
+  describe('formatEdgeLinkPrefix', () => {
+    it('formats sequential link ranges (e.g. Links 1 to 6, Links 7 to 12) for a multi-TAP cluster stack', () => {
+      const tapMembers: CustomNode[] = Array.from({ length: 4 }, (_, i) => ({
+        id: `tap-${i + 1}`,
+        type: 'hardwareNode',
+        position: { x: 0, y: i * 100 },
+        data: {
+          label: `TAP ${i + 1}`,
+          model: 'TAP-M273T',
+          sku: 'TAP-M273T',
+          tappedLinksCount: 6,
+        },
+      } as unknown as CustomNode));
+
+      const clusterNode: CustomNode = {
+        id: 'cluster-tap-1',
+        type: 'clusterNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: '4x TAP Cluster',
+          clusterType: 'tap',
+          memberNodeIds: tapMembers.map((t) => t.id),
+        },
+      } as unknown as CustomNode;
+
+      const ta25Node: CustomNode = {
+        id: 'ta25-1',
+        type: 'hardwareNode',
+        position: { x: 400, y: 0 },
+        data: { label: 'TA25E', model: 'GigaVUE-TA25E' },
+      } as unknown as CustomNode;
+
+      const allNodes = [...tapMembers, clusterNode, ta25Node];
+
+      const parallelEdges: Edge[] = tapMembers.map((t, idx) => ({
+        id: `e-tap-${idx + 1}`,
+        source: 'cluster-tap-1',
+        target: 'ta25-1',
+        sourceHandle: 'out',
+        data: { originalSource: t.id },
+      }));
+
+      expect(getEdgeTapLinksCount(parallelEdges[0], clusterNode, allNodes)).toBe(6);
+      expect(formatEdgeLinkPrefix(parallelEdges[0], parallelEdges, allNodes)).toBe('Links 1 to 6');
+      expect(formatEdgeLinkPrefix(parallelEdges[1], parallelEdges, allNodes)).toBe('Links 7 to 12');
+      expect(formatEdgeLinkPrefix(parallelEdges[2], parallelEdges, allNodes)).toBe('Links 13 to 18');
+      expect(formatEdgeLinkPrefix(parallelEdges[3], parallelEdges, allNodes)).toBe('Links 19 to 24');
+    });
+
+    it('formats multi-link range (Links 1 to 6) for a standalone single TAP module', () => {
+      const tapNode: CustomNode = {
+        id: 'tap-standalone',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'TAP-M251T', model: 'TAP-M251T', tappedLinksCount: 6 },
+      } as unknown as CustomNode;
+      const taNode: CustomNode = { id: 'ta-1', type: 'hardwareNode', position: { x: 200, y: 0 }, data: { label: 'TA25' } } as unknown as CustomNode;
+
+      const edge: Edge = { id: 'e-standalone', source: 'tap-standalone', target: 'ta-1' };
+
+      expect(formatEdgeLinkPrefix(edge, [edge], [tapNode, taNode])).toBe('Links 1 to 6');
+    });
+
+    it('formats standard Link 1/3, Link 2/3 for non-TAP parallel links', () => {
+      const taNode: CustomNode = { id: 'ta-1', type: 'hardwareNode', position: { x: 0, y: 0 }, data: { label: 'TA25' } } as unknown as CustomNode;
+      const hcNode: CustomNode = { id: 'hc-1', type: 'hardwareNode', position: { x: 400, y: 0 }, data: { label: 'HC3' } } as unknown as CustomNode;
+
+      const edges: Edge[] = [
+        { id: 'e1', source: 'ta-1', target: 'hc-1', sourceHandle: 'out' },
+        { id: 'e2', source: 'ta-1', target: 'hc-1', sourceHandle: 'out' },
+        { id: 'e3', source: 'ta-1', target: 'hc-1', sourceHandle: 'out' },
+      ];
+
+      expect(formatEdgeLinkPrefix(edges[0], edges, [taNode, hcNode])).toBe('Link 1/3');
+      expect(formatEdgeLinkPrefix(edges[1], edges, [taNode, hcNode])).toBe('Link 2/3');
+      expect(formatEdgeLinkPrefix(edges[2], edges, [taNode, hcNode])).toBe('Link 3/3');
+    });
   });
 });

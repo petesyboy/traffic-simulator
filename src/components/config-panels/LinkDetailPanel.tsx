@@ -13,6 +13,7 @@ import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from '../../u
 import { getOpticSpeed, getOpticFiberType, formatOpticLabel, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 import { getSkus } from '../../utils/bom/skuUtils';
 import { diagnoseLink, resolveLinkConnectionProblem } from '../../utils/linkResolution';
+import { formatEdgeLinkPrefix } from '../../utils/clusterUtils';
 
 interface LinkDetailPanelProps {
   selectedEdge: Edge;
@@ -200,7 +201,7 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
           <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#888', fontWeight: 600 }}>
-            {totalParallel > 1 ? `Parallel Link ${parallelIndex + 1} of ${totalParallel}` : 'Physical Connection Link'}
+            {formatEdgeLinkPrefix(selectedEdge, parallelEdges, nodes) || (totalParallel > 1 ? `Parallel Link ${parallelIndex + 1} of ${totalParallel}` : 'Physical Connection Link')}
           </span>
           <span
             style={{
@@ -217,7 +218,7 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
           </span>
         </div>
         <h2 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>🔗</span> {totalParallel > 1 ? `Link ${parallelIndex + 1}/${totalParallel}` : 'Selected Link Details'}
+          <span>🔗</span> {formatEdgeLinkPrefix(selectedEdge, parallelEdges, nodes) || (totalParallel > 1 ? `Link ${parallelIndex + 1}/${totalParallel}` : 'Selected Link Details')}
         </h2>
         {isCrossSite ? (
           <div style={{ fontSize: '10px', color: '#ffd54f', background: 'rgba(255,213,79,0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255,213,79,0.3)' }}>

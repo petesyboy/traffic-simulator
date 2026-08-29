@@ -512,3 +512,91 @@ export function dissolveClusterNode(
 
   return { nodes: updatedNodes, edges: updatedEdges };
 }
+
+/**
+ * Calculates the number of tapped links represented by an edge (for single TAPs or cluster TAP links).
+ */
+export function getEdgeTapLinksCount(
+  e: Edge,
+  srcNode?: CustomNode,
+  allNodes: CustomNode[] = [],
+): number {
+  if (!srcNode) return 1;
+  const isClusterTap = srcNode.type === NODE_TYPES.CLUSTER && srcNode.data?.clusterType === 'tap';
+  let tapNode: CustomNode | undefined;
+  if (isClusterTap) {
+    const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+    if (origId) {
+      tapNode = allNodes.find((n) => n.id === origId);
+    }
+  } else if (isTapNode(srcNode) || srcNode.type === NODE_TYPES.INPUT) {
+    tapNode = srcNode;
+  }
+
+  if (tapNode) {
+    const hwData = tapNode.data as Record<string, unknown>;
+    const allocs = hwData?.tappedLinkAllocations as Array<{ qty?: number }> | undefined;
+    if (allocs && allocs.length > 0) {
+      const sum = allocs.reduce((acc, a) => acc + (a.qty || 0), 0);
+      if (sum > 0) return sum;
+    }
+    if (typeof hwData?.tappedLinksCount === 'number' && hwData.tappedLinksCount > 0) {
+      return hwData.tappedLinksCount;
+    }
+    const model = String(hwData?.model || '');
+    if (model.includes('M506') || model.includes('M273') || model.includes('M253') || model.includes('M453')) return 6;
+    return 1;
+  }
+  return 1;
+}
+
+/**
+ * Returns a human-friendly link prefix for diagram edges and inspection panels:
+ * - For TAP stacks: "Links 1 to 6", "Links 7 to 12", "Links 13 to 18", etc.
+ * - For single multi-link TAPs: "Links 1 to 6"
+ * - For general parallel links: "Link 1/4", "Link 2/4", etc.
+ */
+export function formatEdgeLinkPrefix(
+  edge: Edge,
+  parallelEdges: Edge[],
+  nodes: CustomNode[],
+): string {
+  const totalParallel = parallelEdges.length;
+  const parallelIndex = parallelEdges.findIndex((e) => e.id === edge.id);
+  if (parallelIndex < 0 && totalParallel <= 1) {
+    const srcNode = nodes.find((n) => n.id === edge.source);
+    if (srcNode && (isTapNode(srcNode) || (srcNode.type === NODE_TYPES.CLUSTER && srcNode.data?.clusterType === 'tap'))) {
+      const count = getEdgeTapLinksCount(edge, srcNode, nodes);
+      if (count > 1) return `Links 1 to ${count}`;
+    }
+    return '';
+  }
+
+  const srcNode = nodes.find((n) => n.id === edge.source);
+  const isClusterTap = srcNode?.type === NODE_TYPES.CLUSTER && srcNode.data?.clusterType === 'tap';
+  const isDirectTap = isTapNode(srcNode as CustomNode) || srcNode?.type === NODE_TYPES.INPUT;
+
+  if (isClusterTap || isDirectTap) {
+    let startLink = 1;
+    for (let i = 0; i < parallelIndex; i++) {
+      const pEdge = parallelEdges[i];
+      startLink += getEdgeTapLinksCount(pEdge, srcNode, nodes);
+    }
+    const currentCount = getEdgeTapLinksCount(edge, srcNode, nodes);
+    const endLink = startLink + currentCount - 1;
+
+    if (currentCount > 1) {
+      return `Links ${startLink} to ${endLink}`;
+    }
+    if (totalParallel > 1) {
+      return `Link ${startLink}`;
+    }
+    return '';
+  }
+
+  if (totalParallel > 1) {
+    return `Link ${parallelIndex + 1}/${totalParallel}`;
+  }
+  return '';
+}
+

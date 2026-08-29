@@ -17,7 +17,7 @@ import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
 import { isAutoTrayModel } from '../utils/trayModels';
-import { isTapNode, isToolNode } from '../utils/clusterUtils';
+import { isTapNode, isToolNode, formatEdgeLinkPrefix } from '../utils/clusterUtils';
 import { FederatedEnclosures } from './canvas/FederatedEnclosures';
 import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { GroupingBanner } from './canvas/GroupingBanner';
@@ -131,8 +131,8 @@ const CanvasArea: React.FC = () => {
       label = `${srcNode.data?.metadataFormat || 'CEF'} Metadata`;
     }
 
-    if (totalParallel > 1) {
-      const linkPrefix = `Link ${parallelIndex + 1}/${totalParallel}`;
+    const linkPrefix = formatEdgeLinkPrefix(edge, parallelEdges, nodes);
+    if (linkPrefix) {
       label = label ? `${linkPrefix} | ${label}` : linkPrefix;
     }
 
