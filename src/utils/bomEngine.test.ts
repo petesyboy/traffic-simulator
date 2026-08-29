@@ -203,6 +203,63 @@ describe('BOM Engine', () => {
       // 2 auto (still covering the TAP) + 1 manual (untouched) = 3, not capped at 2.
       expect(totalSfp532).toBe(3);
     });
+
+    it('should correctly allocate exactly 48 SFP optics when 4 TAPs in a cluster connect via 4 edges to TA25E', () => {
+      const tapMembers: CustomNode[] = Array.from({ length: 4 }, (_, i) => ({
+        id: `tap-${i + 1}`,
+        type: 'hardwareNode',
+        position: { x: 0, y: i * 100 },
+        data: {
+          label: `TAP ${i + 1}`,
+          model: 'TAP-M273T',
+          sku: 'TAP-M273T',
+          tappedLinksCount: 6,
+          tappedLinkAllocations: [{ qty: 6, optic: 'SFP-533T' }],
+        },
+      } as unknown as CustomNode));
+
+      const clusterNode: CustomNode = {
+        id: 'cluster-tap-1',
+        type: 'clusterNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: '4x TAP Cluster',
+          clusterType: 'tap',
+          memberNodeIds: tapMembers.map(t => t.id),
+        },
+      } as unknown as CustomNode;
+
+      const ta25Node: CustomNode = {
+        id: 'ta25-1',
+        type: 'hardwareNode',
+        position: { x: 300, y: 0 },
+        data: {
+          label: 'TA25E',
+          model: 'GigaVUE-TA25E',
+          sku: 'GVS-TA25E-001',
+          portCapacity: 'Full',
+          optics: [],
+        },
+      } as unknown as CustomNode;
+
+      // 4 edges representing the 4 member TAPs connected to the TA25E
+      const edges: Edge[] = tapMembers.map((t, idx) => ({
+        id: `e-tap-${idx}`,
+        source: 'cluster-tap-1',
+        target: 'ta25-1',
+        data: { originalSource: t.id },
+      }));
+
+      const syncedNodes = syncOpticsOnTapConnection([...tapMembers, clusterNode, ta25Node], edges);
+      const syncedTa = syncedNodes.find(n => n.id === 'ta25-1');
+
+      const totalSfpOptics = (syncedTa?.data?.optics as InstalledOptic[])
+        ?.filter(o => o.optic.includes('SFP-533'))
+        ?.reduce((sum, o) => sum + o.qty, 0) || 0;
+
+      // 4 TAPs * 6 links * 2 = exactly 48 SFP optics (not 48 * 4 = 192 or 384)
+      expect(totalSfpOptics).toBe(48);
+    });
   });
 
   describe('validateConfiguration', () => {

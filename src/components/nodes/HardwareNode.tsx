@@ -424,22 +424,53 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               return descLines.join('\n');
             } else {
               // Find incoming TAP links (deduplicated by source node to prevent double-counting)
-              const incomingSrcIds = Array.from(new Set(edges.filter(e => e.target === id).map(e => e.source)));
-              const tapConns = incomingSrcIds.map(srcId => {
-                const src = nodes.find(n => n.id === srcId);
-                if (src && String(src.data?.model || '').toUpperCase().includes('TAP')) {
-                  const srcHw = src.data as HardwareNodeData;
+              const incomingTapEdges = edges.filter(e => e.target === id);
+              const processedTapIds = new Set<string>();
+              const tapConns: { label: string, linksCount: number, optic: string }[] = [];
+
+              incomingTapEdges.forEach(e => {
+                const src = nodes.find(n => n.id === e.source);
+                if (!src) return;
+                const isClusterTap = src.type === 'clusterNode' && src.data?.clusterType === 'tap';
+                let taps: CustomNode[] = [];
+                if (isClusterTap) {
+                  const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+                  if (origId) {
+                    const m = nodes.find(n => n.id === origId);
+                    if (m && !processedTapIds.has(m.id)) {
+                      processedTapIds.add(m.id);
+                      taps = [m];
+                    }
+                  } else {
+                    const allMembers = nodes.filter(n => (src.data?.memberNodeIds as string[])?.includes(n.id));
+                    allMembers.forEach(m => {
+                      if (!processedTapIds.has(m.id)) {
+                        processedTapIds.add(m.id);
+                        taps.push(m);
+                      }
+                    });
+                  }
+                } else if (String(src.data?.model || '').toUpperCase().includes('TAP') || src.type === 'inputNode') {
+                  if (!processedTapIds.has(src.id)) {
+                    processedTapIds.add(src.id);
+                    taps = [src];
+                  }
+                }
+
+                taps.forEach(tapN => {
+                  const srcHw = tapN.data as HardwareNodeData;
                   const allocations = (srcHw.tappedLinkAllocations as { qty: number, optic: string, toolOptic?: string }[]) || [
                     { qty: srcHw.tappedLinksCount ?? 1, optic: (srcHw.tappedLinkOptic as string) || 'SFP-532' }
                   ];
-                  return allocations.map(a => ({
-                    label: srcHw.label || 'TAP',
-                    linksCount: a.qty,
-                    optic: a.toolOptic || a.optic
-                  }));
-                }
-                return null;
-              }).filter(Boolean).flat() as { label: string, linksCount: number, optic: string }[];
+                  allocations.forEach(a => {
+                    tapConns.push({
+                      label: srcHw.label || (src.data?.label as string) || 'TAP',
+                      linksCount: a.qty,
+                      optic: a.toolOptic || a.optic,
+                    });
+                  });
+                });
+              });
 
               let desc = '';
               if (tapConns.length > 0) {

@@ -90,21 +90,48 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
 
   // Optics check logic for warning badge
   const incomingTapEdges = edges.filter(e => e.target === node.id);
-  const uniqueIncomingTapSources = Array.from(new Set(incomingTapEdges.map(e => e.source)));
   let requiredMMOptics = 0;
   let requiredSMOptics = 0;
   let requiredCopperOptics = 0;
+  const processedTapIds = new Set<string>();
 
-  uniqueIncomingTapSources.forEach(srcId => {
-    const sourceNode = nodes.find(n => n.id === srcId);
-    if (sourceNode?.data?.model?.includes('TAP')) {
-      const tapSku = String(sourceNode.data?.sku || '');
-      const tapModel = String(sourceNode.data?.model || '');
+  incomingTapEdges.forEach(e => {
+    const sourceNode = nodes.find(n => n.id === e.source);
+    if (!sourceNode) return;
+    const isClusterTap = sourceNode.type === 'clusterNode' && sourceNode.data?.clusterType === 'tap';
+    let taps: CustomNode[] = [];
+    if (isClusterTap) {
+      const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+      if (origId) {
+        const m = nodes.find(n => n.id === origId);
+        if (m && !processedTapIds.has(m.id)) {
+          processedTapIds.add(m.id);
+          taps = [m];
+        }
+      } else {
+        const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
+        allMembers.forEach(m => {
+          if (!processedTapIds.has(m.id)) {
+            processedTapIds.add(m.id);
+            taps.push(m);
+          }
+        });
+      }
+    } else if (sourceNode.data?.model?.includes('TAP') || sourceNode.type === 'inputNode') {
+      if (!processedTapIds.has(sourceNode.id)) {
+        processedTapIds.add(sourceNode.id);
+        taps = [sourceNode];
+      }
+    }
+
+    taps.forEach(tapN => {
+      const tapSku = String(tapN.data?.sku || '');
+      const tapModel = String(tapN.data?.model || '');
       const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') ||
         tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') ||
         tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
       
-      const allocations = (sourceNode.data?.tappedLinkAllocations as TappedLinkAllocation[]) || [];
+      const allocations = (tapN.data?.tappedLinkAllocations as TappedLinkAllocation[]) || [];
       for (const alloc of allocations) {
         const opticToValidate = alloc.toolOptic || alloc.optic;
         const matched = SUPPORTED_TAP_OPTICS.find(o => o.value === opticToValidate);
@@ -114,7 +141,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
         else if (isSM) requiredSMOptics += alloc.qty * 2;
         else requiredMMOptics += alloc.qty * 2;
       }
-    }
+    });
   });
 
   const outgoingToolLinks = edges.filter(e => e.source === node.id && nodes.find(n => n.id === e.target)?.type === 'toolNode').length;

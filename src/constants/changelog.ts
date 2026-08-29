@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.694",
+    date: "2026-08-28",
+    summary: "Expand vertical and horizontal node spacing with auto-fitView in Export Diagram Mode (v1.0.694)",
+  },
+  {
     version: "1.0.693",
     date: "2026-08-28",
     summary: "Auto-collapse >4 TAPs and Tools into stacks during diagram and report screenshots (v1.0.693)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.674",
     date: "2026-08-28",
     summary: "Prevent phantom high-speed uplink optics when interconnecting chassis (v1.0.674)",
-  },
-  {
-    version: "1.0.673",
-    date: "2026-08-28",
-    summary: "Add sticky totals footer for Cost Before/After Discount in quote table (v1.0.673)",
   },
 ];

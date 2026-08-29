@@ -78,6 +78,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     const chassisMainBoard = getMainBoardKey((opticRules as Record<string, Record<string, string[]>>)[chassisModel]) || 'Base Ports';
     const connectedEdges = edges.filter(e => e.target === node.id || e.source === node.id);
     const tapOpticsNeeded: Record<string, number> = {};
+    const processedMemberNodeIds = new Set<string>();
 
     connectedEdges.forEach(e => {
       const otherId = e.source === node.id ? e.target : e.source;
@@ -87,9 +88,27 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
         const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
         const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
         
-        const tapNodesToProcess: CustomNode[] = isClusterTap
-          ? nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id))
-          : (isHardwareTap || isInputTap ? [sourceNode] : []);
+        let tapNodesToProcess: CustomNode[] = [];
+        if (isClusterTap) {
+          const origSrc = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+          if (origSrc) {
+            const memberNode = nodes.find(n => n.id === origSrc);
+            if (memberNode && !processedMemberNodeIds.has(memberNode.id)) {
+              processedMemberNodeIds.add(memberNode.id);
+              tapNodesToProcess = [memberNode];
+            }
+          } else {
+            const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
+            allMembers.forEach(m => {
+              if (!processedMemberNodeIds.has(m.id)) {
+                processedMemberNodeIds.add(m.id);
+                tapNodesToProcess.push(m);
+              }
+            });
+          }
+        } else if (isHardwareTap || isInputTap) {
+          tapNodesToProcess = [sourceNode];
+        }
 
         tapNodesToProcess.forEach(tapN => {
           const isHw = tapN.type === NODE_TYPES.HARDWARE && String(tapN.data?.model || '').includes('TAP');
