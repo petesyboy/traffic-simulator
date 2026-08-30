@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.698",
+    date: "2026-08-30",
+    summary: "Add resizable columns and optimized table space in Live Traffic Injector (v1.0.698)",
+  },
+  {
     version: "1.0.697",
     date: "2026-08-30",
     summary: "Add automated flow generation with telco and mobile profile biasing (v1.0.697)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.678",
     date: "2026-08-28",
     summary: "Replace HTL AHR with Traditional Support SKUs (GSS-FYS-*, GSS-RNL-*) in Perpetual deals (v1.0.678)",
-  },
-  {
-    version: "1.0.677",
-    date: "2026-08-28",
-    summary: "Display % (A) for auto-generated discounts in quote line items and reports (v1.0.677)",
   },
 ];

@@ -2,7 +2,8 @@ import { type Edge } from '@xyflow/react';
 import { 
   type TrafficStream, 
   type NodeMetrics, 
-  type CustomNode 
+  type CustomNode,
+  type ClusterNodeData 
 } from '../store/types';
 import { 
   type TrajectoryStream, 
@@ -207,8 +208,37 @@ export const calculateSimulationStep = (
     }
 
     let outboundEdges = edges.filter((e) => e.source === node.id);
-    if (outboundEdges.length === 0 && node.parentId) {
-      outboundEdges = edges.filter((e) => e.source === node.parentId);
+    if (outboundEdges.length === 0) {
+      if (node.parentId) {
+        outboundEdges = edges.filter((e) => e.source === node.parentId);
+      } else {
+        // Check if node is a member of a collapsed cluster
+        const clusterNode = nodes.find(
+          (n) => n.type === 'clusterNode' &&
+          ((n.data as ClusterNodeData)?.memberNodeIds?.includes(node.id) || (node.data as any)?.clusterId === n.id) &&
+          (n.data as ClusterNodeData)?.isCollapsed !== false
+        );
+        if (clusterNode) {
+          // If edges retain originalSource matching this member node, prefer them
+          const specificEdges = edges.filter(
+            (e) => e.source === clusterNode.id && (e.data as Record<string, unknown>)?.originalSource === node.id
+          );
+          if (specificEdges.length > 0) {
+            outboundEdges = specificEdges;
+          } else {
+            outboundEdges = edges.filter((e) => e.source === clusterNode.id);
+          }
+          if (metrics[clusterNode.id] && node.id === item.stream.sourceNodeId && item.edgePath.length === 0) {
+            metrics[clusterNode.id].txMbps += item.stream.bandwidth;
+            metrics[clusterNode.id].txPackets += item.stream.bandwidth * 250;
+          }
+        } else if (node.type === 'clusterNode' && (node.data as ClusterNodeData)?.isCollapsed === false) {
+          // An expanded cluster node: if traffic was targeted directly to clusterNode.id,
+          // find outgoing edges from its member nodes
+          const memberIds = (node.data as ClusterNodeData)?.memberNodeIds || [];
+          outboundEdges = edges.filter((e) => memberIds.includes(e.source));
+        }
+      }
     }
 
     // A GSA hands processed packets back to a TA/HC over the same kind of edge

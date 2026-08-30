@@ -13,6 +13,7 @@ import {
   getEdgeTapLinksCount,
 } from './clusterUtils';
 import { generateBom } from './bom/bomGenerator';
+import { calculateSimulationStep } from './simulation';
 
 describe('clusterUtils', () => {
   const createMockTap = (id: string, model: string, sku: string, tappedLinksCount = 6): CustomNode => ({
@@ -414,4 +415,69 @@ describe('clusterUtils', () => {
       expect(formatEdgeLinkPrefix(edges[2], edges, [taNode, hcNode])).toBe('Link 3/3');
     });
   });
+
+  describe('Simulation through collapsed clusters', () => {
+    it('continues routing traffic to downstream chassis when TAP cluster is collapsed', () => {
+      // Create 4 TAP nodes (6 links each = 24 links)
+      const taps = Array.from({ length: 4 }, (_, i) =>
+        createMockTap(`tap-${i + 1}`, 'TAP-M273T', 'TAP-M273T', 6)
+      );
+
+      const taNode: CustomNode = {
+        id: 'ta25-1',
+        type: 'hardwareNode',
+        position: { x: 500, y: 100 },
+        data: {
+          label: 'GigaVUE-TA25E',
+          model: 'GigaVUE-TA25E',
+          sku: 'GVS-TAX21E-HW',
+          configType: 'Hardware',
+        },
+      } as unknown as CustomNode;
+
+      // Create edges from each TAP to TA25E
+      const initialEdges: Edge[] = taps.map((tap, idx) => ({
+        id: `e-tap-${idx + 1}`,
+        source: tap.id,
+        target: taNode.id,
+        sourceHandle: 'out',
+        targetHandle: 'in',
+      }));
+
+      // Collapse the TAPs into a cluster
+      const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(taps, initialEdges, 'tap');
+      const allNodes = [clusterNode, taNode, ...updatedNodes];
+
+      // Create traffic streams originating from the member TAP nodes
+      const streams = taps.map((tap, idx) => ({
+        id: `stream-${idx + 1}`,
+        name: `TAP Stream ${idx + 1}`,
+        sourceNodeId: tap.id,
+        active: true,
+        bandwidth: 5000, // 5 Gbps each = 20 Gbps total
+        protocol: 'tcp' as const,
+        vlan: '100',
+        ipSrc: '192.168.1.1',
+        ipDst: '10.0.0.1',
+        portSrc: '50000',
+        portDst: '443',
+      }));
+
+      // Run simulation step with collapsed cluster
+      const result = calculateSimulationStep(allNodes, updatedEdges, streams);
+
+      // Verify member TAP nodes recorded Tx metrics
+      expect(result.metrics['tap-1'].txMbps).toBe(5000);
+
+      // Verify the collapsed cluster node recorded aggregate Tx metrics
+      expect(result.metrics[clusterNode.id].txMbps).toBe(20000);
+
+      // Verify downstream TA25E chassis received all 20 Gbps of traffic!
+      expect(result.metrics['ta25-1'].rxMbps).toBe(20000);
+
+      // Verify all edges connecting cluster to TA25E are active
+      expect(result.activeEdges.length).toBeGreaterThan(0);
+    });
+  });
 });
+
