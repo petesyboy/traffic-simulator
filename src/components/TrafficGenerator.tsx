@@ -35,6 +35,36 @@ const ADVANCED_BANDWIDTH_PRESETS = [100, 250, 500, ...STANDARD_BANDWIDTH_PRESETS
 const formatBandwidthOption = (mbps: number): string =>
   mbps >= 1000 ? `${(mbps / 1000).toFixed(1).replace('.0', '')} Gbps` : `${mbps} Mbps`;
 
+const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
+  name: 360,
+  ingress: 180,
+  vlan: 60,
+  proto: 70,
+  ipSrc: 115,
+  ipDst: 115,
+  portDst: 65,
+  rate: 100,
+  status: 80,
+  encrypted: 65,
+  active: 55,
+  action: 65,
+};
+
+const MIN_COLUMN_WIDTHS: Record<string, number> = {
+  name: 140,
+  ingress: 100,
+  vlan: 45,
+  proto: 50,
+  ipSrc: 80,
+  ipDst: 80,
+  portDst: 50,
+  rate: 70,
+  status: 60,
+  encrypted: 50,
+  active: 45,
+  action: 55,
+};
+
 const TrafficGenerator: React.FC = () => {
   const trafficStreams        = useStore((state) => state.trafficStreams);
   const nodes                 = useStore((state) => state.nodes);
@@ -57,6 +87,62 @@ const TrafficGenerator: React.FC = () => {
   // Minimum and maximum heights for the tray
   const MIN_HEIGHT = 80;
   const MAX_HEIGHT = 500;
+
+  // Resizable columns
+  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('fm_simulator_traffic_col_widths');
+      if (saved) {
+        return { ...DEFAULT_COLUMN_WIDTHS, ...JSON.parse(saved) };
+      }
+    } catch {
+      // fallback
+    }
+    return DEFAULT_COLUMN_WIDTHS;
+  });
+
+  const [activeResizingCol, setActiveResizingCol] = useState<string | null>(null);
+
+  const onColumnResizeStart = useCallback((e: React.MouseEvent, colKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = colWidths[colKey] || DEFAULT_COLUMN_WIDTHS[colKey] || 100;
+    const minW = MIN_COLUMN_WIDTHS[colKey] || 40;
+    setActiveResizingCol(colKey);
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.max(minW, startW + delta);
+      setColWidths((prev) => ({ ...prev, [colKey]: newWidth }));
+    };
+
+    const onMouseUp = () => {
+      setActiveResizingCol(null);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setColWidths((current) => {
+        try {
+          localStorage.setItem('fm_simulator_traffic_col_widths', JSON.stringify(current));
+        } catch {
+          // ignore
+        }
+        return current;
+      });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [colWidths]);
+
+  const resetColumnWidths = useCallback(() => {
+    setColWidths(DEFAULT_COLUMN_WIDTHS);
+    try {
+      localStorage.removeItem('fm_simulator_traffic_col_widths');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   /**
    * Drag-to-resize implementation.
@@ -223,6 +309,43 @@ const TrafficGenerator: React.FC = () => {
     ? `${(totalBandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
     : `${totalBandwidthMbps} Mbps`;
 
+  const totalTableWidth = Object.values(colWidths).reduce((sum, w) => sum + w, 0);
+
+  const ResizableHeader: React.FC<{
+    colKey: string;
+    label: string;
+    textAlign?: 'left' | 'center' | 'right';
+  }> = ({ colKey, label, textAlign = 'left' }) => {
+    const width = colWidths[colKey] || DEFAULT_COLUMN_WIDTHS[colKey] || 100;
+    const isResizing = activeResizingCol === colKey;
+    return (
+      <th
+        style={{
+          padding: '6px 8px',
+          width: `${width}px`,
+          minWidth: `${width}px`,
+          maxWidth: `${width}px`,
+          position: 'relative',
+          userSelect: 'none',
+          textAlign,
+          boxSizing: 'border-box',
+        }}
+      >
+        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {label}
+        </span>
+        <div
+          className={`col-resizer ${isResizing ? 'active' : ''}`}
+          onMouseDown={(e) => onColumnResizeStart(e, colKey)}
+          title="Drag to resize column (double-click to reset)"
+          onDoubleClick={resetColumnWidths}
+        >
+          <div className="col-resizer-line" />
+        </div>
+      </th>
+    );
+  };
+
   return (
     <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
       {/* ── Drag handle ──────────────────────────────────────────────────────── */}
@@ -361,6 +484,23 @@ const TrafficGenerator: React.FC = () => {
               ⚡ Auto-Generate Flows
             </button>
 
+            {/* Reset column widths button */}
+            <button
+              onClick={resetColumnWidths}
+              title="Reset table column widths to default layout"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+                padding: '6px 8px',
+                fontSize: '11px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              ⟲ Reset Columns
+            </button>
+
             {/* Clear All button */}
             {trafficStreams.length > 0 && (
               <button
@@ -430,41 +570,61 @@ const TrafficGenerator: React.FC = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: `${drawerHeight - 60}px` }}>
-            <table style={{ width: '100%', minWidth: '1220px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
+            <table style={{ width: '100%', minWidth: `${totalTableWidth}px`, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                  <th style={{ padding: '6px 4px', width: '180px' }}>Name</th>
-                  <th style={{ padding: '6px 4px', width: '260px' }}>Ingress Port</th>
-                  <th style={{ padding: '6px 4px', width: '65px' }}>VLAN</th>
-                  <th style={{ padding: '6px 4px', width: '75px' }}>Proto</th>
-                  <th style={{ padding: '6px 4px', width: '120px' }}>Source IP</th>
-                  <th style={{ padding: '6px 4px', width: '120px' }}>Dest IP</th>
-                  <th style={{ padding: '6px 4px', width: '70px' }}>Dst Port</th>
-                  <th style={{ padding: '6px 4px', width: '100px' }}>Rate</th>
-                  <th style={{ padding: '6px 4px', width: '85px' }}>Status</th>
-                  <th style={{ padding: '6px 4px', width: '70px', textAlign: 'center' }}>Encrypted</th>
-                  <th style={{ padding: '6px 4px', width: '55px', textAlign: 'center' }}>Active</th>
-                  <th style={{ padding: '6px 4px', width: '70px', textAlign: 'center' }}>Action</th>
+                  <ResizableHeader colKey="name" label="Name" />
+                  <ResizableHeader colKey="ingress" label="Ingress Port" />
+                  <ResizableHeader colKey="vlan" label="VLAN" />
+                  <ResizableHeader colKey="proto" label="Proto" />
+                  <ResizableHeader colKey="ipSrc" label="Source IP" />
+                  <ResizableHeader colKey="ipDst" label="Dest IP" />
+                  <ResizableHeader colKey="portDst" label="Dst Port" />
+                  <ResizableHeader colKey="rate" label="Rate" />
+                  <ResizableHeader colKey="status" label="Status" />
+                  <ResizableHeader colKey="encrypted" label="Encrypted" textAlign="center" />
+                  <ResizableHeader colKey="active" label="Active" textAlign="center" />
+                  <ResizableHeader colKey="action" label="Action" textAlign="center" />
                 </tr>
               </thead>
               <tbody>
                 {trafficStreams.map((stream) => (
                   <tr key={stream.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '4px 2px', width: '180px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.name}px`, minWidth: `${colWidths.name}px`, maxWidth: `${colWidths.name}px`, boxSizing: 'border-box' }}>
                       <input
                         type="text"
                         value={stream.name}
                         onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px', width: '170px', borderBottom: '1px solid transparent' }}
+                        title={stream.name}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '12px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          borderBottom: '1px solid transparent',
+                          textOverflow: 'ellipsis',
+                        }}
                         onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
                         onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '260px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.ingress}px`, minWidth: `${colWidths.ingress}px`, maxWidth: `${colWidths.ingress}px`, boxSizing: 'border-box' }}>
                       <select
                         value={stream.sourceNodeId}
                         onChange={(e) => handleFieldChange(stream.id, 'sourceNodeId', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '250px' }}
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                          fontSize: '11px',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          textOverflow: 'ellipsis',
+                        }}
                       >
                         {inputPorts.map((port) => (
                           <option key={port.id} value={port.id}>
@@ -473,55 +633,55 @@ const TrafficGenerator: React.FC = () => {
                         ))}
                       </select>
                     </td>
-                    <td style={{ padding: '4px 2px', width: '65px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.vlan}px`, minWidth: `${colWidths.vlan}px`, maxWidth: `${colWidths.vlan}px`, boxSizing: 'border-box' }}>
                       <input
                         type="text"
                         value={stream.vlan}
                         onChange={(e) => handleFieldChange(stream.id, 'vlan', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '55px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '75px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.proto}px`, minWidth: `${colWidths.proto}px`, maxWidth: `${colWidths.proto}px`, boxSizing: 'border-box' }}>
                       <select
                         value={stream.protocol}
                         onChange={(e) => handleFieldChange(stream.id, 'protocol', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '65px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                       >
                         <option value="tcp">TCP</option>
                         <option value="udp">UDP</option>
                         <option value="icmp">ICMP</option>
                       </select>
                     </td>
-                    <td style={{ padding: '4px 2px', width: '120px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.ipSrc}px`, minWidth: `${colWidths.ipSrc}px`, maxWidth: `${colWidths.ipSrc}px`, boxSizing: 'border-box' }}>
                       <input
                         type="text"
                         value={stream.ipSrc}
                         onChange={(e) => handleFieldChange(stream.id, 'ipSrc', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '120px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.ipDst}px`, minWidth: `${colWidths.ipDst}px`, maxWidth: `${colWidths.ipDst}px`, boxSizing: 'border-box' }}>
                       <input
                         type="text"
                         value={stream.ipDst}
                         onChange={(e) => handleFieldChange(stream.id, 'ipDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '110px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '70px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.portDst}px`, minWidth: `${colWidths.portDst}px`, maxWidth: `${colWidths.portDst}px`, boxSizing: 'border-box' }}>
                       <input
                         type="text"
                         value={stream.portDst}
                         onChange={(e) => handleFieldChange(stream.id, 'portDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '60px' }}
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '100px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.rate}px`, minWidth: `${colWidths.rate}px`, maxWidth: `${colWidths.rate}px`, boxSizing: 'border-box' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <select
                            value={stream.bandwidth}
                            onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
-                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '90px' }}
+                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
                         >
                            {(() => {
                              const presets = advancedMode ? ADVANCED_BANDWIDTH_PRESETS : STANDARD_BANDWIDTH_PRESETS;
@@ -545,7 +705,7 @@ const TrafficGenerator: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '4px 2px', width: '85px' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.status}px`, minWidth: `${colWidths.status}px`, maxWidth: `${colWidths.status}px`, boxSizing: 'border-box' }}>
                       {/* Status badge: Idle / Inactive / ✓ Passed / ❌ Filtered */}
                       {!isRunning ? (
                         <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', fontSize: '10px', color: '#888', display: 'inline-block' }}>
@@ -565,7 +725,7 @@ const TrafficGenerator: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '4px 2px', width: '70px', textAlign: 'center' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.encrypted}px`, minWidth: `${colWidths.encrypted}px`, maxWidth: `${colWidths.encrypted}px`, textAlign: 'center', boxSizing: 'border-box' }}>
                       <input
                         type="checkbox"
                         checked={stream.isEncrypted || false}
@@ -573,7 +733,7 @@ const TrafficGenerator: React.FC = () => {
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '55px', textAlign: 'center' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.active}px`, minWidth: `${colWidths.active}px`, maxWidth: `${colWidths.active}px`, textAlign: 'center', boxSizing: 'border-box' }}>
                       <input
                         type="checkbox"
                         checked={stream.active}
@@ -581,7 +741,7 @@ const TrafficGenerator: React.FC = () => {
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
-                    <td style={{ padding: '4px 2px', width: '70px', textAlign: 'center' }}>
+                    <td style={{ padding: '4px 6px', width: `${colWidths.action}px`, minWidth: `${colWidths.action}px`, maxWidth: `${colWidths.action}px`, textAlign: 'center', boxSizing: 'border-box' }}>
                       <button className="danger" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => deleteTrafficStream(stream.id)}>
                         Delete
                       </button>

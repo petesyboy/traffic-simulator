@@ -1251,6 +1251,35 @@
   letter-spacing: 0.05em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.bottom-drawer .col-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-drawer .col-resizer .col-resizer-line {
+  width: 2px;
+  height: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1px;
+  transition: all 0.15s ease;
+}
+
+.bottom-drawer .col-resizer:hover .col-resizer-line,
+.bottom-drawer .col-resizer.active .col-resizer-line {
+  background: #00e5ff;
+  height: 85%;
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
 }
 
 /* 7. New Tool Classes & Validation Warnings */

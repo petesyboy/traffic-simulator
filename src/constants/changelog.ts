@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.697",
+    date: "2026-08-30",
+    summary: "Add automated flow generation with telco and mobile profile biasing (v1.0.697)",
+  },
+  {
     version: "1.0.696",
     date: "2026-08-29",
     summary: "Show sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links (v1.0.696)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.677",
     date: "2026-08-28",
     summary: "Display % (A) for auto-generated discounts in quote line items and reports (v1.0.677)",
-  },
-  {
-    version: "1.0.676",
-    date: "2026-08-28",
-    summary: "Allow combining FlowVUE and GTP-Max correlation/filtering on a single HC3 GigaSMART card (v1.0.676)",
   },
 ];
