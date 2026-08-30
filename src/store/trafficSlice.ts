@@ -5,8 +5,10 @@ import { initialTraffic } from './storeHelpers';
 export interface TrafficSlice {
   trafficStreams: TrafficStream[];
   trafficProfileBias: 'mixed' | 'telco' | 'enterprise';
+  trafficUtilisationLevel: 'low' | 'medium' | 'high' | 'max' | 'full' | '10' | '20' | '25' | '30' | '40' | '50' | '60' | '70' | '75' | '80' | '90' | '95' | '100';
   customTools: CustomTool[];
   setTrafficProfileBias: (bias: 'mixed' | 'telco' | 'enterprise') => void;
+  setTrafficUtilisationLevel: (level: 'low' | 'medium' | 'high' | 'max' | 'full' | '10' | '20' | '25' | '30' | '40' | '50' | '60' | '70' | '75' | '80' | '90' | '95' | '100') => void;
   setTrafficStreams: (streams: TrafficStream[]) => void;
   clearTrafficStreams: () => void;
   addTrafficStream: (stream: TrafficStream) => void;
@@ -19,6 +21,7 @@ export interface TrafficSlice {
 export const createTrafficSlice: StateCreator<RFState, [], [], TrafficSlice> = (set, get) => ({
   trafficStreams: initialTraffic,
   trafficProfileBias: 'mixed',
+  trafficUtilisationLevel: 'medium',
   customTools: (() => {
     try {
       const saved = localStorage.getItem('fm_simulator_custom_tools');
@@ -29,6 +32,7 @@ export const createTrafficSlice: StateCreator<RFState, [], [], TrafficSlice> = (
   })(),
 
   setTrafficProfileBias: (bias) => set({ trafficProfileBias: bias }),
+  setTrafficUtilisationLevel: (level) => set({ trafficUtilisationLevel: level }),
 
   setTrafficStreams: (streams) => {
     get().pushHistory();

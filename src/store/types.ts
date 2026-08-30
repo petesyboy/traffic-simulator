@@ -467,6 +467,8 @@ export interface RFState {
   tidyLayout: () => void;
   trafficProfileBias: 'mixed' | 'telco' | 'enterprise';
   setTrafficProfileBias: (bias: 'mixed' | 'telco' | 'enterprise') => void;
+  trafficUtilisationLevel: 'low' | 'medium' | 'high' | 'max' | 'full' | '10' | '20' | '25' | '30' | '40' | '50' | '60' | '70' | '75' | '80' | '90' | '95' | '100';
+  setTrafficUtilisationLevel: (level: 'low' | 'medium' | 'high' | 'max' | 'full' | '10' | '20' | '25' | '30' | '40' | '50' | '60' | '70' | '75' | '80' | '90' | '95' | '100') => void;
   setTrafficStreams: (streams: TrafficStream[]) => void;
   clearTrafficStreams: () => void;
   addTrafficStream: (stream: TrafficStream) => void;

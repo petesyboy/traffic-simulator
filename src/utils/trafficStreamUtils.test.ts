@@ -136,6 +136,34 @@ describe('trafficStreamUtils', () => {
     expect(streams[0].bandwidth).toBeLessThanOrEqual(21000);
   });
 
+  it('supports utilisation level presets (low, medium, high, max, full)', () => {
+    const node = createMockTapNode('tap-test', 'TAP-M253', 'TAP-M253', 1); // 10G link (10,000 Mbps)
+
+    // Low: ~10% (1 Gbps = 1000 Mbps)
+    const lowStream = generateStreamsForTopology([node], { utilisationLevel: 'low' })[0];
+    expect(lowStream.bandwidth).toBeGreaterThanOrEqual(900);
+    expect(lowStream.bandwidth).toBeLessThanOrEqual(1100);
+
+    // Medium: ~50% (5 Gbps = 5000 Mbps)
+    const medStream = generateStreamsForTopology([node], { utilisationLevel: 'medium' })[0];
+    expect(medStream.bandwidth).toBeGreaterThanOrEqual(4500);
+    expect(medStream.bandwidth).toBeLessThanOrEqual(5500);
+
+    // High: ~80% (8 Gbps = 8000 Mbps)
+    const highStream = generateStreamsForTopology([node], { utilisationLevel: 'high' })[0];
+    expect(highStream.bandwidth).toBeGreaterThanOrEqual(7800);
+    expect(highStream.bandwidth).toBeLessThanOrEqual(8200);
+
+    // Max: ~95% (9.5 Gbps = 9500 Mbps)
+    const maxStream = generateStreamsForTopology([node], { utilisationLevel: 'max' })[0];
+    expect(maxStream.bandwidth).toBeGreaterThanOrEqual(9300);
+    expect(maxStream.bandwidth).toBeLessThanOrEqual(9700);
+
+    // Full: 100% (10 Gbps = 10000 Mbps)
+    const fullStream = generateStreamsForTopology([node], { utilisationLevel: 'full' })[0];
+    expect(fullStream.bandwidth).toBe(10000);
+  });
+
   it('handles canvas Input Nodes with varying port speeds', () => {
     const input1G = createMockInputNode('span-1g', '1G', 1);
     const input100G = createMockInputNode('span-100g', '100G', 1);

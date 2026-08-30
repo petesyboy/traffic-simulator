@@ -156,8 +156,17 @@ export function getMonitoredLinksForNode(node: CustomNode): LinkSpecification[] 
   return links;
 }
 
+export type TrafficUtilisationLevel =
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'max'
+  | 'full'
+  | '10' | '20' | '25' | '30' | '40' | '50' | '60' | '70' | '75' | '80' | '90' | '95' | '100';
+
 export interface GenerateStreamsOptions {
   profileBias?: TrafficProfileBias;
+  utilisationLevel?: TrafficUtilisationLevel;
   targetNodeIds?: string[];
   utilizationMin?: number; // e.g. 0.42 (42%)
   utilizationMax?: number; // e.g. 0.58 (58%)
@@ -165,7 +174,8 @@ export interface GenerateStreamsOptions {
 
 /**
  * Synthesizes realistic traffic streams for all tapped links and ingress ports.
- * Applies ~50% link utilisation with natural variation and the requested profile bias.
+ * Applies link utilisation presets (low 10%, medium 50%, high 80%, max 95%, full 100%)
+ * or discrete percentages with natural variation and requested profile bias.
  */
 export function generateStreamsForTopology(
   nodes: CustomNode[],
@@ -173,10 +183,53 @@ export function generateStreamsForTopology(
 ): TrafficStream[] {
   const {
     profileBias = 'mixed',
+    utilisationLevel = 'medium',
     targetNodeIds,
-    utilizationMin = 0.42,
-    utilizationMax = 0.58,
   } = options;
+
+  let uMin = options.utilizationMin;
+  let uMax = options.utilizationMax;
+
+  if (uMin === undefined || uMax === undefined) {
+    switch (utilisationLevel) {
+      case 'low':
+      case '10':
+        uMin = 0.09; uMax = 0.11; break;
+      case '20':
+        uMin = 0.19; uMax = 0.21; break;
+      case '25':
+        uMin = 0.24; uMax = 0.26; break;
+      case '30':
+        uMin = 0.29; uMax = 0.31; break;
+      case '40':
+        uMin = 0.39; uMax = 0.41; break;
+      case 'medium':
+      case '50':
+        uMin = 0.45; uMax = 0.55; break;
+      case '60':
+        uMin = 0.59; uMax = 0.61; break;
+      case '70':
+        uMin = 0.69; uMax = 0.71; break;
+      case '75':
+        uMin = 0.74; uMax = 0.76; break;
+      case 'high':
+      case '80':
+        uMin = 0.78; uMax = 0.82; break;
+      case '90':
+        uMin = 0.89; uMax = 0.91; break;
+      case 'max':
+      case '95':
+        uMin = 0.93; uMax = 0.97; break;
+      case 'full':
+      case '100':
+        uMin = 1.0; uMax = 1.0; break;
+      default:
+        uMin = 0.45; uMax = 0.55; break;
+    }
+  }
+
+  const utilizationMin = uMin;
+  const utilizationMax = uMax;
 
   // Filter nodes if specific target nodes were requested
   const candidateNodes = targetNodeIds && targetNodeIds.length > 0

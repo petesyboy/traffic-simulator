@@ -23,6 +23,7 @@ import {
   generateStreamsForTopology,
   getTopologyIngressSummary,
   type TrafficProfileBias,
+  type TrafficUtilisationLevel,
 } from '../utils/trafficStreamUtils';
 
 // Sub-1Gbps presets are only offered in Advanced Mode - they exist to model
@@ -73,8 +74,10 @@ const TrafficGenerator: React.FC = () => {
   const clearTrafficStreams   = useStore((state) => state.clearTrafficStreams);
   const updateTrafficStream   = useStore((state) => state.updateTrafficStream);
   const deleteTrafficStream   = useStore((state) => state.deleteTrafficStream);
-  const trafficProfileBias    = useStore((state) => state.trafficProfileBias || 'mixed');
-  const setTrafficProfileBias = useStore((state) => state.setTrafficProfileBias);
+  const trafficProfileBias       = useStore((state) => state.trafficProfileBias || 'mixed');
+  const setTrafficProfileBias    = useStore((state) => state.setTrafficProfileBias);
+  const trafficUtilisationLevel  = useStore((state) => state.trafficUtilisationLevel || 'medium');
+  const setTrafficUtilisationLevel = useStore((state) => state.setTrafficUtilisationLevel);
   const deliveredStreams      = useStore((state) => state.deliveredStreams);
   const isRunning             = useStore((state) => state.isRunning);
   const toggleSimulation      = useStore((state) => state.toggleSimulation);
@@ -190,8 +193,7 @@ const TrafficGenerator: React.FC = () => {
 
     const generated = generateStreamsForTopology(nodes, {
       profileBias: trafficProfileBias,
-      utilizationMin: 0.42,
-      utilizationMax: 0.58,
+      utilisationLevel: trafficUtilisationLevel,
     });
 
     if (generated.length > 0) {
@@ -199,7 +201,13 @@ const TrafficGenerator: React.FC = () => {
       const biasLabel = trafficProfileBias === 'telco'
         ? 'Telco & Mobile Core'
         : (trafficProfileBias === 'enterprise' ? 'Enterprise' : 'Mixed');
-      setAutoGenNotice(`✨ Auto-generated ${generated.length} flow${generated.length !== 1 ? 's' : ''} across all monitored links (~50% utilisation, ${biasLabel} profile).`);
+      const utilLabel = trafficUtilisationLevel === 'low' ? '10% Low' :
+        (trafficUtilisationLevel === 'medium' ? '50% Medium' :
+        (trafficUtilisationLevel === 'high' ? '80% High' :
+        (trafficUtilisationLevel === 'max' ? '95% Max' :
+        (trafficUtilisationLevel === 'full' ? '100% Line Rate' : `${trafficUtilisationLevel}%`))));
+
+      setAutoGenNotice(`✨ Auto-generated ${generated.length} flow${generated.length !== 1 ? 's' : ''} across all monitored links (${utilLabel} utilisation, ${biasLabel} profile).`);
       setTimeout(() => setAutoGenNotice(null), 5000);
     }
   };
@@ -459,6 +467,32 @@ const TrafficGenerator: React.FC = () => {
                 <option value="mixed">🔀 Mixed (Telco &amp; Enterprise)</option>
                 <option value="telco">📱 Telco &amp; Mobile (GTP/5G/SIP)</option>
                 <option value="enterprise">🏢 Enterprise &amp; Cloud</option>
+              </select>
+            </div>
+
+            {/* Utilisation level dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <select
+                value={trafficUtilisationLevel}
+                onChange={(e) => setTrafficUtilisationLevel(e.target.value as TrafficUtilisationLevel)}
+                title="Select target link utilisation intensity for generated traffic streams"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  fontSize: '11px',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="low">📉 Low (~10% · 1G on 10G)</option>
+                <option value="25">📉 25% Utilisation (2.5G on 10G)</option>
+                <option value="medium">📊 Medium (~50% · 5G on 10G)</option>
+                <option value="75">📈 75% Utilisation (7.5G on 10G)</option>
+                <option value="high">📈 High (~80% · 8G on 10G)</option>
+                <option value="max">🔥 Maximum (~95% · 9.5G on 10G)</option>
+                <option value="full">⚡ Line Rate (100% · 10G on 10G)</option>
               </select>
             </div>
 

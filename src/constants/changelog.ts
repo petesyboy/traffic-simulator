@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.699",
+    date: "2026-08-30",
+    summary: "Preserve traffic flow through collapsed TAP clusters (v1.0.699)",
+  },
+  {
     version: "1.0.698",
     date: "2026-08-30",
     summary: "Add resizable columns and optimized table space in Live Traffic Injector (v1.0.698)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.679",
     date: "2026-08-28",
     summary: "Map GFM-FM000-SW-TM to perpetual GFM-FM000 in license mode conversions and quotes (v1.0.679)",
-  },
-  {
-    version: "1.0.678",
-    date: "2026-08-28",
-    summary: "Replace HTL AHR with Traditional Support SKUs (GSS-FYS-*, GSS-RNL-*) in Perpetual deals (v1.0.678)",
   },
 ];
