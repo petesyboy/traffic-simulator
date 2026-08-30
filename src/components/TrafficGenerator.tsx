@@ -19,6 +19,11 @@ import { useStore, type TrafficStream } from '../store/store';
 import type { TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from '../utils/hardwareUtils';
 import { isAutoTrayModel } from '../utils/trayModels';
+import {
+  generateStreamsForTopology,
+  getTopologyIngressSummary,
+  type TrafficProfileBias,
+} from '../utils/trafficStreamUtils';
 
 // Sub-1Gbps presets are only offered in Advanced Mode - they exist to model
 // ingest-limited sensors (e.g. ForeScout, capped at 1Gbps) that need a feed
@@ -31,14 +36,18 @@ const formatBandwidthOption = (mbps: number): string =>
   mbps >= 1000 ? `${(mbps / 1000).toFixed(1).replace('.0', '')} Gbps` : `${mbps} Mbps`;
 
 const TrafficGenerator: React.FC = () => {
-  const trafficStreams    = useStore((state) => state.trafficStreams);
-  const nodes            = useStore((state) => state.nodes);
-  const addTrafficStream  = useStore((state) => state.addTrafficStream);
-  const updateTrafficStream = useStore((state) => state.updateTrafficStream);
-  const deleteTrafficStream = useStore((state) => state.deleteTrafficStream);
-  const deliveredStreams  = useStore((state) => state.deliveredStreams);
-  const isRunning        = useStore((state) => state.isRunning);
-  const toggleSimulation = useStore((state) => state.toggleSimulation);
+  const trafficStreams        = useStore((state) => state.trafficStreams);
+  const nodes                 = useStore((state) => state.nodes);
+  const addTrafficStream      = useStore((state) => state.addTrafficStream);
+  const setTrafficStreams     = useStore((state) => state.setTrafficStreams);
+  const clearTrafficStreams   = useStore((state) => state.clearTrafficStreams);
+  const updateTrafficStream   = useStore((state) => state.updateTrafficStream);
+  const deleteTrafficStream   = useStore((state) => state.deleteTrafficStream);
+  const trafficProfileBias    = useStore((state) => state.trafficProfileBias || 'mixed');
+  const setTrafficProfileBias = useStore((state) => state.setTrafficProfileBias);
+  const deliveredStreams      = useStore((state) => state.deliveredStreams);
+  const isRunning             = useStore((state) => state.isRunning);
+  const toggleSimulation      = useStore((state) => state.toggleSimulation);
 
   // Resizable tray: tracks the current drawer height in pixels.
   const [drawerHeight, setDrawerHeight] = useState(220);
@@ -79,8 +88,42 @@ const TrafficGenerator: React.FC = () => {
     node.type === 'inputNode' ||
     (node.type === 'hardwareNode' && typeof node.data.model === 'string' && node.data.model.includes('TAP') && !isAutoTrayModel(node.data.model))
   );
+  const ingressSummary = getTopologyIngressSummary(nodes);
+
   const [noPortError, setNoPortError] = useState(false);
   const [streamLimitError, setStreamLimitError] = useState(false);
+  const [autoGenNotice, setAutoGenNotice] = useState<string | null>(null);
+
+  const handleAutoGenerate = () => {
+    if (inputPorts.length === 0 && ingressSummary.totalMonitoredLinks === 0) {
+      setNoPortError(true);
+      setTimeout(() => setNoPortError(false), 3000);
+      return;
+    }
+    setNoPortError(false);
+
+    const generated = generateStreamsForTopology(nodes, {
+      profileBias: trafficProfileBias,
+      utilizationMin: 0.42,
+      utilizationMax: 0.58,
+    });
+
+    if (generated.length > 0) {
+      setTrafficStreams(generated);
+      const biasLabel = trafficProfileBias === 'telco'
+        ? 'Telco & Mobile Core'
+        : (trafficProfileBias === 'enterprise' ? 'Enterprise' : 'Mixed');
+      setAutoGenNotice(`✨ Auto-generated ${generated.length} flow${generated.length !== 1 ? 's' : ''} across all monitored links (~50% utilisation, ${biasLabel} profile).`);
+      setTimeout(() => setAutoGenNotice(null), 5000);
+    }
+  };
+
+  const handleClearAll = () => {
+    if (trafficStreams.length === 0) return;
+    clearTrafficStreams();
+    setAutoGenNotice('Cleared all traffic streams.');
+    setTimeout(() => setAutoGenNotice(null), 3000);
+  };
 
   const handleAddStream = () => {
     if (inputPorts.length === 0) {
@@ -91,7 +134,7 @@ const TrafficGenerator: React.FC = () => {
     }
     setNoPortError(false);
 
-    if (trafficStreams.length >= 20) {
+    if (trafficStreams.length >= 500) {
       setStreamLimitError(true);
       setTimeout(() => setStreamLimitError(false), 4000);
       return;
@@ -175,6 +218,11 @@ const TrafficGenerator: React.FC = () => {
     setIsCollapsed(true);
   }
 
+  const totalBandwidthMbps = trafficStreams.filter(s => s.active).reduce((sum, s) => sum + s.bandwidth, 0);
+  const totalBandwidthLabel = totalBandwidthMbps >= 1000
+    ? `${(totalBandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
+    : `${totalBandwidthMbps} Mbps`;
+
   return (
     <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
       {/* ── Drag handle ──────────────────────────────────────────────────────── */}
@@ -239,20 +287,99 @@ const TrafficGenerator: React.FC = () => {
             <h3 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               📊 Live Traffic Generator &amp; Injector
             </h3>
+            {!isCollapsed && trafficStreams.length > 0 && (
+              <span style={{ fontSize: '11px', background: 'rgba(0, 229, 255, 0.12)', border: '1px solid rgba(0, 229, 255, 0.3)', color: '#00e5ff', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                {trafficStreams.length} stream{trafficStreams.length !== 1 ? 's' : ''} · {totalBandwidthLabel}
+              </span>
+            )}
+            {!isCollapsed && ingressSummary.totalMonitoredLinks > 0 && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                ({ingressSummary.totalMonitoredLinks} tapped link{ingressSummary.totalMonitoredLinks !== 1 ? 's' : ''} detected)
+              </span>
+            )}
           </div>
           {!isCollapsed && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {/* Inline error notice (replaces alert()) */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Inline notices */}
+            {autoGenNotice && (
+              <span style={{ fontSize: '11px', color: '#00e5ff', background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
+                {autoGenNotice}
+              </span>
+            )}
             {noPortError && (
               <span style={{ fontSize: '11px', color: '#ff9100', background: 'rgba(255,145,0,0.1)', border: '1px solid rgba(255,145,0,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
-                ⚠️ Add a Network Input port first
+                ⚠️ Add a Network Input port or TAP module first
               </span>
             )}
             {streamLimitError && (
               <span style={{ fontSize: '11px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', border: '1px solid rgba(239,83,80,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
-                ⚠️ Maximum limit of 20 active traffic streams reached
+                ⚠️ Maximum limit of 500 active traffic streams reached
               </span>
             )}
+
+            {/* Profile bias dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <select
+                value={trafficProfileBias}
+                onChange={(e) => setTrafficProfileBias(e.target.value as TrafficProfileBias)}
+                title="Select traffic synthesis profile bias (Telco/Mobile Core, Enterprise, or Mixed)"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  fontSize: '11px',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="mixed">🔀 Mixed (Telco &amp; Enterprise)</option>
+                <option value="telco">📱 Telco &amp; Mobile (GTP/5G/SIP)</option>
+                <option value="enterprise">🏢 Enterprise &amp; Cloud</option>
+              </select>
+            </div>
+
+            {/* Auto-generate button */}
+            <button
+              onClick={handleAutoGenerate}
+              title="Automatically create traffic generator flows for all tapped links and ingress ports (~50% link utilisation)"
+              style={{
+                background: 'rgba(0, 229, 255, 0.15)',
+                border: '1px solid rgba(0, 229, 255, 0.4)',
+                color: '#00e5ff',
+                padding: '6px 12px',
+                fontSize: '12px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              ⚡ Auto-Generate Flows
+            </button>
+
+            {/* Clear All button */}
+            {trafficStreams.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                title="Clear all traffic streams"
+                style={{
+                  background: 'rgba(239, 83, 80, 0.12)',
+                  border: '1px solid rgba(239, 83, 80, 0.3)',
+                  color: '#ef5350',
+                  padding: '6px 10px',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                Clear All
+              </button>
+            )}
+
             <button
               className={`sim-btn ${isRunning ? 'running' : ''}`}
               style={{
@@ -279,8 +406,27 @@ const TrafficGenerator: React.FC = () => {
 
         {/* Stream table or empty state */}
         {!isCollapsed && (trafficStreams.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '15px 0', fontSize: '13px' }}>
-            No traffic streams currently injected. Click &quot;+ Inject Traffic Stream&quot; to simulate network load.
+          <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0', fontSize: '13px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+            <span>
+              No traffic streams currently injected. Click &quot;⚡ Auto-Generate Flows&quot; to populate all {ingressSummary.totalMonitoredLinks > 0 ? `${ingressSummary.totalMonitoredLinks} monitored links` : 'tapped links'} (~50% utilisation), or &quot;+ Inject Traffic Stream&quot; for single streams.
+            </span>
+            {ingressSummary.totalMonitoredLinks > 0 && (
+              <button
+                onClick={handleAutoGenerate}
+                style={{
+                  background: 'rgba(0, 229, 255, 0.15)',
+                  border: '1px solid rgba(0, 229, 255, 0.4)',
+                  color: '#00e5ff',
+                  padding: '6px 16px',
+                  fontSize: '12px',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+              >
+                ⚡ Auto-Generate {ingressSummary.totalMonitoredLinks} Flow{ingressSummary.totalMonitoredLinks !== 1 ? 's' : ''} for All Links
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: `${drawerHeight - 60}px` }}>

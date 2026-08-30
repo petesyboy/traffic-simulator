@@ -465,6 +465,10 @@ export interface RFState {
   setExportDiagramMode: (val: boolean) => void;
   snapAllNodesToGrid: () => void;
   tidyLayout: () => void;
+  trafficProfileBias: 'mixed' | 'telco' | 'enterprise';
+  setTrafficProfileBias: (bias: 'mixed' | 'telco' | 'enterprise') => void;
+  setTrafficStreams: (streams: TrafficStream[]) => void;
+  clearTrafficStreams: () => void;
   addTrafficStream: (stream: TrafficStream) => void;
   updateTrafficStream: (id: string, stream: Partial<TrafficStream>) => void;
   deleteTrafficStream: (id: string) => void;

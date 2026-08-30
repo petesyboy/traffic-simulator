@@ -23,6 +23,7 @@ import { getOpticSpeed, getTapLinkCapacity, getRemainingCageCapacity } from '../
 import { getMergedSkus } from '../../../utils/skuOverrides';
 import { resolveHardwareIcon } from '../../../assets/hardwareIcons';
 import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
+import { generateStreamsForTopology } from '../../../utils/trafficStreamUtils';
 
 interface TapLinksPanelProps {
   selectedNode: CustomNode;
@@ -173,59 +174,40 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     });
     setAddQty(1);
 
-    // Auto-create traffic streams
-    const isActiveTapModel = tapModel.includes('A-TX') || tapModel.includes('A-SF');
-    if (isActiveTapModel) {
-      const opticSpeedMatch = effectiveOptic.match(/(100M|1G|10G)/i);
-      let speedMbps = 10000;
-      if (isBuiltInOptics) {
-        speedMbps = 1000;
-      } else if (opticSpeedMatch) {
-        const sp = opticSpeedMatch[1].toUpperCase();
-        if (sp === '1G') speedMbps = 1000;
-        else if (sp === '100M') speedMbps = 100;
-        else if (sp === '10G') speedMbps = 10000;
-      }
+    // Auto-create traffic streams covering the updated links
+    const updatedNode = {
+      ...selectedNode,
+      data: {
+        ...selectedNode.data,
+        tappedLinkAllocations: newAllocations,
+        tappedLinksCount: totalLinks,
+      },
+    };
+    const bias = useStore.getState().trafficProfileBias || 'mixed';
+    const allGenerated = generateStreamsForTopology([updatedNode], {
+      profileBias: bias,
+      utilizationMin: 0.42,
+      utilizationMax: 0.58,
+    });
+    const currentStreams = useStore.getState().trafficStreams.filter(s => s.sourceNodeId === selectedNode.id);
+    const newStreamsToAdd = allGenerated.slice(currentStreams.length);
+    newStreamsToAdd.forEach(s => addTrafficStream(s));
+  };
 
-      const profiles = [
-        { name: 'Web Traffic', port: '443', proto: 'tcp' as const },
-        { name: 'DB Sync Flow', port: '5432', proto: 'tcp' as const },
-        { name: 'App Services API', port: '8080', proto: 'tcp' as const },
-        { name: 'DNS Queries', port: '53', proto: 'udp' as const },
-        { name: 'Video Streaming', port: '5004', proto: 'udp' as const },
-        { name: 'VoIP Signalling', port: '5060', proto: 'udp' as const },
-      ];
+  const [tapStreamNotice, setTapStreamNotice] = useState<string | null>(null);
 
-      const tapLabel = String(selectedNode.data?.label || tapModel);
-      for (let i = 0; i < qty; i++) {
-        const profile = profiles[Math.floor(Math.random() * profiles.length)];
-        const utilisation = 0.55 + Math.random() * 0.30;
-        const bandwidthMbps = Math.floor(speedMbps * utilisation);
-        const randomSubnet = Math.floor(Math.random() * 254) + 1;
-        const randomVlan = String(Math.floor(Math.random() * 900) + 100);
-        const streamGbps = bandwidthMbps >= 1000
-          ? `${(bandwidthMbps / 1000).toFixed(1).replace('.0', '')} Gbps`
-          : `${bandwidthMbps} Mbps`;
-
-        const linkIdx = currentAllocatedCount + i + 1;
-        const streamName = `${tapLabel} - Link ${linkIdx} - ${profile.name} (${streamGbps})`;
-
-        addTrafficStream({
-          id: `t-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)}`,
-          name: streamName,
-          sourceNodeId: selectedNode.id,
-          vlan: randomVlan,
-          ipSrc: `192.168.${randomSubnet}.25`,
-          ipDst: `10.10.${randomSubnet}.5`,
-          portSrc: String(Math.floor(Math.random() * 50000) + 1024),
-          portDst: profile.port,
-          protocol: profile.proto,
-          bandwidth: bandwidthMbps,
-          active: true,
-          drift: 1,
-          lastDriftUpdate: 0
-        });
-      }
+  const handleGenerateStreamsForThisTap = () => {
+    const bias = useStore.getState().trafficProfileBias || 'mixed';
+    const generated = generateStreamsForTopology([selectedNode], {
+      profileBias: bias,
+      utilizationMin: 0.42,
+      utilizationMax: 0.58,
+    });
+    if (generated.length > 0) {
+      const remainingStreams = useStore.getState().trafficStreams.filter(s => s.sourceNodeId !== selectedNode.id);
+      useStore.getState().setTrafficStreams([...remainingStreams, ...generated]);
+      setTapStreamNotice(`✓ Created ${generated.length} flow${generated.length !== 1 ? 's' : ''} (~50% utilisation)`);
+      setTimeout(() => setTapStreamNotice(null), 4000);
     }
   };
 
@@ -246,7 +228,31 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
 
   return (
     <div className="panel-section border-t border-orange-500/20 pt-4 mt-4">
-      <h3>🔗 TAP Settings</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <h3 style={{ margin: 0 }}>🔗 TAP Settings</h3>
+        <button
+          onClick={handleGenerateStreamsForThisTap}
+          title="Auto-generate ~50% utilised traffic flows for this TAP module"
+          style={{
+            background: 'rgba(0, 229, 255, 0.12)',
+            border: '1px solid rgba(0, 229, 255, 0.3)',
+            color: '#00e5ff',
+            fontSize: '11px',
+            padding: '3px 8px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          ⚡ Generate Streams
+        </button>
+      </div>
+
+      {tapStreamNotice && (
+        <div style={{ marginBottom: '8px', padding: '4px 8px', background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)', borderRadius: '4px', color: '#00e5ff', fontSize: '11px' }}>
+          {tapStreamNotice}
+        </div>
+      )}
 
       {tapImage && (
         <div style={{ marginBottom: '12px', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', padding: '6px', display: 'flex', justifyContent: 'center' }}>

@@ -174,7 +174,7 @@ export const calculateSimulationStep = (
   });
 
   let iterations = 0;
-  const maxIterations = 500;
+  const maxIterations = 5000;
 
   while (queue.length > 0 && iterations < maxIterations) {
     iterations++;
