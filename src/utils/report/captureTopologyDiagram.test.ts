@@ -93,7 +93,40 @@ describe('detectDiagramSplitting', () => {
 });
 
 describe('prepareTopologyForDiagramCapture', () => {
-  it('automatically collapses > 4 unclustered TAPs into a single compact TAP stack for screenshots', () => {
+  it('collapses existing expanded cluster nodes into compact stacks for screenshots', () => {
+    const clusterNode = {
+      id: 'cluster-taps',
+      type: 'clusterNode',
+      position: { x: 50, y: 100 },
+      data: {
+        clusterType: 'tap',
+        isCollapsed: false,
+        memberNodeIds: ['tap-1', 'tap-2'],
+      },
+    } as unknown as CustomNode;
+
+    const tap1 = {
+      id: 'tap-1',
+      type: 'hardwareNode',
+      position: { x: 50, y: 100 },
+      data: { label: 'TAP 1', clusterId: 'cluster-taps' },
+      hidden: false,
+    } as unknown as CustomNode;
+
+    const tap2 = {
+      id: 'tap-2',
+      type: 'hardwareNode',
+      position: { x: 50, y: 200 },
+      data: { label: 'TAP 2', clusterId: 'cluster-taps' },
+      hidden: false,
+    } as unknown as CustomNode;
+
+    const { nodes } = prepareTopologyForDiagramCapture([clusterNode, tap1, tap2], []);
+    const cluster = nodes.find((n) => n.id === 'cluster-taps');
+    expect(cluster?.data?.isCollapsed).toBe(true);
+  });
+
+  it('preserves unclustered user layout while auto-spacing for export description boxes', () => {
     const tapNodes: CustomNode[] = Array.from({ length: 6 }, (_, i) => ({
       id: `tap-${i + 1}`,
       type: 'hardwareNode',
@@ -123,71 +156,10 @@ describe('prepareTopologyForDiagramCapture', () => {
 
     const { nodes, edges: preparedEdges } = prepareTopologyForDiagramCapture([...tapNodes, chassisNode], edges);
 
-    // Should contain 1 clusterNode + 6 hidden tap nodes + 1 chassis node
-    const cluster = nodes.find((n) => n.type === 'clusterNode');
-    expect(cluster).toBeDefined();
-    expect(cluster?.data?.clusterType).toBe('tap');
-    expect(cluster?.data?.isCollapsed).toBe(true);
-    expect(cluster?.data?.summary?.count).toBe(6);
-
-    // All original edges should now route through the cluster node
-    preparedEdges.forEach((e) => {
-      expect(e.source).toBe(cluster?.id);
-    });
-  });
-
-  it('automatically collapses > 4 unclustered Tools into a single compact Tool stack for screenshots', () => {
-    const toolNodes: CustomNode[] = Array.from({ length: 8 }, (_, i) => ({
-      id: `tool-${i + 1}`,
-      type: 'toolNode',
-      position: { x: 800, y: i * 90 },
-      data: {
-        label: `Probe ${i + 1}`,
-        model: 'Ericsson Probe',
-        configType: 'Custom Tool',
-        ingestLimitMbps: 10000,
-      },
-    } as CustomNode));
-
-    const hc3Node: CustomNode = {
-      id: 'hc3',
-      type: 'hardwareNode',
-      position: { x: 400, y: 300 },
-      data: { label: 'HC3', model: 'GigaVUE-HC3', configType: 'Chassis' },
-    } as CustomNode;
-
-    const edges: Edge[] = toolNodes.map((t, idx) => ({
-      id: `e-tool-${idx}`,
-      source: 'hc3',
-      target: t.id,
-      sourceHandle: 'out',
-      targetHandle: 'in',
-    }));
-
-    const { nodes, edges: preparedEdges } = prepareTopologyForDiagramCapture([hc3Node, ...toolNodes], edges);
-
-    const cluster = nodes.find((n) => n.type === 'clusterNode');
-    expect(cluster).toBeDefined();
-    expect(cluster?.data?.clusterType).toBe('tool');
-    expect(cluster?.data?.isCollapsed).toBe(true);
-    expect(cluster?.data?.summary?.count).toBe(8);
-
-    preparedEdges.forEach((e) => {
-      expect(e.target).toBe(cluster?.id);
-    });
-  });
-
-  it('leaves <= 4 TAPs and Tools as individual nodes without clustering', () => {
-    const tapNodes: CustomNode[] = Array.from({ length: 3 }, (_, i) => ({
-      id: `tap-${i + 1}`,
-      type: 'hardwareNode',
-      position: { x: 50, y: i * 100 },
-      data: { label: `TAP ${i + 1}`, model: 'TAP-M273T', sku: 'TAP-M273T' },
-    } as CustomNode));
-
-    const { nodes } = prepareTopologyForDiagramCapture(tapNodes, []);
+    // Unclustered layout is preserved without cross-site forced grouping
     const clusters = nodes.filter((n) => n.type === 'clusterNode');
     expect(clusters).toHaveLength(0);
-    expect(nodes).toHaveLength(3);
+    expect(nodes).toHaveLength(7);
+    expect(preparedEdges).toHaveLength(6);
   });
 });

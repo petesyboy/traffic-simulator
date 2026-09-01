@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.714",
+    date: "2026-09-01",
+    summary: "Fixed site diagram screenshot framing and multi-site layout capture: eliminated cross-site TAP auto-bundling and adjusted viewport padding and zoom for balanced, centered site sub-diagrams.",
+  },
+  {
     version: "1.0.713",
     date: "2026-09-01",
     summary: "Updated packet-consuming tools catalogue: replaced FortiNDR, Arista NDR, NetWitness, and Trend Micro with Armis (2 Gbps sensor profile) beneath Nozomi, including full appliance profiling and PDF report purpose descriptions.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.689",
     date: "2026-08-28",
     summary: "Added architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters.",
-  },
-  {
-    version: "1.0.688",
-    date: "2026-08-28",
-    summary: "Centered collapsed cluster cards vertically to align with chassis.",
   },
 ];

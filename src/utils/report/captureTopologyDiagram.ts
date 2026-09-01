@@ -147,15 +147,13 @@ export async function captureTopologyDiagramPng(
   });
 }
 
-import { isTapNode, isToolNode, buildClusterNode, collapseClusterNode } from '../clusterUtils';
+import { collapseClusterNode } from '../clusterUtils';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 
 /**
  * Prepares the canvas topology for high-resolution diagram screenshots:
- * 1. Collapses any existing expanded TAP or Tool cluster nodes into compact stacks.
- * 2. If there are more than 4 unclustered TAP modules, groups them into a collapsed TAP stack.
- * 3. If there are more than 4 unclustered Tool nodes, groups them into a collapsed Tool stack.
- * 4. Auto-spaces nodes vertically in columns to eliminate description box overlaps.
+ * 1. Collapses any existing expanded cluster nodes into compact stacks.
+ * 2. Auto-spaces nodes vertically and horizontally in columns to eliminate description box overlaps.
  */
 export function prepareTopologyForDiagramCapture(
   nodes: CustomNode[],
@@ -173,27 +171,7 @@ export function prepareTopologyForDiagramCapture(
     }
   });
 
-  // 2. Check for unclustered visible TAP nodes (> 4)
-  const visibleTaps = currentNodes.filter((n) => !n.hidden && isTapNode(n) && !n.data?.clusterId);
-  if (visibleTaps.length > 4) {
-    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(visibleTaps, currentEdges, 'tap');
-    const updatedIds = new Set(updatedNodes.map((n) => n.id));
-    const restNodes = currentNodes.filter((n) => !updatedIds.has(n.id));
-    currentNodes = [clusterNode, ...restNodes, ...updatedNodes];
-    currentEdges = updatedEdges;
-  }
-
-  // 3. Check for unclustered visible Tool nodes (> 4)
-  const visibleTools = currentNodes.filter((n) => !n.hidden && isToolNode(n) && !n.data?.clusterId);
-  if (visibleTools.length > 4) {
-    const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(visibleTools, currentEdges, 'tool');
-    const updatedIds = new Set(updatedNodes.map((n) => n.id));
-    const restNodes = currentNodes.filter((n) => !updatedIds.has(n.id));
-    currentNodes = [clusterNode, ...restNodes, ...updatedNodes];
-    currentEdges = updatedEdges;
-  }
-
-  // 4. Auto-space nodes vertically in columns to eliminate any description box overlaps
+  // 2. Auto-space nodes vertically in columns to eliminate any description box overlaps
   currentNodes = autoSpaceNodesForExport(currentNodes);
 
   return { nodes: currentNodes, edges: currentEdges };
