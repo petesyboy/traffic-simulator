@@ -3,8 +3,9 @@
 ## Versioning
 - **CRITICAL RULE**: Anytime we make a change to the software, increment the release number in `package.json` (e.g., from `1.0.0` to `1.0.1`, `1.0.2`, etc.). The user specifically requested to increment the release number by `1.01`, `1.02`, `1.03` etc., which maps to standard SemVer patch increments like `1.0.1`, `1.0.2`, `1.0.3`.
 
-## Commit Messages
-- **CRITICAL RULE**: After each change, give the user a summary for a commit message.
+## Commit & Push Workflow
+- **CRITICAL RULE**: Anytime changes are completed, tested, and built, automatically stage all files (`git add .`), commit them with a structured commit message, and push directly to `origin main` (`git push origin main`) so that Cloudflare Pages deployment builds trigger automatically without requiring the user to prompt for it.
+- **CRITICAL RULE**: In the final response to the user, include the commit hash, version number, and the commit message summary.
 
 
 ## Hardware Node Rules
