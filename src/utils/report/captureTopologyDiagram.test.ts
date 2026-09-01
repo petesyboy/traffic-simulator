@@ -90,6 +90,40 @@ describe('detectDiagramSplitting', () => {
     expect(alphaPartition?.nodeIds).toEqual(['n-alpha']);
     expect(betaPartition?.nodeIds).toEqual(['n-beta']);
   });
+
+  it('groups standalone VMware / virtual cloud estates with their connected destination chassis', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'vmware-estate-1',
+        type: 'virtualNode',
+        position: { x: 0, y: 300 },
+        data: { label: 'VMware Estate 1', site: 'VMware Private Cloud', model: 'VMware Virtual TAP' },
+      } as CustomNode,
+      {
+        id: 'ta25e-dc1',
+        type: 'hardwareNode',
+        position: { x: 300, y: 300 },
+        data: { label: 'GigaVUE-TA25E - DC1', site: 'DC1', model: 'GigaVUE-TA25E' },
+      } as CustomNode,
+      {
+        id: 'ta25e-dc2',
+        type: 'hardwareNode',
+        position: { x: 300, y: 100 },
+        data: { label: 'GigaVUE-TA25E - DC2', site: 'DC2', model: 'GigaVUE-TA25E' },
+      } as CustomNode,
+    ];
+
+    const edges: Edge[] = [
+      { id: 'e-vmware', source: 'vmware-estate-1', target: 'ta25e-dc1' },
+    ];
+
+    const result = detectDiagramSplitting(nodes, edges);
+    expect(result.shouldSplit).toBe(true);
+
+    const vmwarePartition = result.partitions.find((p) => p.siteName === 'VMware Private Cloud');
+    expect(vmwarePartition?.nodeIds).toContain('vmware-estate-1');
+    expect(vmwarePartition?.nodeIds).toContain('ta25e-dc1');
+  });
 });
 
 describe('prepareTopologyForDiagramCapture', () => {

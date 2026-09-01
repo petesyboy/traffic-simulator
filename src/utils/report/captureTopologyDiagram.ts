@@ -57,7 +57,7 @@ export function detectDiagramSplitting(
         }
       });
 
-      // 2. Iteratively expand downstream/upstream nodes belonging to this site
+      // 2. Iteratively expand downstream/upstream unassigned nodes belonging to this site
       let expanded = true;
       while (expanded) {
         expanded = false;
@@ -76,6 +76,39 @@ export function detectDiagramSplitting(
             if (!srcSite || srcSite === siteName) {
               siteNodeIds.add(e.source);
               expanded = true;
+            }
+          }
+        });
+      }
+
+      // 3. For standalone source estates (e.g. VMware, Virtual, Cloud, or standalone leaf sites)
+      // that link into an aggregation switch or chassis (TA/HC), include the immediate 1-hop
+      // connected destination chassis so the sub-diagram illustrates the estate connected into
+      // its fabric rather than rendering an orphaned floating node.
+      const ownSiteNodes = visibleNodes.filter(
+        (n) => (n.data?.site as string || '').trim() === siteName,
+      );
+      const isSourceEstate =
+        ownSiteNodes.some(
+          (n) =>
+            n.type === 'virtualNode' ||
+            n.type === 'trafficNode' ||
+            /vmware|cloud|virtual|vseries/i.test(String(n.data?.model || '')) ||
+            /vmware|cloud|virtual|vseries/i.test(String(n.data?.label || '')),
+        );
+
+      if (isSourceEstate) {
+        edges.forEach((e) => {
+          if (siteNodeIds.has(e.source)) {
+            const tgtNode = visibleNodes.find((n) => n.id === e.target);
+            if (tgtNode) {
+              const isChassis =
+                tgtNode.type === 'hardwareNode' &&
+                (/ta|hc|fabric/i.test(String(tgtNode.data?.model || '')) ||
+                 /ta|hc|fabric/i.test(String(tgtNode.data?.label || '')));
+              if (isChassis || ownSiteNodes.length === 1) {
+                siteNodeIds.add(tgtNode.id);
+              }
             }
           }
         });
@@ -257,23 +290,25 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
     }
   });
 
+  // Filter down strictly to site-local nodes and edges so foreign links/nodes cannot render
+  const siteNodes = preparedNodes.filter(
+    (n) => allowedNodeIds.has(n.id) || (n.data?.clusterId && allowedNodeIds.has(n.data.clusterId as string)),
+  );
+  const siteEdges = preparedEdges.filter(
+    (e) => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target),
+  );
+
   useStore.setState((s) => ({
-    nodes: preparedNodes,
-    edges: preparedEdges,
-    fitViewNodeIds: Array.from(allowedNodeIds),
+    nodes: siteNodes,
+    edges: siteEdges,
+    fitViewNodeIds: null,
     fitViewTrigger: s.fitViewTrigger + 1,
   }));
-
-  const allowedEdgeIds = new Set(
-    preparedEdges
-      .filter((e) => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target))
-      .map((e) => e.id),
-  );
 
   await new Promise((resolve) => setTimeout(resolve, 600));
 
   try {
-    return await captureTopologyDiagramPng(allowedNodeIds, allowedEdgeIds);
+    return await captureTopologyDiagramPng();
   } finally {
     useStore.setState((s) => ({
       nodes: originalNodes,

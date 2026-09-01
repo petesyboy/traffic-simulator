@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.716",
+    date: "2026-09-01",
+    summary: "Paired standalone VMware and virtual cloud source estates with their connected aggregation chassis in site architecture sub-diagrams, ensuring full feed context is illustrated rather than orphaned nodes.",
+  },
+  {
+    version: "1.0.715",
+    date: "2026-09-01",
+    summary: "Isolated site topology capture in state store: strictly filtered active canvas nodes and links during site sub-diagram captures to eliminate stray links, foreign TAPs, and external interconnects.",
+  },
+  {
     version: "1.0.714",
     date: "2026-09-01",
     summary: "Fixed site diagram screenshot framing and multi-site layout capture: eliminated cross-site TAP auto-bundling and adjusted viewport padding and zoom for balanced, centered site sub-diagrams.",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.691",
     date: "2026-08-28",
     summary: "Enforced explicit pure white #ffffff and #ff9800 border on all diagram descriptors.",
-  },
-  {
-    version: "1.0.690",
-    date: "2026-08-28",
-    summary: "Matched Export Diagram text and box colors of TAP/Tool clusters to TA/HC chassis.",
-  },
-  {
-    version: "1.0.689",
-    date: "2026-08-28",
-    summary: "Added architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters.",
   },
 ];
