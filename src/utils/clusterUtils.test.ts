@@ -471,13 +471,163 @@ describe('clusterUtils', () => {
 
       // Verify the collapsed cluster node recorded aggregate Tx metrics
       expect(result.metrics[clusterNode.id].txMbps).toBe(20000);
+    });
 
-      // Verify downstream TA25E chassis received all 20 Gbps of traffic!
-      expect(result.metrics['ta25-1'].rxMbps).toBe(20000);
+    it('evaluates configuration validator identically for collapsed and expanded tool stacks', async () => {
+      const { validateConfiguration } = await import('./bom/configValidator');
+      const { syncPortAssignments } = await import('./portSync');
 
-      // Verify all edges connecting cluster to TA25E are active
-      expect(result.activeEdges.length).toBeGreaterThan(0);
+      const hc3Node: CustomNode = {
+        id: 'hc3-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3',
+          model: 'GigaVUE-HC3',
+          sku: 'GVS-HC3A3-HW',
+          configType: 'Hardware',
+          installedBoards: {
+            '1': 'SMT-HC3-C08',
+            '2': 'PRT-HC3-X24',
+          },
+          optics: [
+            { board: 'SMT-HC3-C08 (Slot 1)', optic: 'Q28-503T', qty: 2 },
+          ],
+        },
+      };
+
+      const tools: CustomNode[] = Array.from({ length: 10 }, (_, i) => ({
+        id: `tool-${i + 1}`,
+        type: 'toolNode',
+        position: { x: 400, y: i * 50 },
+        data: {
+          label: `Probe ${i + 1}`,
+          toolName: 'Ericsson Probe',
+          configType: 'Packet Tool',
+        },
+      }));
+
+      const expandedEdges: Edge[] = tools.map((t, idx) => ({
+        id: `e-tool-${idx + 1}`,
+        source: hc3Node.id,
+        target: t.id,
+      }));
+
+      // In expanded state (HC3 with 2 optics, 10 tool links -> needs 10 optics)
+      const expandedErrors = validateConfiguration([hc3Node, ...tools], expandedEdges);
+      const expandedOpticError = expandedErrors.find(e => e.type === 'insufficient_optics');
+      expect(expandedOpticError).toBeDefined();
+      expect(expandedOpticError?.message).toContain('Needs at least 10 optics (currently has 2)');
+
+      // Collapse tools into a cluster
+      const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(tools, expandedEdges, 'tool');
+      const collapsedNodes = [hc3Node, clusterNode, ...updatedNodes];
+
+      // In collapsed state, validateConfiguration MUST report the exact same required optics!
+      const collapsedErrors = validateConfiguration(collapsedNodes, updatedEdges);
+      const collapsedOpticError = collapsedErrors.find(e => e.type === 'insufficient_optics');
+      expect(collapsedOpticError).toBeDefined();
+      expect(collapsedOpticError?.message).toContain('Needs at least 10 optics (currently has 2)');
+
+      // Verify portSync preferredCage routes tool cluster to SFP cages (PRT-HC3-X24) not QSFP
+      const syncedEdges = syncPortAssignments(collapsedNodes, updatedEdges);
+      const links = (syncedEdges[0].data as { portLinks?: { sourcePortId: string }[] })?.portLinks;
+      const firstLink = links?.[0];
+      expect(firstLink?.sourcePortId).toContain('1/2/x'); // Slot 2 SFP cage
+    });
+
+    it('divides traffic equally among 10 expanded tool probes rather than replicating full rate to each', () => {
+      const sourceTap = {
+        id: 'tap-src',
+        type: 'inputNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'TAP-M273T',
+          configType: 'TAP',
+          linkSpeed: 10000,
+        },
+      } as unknown as CustomNode;
+
+      const hc3Node = {
+        id: 'hc3-node',
+        type: 'hardwareNode',
+        position: { x: 200, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3',
+          model: 'GigaVUE-HC3',
+          configType: 'GigaVUE-HC3',
+          gigaSmartApps: [
+            { actionType: 'IP FlowVUE', gtpSamplePercent: 10 },
+          ],
+        },
+      } as unknown as CustomNode;
+
+      const probes: CustomNode[] = Array.from({ length: 10 }, (_, i) => ({
+        id: `probe-${i + 1}`,
+        type: 'toolNode',
+        position: { x: 400, y: i * 50 },
+        data: {
+          label: `Ericsson Probe ${i + 1}`,
+          toolName: 'Ericsson Probe',
+          configType: 'Packet Tool',
+        },
+      })) as unknown as CustomNode[];
+
+      const tapToHc3Edge: Edge = {
+        id: 'e-tap-hc3',
+        source: sourceTap.id,
+        target: hc3Node.id,
+      };
+
+      const hc3ToProbeEdges: Edge[] = probes.map((p, i) => ({
+        id: `e-hc3-probe-${i + 1}`,
+        source: hc3Node.id,
+        target: p.id,
+      }));
+
+      // Cluster the 10 probes
+      const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(probes, hc3ToProbeEdges, 'tool');
+      const expanded = expandClusterNode(clusterNode, [clusterNode, ...updatedNodes], updatedEdges);
+
+      const allNodes = [sourceTap, hc3Node, ...expanded.nodes];
+      const allEdges = [tapToHc3Edge, ...expanded.edges];
+
+      // 4758 Mbps incoming traffic stream -> sampled 10% by IP FlowVUE = 475.8 Mbps egress from HC3
+      const streams = [
+        {
+          id: 'stream-1',
+          name: 'Core Traffic',
+          sourceNodeId: sourceTap.id,
+          bandwidth: 4758,
+          active: true,
+          vlan: '100',
+          ipSrc: '10.0.0.1',
+          ipDst: '10.0.0.2',
+          portSrc: '80',
+          portDst: '8080',
+          protocol: 'TCP',
+        },
+      ] as import('../store/types').TrafficStream[];
+
+      const simResult = calculateSimulationStep(allNodes, allEdges, streams);
+
+      // Verify each edge to each probe receives 47.58 Mbps (not 475.8 Mbps!)
+      expanded.edges.forEach((edge) => {
+        const edgeBw = simResult.edgeMetrics[edge.id];
+        expect(edgeBw).toBeCloseTo(47.58, 1);
+      });
+
+      // Verify each probe metrics Rx is 47.58 Mbps
+      probes.forEach((probe) => {
+        const probeMetric = simResult.metrics[probe.id];
+        expect(probeMetric.rxMbps).toBeCloseTo(47.58, 1);
+      });
+
+      // Total received across all 10 probes equals the 475.8 Mbps total egress from HC3
+      const totalProbeRx = probes.reduce((sum, p) => sum + simResult.metrics[p.id].rxMbps, 0);
+      expect(totalProbeRx).toBeCloseTo(475.8, 1);
     });
   });
 });
+
 

@@ -19,6 +19,21 @@
     "eol": "46752",
     "replacement": "BPS-HC3-C25F2G-SW-TM"
   },
+  "CBL-505": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
+  },
+  "CBL-510": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
+  },
+  "CBL-550": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
+  },
   "CLS-TA100-SW-TM": {
     "eos": "44407",
     "eol": "46233",
@@ -30,9 +45,9 @@
     "replacement": "CLS-TAC20-SW-TM"
   },
   "CLS-TAC40": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "CLS-TAC40E"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "CLS-TAC40-SW-TM": {
     "eos": "45845",
@@ -44,29 +59,19 @@
     "eol": "46233",
     "replacement": "CLS-TAC20-SW-TM"
   },
-  "CLS-TAX20": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "CLS-TAX20E"
-  },
-  "CLS-TAX20-SW-TM": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "CLS-TAX20E-SW-TM"
-  },
   "CLS-WBX01": {
     "eos": "46168",
     "eol": "47054",
     "replacement": ""
   },
   "FAN-TAC40": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "FAN-TAX20": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "GSW-WBX01": {
@@ -170,33 +175,33 @@
     "replacement": "GVS-TAC40E-SW-TM"
   },
   "GVS-TAC41": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAC41E"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAC41-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAC41E-HW"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAC42": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAC42E"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAC42-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAC42E-HW"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TACX1-SW-TM": {
-    "eos": "5/31/2021",
-    "eol": "5/31/2026",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "GVS-TACX2-SW-TM": {
-    "eos": "5/31/2021",
-    "eol": "5/31/2026",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "GVS-TAQ01-SW-TM": {
@@ -229,40 +234,10 @@
     "eol": "46233",
     "replacement": "GVS-TAX22A-SW-TM"
   },
-  "GVS-TAX20-SW-TM": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX20E-SW-TM"
-  },
-  "GVS-TAX20A-SW-TM": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX20EA-SW-TM"
-  },
-  "GVS-TAX21": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX21E"
-  },
-  "GVS-TAX21-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX21E-HW"
-  },
   "GVS-TAX21-SW-TM": {
     "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20-SW-TM"
-  },
-  "GVS-TAX21A": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX21EA"
-  },
-  "GVS-TAX21A-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX21E-HW"
   },
   "GVS-TAX21A-SW-TM": {
     "eos": "44985",
@@ -270,14 +245,14 @@
     "replacement": "GVS-TAX20A-SW-TM"
   },
   "GVS-TAX22": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX22E"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAX22-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX22E-HW"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAX22-SW-TM": {
     "eos": "44985",
@@ -285,29 +260,19 @@
     "replacement": "GVS-TAX20-SW-TM"
   },
   "GVS-TAX22A": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX22EA"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAX22A-HW": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "GVS-TAX22E-HW"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "GVS-TAX22A-SW-TM": {
     "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
-  },
-  "IBP-TAX20": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "IBP-TAX20E"
-  },
-  "IBP-TAX20-SW-TM": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
-    "replacement": "IBP-TAX20E-SW-TM"
   },
   "PRT-HC0-C02-SW-TM": {
     "eos": "44926",
@@ -325,23 +290,23 @@
     "replacement": "PRT-HC1-Q04X08-SW-TM"
   },
   "PWR-TAC41": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "PWR-TAC42": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "PWR-TAX21": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "PWR-TAX22": {
-    "eos": "7/7/2025",
-    "eol": "12/7/2030",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "Q28-515": {
@@ -360,9 +325,9 @@
     "replacement": "QSB-523T"
   },
   "QSB-502": {
-    "eos": "7/3/2025",
-    "eol": "7/3/2025",
-    "replacement": "QSB-504"
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "QSB-504": {
     "eos": "46393",
@@ -375,8 +340,8 @@
     "replacement": "QSB-523T"
   },
   "RMK-TAC40E": {
-    "eos": "7/1/2025",
-    "eol": "7/1/2025",
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "SMT-GSA110-AFI-100G-PL": {
@@ -533,6 +498,11 @@
     "eos": "44926",
     "eol": "46752",
     "replacement": "SMT-HC1-S-SW-TM"
+  },
+  "SMT-HC1-UPGAFI": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
   },
   "SMT-HC2-AFI": {
     "eos": "44926",
@@ -824,9 +794,19 @@
     "eol": "46965",
     "replacement": "SMT-HC3-GEN3-SSL-SW-TM"
   },
+  "SMT-HC3-GEN2-VDR-SW-PL": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
+    "replacement": ""
+  },
   "SMT-HC3-GEN2-VDR-SW-TM": {
     "eos": "45138",
     "eol": "46965",
+    "replacement": ""
+  },
+  "SMT-HC3-UPGAFI": {
+    "eos": "Discontinued (Removed from Price List)",
+    "eol": "",
     "replacement": ""
   },
   "SMT-HC3-UPGBN-MV": {

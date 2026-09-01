@@ -25,6 +25,7 @@ export interface NodeMetrics {
   droppedPackets: number;
   dedupDroppedMbps?: number;
   filterDroppedMbps?: number;
+  gigaSmartDroppedMbps?: number;
 }
 
 export interface MapCondition {

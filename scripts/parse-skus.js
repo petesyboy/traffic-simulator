@@ -2,9 +2,9 @@
  * scripts/parse-skus.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Build-time data ingestion pipeline.
- * Reads all reference CSV files in `references/`, normalizes field names,
- * enriches data with extracted hardware metadata, deduplicates entries,
- * and outputs the structured catalog to `src/data/skus.json`.
+ * Reads the authoritative Worldwide Price List (WWPL) Excel spreadsheet in `references/`,
+ * normalises field names, enriches data with extracted hardware metadata,
+ * deduplicates entries, and outputs the structured catalogue to `src/data/skus.json`.
  */
 
 import fs from 'node:fs';
@@ -19,40 +19,9 @@ const REFERENCES_DIR = path.join(ROOT_DIR, 'references');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'src', 'data');
 const OUTPUT_JSON_PATH = path.join(OUTPUT_DIR, 'skus.json');
 
-const CSV_FILES = [
-  'SKU-List.csv',
-  'SKU-List-HC.csv',
-  'SKU-List-TapsAndTAs.csv',
-  'SKU-List-Accessoriess.csv',
-];
-
-/** Parses a standard CSV line handling quotes and escaped quotes. */
-function parseCsvLine(text) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
+const args = process.argv.slice(2);
+const editionArg = args.find((a) => a.startsWith('--edition='))?.split('=')[1] || process.env.VITE_APP_EDITION || 'internal';
+const edition = editionArg.toLowerCase() === 'partner' ? 'partner' : 'internal';
 
 /** Parses numeric currency string (e.g. " $6,365.00 " -> 6365). */
 function parsePrice(val) {
@@ -172,96 +141,6 @@ function extractFormFactor(sku, desc) {
   return undefined;
 }
 
-function parseCsvFile(filePath) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`[parse-skus] Warning: File not found: ${filePath}`);
-    return [];
-  }
-
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split(/\r?\n/);
-  if (lines.length < 2) return [];
-
-  // Line 1 is often title/metadata (EFFECTIVE DATE...). Find the header row.
-  let headerIndex = 0;
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
-    if (lines[i].toLowerCase().includes('sku') && lines[i].toLowerCase().includes('description')) {
-      headerIndex = i;
-      break;
-    }
-  }
-
-  const headers = parseCsvLine(lines[headerIndex]).map((h) => h.toLowerCase().trim());
-  const skuIdx = headers.findIndex((h) => h === 'sku' || h.startsWith('sku'));
-  const descIdx = headers.findIndex((h) => h.includes('description') || h === 'desc');
-  const listPriceIdx = headers.findIndex((h) => h === 'list price');
-  const listPriceMonthIdx = headers.findIndex((h) => h.includes('price/month') || h.includes('monthly'));
-  const prodFamIdx = headers.findIndex((h) => h === 'product family');
-  const prodSubFamIdx = headers.findIndex((h) => h === 'product sub-family');
-  const cooIdx = headers.findIndex((h) => h.includes('country of origin') || h === 'coo');
-  const eosIdx = headers.findIndex((h) => h.includes('end of sale') || h === 'eos');
-  const eolIdx = headers.findIndex((h) => h.includes('end of life') || h === 'eol');
-  const replIdx = headers.findIndex((h) => h.includes('replacement') || h.includes('eos replacement'));
-  const suppIdx = headers.findIndex((h) => h.includes('support available'));
-
-  if (skuIdx === -1 || descIdx === -1) {
-    console.warn(`[parse-skus] Warning: Could not find SKU/Description in ${filePath}`);
-    return [];
-  }
-
-  const items = [];
-
-  for (let i = headerIndex + 1; i < lines.length; i++) {
-    const rawLine = lines[i].trim();
-    if (!rawLine) continue;
-
-    const row = parseCsvLine(rawLine);
-    const sku = (row[skuIdx] || '').trim();
-    const desc = (row[descIdx] || '').trim();
-
-    if (!sku || !desc) continue;
-
-    const prodFamily = prodFamIdx !== -1 ? (row[prodFamIdx] || '').trim() : undefined;
-    const prodSubFamily = prodSubFamIdx !== -1 ? (row[prodSubFamIdx] || '').trim() : undefined;
-    const coo = cooIdx !== -1 ? (row[cooIdx] || '').trim() : undefined;
-    const eos = eosIdx !== -1 ? (row[eosIdx] || '').trim() : undefined;
-    const eol = eolIdx !== -1 ? (row[eolIdx] || '').trim() : undefined;
-    const repl = replIdx !== -1 ? (row[replIdx] || '').trim() : undefined;
-    const supp = suppIdx !== -1 ? (row[suppIdx] || '').trim().toUpperCase() : undefined;
-    const price = listPriceIdx !== -1 ? parsePrice(row[listPriceIdx]) : undefined;
-    const priceMonth = listPriceMonthIdx !== -1 ? parsePrice(row[listPriceMonthIdx]) : undefined;
-
-    const isTaa = /TAA Compliant/i.test(desc)
-      ? !/Not TAA/i.test(desc)
-      : sku.endsWith('T')
-        ? true
-        : undefined;
-
-    const item = {
-      partNumber: sku,
-      description: desc,
-      category: determineCategory(sku, desc, prodFamily, prodSubFamily),
-      productFamily: prodFamily || undefined,
-      productSubFamily: prodSubFamily || undefined,
-      countryOfOrigin: coo || undefined,
-      endOfSale: eos || undefined,
-      endOfLife: eol || undefined,
-      eosReplacementSku: repl || undefined,
-      supportAvailable: supp === 'TRUE' ? true : supp === 'FALSE' ? false : undefined,
-      listPrice: price,
-      listPriceMonthly: priceMonth,
-      portDensity: extractPortDensity(desc),
-      speedsSupported: extractSpeeds(desc),
-      formFactor: extractFormFactor(sku, desc),
-      isTaaCompliant: isTaa,
-    };
-
-    items.push(item);
-  }
-
-  return items;
-}
-
 function parseXlsxFile(filePath) {
   if (!fs.existsSync(filePath)) return [];
   let workbook;
@@ -365,7 +244,7 @@ function parseXlsxFile(filePath) {
 }
 
 export function generateSkuCatalog() {
-  console.log('[parse-skus] Ingesting SKU reference data from CSV and XLSX files...');
+  console.log('[parse-skus] Ingesting SKU reference data from XLSX files...');
   const skuMap = new Map();
 
   // 1. Seed with base master catalogue entries if available
@@ -398,42 +277,6 @@ export function generateSkuCatalog() {
   }
 
   const newlySeenSkus = new Set();
-
-  for (const filename of CSV_FILES) {
-    const filePath = path.join(REFERENCES_DIR, filename);
-    const parsed = parseCsvFile(filePath);
-    console.log(`[parse-skus] Parsed ${parsed.length} entries from ${filename}`);
-
-    for (const item of parsed) {
-      const key = item.partNumber.toUpperCase();
-      newlySeenSkus.add(key);
-
-      if (!skuMap.has(key)) {
-        skuMap.set(key, item);
-      } else {
-        // Merge attributes to create the richest possible record
-        const existing = skuMap.get(key);
-        const merged = {
-          ...existing,
-          ...item,
-          // Preserve any non-undefined fields
-          listPrice: item.listPrice !== undefined ? item.listPrice : existing.listPrice,
-          listPriceMonthly: item.listPriceMonthly !== undefined ? item.listPriceMonthly : existing.listPriceMonthly,
-          productFamily: item.productFamily || existing.productFamily,
-          productSubFamily: item.productSubFamily || existing.productSubFamily,
-          countryOfOrigin: item.countryOfOrigin || existing.countryOfOrigin,
-          endOfSale: item.endOfSale || existing.endOfSale,
-          endOfLife: item.endOfLife || existing.endOfLife,
-          eosReplacementSku: item.eosReplacementSku || existing.eosReplacementSku,
-          portDensity: item.portDensity || existing.portDensity,
-          speedsSupported: item.speedsSupported || existing.speedsSupported,
-          formFactor: item.formFactor || existing.formFactor,
-          isTaaCompliant: item.isTaaCompliant !== undefined ? item.isTaaCompliant : existing.isTaaCompliant,
-        };
-        skuMap.set(key, merged);
-      }
-    }
-  }
 
   // 2. Ingest active XLSX Price Lists (e.g. WWPL_20260731.xlsx) with highest priority
   const xlsxFiles = fs.readdirSync(REFERENCES_DIR).filter((f) => f.endsWith('.xlsx') || f.endsWith('.xls'));
@@ -852,6 +695,18 @@ export function generateSkuCatalog() {
 
   const allItems = Array.from(skuMap.values()).sort((a, b) => a.partNumber.localeCompare(b.partNumber));
 
+  if (edition === 'partner') {
+    console.log(`[parse-skus] Sanitising SKU catalogue for PARTNER release (stripping all pricing data)...`);
+    for (const item of allItems) {
+      delete item.listPrice;
+      delete item.listPriceMonthly;
+      delete item.unitCost;
+      delete item.price;
+      delete item.maintenancePrice;
+      delete item.termPrices;
+    }
+  }
+
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
@@ -868,7 +723,7 @@ export function generateSkuCatalog() {
   }
 
   fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(allItems, null, 2), 'utf-8');
-  console.log(`[parse-skus] Successfully generated ${allItems.length} structured SKU records in ${OUTPUT_JSON_PATH}`);
+  console.log(`[parse-skus] Successfully generated ${allItems.length} structured SKU records for Edition: [${edition.toUpperCase()}] in ${OUTPUT_JSON_PATH}`);
 
   // Automatically keep legacy flat dictionaries (src/constants/skus.json & skus_metadata.json) in sync
   const CONSTANTS_DIR = path.join(ROOT_DIR, 'src', 'constants');

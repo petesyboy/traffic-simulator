@@ -100,15 +100,25 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
   uniqueIncomingTapSources.forEach(srcId => {
     const sourceNode = nodes.find(n => n.id === srcId);
-    if (sourceNode?.data?.model?.includes('TAP')) {
-      const tapSku = String(sourceNode.data?.sku || '');
-      const tapModel = String(sourceNode.data?.model || '');
-      const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapModel.includes('253T') || tapModel.includes('273T') || tapModel.includes('453T');
+    if (!sourceNode) return;
+    const isClusterTap = sourceNode.type === 'clusterNode' && sourceNode.data?.clusterType === 'tap';
+    let taps: CustomNode[] = [];
+    if (isClusterTap) {
+      const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
+      taps = allMembers.length > 0 ? allMembers : [sourceNode];
+    } else if (sourceNode.data?.model?.includes('TAP') || (sourceNode.type === 'inputNode' && String(sourceNode.data?.configType || '').startsWith('TAP'))) {
+      taps = [sourceNode];
+    }
 
-      const allocations = ((sourceNode.data as HardwareNodeData).tappedLinkAllocations) || [
+    taps.forEach(tapN => {
+      const tapSku = String(tapN.data?.sku || '');
+      const tapModel = String(tapN.data?.model || '');
+      const isSMTap = tapSku.includes('253') || tapSku.includes('273') || tapSku.includes('453') || tapModel.toLowerCase().includes('single-mode') || tapModel.toLowerCase().includes('sm') || tapSku.includes('253T') || tapSku.includes('273T') || tapSku.includes('453T');
+
+      const allocations = ((tapN.data as HardwareNodeData).tappedLinkAllocations) || [
         {
-          qty: (sourceNode.data as HardwareNodeData).tappedLinksCount ?? 1,
-          optic: (sourceNode.data as HardwareNodeData).tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
+          qty: (tapN.data as HardwareNodeData).tappedLinksCount ?? 1,
+          optic: (tapN.data as HardwareNodeData).tappedLinkOptic || (isSMTap ? 'SFP-533 (10G SFP+ LR)' : 'SFP-532 (10G SFP+ SR)')
         }
       ];
 
@@ -126,10 +136,15 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
           requiredMMOptics += alloc.qty * 2;
         }
       }
-    }
+    });
   });
 
-  const outgoingToolLinks = edges.filter(e => e.source === selectedNode.id && nodes.find(n => n.id === e.target)?.type === 'toolNode').length;
+  const outgoingToolLinks = edges.filter(e => {
+    if (e.source !== selectedNode.id) return false;
+    const target = nodes.find(n => n.id === e.target);
+    if (!target) return false;
+    return target.type === 'toolNode' || (target.type === 'clusterNode' && target.data?.clusterType === 'tool');
+  }).length;
 
   let installedMMOptics = 0;
   let installedSMOptics = 0;
@@ -331,8 +346,18 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
         visited.add(e.target);
         const targetNode = nodes.find(n => n.id === e.target);
         if (targetNode) {
-          if (targetNode.type === 'toolNode') toolsReached.add(targetNode.id);
-          else if (targetNode.type !== 'hardwareNode') queue.push(e.target);
+          if (targetNode.type === 'toolNode') {
+            toolsReached.add(targetNode.id);
+          } else if (targetNode.type === 'clusterNode' && targetNode.data?.clusterType === 'tool') {
+            const members = (targetNode.data?.memberNodeIds as string[]) || [];
+            if (members.length > 0) {
+              members.forEach(mId => toolsReached.add(mId));
+            } else {
+              toolsReached.add(targetNode.id);
+            }
+          } else if (targetNode.type !== 'hardwareNode') {
+            queue.push(e.target);
+          }
         }
       }
     });

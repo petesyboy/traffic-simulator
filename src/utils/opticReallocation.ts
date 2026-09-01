@@ -170,7 +170,7 @@ export function deriveChassisRequiredOptics(
     if (!isConnected) return false;
     const peerId = e.source === targetNode.id ? e.target : e.source;
     const peer = nodes.find((n) => n.id === peerId);
-    return peer && peer.type === 'toolNode';
+    return peer && (peer.type === 'toolNode' || (peer.type === 'clusterNode' && peer.data?.clusterType === 'tool'));
   });
 
   toolEdges.forEach((edge) => {

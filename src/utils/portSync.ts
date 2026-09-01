@@ -50,11 +50,18 @@ function preferredCage(peer: CustomNode | undefined, edge?: Edge): ChassisPort['
     }
   }
 
-  // If peer is a tool node, tool connections default to SFP (or tool optic if specified)
-  if (peer.type === 'toolNode') {
+  // If peer is a tool node or tool cluster, tool connections default to SFP (or tool optic if specified)
+  if (peer.type === 'toolNode' || (peer.type === 'clusterNode' && peer.data?.clusterType === 'tool')) {
     const optic = (peer.data as any)?.optic || (peer.data as any)?.toolOptic;
     if (optic) return getOpticCage(String(optic));
     return 'SFP';
+  }
+
+  // If peer is a tap cluster
+  if (peer.type === 'clusterNode' && peer.data?.clusterType === 'tap') {
+    const optic = (peer.data as any)?.tappedLinkOptic;
+    if (optic && !String(optic).startsWith('Passive Optical Splitter')) return getOpticCage(String(optic));
+    return undefined;
   }
 
   const data = peer.data as HardwareNodeData | undefined;

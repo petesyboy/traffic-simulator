@@ -300,11 +300,10 @@ describe('License mode parity (Perpetual <-> HTL) - S1 through S5', () => {
     // "requires SMT-HC3-C08", which addRow's reqMatch regex parses into a mandatory
     // SMT-HC3-C08 Dependency row - the HC3 Gen3 compute module SSL Decrypt physically needs.
     // Its HTL/term-licence counterpart (SMT-HC3-GEN3-INSSL-SW-TM) was missing that clause in
-    // the master price list (references/WWPL_20260731.xlsx, cell C630, and the mirrored
-    // references/SKU-List*.csv), so the exact same topology silently dropped that mandatory
+    // the master price list (references/WWPL_20260731.xlsx, cell C630), so the exact same topology silently dropped that mandatory
     // module from the BOM under HTL only - the same physical solution was valid under
-    // Perpetual and invalid under HTL, purely because of a price-list wording gap. Both
-    // sources now carry the clause; this guards against it silently regressing.
+    // Perpetual and invalid under HTL, purely because of a price-list wording gap. The master
+    // price list now carries the clause; this guards against it silently regressing.
     const perpRequiresC08 = perpRaw.some((r) => r.sku === 'SMT-HC3-C08');
     const htlRequiresC08 = htlRaw.some((r) => r.sku === 'SMT-HC3-C08');
     expect(perpRequiresC08, 'S5: Perpetual SSL Decrypt should carry its mandatory SMT-HC3-C08 module').toBe(true);

@@ -14,6 +14,7 @@ import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import type { HardwareNodeData } from '../../store/types';
+import { isInternalEdition } from '../../constants/edition';
 import QuoteModal from './QuoteModal';
 import { ProjectNamePromptModal, isUntitledProject } from './index';
 
@@ -210,29 +211,31 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="text-sm text-muted">{currentScenarioName || 'Layout'} specs</span>
-            <button
-              onClick={() => ensureProjectNamed(() => setShowQuoteModal(true))}
-              style={{
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                background: '#3a3a3a',
-                border: '1px solid #555',
-                cursor: 'pointer',
-                padding: 0,
-                opacity: 0.5,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '1';
-                e.currentTarget.style.background = '#666';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '0.5';
-                e.currentTarget.style.background = '#3a3a3a';
-              }}
-              title="Open Commercial Quote"
-            />
+            {isInternalEdition() && (
+              <button
+                onClick={() => ensureProjectNamed(() => setShowQuoteModal(true))}
+                style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  background: '#3a3a3a',
+                  border: '1px solid #555',
+                  cursor: 'pointer',
+                  padding: 0,
+                  opacity: 0.5,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.background = '#666';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0.5';
+                  e.currentTarget.style.background = '#3a3a3a';
+                }}
+                title="Open Commercial Quote"
+              />
+            )}
           </div>
         </div>
 
@@ -458,7 +461,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         />
       )}
 
-      {showQuoteModal && <QuoteModal onClose={() => setShowQuoteModal(false)} />}
+      {isInternalEdition() && showQuoteModal && <QuoteModal onClose={() => setShowQuoteModal(false)} />}
     </div>
   );
 };

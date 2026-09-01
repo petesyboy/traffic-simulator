@@ -144,7 +144,12 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
     });
   });
 
-  const outgoingToolLinks = edges.filter(e => e.source === node.id && nodes.find(n => n.id === e.target)?.type === 'toolNode').length;
+  const outgoingToolLinks = edges.filter(e => {
+    if (e.source !== node.id) return false;
+    const target = nodes.find(n => n.id === e.target);
+    if (!target) return false;
+    return target.type === 'toolNode' || (target.type === 'clusterNode' && target.data?.clusterType === 'tool');
+  }).length;
 
   let installedMMOptics = 0;
   let installedSMOptics = 0;
@@ -381,7 +386,7 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
               <input
                 type="text"
                 list="existing-sites-list"
-                placeholder="e.g. Datacenter London"
+                placeholder="e.g. Datacentre London / VMware Private Cloud"
                 value={(node.data?.site as string) || ''}
                 onChange={(e) => updateNodeData(node.id, { site: e.target.value })}
                 className="form-input w-full"

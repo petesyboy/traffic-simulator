@@ -225,13 +225,17 @@ export function isTapUnconfigured(node: CustomNode | undefined): boolean {
  * How many tapped links a TAP node expresses. Zero means unconfigured.
  */
 export function getTappedLinkCount(node: CustomNode): number {
+  if (node.type === 'clusterNode' && node.data?.clusterType === 'tap') {
+    return (node.data?.summary?.totalLinks as number) || (node.data?.memberNodeIds as string[])?.length || 1;
+  }
   return resolveTapAllocations(node.data as HardwareNodeData, 'SFP-532')
     .reduce((sum, a) => sum + (a.qty || 0), 0);
 }
 
-/** True for both hardware TAP chassis and the inputNode "Network TAP" form. */
+/** True for both hardware TAP chassis, inputNode "Network TAP" form, and TAP cluster nodes. */
 export function isTapNode(node: CustomNode | undefined): boolean {
   if (!node) return false;
+  if (node.type === 'clusterNode') return node.data?.clusterType === 'tap';
   if (node.type === 'hardwareNode') return String(node.data?.model || '').includes('TAP');
   return node.type === 'inputNode' && String(node.data?.configType || '').startsWith('TAP');
 }

@@ -35,6 +35,7 @@ import { captureChassisFrontPanelPng } from './report/captureChassisFrontPanel';
 import { captureRackElevationPng } from './report/captureRackElevation';
 import { autoDeployRack } from './autoRack';
 import { isRackableGigamonEquipment, getModuleSlotPositions, getChassisImagePath } from './hardwareUtils';
+import { isInternalEdition } from '../constants/edition';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
@@ -212,7 +213,7 @@ export async function generateAllSolutionAssets(
       showGrid,
       snapToGrid,
     },
-    quoteWorkspace: getProjectQuoteWorkspace(scenarioName),
+    quoteWorkspace: isInternalEdition() ? getProjectQuoteWorkspace(scenarioName) : undefined,
   };
   const jsonContent = JSON.stringify(flow, null, 2);
   files.push({

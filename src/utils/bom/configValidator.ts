@@ -274,7 +274,11 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
     connectedEdges.forEach((e) => {
       const otherId = e.target === chassis.id ? e.source : e.target;
       const sourceNode = nodes.find((n) => n.id === otherId);
-      if (sourceNode?.data?.model?.includes('TAP')) tappedLinks += (sourceNode.data.tappedLinksCount as number) ?? 1;
+      if (sourceNode?.type === NODE_TYPES.CLUSTER && sourceNode.data?.clusterType === 'tap') {
+        tappedLinks += (sourceNode.data?.summary?.totalLinks as number) || (sourceNode.data?.memberNodeIds as string[])?.length || 1;
+      } else if (sourceNode?.data?.model?.includes('TAP')) {
+        tappedLinks += (sourceNode.data.tappedLinksCount as number) ?? 1;
+      }
     });
 
     const toolsReached = new Set<string>();
@@ -290,8 +294,18 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
           visited.add(e.target);
           const targetNode = nodes.find((n) => n.id === e.target);
           if (targetNode) {
-            if (targetNode.type === 'toolNode') toolsReached.add(targetNode.id);
-            else if (targetNode.type !== NODE_TYPES.HARDWARE) queue.push(e.target);
+            if (targetNode.type === 'toolNode') {
+              toolsReached.add(targetNode.id);
+            } else if (targetNode.type === NODE_TYPES.CLUSTER && targetNode.data?.clusterType === 'tool') {
+              const members = (targetNode.data?.memberNodeIds as string[]) || [];
+              if (members.length > 0) {
+                members.forEach((mId) => toolsReached.add(mId));
+              } else {
+                toolsReached.add(targetNode.id);
+              }
+            } else if (targetNode.type !== NODE_TYPES.HARDWARE) {
+              queue.push(e.target);
+            }
           }
         }
       });
@@ -306,7 +320,7 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
         type: 'insufficient_optics',
         nodeId: chassis.id,
         nodeLabel: String(chassis.data?.model || 'Chassis'),
-        message: `Chassis "${chassis.data?.model || 'Chassis'}" (labeled: "${chassis.data?.label || ''}") has insufficient optics installed. Needs at least ${totalRequiredOptics} optics (currently has ${totalInstalledOptics}).`,
+        message: `Chassis "${chassis.data?.model || 'Chassis'}" (labelled: "${chassis.data?.label || ''}") has insufficient optics installed. Needs at least ${totalRequiredOptics} optics (currently has ${totalInstalledOptics}).`,
       });
     }
   });

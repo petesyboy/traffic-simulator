@@ -95,10 +95,12 @@ describe('runGigaSmartApps', () => {
     const metric1 = makeMetric();
     const res1 = runGigaSmartApps(makeStream(1000), gtpSampleApp, metric1);
     expect(res1.forwardStream.bandwidth).toBeCloseTo(100, 4);
+    expect(metric1.gigaSmartDroppedMbps).toBeCloseTo(900, 4);
 
     const metric2 = makeMetric();
     const res2 = runGigaSmartApps(makeStream(1000), gtpWhitelistApp, metric2);
     expect(res2.forwardStream.bandwidth).toBeCloseTo(200, 4);
+    expect(metric2.gigaSmartDroppedMbps).toBeCloseTo(800, 4);
   });
 });
 

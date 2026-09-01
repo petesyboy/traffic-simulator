@@ -43,6 +43,7 @@ export function runGigaSmartApps(
       const ratio = Math.max(0.01, Math.min(1.0, sliceSize / 1518));
       const drop = stream.bandwidth * (1 - ratio);
       nodeMetric.droppedPackets += drop * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= ratio;
     } else if (actionType === 'Header Stripping' || actionType === 'Header/Trailer Remove') {
       const protocol = (app.headerStripProtocol as string) || 'VXLAN';
@@ -57,16 +58,19 @@ export function runGigaSmartApps(
       const scale = protocolScales[protocol] ?? 0.95;
       const drop = stream.bandwidth * (1 - scale);
       nodeMetric.droppedPackets += drop * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= scale;
     } else if (actionType === 'GTP Flow Sampling' || actionType === 'IP FlowVUE') {
       const sampleRate = ((app.gtpSamplePercent !== undefined ? app.gtpSamplePercent : 10)) / 100;
       const drop = stream.bandwidth * (1 - sampleRate);
       nodeMetric.droppedPackets += drop * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= sampleRate;
     } else if (actionType === 'GTP Whitelisting') {
       const passRate = ((app.gtpWhitelistPassPercent !== undefined ? app.gtpWhitelistPassPercent : 25)) / 100;
       const drop = stream.bandwidth * (1 - passRate);
       nodeMetric.droppedPackets += drop * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= passRate;
     } else if (
       actionType === 'Tunneling' ||
@@ -79,13 +83,16 @@ export function runGigaSmartApps(
       const scale = 0.955; // strips ~42B ERSPAN/GRE or ~50B VXLAN outer encapsulation overhead
       const drop = stream.bandwidth * (1 - scale);
       nodeMetric.droppedPackets += drop * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= scale;
     } else {
       let scale = 1.0;
       if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;
       const outBandwidth = stream.bandwidth * scale;
       if (scale < 1.0) {
-        nodeMetric.droppedPackets += stream.bandwidth * (1 - scale) * 250;
+        const drop = stream.bandwidth * (1 - scale);
+        nodeMetric.droppedPackets += drop * 250;
+        nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       }
       stream.bandwidth = outBandwidth;
       if (actionType === 'SSL Decrypt') {

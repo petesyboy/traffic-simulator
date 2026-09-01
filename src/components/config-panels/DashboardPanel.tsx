@@ -14,6 +14,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
   let totalIngest = 0;
   let totalDedupDrops = 0;
   let totalFilterDrops = 0;
+  let totalGigaSmartDrops = 0;
 
   nodes.forEach((n) => {
     const metric = nodeMetrics[n.id];
@@ -21,6 +22,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
 
     totalDedupDrops += metric.dedupDroppedMbps || 0;
     totalFilterDrops += metric.filterDroppedMbps || 0;
+    totalGigaSmartDrops += metric.gigaSmartDroppedMbps || 0;
 
     if (
       n.type === NODE_TYPES.INPUT ||
@@ -31,10 +33,10 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
     }
   });
 
-  // Reduction is what was actually dropped (dedup + filter) relative to
-  // ingest - not ingest-minus-delivered, since "delivered" is a fan-out
+  // Reduction is what was actually dropped (dedup + filter + GigaSMART sampling/slicing)
+  // relative to ingest - not ingest-minus-delivered, since "delivered" is a fan-out
   // total that multiplies with tool count and isn't a meaningful baseline.
-  const reductionRaw     = totalDedupDrops + totalFilterDrops;
+  const reductionRaw     = totalDedupDrops + totalFilterDrops + totalGigaSmartDrops;
   const reductionPercent = totalIngest > 0 ? (reductionRaw / totalIngest) * 100 : 0;
 
   return (
@@ -71,9 +73,12 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isRunning }) => 
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div>Deduped: {formatBandwidth(totalDedupDrops)} ({formatPackets(totalDedupDrops * 250)})</div>
               <div>Filtered: {formatBandwidth(totalFilterDrops)} ({formatPackets(totalFilterDrops * 250)})</div>
+              {totalGigaSmartDrops > 0 && (
+                <div>Sampled / Sliced: {formatBandwidth(totalGigaSmartDrops)} ({formatPackets(totalGigaSmartDrops * 250)})</div>
+              )}
             </div>
             <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '3px', overflow: 'hidden', marginTop: '6px' }}>
-              <div style={{ height: '100%', width: `${reductionPercent}%`, background: 'linear-gradient(90deg, #ff9100 0%, #ff5d00 100%)', borderRadius: '3px', transition: 'width 0.3s ease' }} />
+              <div style={{ height: '100%', width: `${Math.min(100, reductionPercent)}%`, background: 'linear-gradient(90deg, #ff9100 0%, #ff5d00 100%)', borderRadius: '3px', transition: 'width 0.3s ease' }} />
             </div>
           </div>
 

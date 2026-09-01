@@ -150,6 +150,7 @@ export const processGigaSmartNode: NodeProcessor = (
     nodeMetric.txMbps += slicedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
     
     forwardStream = { ...item.stream, bandwidth: slicedBandwidth };
   } 
@@ -168,6 +169,7 @@ export const processGigaSmartNode: NodeProcessor = (
     dropBandwidth = item.stream.bandwidth * (1 - scale);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
     nodeMetric.txMbps += strippedBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;
     forwardStream = { ...item.stream, bandwidth: strippedBandwidth };
@@ -178,6 +180,7 @@ export const processGigaSmartNode: NodeProcessor = (
     dropBandwidth = item.stream.bandwidth * (1 - sampleRate);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
     nodeMetric.txMbps += sampledBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250 * sampleRate;
     forwardStream = { ...item.stream, bandwidth: sampledBandwidth };
@@ -188,6 +191,7 @@ export const processGigaSmartNode: NodeProcessor = (
     dropBandwidth = item.stream.bandwidth * (1 - passRate);
 
     nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
     nodeMetric.txMbps += whitelistBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250 * passRate;
     forwardStream = { ...item.stream, bandwidth: whitelistBandwidth };
@@ -199,6 +203,7 @@ export const processGigaSmartNode: NodeProcessor = (
     if (scale < 1.0) {
       dropBandwidth = item.stream.bandwidth * (1 - scale);
       nodeMetric.droppedPackets += dropBandwidth * 250;
+      nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
     }
     nodeMetric.txMbps += outputBandwidth;
     nodeMetric.txPackets += item.stream.bandwidth * 250;

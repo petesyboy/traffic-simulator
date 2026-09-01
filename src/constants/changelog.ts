@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.700",
+    date: "2026-08-30",
+    summary: "Add link utilisation level selector for traffic generation (v1.0.700)",
+  },
+  {
     version: "1.0.699",
     date: "2026-08-30",
     summary: "Preserve traffic flow through collapsed TAP clusters (v1.0.699)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.680",
     date: "2026-08-28",
     summary: "Resolve optic and port allocation misalignment and orphan fitted optics on modular chassis (v1.0.680)",
-  },
-  {
-    version: "1.0.679",
-    date: "2026-08-28",
-    summary: "Map GFM-FM000-SW-TM to perpetual GFM-FM000 in license mode conversions and quotes (v1.0.679)",
   },
 ];

@@ -16,6 +16,8 @@ function getGitCommit(): string {
   }
 }
 
+const edition = (process.env.VITE_APP_EDITION || 'internal').toLowerCase();
+
 // Stamps the built HTML with <meta> tags for the app version, build timestamp,
 // and git commit — visible directly in GitHub's file view (or any text editor)
 // on dist/index.html / traffic-reduction-simulator.html without running the app.
@@ -39,12 +41,18 @@ function buildInfoPlugin(): Plugin {
 
 // Replace 'traffic-simulator' with your exact repository name if it differs
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_EDITION': JSON.stringify(edition),
+  },
   plugins: [
     react(),
     viteSingleFile(),
     buildInfoPlugin(),
   ],
   base: './', // Use relative path for standalone opening
+  build: {
+    emptyOutDir: false,
+  },
   test: {
     globals: true,
     environment: 'node',

@@ -501,6 +501,7 @@ export function describeProcessingNodeDetail(
     bullets.push(line);
     if (metrics.dedupDroppedMbps) bullets.push(`Deduplicated away: ${formatBandwidth(metrics.dedupDroppedMbps)}`);
     if (metrics.filterDroppedMbps) bullets.push(`Filtered out: ${formatBandwidth(metrics.filterDroppedMbps)}`);
+    if (metrics.gigaSmartDroppedMbps) bullets.push(`GigaSMART reduced / sampled: ${formatBandwidth(metrics.gigaSmartDroppedMbps)}`);
   }
 
   return { headline: node.data.label || node.id, bullets };

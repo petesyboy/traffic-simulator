@@ -493,18 +493,15 @@
     "partNumber": "CBL-505",
     "description": "QSFP28 to QSFP28 40/100Gb Active Fiber Cable, 5 meters. TAA Compliant.",
     "category": "Cable",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
-    "productFamily": "Accessories",
-    "productSubFamily": "Cables",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 4405,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "CBL-505A",
@@ -527,18 +524,15 @@
     "partNumber": "CBL-510",
     "description": "QSFP28 to QSFP28 40/100Gb Active Fiber Cable, 10 meters. TAA Compliant.",
     "category": "Cable",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
-    "productFamily": "Accessories",
-    "productSubFamily": "Cables",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 5510,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "CBL-510A",
@@ -561,18 +555,15 @@
     "partNumber": "CBL-550",
     "description": "QSFP28 to QSFP28 40/100Gb Active Fiber Cable, 50 meters. TAA Compliant.",
     "category": "Cable",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "100G"
     ],
     "formFactor": "QSFP28",
     "isTaaCompliant": true,
-    "productFamily": "Accessories",
-    "productSubFamily": "Cables",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 6610,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "CBL-602",
@@ -673,16 +664,10 @@
     "partNumber": "CLS-TAC40",
     "description": "Perpetual Advanced Features license for GigaVUE-TA400 (GVS-TAC[41/42]). Software support at desired level must be purchased separately. (EOS Jul 7, 2025)",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "CLS-TAC40E",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA400",
-    "countryOfOrigin": "United States",
-    "supportAvailable": true,
-    "listPrice": 19100,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "CLS-TAC40-SW-TM",
@@ -742,31 +727,25 @@
     "partNumber": "CLS-TAX20",
     "description": "Perpetual Advanced Features license for GigaVUE-TA25 (GVS-TAX[21/22/21A/22A]). Software support at desired level must be purchased separately.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "CLS-TAX20E",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA25",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPrice": 5095,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "CLS-TAX20-SW-TM",
     "description": "Monthly Advanced Features term license for GigaVUE-TA25 (GVS-TAX[21/22/21A/22A]). Includes Bundled Elite-Plus Software Support.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "CLS-TAX20E-SW-TM",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA25",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPriceMonthly": 220,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "CLS-TAX20E",
@@ -930,15 +909,10 @@
     "partNumber": "FAN-TAC40",
     "description": "GigaVUE-TA400 Fan Assembly, each (7 required) (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "productFamily": "Accessories",
-    "productSubFamily": "Fans",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 660,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "FAN-TAC40E",
@@ -956,15 +930,10 @@
     "partNumber": "FAN-TAX20",
     "description": "GigaVUE-TA25 Fan Assembly, each (4 required) (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "productFamily": "Accessories",
-    "productSubFamily": "Fans",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 660,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "FAN-TAX20E",
@@ -3419,41 +3388,29 @@
     "partNumber": "GVS-TAC41",
     "description": "GigaVUE-TA400 node, 32 400G QSFP-DD cages, 2 power supplies, 7 fan trays, AC power; all ports enabled (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAC41E",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 32,
     "speedsSupported": [
       "400G"
     ],
     "formFactor": "QSFP-DD",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA400",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 114960,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAC41-HW",
     "description": "GigaVUE-TA400 node, 32 400G QSFP-DD cages, 2 power supplies, 7 fan trays, AC power; all ports enabled. Hardware only. Must Pair with appropriate GigaVUE-OS Software License (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAC41E-HW",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 32,
     "speedsSupported": [
       "400G"
     ],
     "formFactor": "QSFP-DD",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA400",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 14245,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAC41E",
@@ -3512,41 +3469,29 @@
     "partNumber": "GVS-TAC42",
     "description": "GigaVUE-TA400 node, 32 400G QSFP-DD cages, 2 power supplies, 7 fan trays, DC power; all ports enabled (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAC42E",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 32,
     "speedsSupported": [
       "400G"
     ],
     "formFactor": "QSFP-DD",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA400",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 116225,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAC42-HW",
     "description": "GigaVUE-TA400 node, 32 400G QSFP-DD cages, 2 power supplies, 7 fan trays, DC power; all ports enabled. Hardware only. Must Pair with appropriate GigaVUE-OS Software License (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAC42E-HW",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 32,
     "speedsSupported": [
       "400G"
     ],
     "formFactor": "QSFP-DD",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA400",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 14355,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAC42E",
@@ -3605,29 +3550,19 @@
     "partNumber": "GVS-TACX1-SW-TM",
     "description": "Monthly GigaVUE-OS term license for GigaVUE-TA100 CXP (GVS-TACX1-HW). Includes Bundled Elite-Plus Software Support.  (EOS May 31, 2021)",
     "category": "License",
-    "endOfSale": "5/31/2021",
-    "endOfLife": "5/31/2026",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA100",
-    "countryOfOrigin": "United States",
-    "supportAvailable": true,
-    "listPriceMonthly": 4955,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TACX2-SW-TM",
     "description": "Monthly GigaVUE-OS term license for GigaVUE-TA100 CXP (GVS-TACX2-HW). Includes Bundled Elite-Plus Software Support.  (EOS May 31, 2021)",
     "category": "License",
-    "endOfSale": "5/31/2021",
-    "endOfLife": "5/31/2026",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA100",
-    "countryOfOrigin": "United States",
-    "supportAvailable": true,
-    "listPriceMonthly": 4955,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAQ01-SW-TM",
@@ -3723,24 +3658,18 @@
     "partNumber": "GVS-TAX20-SW-TM",
     "description": "Monthly GigaVUE-OS term license for GigaVUE-TA25; all ports enabled (GVS-TAX[21/22]-HW). Includes Bundled Elite-Plus Software Support.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX20E-SW-TM",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA25",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPriceMonthly": 1205,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX20A-SW-TM",
     "description": "Monthly GigaVUE-OS term license for GigaVUE-TA25; 24 1/10/25G ports + 4 40/100G ports enabled (GVS-TAX[21A/22A]-HW). Includes Bundled Elite-Plus Software Support.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX20EA-SW-TM",
     "speedsSupported": [
       "25G",
       "100G"
@@ -3750,8 +3679,8 @@
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPriceMonthly": 685,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX20E-SW-TM",
@@ -3805,9 +3734,6 @@
     "partNumber": "GVS-TAX21",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 10G/25G SFP28 cages, 2 power supplies, 4 fan trays, AC power, all ports enabled.",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX21E",
     "portDensity": 8,
     "speedsSupported": [
       "10G",
@@ -3821,16 +3747,13 @@
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
     "listPrice": 38440,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX21-HW",
     "description": "GigaVUE-TA25 node, 48 1/10/25G SFP28 cages + 8 40/100G QSFP28 cages, 2 power supplies, 4 fan trays, AC power,  all ports enabled. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX21E-HW",
     "portDensity": 28,
     "speedsSupported": [
       "25G",
@@ -3842,8 +3765,8 @@
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
     "listPrice": 4800,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX21-SW-TM",
@@ -3863,9 +3786,6 @@
     "partNumber": "GVS-TAX21A",
     "description": "GigaVUE-TA25 node, 48 1/10/25G SFP28 cages + 8 40/100G QSFP28 cages, 2 power supplies, 4 fan trays, AC power, 24 1/10/25G ports enabled.",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX21EA",
     "portDensity": 28,
     "speedsSupported": [
       "25G",
@@ -3877,16 +3797,13 @@
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
     "listPrice": 22995,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX21A-HW",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 1G/10G/25G SFP28 cages, 2 power supplies, 4 fan trays, AC power, 24 10G/25G ports enabled.. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX21E-HW",
     "portDensity": 8,
     "speedsSupported": [
       "1G",
@@ -3901,8 +3818,8 @@
     "countryOfOrigin": "Taiwan",
     "supportAvailable": true,
     "listPrice": 4800,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "GVS-TAX21A-SW-TM",
@@ -3997,9 +3914,7 @@
     "partNumber": "GVS-TAX22",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 10G/25G SFP28 cages, 2 power supplies, 4 fan trays, DC power, all ports enabled.  (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX22E",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 8,
     "speedsSupported": [
       "10G",
@@ -4008,21 +3923,15 @@
       "100G"
     ],
     "formFactor": "QSFP28",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA25",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 39730,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAX22-HW",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 1G/10G/25G SFP28 cages, 2 power supplies, 4 fan trays, DC power, all ports enabled. Hardware only. Must pair with appropriate GigaVUE-OS Software License.  (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX22E-HW",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 8,
     "speedsSupported": [
       "1G",
@@ -4032,13 +3941,9 @@
       "100G"
     ],
     "formFactor": "QSFP28",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA25",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 4885,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAX22-SW-TM",
@@ -4058,9 +3963,7 @@
     "partNumber": "GVS-TAX22A",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 10G/25G SFP28 cages, 2 power supplies, 4 fan trays, DC power, 24 10G/25G ports enabled.  (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX22EA",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 8,
     "speedsSupported": [
       "10G",
@@ -4069,21 +3972,15 @@
       "100G"
     ],
     "formFactor": "QSFP28",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA25",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 24040,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAX22A-HW",
     "description": "GigaVUE-TA25 node, 8 40G/100G QSFP28 cages + 48 1G/10G/25G SFP28 cages, 2 power supplies, 4 fan trays, DC power, 24 10G/25G ports enabled. Hardware only. Must pair with appropriate GigaVUE-OS Software License.  (EOS Jul 7, 2025)",
     "category": "Fan",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "GVS-TAX22E-HW",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "portDensity": 8,
     "speedsSupported": [
       "1G",
@@ -4093,13 +3990,9 @@
       "100G"
     ],
     "formFactor": "QSFP28",
-    "productFamily": "Taps and Aggregators",
-    "productSubFamily": "GigaVUE-TA25",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": true,
-    "listPrice": 4885,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "GVS-TAX22A-SW-TM",
@@ -4292,31 +4185,25 @@
     "partNumber": "IBP-TAX20",
     "description": "Perpetual Inline Bypass License for GigaVUE-TA25 (GVS-TAX[21/22/21A/22A]). Software support at desired level must be purchased separately.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "IBP-TAX20E",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA25",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPrice": 19100,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "IBP-TAX20-SW-TM",
     "description": "Monthly Inline Bypass term license for GigaVUE-TA25 (GVS-TAX[21/22/21A/22A]). Includes Bundled Elite-Plus Software Support.",
     "category": "License",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "eosReplacementSku": "IBP-TAX20E-SW-TM",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA25",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
     "listPriceMonthly": 730,
-    "status": "EOL",
-    "isUnavailable": true
+    "status": "Active",
+    "isUnavailable": false
   },
   {
     "partNumber": "IBP-TAX20E",
@@ -5178,15 +5065,10 @@
     "partNumber": "PWR-TAC41",
     "description": "Power Supply Module, GigaVUE-TA400, AC. (EOS Jul 7, 2025)",
     "category": "Power",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "productFamily": "Accessories",
-    "productSubFamily": "Power",
-    "countryOfOrigin": "China",
-    "supportAvailable": false,
-    "listPrice": 2940,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "PWR-TAC41E",
@@ -5204,15 +5086,10 @@
     "partNumber": "PWR-TAC42",
     "description": "Power Supply Module, GigaVUE-TA400, DC. (EOS Jul 7, 2025)",
     "category": "Power",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "productFamily": "Accessories",
-    "productSubFamily": "Power",
-    "countryOfOrigin": "China",
-    "supportAvailable": false,
-    "listPrice": 3615,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "PWR-TAC42E",
@@ -5230,16 +5107,11 @@
     "partNumber": "PWR-TAX21",
     "description": "Power Supply Module, GigaVUE-TA25, AC, each. Not TAA Compliant. (EOS Jul 7, 2025)",
     "category": "Power",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "isTaaCompliant": false,
-    "productFamily": "Accessories",
-    "productSubFamily": "Power",
-    "countryOfOrigin": "China",
-    "supportAvailable": false,
-    "listPrice": 1970,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "isTaaCompliant": true,
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "PWR-TAX21E",
@@ -5258,16 +5130,11 @@
     "partNumber": "PWR-TAX22",
     "description": "Power Supply Module, GigaVUE-TA25, DC, each. Not TAA Compliant.  (EOS Jul 7, 2025)",
     "category": "Power",
-    "endOfSale": "7/7/2025",
-    "endOfLife": "12/7/2030",
-    "isTaaCompliant": false,
-    "productFamily": "Accessories",
-    "productSubFamily": "Power",
-    "countryOfOrigin": "China",
-    "supportAvailable": false,
-    "listPrice": 2890,
-    "status": "EOL",
-    "isUnavailable": true
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "isTaaCompliant": true,
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "PWR-TAX22E",
@@ -5597,21 +5464,15 @@
     "partNumber": "QSB-502",
     "description": "40G QSFP+ BiDi, Multimode SR, Full Duplex. Not TAA Compliant. (EOS Jul 03, 2025)",
     "category": "Transceiver",
-    "endOfSale": "7/3/2025",
-    "endOfLife": "7/3/2025",
-    "eosReplacementSku": "QSB-504",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "speedsSupported": [
       "40G"
     ],
     "formFactor": "QSFP+",
-    "isTaaCompliant": false,
-    "productFamily": "Accessories",
-    "productSubFamily": "Transceivers",
-    "countryOfOrigin": "Malaysia",
-    "supportAvailable": false,
-    "listPrice": 1980,
-    "status": "EOL",
-    "isUnavailable": true
+    "isTaaCompliant": true,
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "QSB-504",
@@ -5960,16 +5821,11 @@
   {
     "partNumber": "RMK-TAC40E",
     "description": "GigaVUE-TA400E Rack Mount Kit",
-    "category": "Accessory",
-    "endOfSale": "7/1/2025",
-    "endOfLife": "7/1/2025",
-    "productFamily": "Accessories",
-    "productSubFamily": "Accessories",
-    "countryOfOrigin": "Taiwan",
-    "supportAvailable": false,
-    "listPrice": 165,
-    "status": "EOL",
-    "isUnavailable": true
+    "category": "Other",
+    "endOfSale": "Discontinued (Removed from Price List)",
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "RMK-TAX20E",
@@ -7609,13 +7465,11 @@
     "partNumber": "SMT-HC1-UPGAFI",
     "description": "Application Filtering Intelligence - Upgrade from ASF - GigaVUE-HC1.",
     "category": "Other",
-    "productFamily": "GigaVUE H Series",
-    "productSubFamily": "GigaVUE-HC1",
-    "countryOfOrigin": "United States",
-    "supportAvailable": true,
+    "endOfSale": "Discontinued (Removed from Price List)",
     "listPrice": 15000,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "SMT-HC1-UPGBN-NV",
@@ -8899,13 +8753,11 @@
     "partNumber": "SMT-HC3-GEN2-VDR-SW-PL",
     "description": "Perpetual license for GigaSMART, GigaVUE-HC3 license, Video Fata Record Generation for Nokia AVA Platform. Desired Software support program must be added. This is a GEN2 license.",
     "category": "License",
-    "productFamily": "GigaVUE H Series",
-    "productSubFamily": "GigaVUE-HC3",
-    "countryOfOrigin": "United States",
-    "supportAvailable": true,
+    "endOfSale": "Discontinued (Removed from Price List)",
     "listPrice": 20000,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "SMT-HC3-GEN2-VDR-SW-TM",
@@ -9247,11 +9099,13 @@
   },
   {
     "partNumber": "SMT-HC3-UPGAFI",
-    "description": "Application Filtering Intelligence – Upgrade",
+    "description": "Application Filtering Intelligence – Upgrade\nfrom ASF - GigaVUE-HC3",
     "category": "Other",
+    "endOfSale": "Discontinued (Removed from Price List)",
     "listPrice": 15000,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "Discontinued",
+    "isUnavailable": true,
+    "supportAvailable": false
   },
   {
     "partNumber": "SMT-HC3-UPGBN-MV",

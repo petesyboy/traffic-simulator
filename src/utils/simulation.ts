@@ -103,7 +103,7 @@ export const calculateSimulationStep = (
 
   const metrics: Record<string, NodeMetrics> = {};
   nodes.forEach((node) => {
-    metrics[node.id] = { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedMbps: 0, filterDroppedMbps: 0 };
+    metrics[node.id] = { rxMbps: 0, txMbps: 0, rxPackets: 0, txPackets: 0, droppedPackets: 0, dedupDroppedMbps: 0, filterDroppedMbps: 0, gigaSmartDroppedMbps: 0 };
   });
 
   const activeEdgeSet = new Set<string>();
@@ -378,16 +378,40 @@ export const calculateSimulationStep = (
           nodeMetric.txPackets += ms.bandwidth * 250;
         });
       } else {
+        // Resolve cluster / group pool ID for tool cluster members so traffic is
+        // load-balanced across member tools rather than multicasting full rate to all.
+        const getTargetClusterId = (targetId: string): string | null => {
+          const tn = nodes.find(n => n.id === targetId);
+          if (!tn) return null;
+          if (tn.type === 'clusterNode' && (tn.data as any)?.clusterType === 'tool') return tn.id;
+          if (tn.data && (tn.data as any).clusterId) {
+            const cNode = nodes.find(n => n.id === (tn.data as any).clusterId);
+            if (cNode && (cNode.data as any)?.clusterType === 'tool') return cNode.id;
+          }
+          return null;
+        };
+
         // Tracked separately so a node fanning out on both handles (e.g. the
         // GSA's packet "out" and metadata "metadata-out") doesn't let one
         // handle's link count affect the other's split when load-balanced.
+        const clusterEdgesCount: Record<string, number> = {};
         const edgesPerTarget: Record<string, number> = {};
         packetOutboundEdges.forEach(e => {
           edgesPerTarget[e.target] = (edgesPerTarget[e.target] || 0) + 1;
+          const cId = getTargetClusterId(e.target);
+          if (cId) {
+            clusterEdgesCount[cId] = (clusterEdgesCount[cId] || 0) + 1;
+          }
         });
+
+        const metadataClusterEdgesCount: Record<string, number> = {};
         const metadataEdgesPerTarget: Record<string, number> = {};
         metadataTargetEdges.forEach(e => {
           metadataEdgesPerTarget[e.target] = (metadataEdgesPerTarget[e.target] || 0) + 1;
+          const cId = getTargetClusterId(e.target);
+          if (cId) {
+            metadataClusterEdgesCount[cId] = (metadataClusterEdgesCount[cId] || 0) + 1;
+          }
         });
 
         outboundEdges.forEach((edge) => {
@@ -403,8 +427,9 @@ export const calculateSimulationStep = (
 
           activeEdgeSet.add(edge.id);
 
-          const numLinks = edgesPerTarget[edge.target] || 1;
-          const metadataNumLinks = metadataEdgesPerTarget[edge.target] || 1;
+          const cId = getTargetClusterId(edge.target);
+          const numLinks = (cId && clusterEdgesCount[cId] > 0) ? clusterEdgesCount[cId] : (edgesPerTarget[edge.target] || 1);
+          const metadataNumLinks = (cId && metadataClusterEdgesCount[cId] > 0) ? metadataClusterEdgesCount[cId] : (metadataEdgesPerTarget[edge.target] || 1);
           const edgeForwardStream = (hasForwardStream && packetEdgeIdSet.has(edge.id)) ? { ...forwardStream!, bandwidth: forwardStream!.bandwidth / numLinks } : null;
           const edgeMetadataStreams = metadataEdgeIdSet.has(edge.id) ? generatedMetadataStreams.map(ms => ({ ...ms, bandwidth: ms.bandwidth / metadataNumLinks })) : [];
 
