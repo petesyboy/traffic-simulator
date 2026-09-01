@@ -1,5 +1,145 @@
 [
   {
+    "version": "1.0.713",
+    "date": "2026-09-01",
+    "summary": "Updated packet-consuming tools catalogue: replaced FortiNDR, Arista NDR, NetWitness, and Trend Micro with Armis (2 Gbps sensor profile) beneath Nozomi, including full appliance profiling and PDF report purpose descriptions."
+  },
+  {
+    "version": "1.0.712",
+    "date": "2026-09-01",
+    "summary": "Omitted unfinished Uplink report from active Report Generator modal and 'Dump All to Folder' solution deliverables package, focusing exports on Signal Path, Patch Sheet, and Crossover formats."
+  },
+  {
+    "version": "1.0.711",
+    "date": "2026-09-01",
+    "summary": "Fleshed out advanced Systems Engineer Reference Guide (README_advanced.md) with comprehensive source traffic modelling, optical TAP architectures, double-optic rules, multi-link trunks, and BOM diagnostics."
+  },
+  {
+    "version": "1.0.710",
+    "date": "2026-09-01",
+    "summary": "Integrated native File System Access API choosers for PDF reports, formal quotes, and diagram exports, streaming files directly to user-selected folders."
+  },
+  {
+    "version": "1.0.709",
+    "date": "2026-09-01",
+    "summary": "Added Australia & New Zealand (AU/ANZ) deployment region support with automatic PCD-00007 / PCD-00A27 power cord mapping for TAPs and chassis."
+  },
+  {
+    "version": "1.0.708",
+    "date": "2026-09-01",
+    "summary": "Streamlined GigaSMART traffic map auto-insertion when dropping traffic maps onto existing tool links."
+  },
+  {
+    "version": "1.0.707",
+    "date": "2026-09-01",
+    "summary": "Added Multi-Edition build pipelines (Internal vs Partner), GigaSMART reduction metrics, tool cluster load balancing, and dynamic site input improvements."
+  },
+  {
+    "version": "1.0.700",
+    "date": "2026-08-30",
+    "summary": "Added link utilisation level selector for traffic generation."
+  },
+  {
+    "version": "1.0.699",
+    "date": "2026-08-30",
+    "summary": "Preserved traffic flow through collapsed TAP clusters in simulation engine."
+  },
+  {
+    "version": "1.0.698",
+    "date": "2026-08-30",
+    "summary": "Added resizable columns and optimized table space in Live Traffic Injector."
+  },
+  {
+    "version": "1.0.697",
+    "date": "2026-08-30",
+    "summary": "Added automated flow generation with telco and mobile profile biasing."
+  },
+  {
+    "version": "1.0.696",
+    "date": "2026-08-29",
+    "summary": "Showed sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links."
+  },
+  {
+    "version": "1.0.695",
+    "date": "2026-08-29",
+    "summary": "Resolved TAP cluster member optics accurately on chassis connections."
+  },
+  {
+    "version": "1.0.694",
+    "date": "2026-08-28",
+    "summary": "Expanded vertical and horizontal node spacing with auto-fitView in Export Diagram Mode."
+  },
+  {
+    "version": "1.0.693",
+    "date": "2026-08-28",
+    "summary": "Auto-collapsed >4 TAPs and Tools into stacks during diagram and report screenshots."
+  },
+  {
+    "version": "1.0.692",
+    "date": "2026-08-28",
+    "summary": "Decoupled 3D card deck background from Export Diagram description box."
+  },
+  {
+    "version": "1.0.691",
+    "date": "2026-08-28",
+    "summary": "Enforced explicit pure white #ffffff and #ff9800 border on all diagram descriptors."
+  },
+  {
+    "version": "1.0.690",
+    "date": "2026-08-28",
+    "summary": "Matched Export Diagram text and box colors of TAP/Tool clusters to TA/HC chassis."
+  },
+  {
+    "version": "1.0.689",
+    "date": "2026-08-28",
+    "summary": "Added architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters."
+  },
+  {
+    "version": "1.0.688",
+    "date": "2026-08-28",
+    "summary": "Centered collapsed cluster cards vertically to align with chassis."
+  },
+  {
+    "version": "1.0.687",
+    "date": "2026-08-28",
+    "summary": "Positioned cluster cards strictly at member nodes bounding box."
+  },
+  {
+    "version": "1.0.686",
+    "date": "2026-08-28",
+    "summary": "Preserved parallel and clustered links across restoreState and grouping operations."
+  },
+  {
+    "version": "1.0.685",
+    "date": "2026-08-28",
+    "summary": "Restored tool and tap link terminations during expand/collapse cycles."
+  },
+  {
+    "version": "1.0.684",
+    "date": "2026-08-28",
+    "summary": "Added stacked cluster cards with expand/collapse for TAPs and Tools."
+  },
+  {
+    "version": "1.0.683",
+    "date": "2026-08-28",
+    "summary": "Synced manually overridden and racked M200T trays to Bill of Materials."
+  },
+  {
+    "version": "1.0.682",
+    "date": "2026-08-28",
+    "summary": "Added TAP tray allocation preference and manual M200T override support."
+  },
+  {
+    "version": "1.0.681",
+    "date": "2026-08-28",
+    "summary": "Prevented optic doubling on TA25E and chassis by tagging TAP reallocated optics as isAutoAdded."
+  },
+  {
+    "version": "1.0.680",
+    "date": "2026-08-28",
+    "summary": "Resolved optic and port allocation misalignment and orphan fitted optics on modular chassis."
+  },
+  {
     "version": "1.0.598",
     "date": "2026-08-24",
     "summary": "Project workspace maintenance: cleaned up stale root scratchpads (work_log.md), removed obsolete .claude worktrees, cleared temporary test coverage artifacts, and committed a clean git release state."

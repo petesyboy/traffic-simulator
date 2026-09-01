@@ -43,7 +43,7 @@ const SCAN_COMMITS = 60;
 const KEEP_ENTRIES = 20;
 
 /** Conventional-commit types that aren't user-facing release notes. */
-const SKIP_TYPES = /^(chore|test|ci|docs|build|style|refactor)(\([^)]*\))?!?:/i;
+const SKIP_TYPES = /^(chore|test|ci|build)(\([^)]*\))?!?:/i;
 
 const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
 

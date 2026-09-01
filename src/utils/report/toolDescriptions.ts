@@ -37,6 +37,8 @@ export const TOOL_PURPOSE_DESCRIPTIONS: Record<string, string> = {
     'A network access control and device visibility platform that identifies and profiles every device connecting to the network.',
   Nozomi:
     'An OT/ICS security platform that monitors industrial control system and IoT traffic for asset visibility and threat detection.',
+  Armis:
+    'An asset intelligence and cybersecurity platform that discovers, categorises, and continuously monitors unmanaged, IoT, and OT devices via passive traffic analysis.',
   Splunk:
     'A SIEM and log analytics platform that indexes machine data (including network metadata) for search, correlation, and security investigation.',
   Elastic:

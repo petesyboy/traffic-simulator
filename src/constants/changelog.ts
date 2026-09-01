@@ -16,103 +16,103 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.713",
+    date: "2026-09-01",
+    summary: "Updated packet-consuming tools catalogue: replaced FortiNDR, Arista NDR, NetWitness, and Trend Micro with Armis (2 Gbps sensor profile) beneath Nozomi, including full appliance profiling and PDF report purpose descriptions.",
+  },
+  {
+    version: "1.0.712",
+    date: "2026-09-01",
+    summary: "Omitted unfinished Uplink report from active Report Generator modal and 'Dump All to Folder' solution deliverables package, focusing exports on Signal Path, Patch Sheet, and Crossover formats.",
+  },
+  {
+    version: "1.0.711",
+    date: "2026-09-01",
+    summary: "Fleshed out advanced Systems Engineer Reference Guide (README_advanced.md) with comprehensive source traffic modelling, optical TAP architectures, double-optic rules, multi-link trunks, and BOM diagnostics.",
+  },
+  {
     version: "1.0.710",
     date: "2026-09-01",
-    summary: "Trigger native OS file and directory pickers immediately on click",
+    summary: "Integrated native File System Access API choosers for PDF reports, formal quotes, and diagram exports, streaming files directly to user-selected folders.",
   },
   {
     version: "1.0.709",
     date: "2026-09-01",
-    summary: "Add Australia & New Zealand (AU) deployment region and power cord resolution",
+    summary: "Added Australia & New Zealand (AU/ANZ) deployment region support with automatic PCD-00007 / PCD-00A27 power cord mapping for TAPs and chassis.",
+  },
+  {
+    version: "1.0.708",
+    date: "2026-09-01",
+    summary: "Streamlined GigaSMART traffic map auto-insertion when dropping traffic maps onto existing tool links.",
   },
   {
     version: "1.0.707",
     date: "2026-09-01",
-    summary: "Multi-edition support, gigaSMART reduction metrics, tool cluster load balancing, and site input improvements (v1.0.707)",
+    summary: "Added Multi-Edition build pipelines (Internal vs Partner), GigaSMART reduction metrics, tool cluster load balancing, and dynamic site input improvements.",
   },
   {
     version: "1.0.700",
     date: "2026-08-30",
-    summary: "Add link utilisation level selector for traffic generation (v1.0.700)",
+    summary: "Added link utilisation level selector for traffic generation.",
   },
   {
     version: "1.0.699",
     date: "2026-08-30",
-    summary: "Preserve traffic flow through collapsed TAP clusters (v1.0.699)",
+    summary: "Preserved traffic flow through collapsed TAP clusters in simulation engine.",
   },
   {
     version: "1.0.698",
     date: "2026-08-30",
-    summary: "Add resizable columns and optimized table space in Live Traffic Injector (v1.0.698)",
+    summary: "Added resizable columns and optimized table space in Live Traffic Injector.",
   },
   {
     version: "1.0.697",
     date: "2026-08-30",
-    summary: "Add automated flow generation with telco and mobile profile biasing (v1.0.697)",
+    summary: "Added automated flow generation with telco and mobile profile biasing.",
   },
   {
     version: "1.0.696",
     date: "2026-08-29",
-    summary: "Show sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links (v1.0.696)",
+    summary: "Showed sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links.",
   },
   {
     version: "1.0.695",
     date: "2026-08-29",
-    summary: "Resolve TAP cluster member optics accurately on chassis connections (v1.0.695)",
+    summary: "Resolved TAP cluster member optics accurately on chassis connections.",
   },
   {
     version: "1.0.694",
     date: "2026-08-28",
-    summary: "Expand vertical and horizontal node spacing with auto-fitView in Export Diagram Mode (v1.0.694)",
+    summary: "Expanded vertical and horizontal node spacing with auto-fitView in Export Diagram Mode.",
   },
   {
     version: "1.0.693",
     date: "2026-08-28",
-    summary: "Auto-collapse >4 TAPs and Tools into stacks during diagram and report screenshots (v1.0.693)",
+    summary: "Auto-collapsed >4 TAPs and Tools into stacks during diagram and report screenshots.",
   },
   {
     version: "1.0.692",
     date: "2026-08-28",
-    summary: "Decouple 3D card deck background from Export Diagram description box (v1.0.692)",
+    summary: "Decoupled 3D card deck background from Export Diagram description box.",
   },
   {
     version: "1.0.691",
     date: "2026-08-28",
-    summary: "Enforce explicit pure white #ffffff and #ff9800 border on all diagram descriptors (v1.0.691)",
+    summary: "Enforced explicit pure white #ffffff and #ff9800 border on all diagram descriptors.",
+  },
+  {
+    version: "1.0.690",
+    date: "2026-08-28",
+    summary: "Matched Export Diagram text and box colors of TAP/Tool clusters to TA/HC chassis.",
   },
   {
     version: "1.0.689",
     date: "2026-08-28",
-    summary: "Add architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters (v1.0.689)",
+    summary: "Added architecture details overlay in Export Diagram Ready Mode for TAP and Tool clusters.",
   },
   {
     version: "1.0.688",
     date: "2026-08-28",
-    summary: "Center collapsed cluster cards vertically to align with chassis (v1.0.688)",
-  },
-  {
-    version: "1.0.687",
-    date: "2026-08-28",
-    summary: "Position cluster cards strictly at member nodes bounding box (v1.0.687)",
-  },
-  {
-    version: "1.0.686",
-    date: "2026-08-28",
-    summary: "Preserve parallel and clustered links across restoreState and grouping operations (v1.0.686)",
-  },
-  {
-    version: "1.0.685",
-    date: "2026-08-28",
-    summary: "Restore tool and tap link terminations during expand/collapse cycles (v1.0.685)",
-  },
-  {
-    version: "1.0.684",
-    date: "2026-08-28",
-    summary: "Add stacked cluster cards with expand/collapse for TAPs and Tools (v1.0.684)",
-  },
-  {
-    version: "1.0.683",
-    date: "2026-08-28",
-    summary: "Sync manually overridden and racked M200T trays to Bill of Materials (v1.0.683)",
+    summary: "Centered collapsed cluster cards vertically to align with chassis.",
   },
 ];

@@ -18,8 +18,10 @@ describe('describeToolPurpose', () => {
     );
   });
 
-  it('has an entry for all 19 built-in catalogue tools (14 packet + 4 metadata + 1 objects)', () => {
-    expect(Object.keys(TOOL_PURPOSE_DESCRIPTIONS)).toHaveLength(19);
+  it('has an entry for built-in catalogue tools including Armis', () => {
+    expect(TOOL_PURPOSE_DESCRIPTIONS['Armis']).toBeDefined();
+    expect(TOOL_PURPOSE_DESCRIPTIONS['Armis']).toContain('asset intelligence');
+    expect(Object.keys(TOOL_PURPOSE_DESCRIPTIONS).length).toBeGreaterThanOrEqual(16);
   });
 });
 

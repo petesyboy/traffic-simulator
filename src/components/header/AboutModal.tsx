@@ -14,7 +14,7 @@ export interface AboutModalProps {
   onClose: () => void;
 }
 
-const RECENT_COUNT = 2;
+const RECENT_COUNT = 4;
 
 const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => (
   <div className="modal-overlay" onClick={onClose}>
