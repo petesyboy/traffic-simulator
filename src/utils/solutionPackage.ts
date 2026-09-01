@@ -29,7 +29,6 @@ import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from './bom
 import { getProjectQuoteWorkspace } from './projectQuoteStorage';
 import { buildPhysicalItems, parseAndConvertDimensions } from './bom/physicalItems';
 import { buildReportDocDefinition } from './report/buildReportDocDefinition';
-import { buildUplinkReportDocDefinition } from './report/uplinkReport';
 import { captureTopologyDiagramForReport, captureSiteTopologyDiagramForReport } from './report/captureTopologyDiagram';
 import { captureChassisFrontPanelPng } from './report/captureChassisFrontPanel';
 import { captureRackElevationPng } from './report/captureRackElevation';
@@ -297,8 +296,8 @@ export async function generateAllSolutionAssets(
     console.warn('Topology PNG capture failed, continuing:', err);
   }
 
-  // ── 5. PDF Technical Spec & Executive Brief Rendering ──
-  onProgress?.('Rendering Architecture Spec & Uplink PDFs via pdfmake...');
+  // ── 5. PDF Technical Spec Rendering ──
+  onProgress?.('Rendering Architecture Spec PDF via pdfmake...');
   try {
     const pdfMake = await loadPdfMake();
     const logoDataUrl = await fetchAsDataUrl(gigamonLogo).catch(() => undefined);
@@ -380,16 +379,6 @@ export async function generateAllSolutionAssets(
     files.push({
       filename: getStandardExportFilename('architecture-pdf', scenarioName),
       content: archBlob,
-      mimeType: 'application/pdf',
-      category: 'pdf',
-    });
-
-    // B. Uplink Executive Outcome Brief PDF
-    const uplinkDocDef = buildUplinkReportDocDefinition(reportInput);
-    const uplinkBlob = await renderPdfDocToBlob(pdfMake.createPdf(uplinkDocDef));
-    files.push({
-      filename: getStandardExportFilename('uplink-pdf', scenarioName),
-      content: uplinkBlob,
       mimeType: 'application/pdf',
       category: 'pdf',
     });

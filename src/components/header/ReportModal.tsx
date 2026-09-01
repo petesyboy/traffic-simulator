@@ -19,7 +19,6 @@ import {
 import { captureChassisFrontPanelPng } from '../../utils/report/captureChassisFrontPanel';
 import { captureRackElevationPng } from '../../utils/report/captureRackElevation';
 import { buildReportDocDefinition } from '../../utils/report/buildReportDocDefinition';
-import { buildUplinkReportDocDefinition } from '../../utils/report/uplinkReport';
 import { buildPatchSheetReportDocDefinition } from '../../utils/report/patchSheetReport';
 import { buildCrossoverReportDocDefinition } from '../../utils/report/crossoverReport';
 import { autoDeployRack } from '../../utils/autoRack';
@@ -38,7 +37,7 @@ export interface ReportModalProps {
   onClose: () => void;
 }
 
-type ReportFormatType = 'signal-path' | 'uplink' | 'patch-sheet' | 'crossover';
+type ReportFormatType = 'signal-path' | 'patch-sheet' | 'crossover';
 
 interface PdfMakeStatic {
   createPdf: (documentDefinitions: TDocumentDefinitions) => TCreatedPdf;
@@ -123,9 +122,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     ensureProjectNamed(async (resolvedScenarioName) => {
       let exportDocType: ExportDocumentType = 'architecture-pdf';
       switch (reportFormat) {
-        case 'uplink':
-          exportDocType = 'uplink-pdf';
-          break;
         case 'patch-sheet':
           exportDocType = 'patch-sheet-pdf';
           break;
@@ -232,9 +228,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
             let docDefinition: TDocumentDefinitions;
 
             switch (reportFormat) {
-              case 'uplink':
-                docDefinition = buildUplinkReportDocDefinition(reportInput);
-                break;
               case 'patch-sheet':
                 docDefinition = buildPatchSheetReportDocDefinition(reportInput);
                 break;
@@ -356,17 +349,24 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const formatOptions: { id: ReportFormatType; title: string; subtitle: string; tag: string; color: string }[] = [
     {
       id: 'signal-path',
-      title: 'Signal Path',
+      title: 'Signal Path & Architecture',
       subtitle: 'Complete engineering spec, network topology, Bill of Materials, and rack elevations.',
       tag: 'Technical Spec',
       color: '#16213D',
     },
     {
-      id: 'uplink',
-      title: 'Uplink',
-      subtitle: 'Executive outcome brief, milestone progression, and business risk reframes.',
-      tag: 'Executive Brief',
+      id: 'patch-sheet',
+      title: 'Patch Sheet & Cabling',
+      subtitle: 'Physical cabling and port-by-port wiring schedule for datacentre technicians.',
+      tag: 'Cabling Schedule',
       color: '#0F2E33',
+    },
+    {
+      id: 'crossover',
+      title: 'Crossover & Flow Tables',
+      subtitle: 'Traffic mapping rules, flow filtering, and tool delivery matrices.',
+      tag: 'Flow Mapping',
+      color: '#281B38',
     },
   ];
 

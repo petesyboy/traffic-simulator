@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.710",
+    date: "2026-09-01",
+    summary: "Trigger native OS file and directory pickers immediately on click",
+  },
+  {
     version: "1.0.709",
     date: "2026-09-01",
     summary: "Add Australia & New Zealand (AU) deployment region and power cord resolution",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.683",
     date: "2026-08-28",
     summary: "Sync manually overridden and racked M200T trays to Bill of Materials (v1.0.683)",
-  },
-  {
-    version: "1.0.682",
-    date: "2026-08-28",
-    summary: "Add TAP tray allocation preference and manual M200T override support (v1.0.682)",
   },
 ];

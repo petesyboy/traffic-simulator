@@ -42,7 +42,7 @@ describe('solutionPackage', () => {
     );
   });
 
-  it('generates the 6 canonical solution deliverable files in memory', async () => {
+  it('generates the 5 canonical solution deliverable files in memory', async () => {
     const assets = await generateAllSolutionAssets({
       nodes: mockNodes,
       edges: mockEdges,
@@ -56,15 +56,15 @@ describe('solutionPackage', () => {
 
     const filenames = assets.map((a) => a.filename);
 
-    expect(filenames).toHaveLength(6);
+    expect(filenames).toHaveLength(5);
     expect(filenames).toContain('Solution_Overview_City_of_Goteborg.json');
     expect(filenames).toContain('Bill_of_Materials_City_of_Goteborg.csv');
     expect(filenames).toContain('Bill_of_Materials_Deployment_Report_City_of_Goteborg.csv');
     expect(filenames).toContain('Gigamon_Architecture_Diagram_City_of_Goteborg.png');
     expect(filenames).toContain('Gigamon_Architecture_City_of_Goteborg.pdf');
-    expect(filenames).toContain('Gigamon_Architecture_Uplink_City_of_Goteborg.pdf');
 
-    // No commercial quotes in deliverables dump
+    // No commercial quotes or uplink reports in deliverables dump
+    expect(filenames).not.toContain('Gigamon_Architecture_Uplink_City_of_Goteborg.pdf');
     expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.csv');
     expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.json');
     expect(filenames).not.toContain('Commercial_Quote_City_of_Goteborg.pdf');
