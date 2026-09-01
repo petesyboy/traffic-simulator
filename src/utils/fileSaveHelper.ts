@@ -6,6 +6,12 @@
  * with a graceful window.prompt() fallback for browsers or file:// contexts without File System Access API.
  */
 
+export type FileContentInput =
+  | Blob
+  | string
+  | (() => Promise<Blob | string>)
+  | (() => Blob | string);
+
 export interface FilePickerTypeOption {
   description: string;
   mimeType: string;
@@ -40,26 +46,27 @@ function convertContentToBlob(content: Blob | string, defaultMime: string): Blob
 }
 
 /**
- * Saves a Blob or string to disk, asking the user for a filename / location.
+ * Saves a Blob, string, or dynamically generated content to disk, asking the user for a filename / location.
  *
  * 1. Uses window.showSaveFilePicker when available, which opens the native OS Save dialog
  *    allowing the user to overwrite existing files or select a target folder.
+ *    If a generator function is provided, showSaveFilePicker is invoked IMMEDIATELY while
+ *    the user click gesture is active, before executing heavy rendering/generation.
  * 2. Falls back to window.prompt() to ask for a filename before triggering a standard download.
  *
- * @param content The file content as a Blob, UTF-8 string, or base64 data URL
+ * @param contentOrGenerator The file content (Blob / string) or an async generator function returning Blob/string
  * @param defaultFilename The suggested initial filename
  * @param options Description, MIME type, and extension for the file picker
  */
 export async function saveWithFilePickerOrPrompt(
-  content: Blob | string,
+  contentOrGenerator: FileContentInput,
   defaultFilename: string,
   options?: Partial<FilePickerTypeOption>,
 ): Promise<SaveFileResult> {
-  const ext = options?.extension || (defaultFilename.includes('.') ? '.' + defaultFilename.split('.').pop()! : '');
-  const mime = options?.mimeType || (content instanceof Blob ? content.type : 'application/octet-stream') || 'application/octet-stream';
+  const rawExt = options?.extension || (defaultFilename.includes('.') ? '.' + defaultFilename.split('.').pop()! : '');
+  const ext = rawExt.startsWith('.') ? rawExt : `.${rawExt}`;
+  const mime = options?.mimeType || 'application/octet-stream';
   const desc = options?.description || 'File';
-
-  const blob = convertContentToBlob(content, mime);
 
   // 1. Try modern File System Access API (supported in Chrome/Edge on macOS, Windows, Linux)
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
@@ -81,6 +88,13 @@ export async function saveWithFilePickerOrPrompt(
         ],
       });
 
+      // User chose destination and clicked Save: now generate or resolve content
+      const resolvedContent = typeof contentOrGenerator === 'function'
+        ? await contentOrGenerator()
+        : contentOrGenerator;
+
+      const blob = convertContentToBlob(resolvedContent, mime);
+
       const writable = await handle.createWritable();
       await writable.write(blob);
       await writable.close();
@@ -98,11 +112,17 @@ export async function saveWithFilePickerOrPrompt(
           cancelled: true,
         };
       }
-      // Otherwise (e.g. SecurityError on file:// origin), fall through to prompt fallback
+      console.warn('showSaveFilePicker unavailable or threw, falling back to prompt download:', err);
     }
   }
 
   // 2. Fallback: Prompt user for filename so they can choose or confirm the name
+  const resolvedContent = typeof contentOrGenerator === 'function'
+    ? await contentOrGenerator()
+    : contentOrGenerator;
+
+  const blob = convertContentToBlob(resolvedContent, mime);
+
   let targetFilename = defaultFilename;
   if (typeof window !== 'undefined' && typeof window.prompt === 'function') {
     const userInput = window.prompt('Save as file name (enter name to save or overwrite):', defaultFilename);

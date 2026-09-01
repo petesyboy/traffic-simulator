@@ -752,54 +752,59 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setIsExportingPdf(true);
     setPdfError(null);
     try {
-      const pdfMake = await loadPdfMake();
-      const docDef = buildQuotePdfDocDefinition(items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode, {
-        scenarioName: currentScenarioName || 'Gigamon_Solution',
-        projectLicenseMode: globalLicenseMode,
-        defaultTermDuration: globalTermDuration,
-        projectRegion: globalRegion,
-        customerName: quoteMetadata?.endCustomer || currentScenarioName || 'Gigamon Customer',
-      });
       const defaultFilename = getStandardExportFilename('quote-pdf', currentScenarioName);
 
-      const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
-        try {
-          const timeout = setTimeout(() => {
-            reject(new Error('PDF generation timed out after 10 seconds.'));
-          }, 10000);
-
-          const pdfDoc = pdfMake.createPdf(docDef) as unknown as {
-            getBlob: (cb?: (blob: Blob) => void) => Promise<Blob> | void;
-          };
-
-          const res = pdfDoc.getBlob((blob: Blob) => {
-            clearTimeout(timeout);
-            if (blob) resolve(blob);
-            else reject(new Error('PDF generation produced an empty file.'));
+      const res = await saveWithFilePickerOrPrompt(
+        async () => {
+          const pdfMake = await loadPdfMake();
+          const docDef = buildQuotePdfDocDefinition(items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode, {
+            scenarioName: currentScenarioName || 'Gigamon_Solution',
+            projectLicenseMode: globalLicenseMode,
+            defaultTermDuration: globalTermDuration,
+            projectRegion: globalRegion,
+            customerName: quoteMetadata?.endCustomer || currentScenarioName || 'Gigamon Customer',
           });
 
-          if (res && typeof (res as Promise<Blob>).then === 'function') {
-            (res as Promise<Blob>)
-              .then((blob) => {
+          return await new Promise<Blob>((resolve, reject) => {
+            try {
+              const timeout = setTimeout(() => {
+                reject(new Error('PDF generation timed out after 10 seconds.'));
+              }, 10000);
+
+              const pdfDoc = pdfMake.createPdf(docDef) as unknown as {
+                getBlob: (cb?: (blob: Blob) => void) => Promise<Blob> | void;
+              };
+
+              const pdfRes = pdfDoc.getBlob((blob: Blob) => {
                 clearTimeout(timeout);
                 if (blob) resolve(blob);
                 else reject(new Error('PDF generation produced an empty file.'));
-              })
-              .catch((err) => {
-                clearTimeout(timeout);
-                reject(err);
               });
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
 
-      const res = await saveWithFilePickerOrPrompt(pdfBlob, defaultFilename, {
-        description: 'PDF Quotation Document',
-        mimeType: 'application/pdf',
-        extension: '.pdf',
-      });
+              if (pdfRes && typeof (pdfRes as Promise<Blob>).then === 'function') {
+                (pdfRes as Promise<Blob>)
+                  .then((blob) => {
+                    clearTimeout(timeout);
+                    if (blob) resolve(blob);
+                    else reject(new Error('PDF generation produced an empty file.'));
+                  })
+                  .catch((err) => {
+                    clearTimeout(timeout);
+                    reject(err);
+                  });
+              }
+            } catch (err) {
+              reject(err);
+            }
+          });
+        },
+        defaultFilename,
+        {
+          description: 'PDF Quotation Document',
+          mimeType: 'application/pdf',
+          extension: '.pdf',
+        }
+      );
 
       if (res.saved) {
         setQuoteNotification({

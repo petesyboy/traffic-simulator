@@ -249,18 +249,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
   const handleExportScreenshot = () => {
     ensureProjectNamed((resolvedName) => {
-      captureTopologyDiagramForReport()
-        .then(async (dataUrl) => {
-          const filename = getStandardExportFilename('diagram-png', resolvedName);
-          await saveWithFilePickerOrPrompt(dataUrl, filename, {
-            description: 'PNG Topology Diagram',
-            mimeType: 'image/png',
-            extension: '.png',
-          });
-        })
-        .catch((err) => {
-          console.error('oops, something went wrong!', err);
-        });
+      const filename = getStandardExportFilename('diagram-png', resolvedName);
+      saveWithFilePickerOrPrompt(
+        async () => {
+          return await captureTopologyDiagramForReport();
+        },
+        filename,
+        {
+          description: 'PNG Topology Diagram',
+          mimeType: 'image/png',
+          extension: '.png',
+        }
+      ).catch((err) => {
+        console.error('oops, something went wrong!', err);
+      });
     });
   };
 

@@ -118,159 +118,183 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   };
 
   const handleGenerate = () => {
+    setError(null);
+
     ensureProjectNamed(async (resolvedScenarioName) => {
+      let exportDocType: ExportDocumentType = 'architecture-pdf';
+      switch (reportFormat) {
+        case 'uplink':
+          exportDocType = 'uplink-pdf';
+          break;
+        case 'patch-sheet':
+          exportDocType = 'patch-sheet-pdf';
+          break;
+        case 'crossover':
+          exportDocType = 'crossover-pdf';
+          break;
+        case 'signal-path':
+        default:
+          exportDocType = 'architecture-pdf';
+          break;
+      }
+      const defaultFilename = getStandardExportFilename(exportDocType, resolvedScenarioName);
+
       setBusy(true);
-      setError(null);
-      setStep('capturing');
+
       try {
-        // 1. Auto-deploy hardware to racks for each site before generating report
-        const uniqueSites = Array.from(
-          new Set(
-            nodes
-              .filter(isRackableGigamonEquipment)
-              .map((n) => (n.data?.site as string || '').trim())
-              .filter(Boolean)
-          )
-        );
-        if (uniqueSites.length === 0) uniqueSites.push('Global / Unassigned');
+        const saveRes = await saveWithFilePickerOrPrompt(
+          async () => {
+            setStep('capturing');
 
-        let currentNodes = [...nodes];
-        for (const site of uniqueSites) {
-          currentNodes = autoDeployRack(currentNodes, site);
-        }
-        storeSetNodes(currentNodes);
-
-        const [diagramDataUrl, logoDataUrl] = await Promise.all([
-          captureTopologyDiagramForReport(),
-          fetchAsDataUrl(gigamonLogo).catch(() => undefined),
-        ]);
-
-        const chassisFrontPanelImages: Record<string, string> = {};
-        const hardwareNodes = currentNodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
-        await Promise.all(
-          hardwareNodes.map(async (n) => {
-            const data = n.data as HardwareNodeData;
-            const model = String(data.model || '');
-            const chassisImage = resolveHardwareIcon(getChassisImagePath(model, data.sku));
-            const slotPositions = getModuleSlotPositions(model, data.sku);
-            const png = await captureChassisFrontPanelPng(chassisImage, slotPositions, data.installedBoards || {}).catch(
-              () => undefined,
+            // 1. Auto-deploy hardware to racks for each site before generating report
+            const uniqueSites = Array.from(
+              new Set(
+                nodes
+                  .filter(isRackableGigamonEquipment)
+                  .map((n) => (n.data?.site as string || '').trim())
+                  .filter(Boolean)
+              )
             );
-            if (png) chassisFrontPanelImages[n.id] = png;
-          }),
-        );
+            if (uniqueSites.length === 0) uniqueSites.push('Global / Unassigned');
 
-        // Capture 42U rack elevation diagrams for each site
-        const siteRackImages: Record<string, string> = {};
-        await Promise.all(
-          uniqueSites.map(async (site) => {
-            const png = await captureRackElevationPng(currentNodes, site, chassisFrontPanelImages).catch(() => undefined);
-            if (png) siteRackImages[site] = png;
-          }),
-        );
-
-        // Check if multi-site diagram splitting is recommended for legibility
-        const splitJudgement = detectDiagramSplitting(currentNodes, edges);
-        const siteDiagrams: Record<string, string> = {};
-
-        if (splitJudgement.shouldSplit) {
-          for (const partition of splitJudgement.partitions) {
-            try {
-              const sitePng = await captureSiteTopologyDiagramForReport(partition.nodeIds);
-              if (sitePng) siteDiagrams[partition.siteName] = sitePng;
-            } catch {
-              // Fallback gracefully to overview diagram if sub-diagram capture fails
+            let currentNodes = [...nodes];
+            for (const site of uniqueSites) {
+              currentNodes = autoDeployRack(currentNodes, site);
             }
-          }
-        }
+            storeSetNodes(currentNodes);
 
-        setStep('building');
+            const [diagramDataUrl, logoDataUrl] = await Promise.all([
+              captureTopologyDiagramForReport(),
+              fetchAsDataUrl(gigamonLogo).catch(() => undefined),
+            ]);
 
-        const reportInput = {
-          nodes: currentNodes,
-          edges,
-          trafficStreams,
-          projectName: resolvedScenarioName,
-          projectRegion,
-          projectLicenseMode,
-          defaultTermDuration,
-          peakNodeRxMbps,
-          advancedMode,
-          diagramDataUrl,
-          logoDataUrl,
-          nodeMetrics,
-          isRunning,
-          chassisFrontPanelImages,
-          siteRackImages,
-          siteDiagrams,
-          execSummaryText: execSummaryText.trim() || undefined,
-        };
+            const chassisFrontPanelImages: Record<string, string> = {};
+            const hardwareNodes = currentNodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
+            await Promise.all(
+              hardwareNodes.map(async (n) => {
+                const data = n.data as HardwareNodeData;
+                const model = String(data.model || '');
+                const chassisImage = resolveHardwareIcon(getChassisImagePath(model, data.sku));
+                const slotPositions = getModuleSlotPositions(model, data.sku);
+                const png = await captureChassisFrontPanelPng(chassisImage, slotPositions, data.installedBoards || {}).catch(
+                  () => undefined,
+                );
+                if (png) chassisFrontPanelImages[n.id] = png;
+              }),
+            );
 
-        let docDefinition: TDocumentDefinitions;
-        let exportDocType: ExportDocumentType = 'architecture-pdf';
+            // Capture 42U rack elevation diagrams for each site
+            const siteRackImages: Record<string, string> = {};
+            await Promise.all(
+              uniqueSites.map(async (site) => {
+                const png = await captureRackElevationPng(currentNodes, site, chassisFrontPanelImages).catch(() => undefined);
+                if (png) siteRackImages[site] = png;
+              }),
+            );
 
-        switch (reportFormat) {
-          case 'uplink':
-            docDefinition = buildUplinkReportDocDefinition(reportInput);
-            exportDocType = 'uplink-pdf';
-            break;
-          case 'patch-sheet':
-            docDefinition = buildPatchSheetReportDocDefinition(reportInput);
-            exportDocType = 'patch-sheet-pdf';
-            break;
-          case 'crossover':
-            docDefinition = buildCrossoverReportDocDefinition(reportInput);
-            exportDocType = 'crossover-pdf';
-            break;
-          case 'signal-path':
-          default:
-            docDefinition = buildReportDocDefinition(reportInput);
-            exportDocType = 'architecture-pdf';
-            break;
-        }
+            // Check if multi-site diagram splitting is recommended for legibility
+            const splitJudgement = detectDiagramSplitting(currentNodes, edges);
+            const siteDiagrams: Record<string, string> = {};
 
-        const pdfMake = await loadPdfMake();
-        const defaultFilename = getStandardExportFilename(exportDocType, resolvedScenarioName);
+            if (splitJudgement.shouldSplit) {
+              for (const partition of splitJudgement.partitions) {
+                try {
+                  const sitePng = await captureSiteTopologyDiagramForReport(partition.nodeIds);
+                  if (sitePng) siteDiagrams[partition.siteName] = sitePng;
+                } catch {
+                  // Fallback gracefully to overview diagram if sub-diagram capture fails
+                }
+              }
+            }
 
-        const pdfBlob: Blob = await new Promise<Blob>((resolve, reject) => {
-          try {
-            const timeout = setTimeout(() => {
-              reject(new Error('PDF generation timed out after 10 seconds.'));
-            }, 10000);
+            setStep('building');
 
-            const pdfDoc = pdfMake.createPdf(docDefinition) as unknown as {
-              getBlob: (cb?: (blob: Blob) => void) => Promise<Blob> | void;
+            const reportInput = {
+              nodes: currentNodes,
+              edges,
+              trafficStreams,
+              projectName: resolvedScenarioName,
+              projectRegion,
+              projectLicenseMode,
+              defaultTermDuration,
+              peakNodeRxMbps,
+              advancedMode,
+              diagramDataUrl,
+              logoDataUrl,
+              nodeMetrics,
+              isRunning,
+              chassisFrontPanelImages,
+              siteRackImages,
+              siteDiagrams,
+              execSummaryText: execSummaryText.trim() || undefined,
             };
 
-            const res = pdfDoc.getBlob((blob: Blob) => {
-              clearTimeout(timeout);
-              if (blob) resolve(blob);
-              else reject(new Error('PDF report generation produced an empty file.'));
-            });
+            let docDefinition: TDocumentDefinitions;
 
-            if (res && typeof (res as Promise<Blob>).then === 'function') {
-              (res as Promise<Blob>)
-                .then((blob) => {
+            switch (reportFormat) {
+              case 'uplink':
+                docDefinition = buildUplinkReportDocDefinition(reportInput);
+                break;
+              case 'patch-sheet':
+                docDefinition = buildPatchSheetReportDocDefinition(reportInput);
+                break;
+              case 'crossover':
+                docDefinition = buildCrossoverReportDocDefinition(reportInput);
+                break;
+              case 'signal-path':
+              default:
+                docDefinition = buildReportDocDefinition(reportInput);
+                break;
+            }
+
+            const pdfMake = await loadPdfMake();
+
+            return await new Promise<Blob>((resolve, reject) => {
+              try {
+                const timeout = setTimeout(() => {
+                  reject(new Error('PDF generation timed out after 10 seconds.'));
+                }, 10000);
+
+                const pdfDoc = pdfMake.createPdf(docDefinition) as unknown as {
+                  getBlob: (cb?: (blob: Blob) => void) => Promise<Blob> | void;
+                };
+
+                const res = pdfDoc.getBlob((blob: Blob) => {
                   clearTimeout(timeout);
                   if (blob) resolve(blob);
                   else reject(new Error('PDF report generation produced an empty file.'));
-                })
-                .catch((err) => {
-                  clearTimeout(timeout);
-                  reject(err);
                 });
-            }
-          } catch (err) {
-            reject(err);
-          }
-        });
 
-        await saveWithFilePickerOrPrompt(pdfBlob, defaultFilename, {
-          description: 'PDF Solution Report',
-          mimeType: 'application/pdf',
-          extension: '.pdf',
-        });
-        setStep('done');
+                if (res && typeof (res as Promise<Blob>).then === 'function') {
+                  (res as Promise<Blob>)
+                    .then((blob) => {
+                      clearTimeout(timeout);
+                      if (blob) resolve(blob);
+                      else reject(new Error('PDF report generation produced an empty file.'));
+                    })
+                    .catch((err) => {
+                      clearTimeout(timeout);
+                      reject(err);
+                    });
+                }
+              } catch (err) {
+                reject(err);
+              }
+            });
+          },
+          defaultFilename,
+          {
+            description: 'PDF Solution Report',
+            mimeType: 'application/pdf',
+            extension: '.pdf',
+          }
+        );
+
+        if (saveRes.saved) {
+          setStep('done');
+        } else {
+          setStep('idle');
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not generate the report.');
         setStep('idle');
@@ -279,6 +303,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       }
     });
   };
+
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [exportAllStatus, setExportAllStatus] = useState<string | null>(null);
 

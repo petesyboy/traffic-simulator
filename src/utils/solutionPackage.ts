@@ -414,18 +414,27 @@ export async function exportSolutionToDirectoryOrZip(
   fileCount: number;
 }> {
   const scenarioName = options.currentScenarioName || 'Solution';
-  options.onProgress?.('Preparing solution deliverables...');
 
-  const assets = await generateAllSolutionAssets(options);
-
-  // 1. Try modern File System Access Directory Picker (showDirectoryPicker)
+  // 1. Try modern File System Access Directory Picker (showDirectoryPicker) FIRST while user gesture is active
   if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
+    let dirHandle: FileSystemDirectoryHandle | null = null;
     try {
-      const dirHandle = await (window as unknown as {
+      dirHandle = await (window as unknown as {
         showDirectoryPicker: (opts?: { id?: string; mode?: string }) => Promise<FileSystemDirectoryHandle>;
       }).showDirectoryPicker({
         mode: 'readwrite',
       });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // User cancelled folder chooser
+        return { success: false, fileCount: 0 };
+      }
+      console.warn('showDirectoryPicker unavailable or threw, falling back to ZIP package:', err);
+    }
+
+    if (dirHandle) {
+      options.onProgress?.('Generating deliverables (PDF reports, CSVs, JSON, diagram)...');
+      const assets = await generateAllSolutionAssets(options);
 
       options.onProgress?.(`Writing ${assets.length} files to folder "${dirHandle.name}"...`);
 
@@ -444,17 +453,13 @@ export async function exportSolutionToDirectoryOrZip(
         directoryName: dirHandle.name,
         fileCount: assets.length,
       };
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        // User cancelled folder chooser
-        return { success: false, fileCount: 0 };
-      }
-      // Otherwise fall through to ZIP package fallback
-      console.warn('showDirectoryPicker unavailable or threw, falling back to ZIP package:', err);
     }
   }
 
   // 2. Universal Fallback: Bundle all files into a structured ZIP archive
+  options.onProgress?.('Generating deliverables for ZIP package...');
+  const assets = await generateAllSolutionAssets(options);
+
   options.onProgress?.('Packaging all deliverables into a ZIP archive...');
   const zip = new JSZip();
   const folderName = getStandardExportFilename('topology-json', scenarioName).replace(/\.json$/i, '');

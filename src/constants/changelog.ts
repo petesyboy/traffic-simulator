@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.709",
+    date: "2026-09-01",
+    summary: "Add Australia & New Zealand (AU) deployment region and power cord resolution",
+  },
+  {
     version: "1.0.707",
     date: "2026-09-01",
     summary: "Multi-edition support, gigaSMART reduction metrics, tool cluster load balancing, and site input improvements (v1.0.707)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.682",
     date: "2026-08-28",
     summary: "Add TAP tray allocation preference and manual M200T override support (v1.0.682)",
-  },
-  {
-    version: "1.0.681",
-    date: "2026-08-28",
-    summary: "Prevent optic doubling on TA25E and chassis by tagging TAP reallocated optics as isAutoAdded (v1.0.681)",
   },
 ];
