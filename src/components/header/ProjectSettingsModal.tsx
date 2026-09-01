@@ -65,11 +65,12 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
             <select
               className="form-select"
               value={projectRegion}
-              onChange={(e) => setProjectRegion(e.target.value as 'US' | 'EU' | 'UK')}
+              onChange={(e) => setProjectRegion(e.target.value as 'US' | 'EU' | 'UK' | 'AU')}
             >
               <option value="US">North America (US)</option>
               <option value="EU">Europe (EU)</option>
               <option value="UK">United Kingdom (UK)</option>
+              <option value="AU">Australia &amp; New Zealand (AU / ANZ)</option>
             </select>
           </div>
 

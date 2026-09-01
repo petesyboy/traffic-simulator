@@ -411,7 +411,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     edges,
     projectLicenseMode,
     defaultTermDuration,
-    projectRegion as 'US' | 'EU' | 'UK',
+    projectRegion as 'US' | 'EU' | 'UK' | 'AU',
     true,
     peakNodeRxMbps,
   );

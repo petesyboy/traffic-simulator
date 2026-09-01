@@ -195,7 +195,7 @@ export function generateBom(
   edges: Edge[],
   globalLicenseMode: 'HTL' | 'Perpetual',
   globalTermDuration: string,
-  globalRegion: 'US' | 'EU' | 'UK' = 'US',
+  globalRegion: 'US' | 'EU' | 'UK' | 'AU' = 'US',
   groupByNode: boolean = false,
   peakNodeRxMbps: Record<string, number> = {},
   trayPreferenceOverride?: TrayAllocationPreference,
@@ -297,8 +297,8 @@ export function generateBom(
           } else addRow(node.id, resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic', undefined, undefined, 'tap-termination');
         }
       }
-      const isSeries2 = model.includes('SF2') || model.includes('TX2');
-      const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
+      const isSeries2 = model.includes('SF2') || model.includes('TX2') || model.includes('ATX-21') || model.includes('ASF-21') || model.includes('Series 2') || resolved.hwSku.includes('ASF2') || resolved.hwSku.includes('ATX2');
+      const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX') || resolved.hwSku.includes('ASF') || resolved.hwSku.includes('ATX'));
       const siteKey = (node.data?.site as string) || 'Unassigned';
       if (isSeries1) {
         const tapRackMount = (node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)';
@@ -309,7 +309,7 @@ export function generateBom(
       } else if (isSeries2) {
         if (node.data.tapDualPower) addRow(node.id, 'PBK-GTA21', 1, 'Dependency');
         if (node.data.tapBattery) addRow(node.id, 'BAT-GTA20', 1, 'Dependency');
-        const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
+        const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : (globalRegion === 'AU' ? 'PCD-00A27' : 'PCD-00A21'));
         const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
         if (cordQty > 0) addRow(node.id, cordSku, cordQty, 'Dependency');
       }
@@ -345,7 +345,7 @@ export function generateBom(
     if (model.includes('TA') || model.includes('HC')) {
       const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
       if (node.data?.powerSupply === 'DC') addRow(node.id, 'PCD-00051', psuQty, 'Dependency');
-      else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
+      else addRow(node.id, globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : (globalRegion === 'AU' ? 'PCD-00007' : 'PCD-00001')), psuQty, 'Dependency');
     }
     if (resolved.advSku) addRow(node.id, resolved.advSku, 1, 'License', resolved.advSku.includes('-SW-TM') ? termOverride : undefined);
     Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => {
@@ -491,7 +491,7 @@ export function generateBom(
   for (const [siteKey, series1PstAcTaps] of Object.entries(series1PstAcTapsPerSite)) if (series1PstAcTaps > 0) {
     const numPstAC = Math.ceil(series1PstAcTaps / 24);
     addRow(null, 'PST-GTA01', numPstAC, 'Dependency', undefined, siteKey);
-    addRow(null, globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21'), numPstAC * 2, 'Dependency', undefined, siteKey);
+    addRow(null, globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : (globalRegion === 'AU' ? 'PCD-00A27' : 'PCD-00A21')), numPstAC * 2, 'Dependency', undefined, siteKey);
   }
   for (const [siteKey, series1PstDcTaps] of Object.entries(series1PstDcTapsPerSite)) if (series1PstDcTaps > 0) {
     const numPstDC = Math.ceil(series1PstDcTaps / 24);
@@ -736,7 +736,7 @@ export function generateSingleNodeBom(
   node: CustomNode,
   globalLicenseMode: 'HTL' | 'Perpetual',
   globalTermDuration: string,
-  globalRegion: 'US' | 'EU' | 'UK' = 'US',
+  globalRegion: 'US' | 'EU' | 'UK' | 'AU' = 'US',
   edges: Edge[] = [],
   nodes: CustomNode[] = [],
   peakRxMbps?: number
@@ -797,7 +797,8 @@ export function generateSingleNodeBom(
       if (allocations.length > 0) allocations.forEach(alloc => { addRow(resolveOpticSku(alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, 'tap-termination'); addRow(resolveOpticSku(alloc.toolOptic || alloc.optic, ''), 2 * alloc.qty, 'Optic', undefined, 'tap-termination'); });
       else addRow(resolveOpticSku((node.data?.tappedLinkOptic as string) || 'SFP-532', ''), 4, 'Optic', undefined, 'tap-termination');
     }
-    const isSeries2 = model.includes('SF2') || model.includes('TX2'), isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX'));
+    const isSeries2 = model.includes('SF2') || model.includes('TX2') || model.includes('ATX-21') || model.includes('ASF-21') || model.includes('Series 2') || resolved.hwSku.includes('ASF2') || resolved.hwSku.includes('ATX2');
+    const isSeries1 = !isSeries2 && (model.includes('A-SF') || model.includes('A-TX') || resolved.hwSku.includes('ASF') || resolved.hwSku.includes('ATX'));
     if (isSeries1) {
       if (((node.data.tapRackMount as string) || 'RMT-GTA03 (3-bay Rack Tray)') === 'RMT-GTA03 (3-bay Rack Tray)') addRow('RMT-GTA03', 1, 'Dependency');
       const tapPower = (node.data.tapPower as string) || 'Individual Power Brick';
@@ -807,7 +808,7 @@ export function generateSingleNodeBom(
     } else if (isSeries2) {
       if (node.data.tapDualPower) addRow('PBK-GTA21', 1, 'Dependency');
       if (node.data.tapBattery) addRow('BAT-GTA20', 1, 'Dependency');
-      const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : 'PCD-00A21');
+      const cordSku = globalRegion === 'EU' ? 'PCD-00A23' : (globalRegion === 'UK' ? 'PCD-00A25' : (globalRegion === 'AU' ? 'PCD-00A27' : 'PCD-00A21'));
       const cordQty = (globalRegion !== 'US' ? (node.data.tapDualPower ? 2 : 1) : (node.data.tapDualPower ? 1 : 0)) + (node.data.tapExtraPowerCord ? 1 : 0);
       if (cordQty > 0) addRow(cordSku, cordQty, 'Dependency');
     }
@@ -838,7 +839,7 @@ export function generateSingleNodeBom(
   if (model.includes('TA') || model.includes('HC')) {
     const psuQty = (model.includes('HC3') && node.data?.psuCount === 4) ? 4 : 2;
     if (node.data?.powerSupply === 'DC') addRow('PCD-00051', psuQty, 'Dependency');
-    else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : 'PCD-00001'), psuQty, 'Dependency');
+    else addRow(globalRegion === 'EU' ? 'PCD-00003' : (globalRegion === 'UK' ? 'PCD-00005' : (globalRegion === 'AU' ? 'PCD-00007' : 'PCD-00001')), psuQty, 'Dependency');
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', resolved.advSku.includes('-SW-TM') ? termOverride : undefined);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });

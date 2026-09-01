@@ -654,6 +654,47 @@ describe('MPO breakout panel validation', () => {
       const hundredGOptics = bom.filter(r => r.sku.startsWith('Q28-') || r.sku.startsWith('QSF-'));
       expect(hundredGOptics.length).toBe(0);
     });
+
+    it('should generate Australian power cords (PCD-00A27 and PCD-00007) when globalRegion is AU', () => {
+      const tapNode: CustomNode = {
+        id: 'tap-atx21',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'G-TAP ATX-21',
+          configType: 'TAP',
+          model: 'G-TAP ATX-21 (Copper)',
+          sku: 'GTP-ATX21',
+          tapDualPower: true,
+        },
+      } as unknown as CustomNode;
+
+      const hcNode: CustomNode = {
+        id: 'hc1-node',
+        type: 'hardwareNode',
+        position: { x: 300, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          sku: 'HC1-BASE',
+          powerSupply: 'AC',
+        },
+      } as unknown as CustomNode;
+
+      const bom = generateBom([tapNode, hcNode], [], 'HTL', '36', 'AU');
+
+      // G-TAP ATX-21 with dual power in AU should get 2x PCD-00A27
+      const tapCord = bom.find(r => r.sku === 'PCD-00A27');
+      expect(tapCord).toBeDefined();
+      expect(tapCord?.qty).toBe(2);
+
+      // GigaVUE-HC1 AC in AU should get 2x PCD-00007
+      const chassisCord = bom.find(r => r.sku === 'PCD-00007');
+      expect(chassisCord).toBeDefined();
+      expect(chassisCord?.qty).toBe(2);
+    });
   });
 });
+
 

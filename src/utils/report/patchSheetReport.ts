@@ -37,7 +37,7 @@ export function buildPatchSheetReportDocDefinition(input: ReportInput): TDocumen
     edges,
     projectLicenseMode,
     defaultTermDuration,
-    projectRegion as 'US' | 'EU' | 'UK',
+    projectRegion as 'US' | 'EU' | 'UK' | 'AU',
     true,
     peakNodeRxMbps,
   );

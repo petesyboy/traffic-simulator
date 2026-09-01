@@ -11,7 +11,7 @@ export interface SettingsSlice {
   advancedModeUnlocked: boolean;
   projectLicenseMode: 'HTL' | 'Perpetual';
   defaultTermDuration: string;
-  projectRegion: 'US' | 'EU' | 'UK';
+  projectRegion: 'US' | 'EU' | 'UK' | 'AU';
   disableDcWarnings: boolean;
   panelTextScale: number;
   trayAllocationPreference: 'auto' | 'TAP-M200T' | 'TAP-M100T';
@@ -20,7 +20,7 @@ export interface SettingsSlice {
   setAdvancedModeUnlocked: (unlocked: boolean) => void;
   setProjectLicenseMode: (mode: 'HTL' | 'Perpetual') => void;
   setDefaultTermDuration: (duration: string) => void;
-  setProjectRegion: (region: 'US' | 'EU' | 'UK') => void;
+  setProjectRegion: (region: 'US' | 'EU' | 'UK' | 'AU') => void;
   setDisableDcWarnings: (disable: boolean) => void;
   setPanelTextScale: (scale: number) => void;
   setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
@@ -32,7 +32,7 @@ export interface SettingsSlice {
       advancedMode?: boolean;
       projectLicenseMode?: 'HTL' | 'Perpetual';
       defaultTermDuration?: string;
-      projectRegion?: 'US' | 'EU' | 'UK';
+      projectRegion?: 'US' | 'EU' | 'UK' | 'AU';
       disableDcWarnings?: boolean;
       panelTextScale?: number;
       showGrid?: boolean;

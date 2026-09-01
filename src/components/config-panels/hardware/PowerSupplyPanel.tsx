@@ -49,7 +49,11 @@ export const PowerSupplyPanel: React.FC<PowerSupplyPanelProps> = ({
   };
 
   if (isActiveTap) {
-    const cordLabel = globalRegion === 'EU' ? 'PCD-00A23 (EU Power Cord)' : globalRegion === 'UK' ? 'PCD-00A25 (UK Power Cord)' : 'PCD-00A21 (US Power Cord)';
+    const cordLabel = 
+      globalRegion === 'EU' ? 'PCD-00A23 (EU Power Cord)' : 
+      globalRegion === 'UK' ? 'PCD-00A25 (UK Power Cord)' : 
+      globalRegion === 'AU' ? 'PCD-00A27 (AU Power Cord)' : 
+      'PCD-00A21 (US Power Cord)';
 
     return (
       <div className="panel-section flex-col gap-4">

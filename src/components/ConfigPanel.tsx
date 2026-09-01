@@ -327,7 +327,7 @@ const ConfigPanel: React.FC = () => {
               />
             </div>
           )}
-          {configType === CONFIG_TYPES.TRAFFIC_MAP && (
+          {(selectedNode.type === NODE_TYPES.MAP || configType === CONFIG_TYPES.TRAFFIC_MAP) && (
             <div className="config-card">
               <h3>🗺️ Traffic Map Configuration</h3>
               <MapNodePanel

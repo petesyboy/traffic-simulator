@@ -186,7 +186,11 @@ const CanvasArea: React.FC = () => {
     if (isRunning && bps !== undefined && bps > 0) style.animationDuration = calculateAnimationDuration(bps);
 
     if (hoveredEdgeId === edge.id) {
-      const isInsertHover = draggedNodeType === NODE_TYPES.GIGASMART || draggedNodeType === NODE_TYPES.GIGASTREAM;
+      const isInsertHover = 
+        draggedNodeType === NODE_TYPES.GIGASMART || 
+        draggedNodeType === NODE_TYPES.GIGASTREAM || 
+        draggedNodeType === NODE_TYPES.MAP || 
+        draggedNodeType === NODE_TYPES.FILTER;
       style = { ...style, stroke: isInsertHover ? '#ff9800' : '#00e5ff', strokeWidth: isInsertHover ? '5px' : '4px', filter: isInsertHover ? 'drop-shadow(0px 0px 10px #ff9800)' : 'drop-shadow(0px 0px 8px #00e5ff)' };
     }
     
@@ -229,7 +233,11 @@ const CanvasArea: React.FC = () => {
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-    const canInterposeOnEdge = draggedNodeType === NODE_TYPES.GIGASTREAM || (draggedNodeType === NODE_TYPES.GIGASMART && !advancedMode);
+    const canInterposeOnEdge = 
+      draggedNodeType === NODE_TYPES.GIGASTREAM || 
+      draggedNodeType === NODE_TYPES.MAP || 
+      draggedNodeType === NODE_TYPES.FILTER || 
+      (draggedNodeType === NODE_TYPES.GIGASMART && !advancedMode);
     if (canInterposeOnEdge) {
       const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       let foundEdgeId: string | null = null;
@@ -319,6 +327,24 @@ const CanvasArea: React.FC = () => {
       const baseModel = String(initialData?.model || initialData?.label || 'Node');
       nodes.forEach(n => { if (n.type === NODE_TYPES.HARDWARE) { const nodeBaseModel = String(n.data?.model || n.data?.label || 'Node'); if (nodeBaseModel === baseModel) { const m = String(n.data?.label || '').match(new RegExp(`^${baseModel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+#?(\\d+)$`, 'i')); if (m) maxIndex = Math.max(maxIndex, parseInt(m[1], 10)); else if (String(n.data?.label) === baseModel) maxIndex = Math.max(maxIndex, 1); } } });
       if (maxIndex > 0) labelToUse = `${baseModel} #${maxIndex + 1}`;
+    } else if (type === NODE_TYPES.MAP) {
+      let maxIndex = 0;
+      nodes.forEach(n => {
+        if (n.type === NODE_TYPES.MAP) {
+          const m = String(n.data?.label || '').match(/Traffic Map\s*(\d+)?/i);
+          if (m) maxIndex = Math.max(maxIndex, m[1] ? parseInt(m[1], 10) : 1);
+        }
+      });
+      if (maxIndex > 0) labelToUse = `Traffic Map ${maxIndex + 1}`;
+    } else if (type === NODE_TYPES.FILTER) {
+      let maxIndex = 0;
+      nodes.forEach(n => {
+        if (n.type === NODE_TYPES.FILTER) {
+          const m = String(n.data?.label || '').match(/Traffic Tunnel\s*(\d+)?/i);
+          if (m) maxIndex = Math.max(maxIndex, m[1] ? parseInt(m[1], 10) : 1);
+        }
+      });
+      if (maxIndex > 0) labelToUse = `Traffic Tunnel ${maxIndex + 1}`;
     }
 
     if (initialData?.actionType === 'Deduplication' && mergedData.dedupRate === undefined) { mergedData.dedupRate = Math.floor(Math.random() * 41) + 10; mergedData.lastDedupUpdate = Date.now(); }
@@ -327,7 +353,12 @@ const CanvasArea: React.FC = () => {
     if (type === 'toolNode' && initialData?.configType === 'Packet Tool' && initialData?.toolName !== 'GigaSMART Appliance' && mergedData.ingestOptic === undefined) { mergedData.ingestOptic = 'Customer Supplied Optic'; mergedData.ingestOpticQty = '1'; }
 
     let edgeToInterpose: Edge | null = null;
-    if (type === NODE_TYPES.GIGASTREAM || type === NODE_TYPES.GIGASMART) {
+    if (
+      type === NODE_TYPES.GIGASTREAM || 
+      type === NODE_TYPES.MAP || 
+      type === NODE_TYPES.FILTER || 
+      (type === NODE_TYPES.GIGASMART && !advancedMode)
+    ) {
       for (const edge of edges) {
         const srcNode = nodes.find(n => n.id === edge.source), targetNode = nodes.find(n => n.id === edge.target);
         if (!srcNode || !targetNode || (srcNode.type === NODE_TYPES.HARDWARE && targetNode.type === NODE_TYPES.HARDWARE)) continue;
@@ -341,7 +372,17 @@ const CanvasArea: React.FC = () => {
       }
     }
 
-    const newNode: CustomNode = { id: uuidv4(), type, position, data: { label: labelToUse, configType: mergedData.configType || labelToUse, ...mergedData } };
+    const newNode: CustomNode = { 
+      id: uuidv4(), 
+      type, 
+      position, 
+      data: { 
+        label: labelToUse, 
+        configType: mergedData.configType || (type === NODE_TYPES.MAP ? CONFIG_TYPES.TRAFFIC_MAP : labelToUse), 
+        conditions: mergedData.conditions || [],
+        ...mergedData 
+      } 
+    };
     addNode(newNode);
 
     if (edgeToInterpose) {

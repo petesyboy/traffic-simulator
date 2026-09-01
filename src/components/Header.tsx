@@ -428,7 +428,9 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       ? 'https://flagcdn.com/eu.svg'
                       : projectRegion === 'UK'
                         ? 'https://flagcdn.com/gb.svg'
-                        : 'https://flagcdn.com/us.svg'
+                        : projectRegion === 'AU'
+                          ? 'https://flagcdn.com/au.svg'
+                          : 'https://flagcdn.com/us.svg'
                   }
                   alt={projectRegion}
                   title={`Deployment Region: ${projectRegion}`}

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.707",
+    date: "2026-09-01",
+    summary: "Multi-edition support, gigaSMART reduction metrics, tool cluster load balancing, and site input improvements (v1.0.707)",
+  },
+  {
     version: "1.0.700",
     date: "2026-08-30",
     summary: "Add link utilisation level selector for traffic generation (v1.0.700)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.681",
     date: "2026-08-28",
     summary: "Prevent optic doubling on TA25E and chassis by tagging TAP reallocated optics as isAutoAdded (v1.0.681)",
-  },
-  {
-    version: "1.0.680",
-    date: "2026-08-28",
-    summary: "Resolve optic and port allocation misalignment and orphan fitted optics on modular chassis (v1.0.680)",
   },
 ];
