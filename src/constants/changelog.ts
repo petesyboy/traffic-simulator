@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.728",
+    date: "2026-09-02",
+    summary: "Enhanced report site diagram isolation with DWDM transport ring inclusion and added SPAN speed/fibre type descriptors in Export Diagram Ready Mode: each per-site report diagram now captures the isolated local data centre plus its connected DWDM ring, and SPAN nodes display configured port speed and fibre media specifications.",
+  },
+  {
     version: "1.0.727",
     date: "2026-09-02",
     summary: "Expanded canvas viewport zoom limits down to 2% (minZoom: 0.02) and enabled auto-fitting for large multi-site architectures: eliminated the 50% zoom restriction, added a live zoom readout and one-click Fit View control, and compacted inter-site vertical spacing.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.709",
     date: "2026-09-01",
     summary: "Added Australia & New Zealand (AU/ANZ) deployment region support with automatic PCD-00007 / PCD-00A27 power cord mapping for TAPs and chassis.",
-  },
-  {
-    version: "1.0.708",
-    date: "2026-09-01",
-    summary: "Streamlined GigaSMART traffic map auto-insertion when dropping traffic maps onto existing tool links.",
   },
 ];

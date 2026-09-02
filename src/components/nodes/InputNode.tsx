@@ -50,6 +50,8 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
     ? resolveHardwareIcon((data.image as string | undefined) || (data.model as string | undefined) || (data.sku as string | undefined))
     : undefined;
 
+  const exportDiagramMode = useStore((state) => state.exportDiagramMode);
+
   return (
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
@@ -99,6 +101,45 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         <Handle type="source" position={Position.Bottom} id="out-bottom" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
         <Handle type="source" position={Position.Right} id="out" />
       </div>
+
+      {exportDiagramMode && (
+        <div style={{
+          background: 'var(--node-desc-bg, rgba(20, 20, 20, 0.95))',
+          border: '1px solid #3b82f6',
+          borderRadius: '4px',
+          padding: '6px 8px',
+          width: '180px',
+          boxSizing: 'border-box',
+          color: 'var(--text-primary, #fff)',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          boxShadow: 'var(--shadow-md, 0 2px 8px rgba(0,0,0,0.8))',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-wrap',
+          marginTop: '6px'
+        }}>
+          {(() => {
+            const rawSpeed = (data.portSpeed as string) || (data.linkSpeed ? `${Number(data.linkSpeed) >= 1000 ? Number(data.linkSpeed) / 1000 : data.linkSpeed}G` : '10G');
+            const speedFormatted = rawSpeed.endsWith('Gbps')
+              ? rawSpeed
+              : (rawSpeed.endsWith('G') ? `${rawSpeed.replace('G', '')} Gbps` : `${rawSpeed} Gbps`);
+            const fiber = (data.spanFiberMode as string) || (data.fiberType as string) || (data.media as string) || 'Multimode (SR)';
+
+            if (configType.startsWith(CONFIG_TYPES.SPAN)) {
+              return `SPAN Port Session:\n• Speed: ${speedFormatted}\n• Fibre Type: ${fiber}\n• Mode: Switch Port Mirroring`;
+            } else if (configType.startsWith(CONFIG_TYPES.ERSPAN)) {
+              const srcIp = (data.erspanSrcIp as string) || '192.168.10.5';
+              const idVal = (data.erspanId as number) ?? 10;
+              return `ERSPAN Source Tunnel:\n• Speed: ${speedFormatted}\n• Session ID: ${idVal}\n• Source IP: ${srcIp}`;
+            } else if (configType.startsWith(CONFIG_TYPES.EAST_WEST)) {
+              return `East/West Traffic Source:\n• Speed: ${speedFormatted}\n• Fibre Type: ${fiber}\n• Mode: Inter-Switch / Hypervisor`;
+            } else if (configType.startsWith(CONFIG_TYPES.VMWARE)) {
+              return `VMware Virtual Estate:\n• Feed Type: vCenter / NSX-T\n• Speed: 10/25 Gbps vNICs`;
+            }
+            return `Network Input:\n• Speed: ${speedFormatted}\n• Fibre: ${fiber}`;
+          })()}
+        </div>
+      )}
     </>
   );
 };

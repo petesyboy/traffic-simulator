@@ -124,6 +124,48 @@ describe('detectDiagramSplitting', () => {
     expect(vmwarePartition?.nodeIds).toContain('vmware-estate-1');
     expect(vmwarePartition?.nodeIds).toContain('ta25e-dc1');
   });
+
+  it('includes connected DWDM transport networks in each participating data centre partition', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'dc1-ta',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'DC1 TA200', site: 'DC1', model: 'GigaVUE-TA200' },
+      } as CustomNode,
+      {
+        id: 'dc2-ta',
+        type: 'hardwareNode',
+        position: { x: 0, y: 300 },
+        data: { label: 'DC2 TA200', site: 'DC2', model: 'GigaVUE-TA200' },
+      } as CustomNode,
+      {
+        id: 'dwdm-ring',
+        type: 'dwdmNetworkNode',
+        position: { x: 300, y: 150 },
+        data: { label: 'Core DWDM Ring', configType: 'dwdmNetwork' },
+      } as CustomNode,
+    ];
+
+    const edges: Edge[] = [
+      { id: 'e-dc1-dwdm', source: 'dc1-ta', target: 'dwdm-ring' },
+      { id: 'e-dc2-dwdm', source: 'dc2-ta', target: 'dwdm-ring' },
+    ];
+
+    const result = detectDiagramSplitting(nodes, edges);
+    expect(result.shouldSplit).toBe(true);
+    expect(result.partitions).toHaveLength(2);
+
+    const dc1Partition = result.partitions.find((p) => p.siteName === 'DC1');
+    expect(dc1Partition?.nodeIds).toContain('dc1-ta');
+    expect(dc1Partition?.nodeIds).toContain('dwdm-ring');
+    expect(dc1Partition?.nodeIds).not.toContain('dc2-ta');
+
+    const dc2Partition = result.partitions.find((p) => p.siteName === 'DC2');
+    expect(dc2Partition?.nodeIds).toContain('dc2-ta');
+    expect(dc2Partition?.nodeIds).toContain('dwdm-ring');
+    expect(dc2Partition?.nodeIds).not.toContain('dc1-ta');
+  });
 });
 
 describe('prepareTopologyForDiagramCapture', () => {

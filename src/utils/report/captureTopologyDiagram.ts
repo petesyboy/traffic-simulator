@@ -9,7 +9,7 @@ import { toPng } from 'html-to-image';
 import type { CustomNode } from '../../store/types';
 import type { Edge } from '@xyflow/react';
 import { isAutoTrayModel } from '../trayModels';
-import { autoSpaceNodesForExport } from '../autoLayout';
+import { autoSpaceNodesForExport, computeTidyLayout } from '../autoLayout';
 
 export interface SiteDiagramPartition {
   siteName: string;
@@ -113,6 +113,23 @@ export function detectDiagramSplitting(
           }
         });
       }
+
+      // 4. For sites connected to a central DWDM transport network / optical ring, include the DWDM hub
+      // node so the per-site diagram shows the WAN ring connectivity without leaking other data centres.
+      edges.forEach((e) => {
+        if (siteNodeIds.has(e.source)) {
+          const tgtNode = visibleNodes.find((n) => n.id === e.target);
+          if (tgtNode && (tgtNode.type === NODE_TYPES.DWDM_NETWORK || tgtNode.type === 'dwdmNetworkNode')) {
+            siteNodeIds.add(tgtNode.id);
+          }
+        }
+        if (siteNodeIds.has(e.target)) {
+          const srcNode = visibleNodes.find((n) => n.id === e.source);
+          if (srcNode && (srcNode.type === NODE_TYPES.DWDM_NETWORK || srcNode.type === 'dwdmNetworkNode')) {
+            siteNodeIds.add(srcNode.id);
+          }
+        }
+      });
 
       partitions.push({
         siteName,
@@ -298,8 +315,11 @@ export async function captureSiteTopologyDiagramForReport(nodeIds: string[]): Pr
     (e) => allowedNodeIds.has(e.source) && allowedNodeIds.has(e.target),
   );
 
+  // Lay out the isolated site nodes and connected DWDM hub neatly in compact columns
+  const laidOutSiteNodes = computeTidyLayout(siteNodes, siteEdges);
+
   useStore.setState((s) => ({
-    nodes: siteNodes,
+    nodes: laidOutSiteNodes,
     edges: siteEdges,
     fitViewNodeIds: null,
     fitViewTrigger: s.fitViewTrigger + 1,

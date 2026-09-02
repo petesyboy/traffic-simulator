@@ -81,6 +81,20 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
         </FormGroup>
       )}
 
+      {configType === CONFIG_TYPES.SPAN && (
+        <FormGroup label="Media / Fibre Type">
+          <select
+            value={(node.data?.spanFiberMode as string) || (node.data?.fiberType as string) || 'Multimode (SR)'}
+            onChange={(e) => onGenericChange('spanFiberMode', e.target.value)}
+          >
+            <option value="Multimode (SR)">Multimode (SR / Short-Reach)</option>
+            <option value="Singlemode (LR)">Singlemode (LR / Long-Reach)</option>
+            <option value="Direct Attach Copper (DAC)">Direct Attach Copper (DAC)</option>
+            <option value="10GBASE-T Copper">10GBASE-T RJ45 Copper</option>
+          </select>
+        </FormGroup>
+      )}
+
       <FormGroup label="Encrypted Traffic (%)">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <input
