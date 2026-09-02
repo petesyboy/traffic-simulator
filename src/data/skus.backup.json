@@ -2404,13 +2404,16 @@
     "partNumber": "GTP-ASF02",
     "description": "G-TAP A Series, Always On SFP/SFP+ TAP, DC Power",
     "category": "TAP",
+    "endOfSale": "2026-08-14",
+    "endOfLife": "2031-08-14",
+    "eosReplacementSku": "GTP-ASF00 + PST-GTA02",
     "formFactor": "SFP+",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-A",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "EOL",
+    "isUnavailable": true
   },
   {
     "partNumber": "GTP-ASF21",
@@ -2456,6 +2459,9 @@
     "partNumber": "GTP-ATX02",
     "description": "G-TAP A Series, Always On  10/100/1000M copper TAP, DC Power",
     "category": "TAP",
+    "endOfSale": "2026-08-14",
+    "endOfLife": "2031-08-14",
+    "eosReplacementSku": "GTP-ATX00 + PST-GTA02",
     "speedsSupported": [
       "1G"
     ],
@@ -2463,8 +2469,8 @@
     "productSubFamily": "GTAP-A",
     "countryOfOrigin": "Mexico",
     "supportAvailable": true,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "EOL",
+    "isUnavailable": true
   },
   {
     "partNumber": "GTP-ATX21",
@@ -3900,23 +3906,29 @@
     "partNumber": "IBP-TAC40",
     "description": "Perpetual Inline Bypass License for GigaVUE-TA400 (GVS-TAC[41/42]). Software support at desired level must be purchased separately.",
     "category": "License",
+    "endOfSale": "2025-07-07",
+    "endOfLife": "2030-12-07",
+    "eosReplacementSku": "IBP-TAC40E",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA400",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "EOL",
+    "isUnavailable": true
   },
   {
     "partNumber": "IBP-TAC40-SW-TM",
     "description": "Monthly Inline Bypass term license for GigaVUE-TA400 (GVS-TAC[41/42]). Includes Bundled Elite-Plus Software Support.",
     "category": "License",
+    "endOfSale": "2025-07-07",
+    "endOfLife": "2030-12-07",
+    "eosReplacementSku": "IBP-TAC40E-SW-TM",
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GigaVUE-TA400E",
     "countryOfOrigin": "United States",
     "supportAvailable": true,
-    "status": "Active",
-    "isUnavailable": false
+    "status": "EOL",
+    "isUnavailable": true
   },
   {
     "partNumber": "IBP-TAC40E",
@@ -8978,6 +8990,21 @@
     "isUnavailable": false
   },
   {
+    "partNumber": "TAP-M451",
+    "description": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
+    "category": "TAP",
+    "endOfSale": "2021-10-31",
+    "endOfLife": "2026-10-31",
+    "eosReplacementSku": "TAP-M451T",
+    "portDensity": 3,
+    "speedsSupported": [
+      "400G"
+    ],
+    "isTaaCompliant": true,
+    "status": "EOL",
+    "isUnavailable": true
+  },
+  {
     "partNumber": "TAP-M451T",
     "description": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "category": "TAP",
@@ -9010,6 +9037,21 @@
     "isUnavailable": false
   },
   {
+    "partNumber": "TAP-M453",
+    "description": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 1270-1550nm SM, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
+    "category": "TAP",
+    "endOfSale": "2021-10-31",
+    "endOfLife": "2026-10-31",
+    "eosReplacementSku": "TAP-M453T",
+    "portDensity": 3,
+    "speedsSupported": [
+      "400G"
+    ],
+    "isTaaCompliant": true,
+    "status": "EOL",
+    "isUnavailable": true
+  },
+  {
     "partNumber": "TAP-M453T",
     "description": "G-TAP M Series 40/100/400Gb 50/50 tap module, 1270-1550nm SM, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "category": "TAP",
@@ -9024,6 +9066,21 @@
     "supportAvailable": false,
     "status": "Active",
     "isUnavailable": false
+  },
+  {
+    "partNumber": "TAP-M471",
+    "description": "G-TAP M Series 40/100/400Gb, 70/30 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
+    "category": "TAP",
+    "endOfSale": "2021-10-31",
+    "endOfLife": "2026-10-31",
+    "eosReplacementSku": "TAP-M471T",
+    "portDensity": 3,
+    "speedsSupported": [
+      "400G"
+    ],
+    "isTaaCompliant": true,
+    "status": "EOL",
+    "isUnavailable": true
   },
   {
     "partNumber": "TAP-M471T",

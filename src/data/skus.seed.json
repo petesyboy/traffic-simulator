@@ -97,7 +97,7 @@
     "QDD-514": "400G QSFP-DD, Singlemode FR4. Not TAA Compliant.",
     "QSB-501": "40G QSFP+ BiDi, Multimode SR RX-only. Not TAA Compliant. (EOS Oct 1, 2026)",
     "QSB-502": "40G QSFP+ BiDi, Multimode SR, Full Duplex. Not TAA Compliant. (EOS Jul 03, 2025)",
-    "QSB-504": "40G QSFP+ BiDi, Multimode SR, Full Duplex. Not TAA Compliant. (EOS Jan 6, 2027)",
+    "QSB-504": "40G QSFP+ BiDi, Multimode SR, Full Duplex. Not TAA Compliant. (EOS Feb 14, 2027)",
     "QSB-512": "100G QSFP28 BiDi, Multimode SR, Full Duplex. Not TAA Compliant.",
     "QSB-521": "100G and 40G QSFP28 BiDi, Multimode SR, Rx-Only For Use With Taps. Not TAA Compliant.​ (EOS Oct 1, 2026)",
     "QSB-531": "100G QSFP28 BiDi, Multimode SR1.2, KP4 FEC support, Rx-Only For Use With Taps. Not TAA Compliant.",
@@ -153,14 +153,14 @@
     "BPS-HC1-D35C60": "Bypass Module, GigaVUE-HC1-Plus/HC1/HCT, 6 1/10G LX/LR BPS pairs",
     "BPS-HC1-D35C60-HW": "Bypass Module, GigaVUE-HC1-Plus/HC1/HCT, 6 1/10G LX/LR BPS pairs. Hardware only. Must pair with appropriate GigaVUE-OS Software License.",
     "BPS-HC1-D35C60-SW-TM": "Monthly GigaVUE-OS term license for BPS-HC1-D35C60-HW. Includes Bundled Elite-Plus Software Support.",
-    "BPS-HC3-C25F2G": "Bypass Combo Module, GigaVUE-HC3, 2  40/100Gb SR4 BPS pairs, 16 10G SFP+ cages",
-    "BPS-HC3-C25F2G-HW": "Bypass Combo Module, GigaVUE-HC3, 2  40/100Gb SR4 BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
+    "BPS-HC3-C25F2G": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2  40/100Gb SR4 BPS pairs, 16 10G SFP+ cages",
+    "BPS-HC3-C25F2G-HW": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2  40/100Gb SR4 BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
     "BPS-HC3-C25F2G-SW-TM": "Monthly GigaVUE-OS term license for BPS-HC3-C25F2G-HW. Includes Bundled Elite-Plus Software Support.",
-    "BPS-HC3-C35C2G": "Bypass Combo Module, GigaVUE-HC3, 2 100Gb LR BPS pairs, 16 10G SFP+ cages",
-    "BPS-HC3-C35C2G-HW": "Bypass Combo Module, GigaVUE-HC3, 2 100Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
+    "BPS-HC3-C35C2G": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2 100Gb LR BPS pairs, 16 10G SFP+ cages",
+    "BPS-HC3-C35C2G-HW": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2 100Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
     "BPS-HC3-C35C2G-SW-TM": "Monthly GigaVUE-OS term license for BPS-HC3-C35C2G-HW. Includes Bundled Elite-Plus Software Support.",
-    "BPS-HC3-Q35C2G": "Bypass Combo Module, GigaVUE-HC3, 2 40Gb LR BPS pairs, 16 10G SFP+ cages",
-    "BPS-HC3-Q35C2G-HW": "Bypass Combo Module, GigaVUE-HC3, 2 40Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
+    "BPS-HC3-Q35C2G": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2 40Gb LR BPS pairs, 16 10G SFP+ cages",
+    "BPS-HC3-Q35C2G-HW": "Bypass Combo Module, GigaVUE-HC3 (CCv1 or CCv2), 2 40Gb LR BPS pairs, 16 10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
     "BPS-HC3-Q35C2G-SW-TM": "Monthly GigaVUE-OS term license for BPS-HC3-Q35C2G-HW. Includes Bundled Elite-Plus Software Support.",
     "GEM-2500G-4G-SW-TM": "Monthly Term license for GigaVUE Enriched Metadata software for 4G Networks, Up to 2500 Gbps capacity. Min Term is 12 months. Includes bundled Elite-Plus Support. This is a capacity-based Gen3 software license. Requires SMT-HC3-C08-HW",
     "GEM-2500G-5G-SW-TM": "Monthly Term license for GigaVUE Enriched Metadata software for 5G Networks, Up to 2500 Gbps capacity. Min Term is 12 months. Includes bundled Elite-Plus Support. This is a capacity-based Gen3 software license. Requires SMT-HC3-C08-HW",
@@ -231,8 +231,8 @@
     "PRT-HC3-C16": "Port Module, GigaVUE-HC3, 16x100G QSFP28 cages. Requires Control Card Version 2.",
     "PRT-HC3-C16-HW": "Port Module, GigaVUE-HC3, 16x100G QSFP28 cages.  Requires Control Card Version 2.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
     "PRT-HC3-C16-SW-TM": "Monthly GigaVUE-OS term license for PRT-HC3-C16-HW. Includes Bundled Elite-Plus Software Support.",
-    "PRT-HC3-X24": "Port Module, GigaVUE-HC3, 24x10G SFP+ cages",
-    "PRT-HC3-X24-HW": "Port Module, GigaVUE-HC3, 24x10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
+    "PRT-HC3-X24": "Port Module, GigaVUE-HC3 (CCv1 or CCv2), 24x10G SFP+ cages",
+    "PRT-HC3-X24-HW": "Port Module, GigaVUE-HC3 (CCv1 or CCv2), 24x10G SFP+ cages.  Hardware only.  Must pair with appropriate GigaVUE-OS Software License.",
     "PRT-HC3-X24-SW-TM": "Monthly GigaVUE-OS term license for PRT-HC3-X24-HW. Includes Bundled Elite-Plus Software Support.",
     "SMT-HC1-AFI": "Application Filtering Intelligence (1 Month ) GigaVUE-HC1 (12-month Minimum). Includes bundled Elite-Plus Support.",
     "SMT-HC1-AFS": "Advanced Flow Slicing (1 Month ) GigaVUE-HC1 (12-month Minimum). Includes bundled Elite-Plus Support.",
@@ -395,11 +395,11 @@
     "GSW-WBX01": "Monthly GigaVUE-OS term license for Dell 4112F-ON (500 Gbps & lower, 12x1G + 3x100G). Includes Bundled Elite-Plus Software Support. (EOS May 26, 2026)",
     "GTP-ASF00": "G-TAP A Series, Always On SFP/SFP+ TAP, No Power",
     "GTP-ASF01-UN": "G-TAP A Series, Always On SFP/SFP+ TAP, AC Power (EU, UK, US/JP, AU plugs).",
-    "GTP-ASF02": "G-TAP A Series, Always On SFP/SFP+ TAP, DC Power",
+    "GTP-ASF02": "G-TAP A Series, Always On SFP/SFP+ TAP, DC Power (EOS Aug 14, 2026)",
     "GTP-ASF21": "G-TAP A Series 2, Always On Tap, taps 4 1/10Gb SFP/SFP+ links, fan assembly, 1 power brick (NA), rack mount kit. Includes North American power cord.",
     "GTP-ATX00": "G-TAP A Series, Always On 10/100/1000M copper TAP, No Power",
     "GTP-ATX01-UN": "G-TAP A Series, Always On Copper TAP, AC Power (EU, UK, US/JP, AU plugs).",
-    "GTP-ATX02": "G-TAP A Series, Always On  10/100/1000M copper TAP, DC Power",
+    "GTP-ATX02": "G-TAP A Series, Always On  10/100/1000M copper TAP, DC Power (EOS Aug 14, 2026)",
     "GTP-ATX21": "G-TAP A Series 2, Always On Tap, taps 4 10/100/1000BASE-T links, fan assembly, 1 power brick (NA), rack mount kit. Includes North American power cord.",
     "RMT-GTA03": "Rack Mount Tray, 3-bay G-TAP A Series",
     "GVS-TAC01-SW-TM": "Monthly GigaVUE-OS term license for GigaVUE-TA100 (GVS-TAC01-HW). Includes Bundled Elite-Plus Software Support.  (EOS Feb 28, 2022)",
@@ -467,8 +467,8 @@
     "IBP-TAC20-SW-TM": "Monthly Inline Bypass term license for GigaVUE-TA200 (GVS-TAC[21/22]). Includes Bundled Elite-Plus Software Support.",
     "IBP-TAC20E": "Perpetual Inline Bypass License for GigaVUE-TA200E (GVS-TAC[21E/22E]). Software support at desired level must be purchased separately.",
     "IBP-TAC20E-SW-TM": "Monthly Inline Bypass term license for GigaVUE-TA200E (GVS-TAC20E). Includes Bundled Elite-Plus Software Support.",
-    "IBP-TAC40": "Perpetual Inline Bypass License for GigaVUE-TA400 (GVS-TAC[41/42]). Software support at desired level must be purchased separately.",
-    "IBP-TAC40-SW-TM": "Monthly Inline Bypass term license for GigaVUE-TA400 (GVS-TAC[41/42]). Includes Bundled Elite-Plus Software Support.",
+    "IBP-TAC40": "Perpetual Inline Bypass License for GigaVUE-TA400 (GVS-TAC[41/42]). Software support at desired level must be purchased separately. (EOS Jul 7, 2025)",
+    "IBP-TAC40-SW-TM": "Monthly Inline Bypass term license for GigaVUE-TA400 (GVS-TAC[41/42]). Includes Bundled Elite-Plus Software Support. (EOS Jul 7, 2025)",
     "IBP-TAC40E": "Perpetual Inline Bypass License for GigaVUE-TA400E (GVS-TAC[41E/42E]). Software support at desired level must be purchased separately.",
     "IBP-TAC40E-SW-TM": "Monthly Inline Bypass term license for GigaVUE-TA400E (GVS-TAC[41E/42E]). Includes Bundled Elite-Plus Software Support.",
     "IBP-TAX20": "Perpetual Inline Bypass License for GigaVUE-TA25 (GVS-TAX[21/22/21A/22A]). Software support at desired level must be purchased separately.",
@@ -497,9 +497,12 @@
     "TAP-M273LT": "G-TAP M Series 1/10/25/40/100/400Gb 70/30 tap module, 1270-1550nm SM, taps 2 links, LC, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "TAP-M273T": "G-TAP M Series 1/10/25/40/100/400Gb 70/30 tap module, 1270-1550nm SM, taps 6 links, LC, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "TAP-M273ULT": "G-TAP M Series 1/10/25/40/100/400Gb 70/30 unidirectional tap module, 1270-1550nm SM, taps 2 links, LC, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
+    "TAP-M451": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
     "TAP-M451T": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "TAP-M451ULT": "G-TAP M Series 40/100/400Gb 50/50 unidirectional tap module, 830-870nm MM 50/125µm OM5, taps 1 link, MPO, requires TAP-M202ULT chassis. TAA Compliant.",
+    "TAP-M453": "G-TAP M Series 40/100/400Gb, 50/50 tap module, 1270-1550nm SM, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
     "TAP-M453T": "G-TAP M Series 40/100/400Gb 50/50 tap module, 1270-1550nm SM, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
+    "TAP-M471": "G-TAP M Series 40/100/400Gb, 70/30 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100 or TAP-M200 chassis. Not TAA Compliant. (EOS Oct 31, 2021)",
     "TAP-M471T": "G-TAP M Series 40/100/400Gb, 70/30 tap module, 830-870nm MM 50/125µm OM5, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
     "TAP-M471ULT": "G-TAP M Series 40/100/400Gb 70/30 unidirectional tap module, 830-870nm MM 50/125µm OM5, taps 1 link, MPO, requires TAP-M202ULT chassis. TAA Compliant.",
     "TAP-M473T": "G-TAP M Series 40/100/400Gb 70/30 tap module, 1270-1550nm SM, taps 3 links, MPO, requires TAP-M100T or TAP-M200T chassis. TAA Compliant.",
@@ -758,9 +761,44 @@
   },
   "metadata": {
     "QSB-504": {
-      "eos": "2027-01-06",
-      "eol": "2032-01-06",
+      "eos": "2027-02-14",
+      "eol": "2032-02-14",
       "replacement": "QSB-524T"
+    },
+    "IBP-TAC40": {
+      "eos": "2025-07-07",
+      "eol": "2030-12-07",
+      "replacement": "IBP-TAC40E"
+    },
+    "IBP-TAC40-SW-TM": {
+      "eos": "2025-07-07",
+      "eol": "2030-12-07",
+      "replacement": "IBP-TAC40E-SW-TM"
+    },
+    "GTP-ATX02": {
+      "eos": "2026-08-14",
+      "eol": "2031-08-14",
+      "replacement": "GTP-ATX00 + PST-GTA02"
+    },
+    "GTP-ASF02": {
+      "eos": "2026-08-14",
+      "eol": "2031-08-14",
+      "replacement": "GTP-ASF00 + PST-GTA02"
+    },
+    "TAP-M451": {
+      "eos": "2021-10-31",
+      "eol": "2026-10-31",
+      "replacement": "TAP-M451T"
+    },
+    "TAP-M453": {
+      "eos": "2021-10-31",
+      "eol": "2026-10-31",
+      "replacement": "TAP-M453T"
+    },
+    "TAP-M471": {
+      "eos": "2021-10-31",
+      "eol": "2026-10-31",
+      "replacement": "TAP-M471T"
     },
     "BPS-HC0-D25A4G-SW-TM": {
       "eos": "2022-12-31",

@@ -79,6 +79,16 @@
     "eol": "47054",
     "replacement": ""
   },
+  "GTP-ASF02": {
+    "eos": "2026-08-14",
+    "eol": "2031-08-14",
+    "replacement": "GTP-ASF00 + PST-GTA02"
+  },
+  "GTP-ATX02": {
+    "eos": "2026-08-14",
+    "eol": "2031-08-14",
+    "replacement": "GTP-ATX00 + PST-GTA02"
+  },
   "GVS-GSA110-2AC": {
     "eos": "Discontinued (Removed from Price List)",
     "eol": "",
@@ -273,6 +283,16 @@
     "eos": "44985",
     "eol": "",
     "replacement": "GVS-TAX20A-SW-TM"
+  },
+  "IBP-TAC40": {
+    "eos": "2025-07-07",
+    "eol": "2030-12-07",
+    "replacement": "IBP-TAC40E"
+  },
+  "IBP-TAC40-SW-TM": {
+    "eos": "2025-07-07",
+    "eol": "2030-12-07",
+    "replacement": "IBP-TAC40E-SW-TM"
   },
   "PRT-HC0-C02-SW-TM": {
     "eos": "44926",
@@ -858,6 +878,21 @@
     "eos": "44926",
     "eol": "46752",
     "replacement": ""
+  },
+  "TAP-M451": {
+    "eos": "2021-10-31",
+    "eol": "2026-10-31",
+    "replacement": "TAP-M451T"
+  },
+  "TAP-M453": {
+    "eos": "2021-10-31",
+    "eol": "2026-10-31",
+    "replacement": "TAP-M453T"
+  },
+  "TAP-M471": {
+    "eos": "2021-10-31",
+    "eol": "2026-10-31",
+    "replacement": "TAP-M471T"
   },
   "UPG-TAC24-SW-TM": {
     "eos": "44620",

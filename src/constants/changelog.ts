@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.717",
+    date: "2026-09-02",
+    summary: "Ingested Worldwide Price List (WWPL Sept 2026) updates: clarified CCv1/CCv2 compatibility across HC3 bypass and port modules, updated EOS/EOL dates and replacement SKU mappings for QSB-504, IBP-TAC40, GTP-ATX02, GTP-ASF02, and G-TAP M Series modules.",
+  },
+  {
     version: "1.0.716",
     date: "2026-09-01",
     summary: "Paired standalone VMware and virtual cloud source estates with their connected aggregation chassis in site architecture sub-diagrams, ensuring full feed context is illustrated rather than orphaned nodes.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.692",
     date: "2026-08-28",
     summary: "Decoupled 3D card deck background from Export Diagram description box.",
-  },
-  {
-    version: "1.0.691",
-    date: "2026-08-28",
-    summary: "Enforced explicit pure white #ffffff and #ff9800 border on all diagram descriptors.",
   },
 ];
