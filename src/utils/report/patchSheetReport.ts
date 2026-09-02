@@ -103,8 +103,17 @@ export function buildPatchSheetReportDocDefinition(input: ReportInput): TDocumen
 
   // Title & Scope line
   content.push({ text: `FIELD INSTALLATION & PATCH SHEET — ${projectName.toUpperCase()}`, style: 'workOrderTitle' });
+  const hasTaps = stats.tapUnitCount > 0;
+  const hasSpans = (stats.inputCounts.span + stats.inputCounts.erspan + stats.inputCounts.eastWest + stats.inputCounts.vmware + stats.inputCounts.other) > 0;
+  const sourceScope =
+    hasTaps && hasSpans
+      ? `${stats.tapUnitCount} TAPs | ${stats.inputCounts.span} SPAN Sessions`
+      : hasTaps
+        ? `${stats.tapUnitCount} TAPs`
+        : `${stats.inputCounts.span} SPAN Sessions`;
+
   content.push({
-    text: `SCOPE: ${stats.monitoredLinkCount} Monitored Links (${stats.totalFeedCount} Feeds) | ${stats.tapUnitCount} TAPs | ${Object.keys(stats.chassisCounts).length} Chassis Types | ${stats.toolCount} Monitoring Tools`,
+    text: `SCOPE: ${stats.monitoredLinkCount} Monitored Links (${stats.totalFeedCount} Feeds) | ${sourceScope} | ${Object.keys(stats.chassisCounts).length} Chassis Types | ${stats.toolCount} Monitoring Tools`,
     style: 'workOrderScope',
   });
 
@@ -166,10 +175,19 @@ export function buildPatchSheetReportDocDefinition(input: ReportInput): TDocumen
     }
   });
 
-  // Fiber cabling checks
+  // Fiber / Feed cabling checks
+  if (stats.tapUnitCount > 0) {
+    checklistItems.push(
+      `[ ] Dress and route incoming tapped fiber links (${stats.inputCounts.tapFeeds || stats.totalFeedCount} optical simplex/duplex strands) into TAP modules with standard bend radius.`,
+      `[ ] Patch northbound and southbound TAP monitor ports to aggregation chassis ingress ports using labeled patch cables.`,
+    );
+  }
+  if (stats.inputCounts.span > 0) {
+    checklistItems.push(
+      `[ ] Connect incoming SPAN/mirror source feeds (${stats.inputCounts.span} feed${stats.inputCounts.span !== 1 ? 's' : ''}) to designated aggregation chassis ingress ports.`,
+    );
+  }
   checklistItems.push(
-    `[ ] Dress and route incoming tapped fiber links (${stats.totalFeedCount} optical simplex/duplex strands) into TAP modules with standard bend radius.`,
-    `[ ] Patch northbound and southbound TAP monitor ports to aggregation chassis ingress ports using labeled patch cables.`,
     `[ ] Connect egress tool interfaces to target security/monitoring systems (${stats.toolCount} active destinations).`,
     `[ ] Power on units, observe boot diagnostics, and verify solid green link LEDs across all active ingress/egress ports.`,
     `[ ] Perform optical power budget check (Rx power within optic specification) on aggregation ports.`,

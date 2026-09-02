@@ -17,12 +17,13 @@ import { markdownToPdfmakeContent } from './markdownToPdfmake';
 
 /**
  * Builds the ascending milestone line chart SVG for the Uplink cover.
- * Shows progression: TAPs Deployed → Aggregation Live → Full Visibility.
+ * Shows progression: Ingress Deployed → Aggregation Live → Full Visibility.
  */
-function buildMilestoneChartSvg(): string {
+function buildMilestoneChartSvg(hasTaps: boolean, hasSpans: boolean): string {
   const W = 515;
   const H = 90;
   const c = REPORT_UPLINK_COLOURS;
+  const milestone1Label = hasTaps && hasSpans ? 'Capture Live' : (hasTaps ? 'TAPs Deployed' : 'SPANs Live');
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -39,11 +40,11 @@ function buildMilestoneChartSvg(): string {
     <!-- Milestone trajectory line -->
     <path d="M 50 60 Q 180 50, 260 38 T 465 18" stroke="url(#upGrad)" stroke-width="2.5" fill="none" />
 
-    <!-- Milestone 1: TAPs Deployed -->
+    <!-- Milestone 1: TAPs/SPANs Deployed -->
     <circle cx="50" cy="60" r="5" fill="${c.structural}" />
     <circle cx="50" cy="60" r="2.5" fill="#FFFFFF" />
     <text x="50" y="78" font-family="sans-serif" font-size="8" font-weight="bold" fill="${c.structural}" text-anchor="middle">MILESTONE 01</text>
-    <text x="50" y="87" font-family="sans-serif" font-size="7" fill="${c.inkSecondary}" text-anchor="middle">TAPs Deployed</text>
+    <text x="50" y="87" font-family="sans-serif" font-size="7" fill="${c.inkSecondary}" text-anchor="middle">${milestone1Label}</text>
 
     <!-- Milestone 2: Aggregation Live -->
     <circle cx="260" cy="38" r="5" fill="${c.structural}" />
@@ -108,9 +109,17 @@ export function buildUplinkReportDocDefinition(input: ReportInput): TDocumentDef
     margin: [0, 0, 0, 18],
   });
 
+  const hasTaps = stats.tapUnitCount > 0;
+  const hasSpans =
+    (stats.inputCounts.span +
+      stats.inputCounts.erspan +
+      stats.inputCounts.eastWest +
+      stats.inputCounts.vmware +
+      stats.inputCounts.other) > 0;
+
   // Milestone trajectory chart
   content.push({
-    svg: buildMilestoneChartSvg(),
+    svg: buildMilestoneChartSvg(hasTaps, hasSpans),
     width: 515,
     margin: [0, 0, 0, 20],
   });
@@ -118,6 +127,15 @@ export function buildUplinkReportDocDefinition(input: ReportInput): TDocumentDef
   // ═══════════════════════════════════════════════════════════════
   // THE HERO REFRAME (Outcome-based Value Pillars)
   // ═══════════════════════════════════════════════════════════════
+  const ingressFeedLabel =
+    hasTaps && !hasSpans
+      ? `${stats.totalFeedCount} Ingress Optical Feeds`
+      : `${stats.totalFeedCount} Ingress Traffic Feeds`;
+  const ingressFeedDesc =
+    hasTaps
+      ? 'Complete wire-speed capture without SPAN port contention or switch CPU degradation.'
+      : 'Dedicated high-capacity ingress aggregation without packet drop or tool contention.';
+
   content.push({
     table: {
       widths: ['100%'],
@@ -138,8 +156,8 @@ export function buildUplinkReportDocDefinition(input: ReportInput): TDocumentDef
                   {
                     stack: [
                       { text: `${stats.monitoredLinkCount} Monitored Links`, style: 'metricValue' },
-                      { text: `${stats.totalFeedCount} Ingress Optical Feeds`, style: 'metricLabel', margin: [0, 2, 0, 2] },
-                      { text: 'Complete wire-speed capture without SPAN port contention or switch CPU degradation.', style: 'metricDesc' },
+                      { text: ingressFeedLabel, style: 'metricLabel', margin: [0, 2, 0, 2] },
+                      { text: ingressFeedDesc, style: 'metricDesc' },
                     ],
                   },
                   {
@@ -214,7 +232,10 @@ export function buildUplinkReportDocDefinition(input: ReportInput): TDocumentDef
         [
           { text: 'Zero Production Impact', style: 'body', bold: true },
           {
-            text: 'Optical TAPs operate purely at the physical layer with zero power consumption and zero software overhead on production core switches.',
+            text:
+              stats.tapUnitCount > 0
+                ? 'Optical TAPs operate purely at the physical layer with zero power consumption and zero software overhead on production core switches.'
+                : 'Dedicated visibility fabric offloads monitoring traffic from production core switches, eliminating CPU degradation and SPAN session limits.',
             style: 'bodySecondary',
           },
         ],

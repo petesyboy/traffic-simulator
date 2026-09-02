@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.725",
+    date: "2026-09-02",
+    summary: "Refined report traffic source terminology: dynamically adapted topology diagrams, schematics, and work orders to specify 'SPAN allocations', 'TAP allocations', or 'TAP/SPAN allocations' based on actual deployed sources rather than hardcoding TAP references.",
+  },
+  {
     version: "1.0.724",
     date: "2026-09-02",
     summary: "Implemented site-aware tidy layout and visual data centre enclosures: clustered equipment by physical site into dedicated swimlanes with clean inter-site routing, preventing cross-site column mixing and rendering interactive glassmorphic data centre boundaries.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.700",
     date: "2026-08-30",
     summary: "Added link utilisation level selector for traffic generation.",
-  },
-  {
-    version: "1.0.699",
-    date: "2026-08-30",
-    summary: "Preserved traffic flow through collapsed TAP clusters in simulation engine.",
   },
 ];

@@ -430,5 +430,48 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(stringified).toContain('Deep Observability');
     expect(stringified).toContain('0 engines');
   });
+
+  it('uses SPAN allocations rather than TAP allocations when no optical TAPs are present', () => {
+    const span1: CustomNode = {
+      id: 'span-1',
+      type: 'inputNode',
+      position: { x: 0, y: 0 },
+      data: { label: 'SPAN 1', configType: 'SPAN', site: 'DC1' },
+    } as CustomNode;
+    const span2: CustomNode = {
+      id: 'span-2',
+      type: 'inputNode',
+      position: { x: 0, y: 50 },
+      data: { label: 'SPAN 2', configType: 'SPAN', site: 'DC2' },
+    } as CustomNode;
+    const taNode: CustomNode = {
+      id: 'ta-1',
+      type: 'hardwareNode',
+      position: { x: 100, y: 0 },
+      data: { label: 'TA200E', model: 'GigaVUE-TA200E', sku: 'TA200E-BASE', site: 'DC1' },
+    } as CustomNode;
+
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [span1, span2, taNode],
+      edges: [],
+      siteDiagrams: {
+        DC1: 'data:image/png;base64,AAAA',
+        DC2: 'data:image/png;base64,BBBB',
+      },
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    // Must NOT say "local TAP allocations" when there are no TAPs
+    expect(allText).not.toContain('local TAP allocations');
+    // Must describe as SPAN allocations
+    expect(allText).toContain('illustrating local SPAN allocations');
+    expect(allText).toContain('High-level signal flow across network SPAN sources');
+
+    // Schematic SVG must render SPANs instead of TAPs
+    const stringified = JSON.stringify(doc.content);
+    expect(stringified).toContain('SPAN');
+    expect(stringified).not.toContain('0 TAPs');
+  });
 });
 

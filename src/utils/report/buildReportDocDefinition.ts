@@ -325,6 +325,7 @@ function buildSiteSchematicSvg(
   toolCount: number,
   gigaSmartOps: number,
   siteName: string,
+  spanCount: number = 0,
 ): string {
   const W = 515;
   const H = 80;
@@ -334,7 +335,7 @@ function buildSiteSchematicSvg(
   const lineC = '#94A3B8';
 
   // Node box positions (centre x)
-  const x1 = 48;   // TAPs
+  const x1 = 48;   // Ingress / TAPs / SPANs
   const x2 = 165;  // Aggregation
   const x3 = 295;  // HC / GigaSMART
   const x4 = 430;  // Tools
@@ -356,7 +357,28 @@ function buildSiteSchematicSvg(
   };
 
   const gsLabel = gigaSmartOps > 0 ? `${gigaSmartOps} Op${gigaSmartOps !== 1 ? 's' : ''}` : 'Deep Observability';
-  const tapSubLabel = tapFeedCount > tapLinkCount ? `${tapFeedCount} feeds (${tapLinkCount} links)` : `${tapFeedCount} feeds`;
+
+  let box1Title: string;
+  let box1Sub: string;
+  let sourceSubLabel: string;
+
+  if (tapUnitCount === 0 && spanCount > 0) {
+    box1Title = `${spanCount} SPAN${spanCount !== 1 ? 's' : ''}`;
+    box1Sub = 'Port Mirror';
+    sourceSubLabel = `${spanCount} SPAN feed${spanCount !== 1 ? 's' : ''}`;
+  } else if (tapUnitCount > 0 && spanCount > 0) {
+    box1Title = `${tapUnitCount} TAP / ${spanCount} SP`;
+    box1Sub = 'Hybrid Capture';
+    sourceSubLabel = `${tapFeedCount + spanCount} feeds (${tapLinkCount + spanCount} links)`;
+  } else if (tapUnitCount > 0) {
+    box1Title = `${tapUnitCount} TAP${tapUnitCount !== 1 ? 's' : ''}`;
+    box1Sub = 'Optical Capture';
+    sourceSubLabel = tapFeedCount > tapLinkCount ? `${tapFeedCount} feeds (${tapLinkCount} links)` : `${tapFeedCount} feeds`;
+  } else {
+    box1Title = '0 Sources';
+    box1Sub = 'No Feeds';
+    sourceSubLabel = '0 feeds';
+  }
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -368,7 +390,7 @@ function buildSiteSchematicSvg(
   <!-- Site label -->
   <text x="4" y="14" font-family="sans-serif" font-size="8" font-weight="bold" fill="${muted}" letter-spacing="0.5">${siteName.toUpperCase()} · SIGNAL PATH SCHEMATIC</text>
 
-  ${box(x1, navy, `${tapUnitCount} TAP${tapUnitCount !== 1 ? 's' : ''}`, 'Optical Capture')}
+  ${box(x1, navy, box1Title, box1Sub)}
   ${arrow(x1, x2)}
   ${box(x2, navy, `${aggCount} Aggr.`, 'Aggregation')}
   ${arrow(x2, x3)}
@@ -377,7 +399,7 @@ function buildSiteSchematicSvg(
   ${box(x4, navy, `${toolCount} Tool${toolCount !== 1 ? 's' : ''}`, 'Destinations')}
 
   <!-- Counts row -->
-  <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${tapSubLabel}</text>
+  <text x="${x1}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${sourceSubLabel}</text>
   <text x="${x2}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${aggCount} unit${aggCount !== 1 ? 's' : ''}</text>
   <text x="${x3}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${accent}">${gigaSmartOps > 0 ? `${gigaSmartOps} engine${gigaSmartOps !== 1 ? 's' : ''}` : (hcCount > 0 ? `${hcCount} engine${hcCount !== 1 ? 's' : ''}` : '0 engines')}</text>
   <text x="${x4}" y="${cy + bh / 2 + 14}" text-anchor="middle" font-family="sans-serif" font-size="7" fill="${muted}">${toolCount} dest.</text>
@@ -699,8 +721,24 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     });
   }
 
+  const hasAnyTaps = stats.tapUnitCount > 0;
+  const hasAnySpans =
+    (stats.inputCounts.span +
+      stats.inputCounts.erspan +
+      stats.inputCounts.eastWest +
+      stats.inputCounts.vmware +
+      stats.inputCounts.other) > 0;
+  const signalSourceDesc =
+    hasAnyTaps && hasAnySpans
+      ? 'network tap/SPAN points'
+      : hasAnyTaps
+        ? 'network tap points'
+        : hasAnySpans
+          ? 'network SPAN sources'
+          : 'traffic acquisition sources';
+
   content.push({
-    text: 'High-level signal flow across network tap points, aggregation switches, transformation engines, and monitoring tools.',
+    text: `High-level signal flow across ${signalSourceDesc}, aggregation switches, transformation engines, and monitoring tools.`,
     style: 'bodySecondary',
     margin: [0, 0, 0, 8],
   });
@@ -747,12 +785,13 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     const siteGsOps = siteNodes.filter((n) => n.type === NODE_TYPES.GIGASMART).length;
 
     return {
-      tapUnitCount: siteTapUnitCount || stats.tapUnitCount,
-      totalLinkCount: siteTotalLinkCount || stats.monitoredLinkCount,
-      totalFeedCount: siteTotalFeedCount || stats.totalFeedCount,
+      tapUnitCount: siteTapUnitCount,
+      spanCount: siteSpanCount,
+      totalLinkCount: siteTotalLinkCount,
+      totalFeedCount: siteTotalFeedCount,
       aggCount: siteAggCount,
       hcCount: siteHcCount,
-      toolCount: siteToolCount || stats.toolCount,
+      toolCount: siteToolCount,
       gsOps: siteGsOps,
     };
   };
@@ -774,6 +813,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       siteMetricsList.every(
         (entry) =>
           entry.metrics.tapUnitCount === firstMetrics.tapUnitCount &&
+          entry.metrics.spanCount === firstMetrics.spanCount &&
           entry.metrics.totalLinkCount === firstMetrics.totalLinkCount &&
           entry.metrics.totalFeedCount === firstMetrics.totalFeedCount &&
           entry.metrics.aggCount === firstMetrics.aggCount &&
@@ -795,6 +835,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           firstMetrics.toolCount,
           firstMetrics.gsOps,
           `REPRESENTATIVE SITE ARCHITECTURE (${siteNamesJoined})`,
+          firstMetrics.spanCount,
         ),
         width: 515,
         margin: [0, 0, 0, 14],
@@ -802,13 +843,25 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     }
 
     siteEntries.forEach(([siteName, siteDiagramUrl], index) => {
+      const m = siteMetricsList[index].metrics;
+      const hasSiteTaps = m.tapUnitCount > 0;
+      const hasSiteSpans = m.spanCount > 0;
+      const sourceAllocationDesc =
+        hasSiteTaps && hasSiteSpans
+          ? 'local TAP/SPAN allocations'
+          : hasSiteTaps
+            ? 'local TAP allocations'
+            : hasSiteSpans
+              ? 'local SPAN allocations'
+              : 'local traffic sources';
+
       content.push({
         text: `Site Architecture Breakdown — ${siteName}`,
         style: 'subHeading',
         margin: [0, 14, 0, 4],
       } as Content);
       content.push({
-        text: `Focused topology diagram for ${siteName}, illustrating local TAP allocations, aggregation chassis ports, and tool feeds.`,
+        text: `Focused topology diagram for ${siteName}, illustrating ${sourceAllocationDesc}, aggregation chassis ports, and tool feeds.`,
         style: 'bodySecondary',
         margin: [0, 0, 0, 6],
       } as Content);
@@ -820,7 +873,6 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
       // Only push per-site schematics if the sites actually differ in architecture
       if (!allSitesIdentical) {
-        const m = siteMetricsList[index].metrics;
         content.push({
           svg: buildSiteSchematicSvg(
             m.tapUnitCount,
@@ -831,6 +883,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             m.toolCount,
             m.gsOps,
             siteName,
+            m.spanCount,
           ),
           width: 515,
           margin: [0, 0, 0, 14],
@@ -853,6 +906,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         m.toolCount,
         m.gsOps,
         singleSiteName,
+        m.spanCount,
       ),
       width: 515,
       margin: [0, 0, 0, 14],

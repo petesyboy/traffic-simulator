@@ -51,7 +51,15 @@ if (targetEdition === 'partner') {
   execSync('node scripts/parse-skus.js --edition=internal', { cwd: ROOT_DIR, stdio: 'inherit' });
   const internalHtml = path.join(DIST_DIR, 'internal', 'traffic-reduction-simulator.html');
   if (fs.existsSync(internalHtml)) {
-    fs.copyFileSync(internalHtml, path.join(DIST_DIR, 'index.html'));
+    try {
+      fs.copyFileSync(internalHtml, path.join(DIST_DIR, 'index.html'));
+    } catch {
+      try {
+        fs.writeFileSync(path.join(DIST_DIR, 'index.html'), fs.readFileSync(internalHtml));
+      } catch (err) {
+        console.warn(`[warning] Could not update root dist/index.html: ${err.message}`);
+      }
+    }
   }
 }
 
