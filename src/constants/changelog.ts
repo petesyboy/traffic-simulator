@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.729",
+    date: "2026-09-02",
+    summary: "Fixed Export Diagram Ready Mode vertical node clearance and chassis SPAN termination descriptions: automatically expanded vertical column spacing to prevent lower nodes from obscuring upper description boxes, distinguished SPAN sessions (1 feed per session) from physical TAP links in chassis termination text, and resolved precise fitted optic SKUs (e.g. Q28-502T) rather than falling back to default TAP optics.",
+  },
+  {
     version: "1.0.728",
     date: "2026-09-02",
     summary: "Enhanced report site diagram isolation with DWDM transport ring inclusion and added SPAN speed/fibre type descriptors in Export Diagram Ready Mode: each per-site report diagram now captures the isolated local data centre plus its connected DWDM ring, and SPAN nodes display configured port speed and fibre media specifications.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.710",
     date: "2026-09-01",
     summary: "Integrated native File System Access API choosers for PDF reports, formal quotes, and diagram exports, streaming files directly to user-selected folders.",
-  },
-  {
-    version: "1.0.709",
-    date: "2026-09-01",
-    summary: "Added Australia & New Zealand (AU/ANZ) deployment region support with automatic PCD-00007 / PCD-00A27 power cord mapping for TAPs and chassis.",
   },
 ];

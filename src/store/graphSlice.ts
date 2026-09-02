@@ -300,7 +300,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   snapAllNodesToGrid: () => { get().pushHistory(); set({ nodes: get().nodes.map((node) => ({ ...node, position: { x: Math.round(node.position.x / 15) * 15, y: Math.round(node.position.y / 15) * 15 } })) }); },
   tidyLayout: () => {
     get().pushHistory();
-    const newNodes = computeTidyLayout(get().nodes, get().edges);
+    const newNodes = computeTidyLayout(get().nodes, get().edges, get().exportDiagramMode);
     const newEdges = optimizeDwdmEdgeHandles(newNodes, get().edges);
     set({ nodes: newNodes, edges: newEdges, fitViewTrigger: get().fitViewTrigger + 1 });
   },

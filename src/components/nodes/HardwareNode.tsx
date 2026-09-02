@@ -10,6 +10,7 @@ import React, { useMemo, useState } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition, HardwareNodeData, GigaSmartNodeData, CustomNode } from '../../store/types';
+import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { formatBandwidth } from '../../utils/format';
 import {
   MapIcon, GreenCircleIcon, TapIcon, AppIcon,
@@ -423,37 +424,81 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${a.optic} to mirror traffic.`);
               return descLines.join('\n');
             } else {
-              // Find incoming TAP links (deduplicated by source node to prevent double-counting)
-              const incomingTapEdges = edges.filter(e => e.target === id);
-              const processedTapIds = new Set<string>();
+              // Find incoming source links (deduplicated by source node to prevent double-counting)
+              const incomingEdges = edges.filter(e => e.target === id);
+              const processedSrcIds = new Set<string>();
+              const spanConns: { label: string, count: number, optic: string, typeName: string }[] = [];
               const tapConns: { label: string, linksCount: number, optic: string }[] = [];
 
-              incomingTapEdges.forEach(e => {
+              // Available fitted optics on this chassis node from nodeBom
+              const chassisOptics = nodeBom.filter(r => r.type === 'Optic').map(r => r.sku);
+
+              incomingEdges.forEach(e => {
                 const src = nodes.find(n => n.id === e.source);
                 if (!src) return;
+
                 const isClusterTap = src.type === 'clusterNode' && src.data?.clusterType === 'tap';
                 let taps: CustomNode[] = [];
+
                 if (isClusterTap) {
                   const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
                   if (origId) {
                     const m = nodes.find(n => n.id === origId);
-                    if (m && !processedTapIds.has(m.id)) {
-                      processedTapIds.add(m.id);
+                    if (m && !processedSrcIds.has(m.id)) {
+                      processedSrcIds.add(m.id);
                       taps = [m];
                     }
                   } else {
                     const allMembers = nodes.filter(n => (src.data?.memberNodeIds as string[])?.includes(n.id));
                     allMembers.forEach(m => {
-                      if (!processedTapIds.has(m.id)) {
-                        processedTapIds.add(m.id);
+                      if (!processedSrcIds.has(m.id)) {
+                        processedSrcIds.add(m.id);
                         taps.push(m);
                       }
                     });
                   }
-                } else if (String(src.data?.model || '').toUpperCase().includes('TAP') || src.type === 'inputNode') {
-                  if (!processedTapIds.has(src.id)) {
-                    processedTapIds.add(src.id);
+                } else if (String(src.data?.model || '').toUpperCase().includes('TAP') || (src.type === 'inputNode' && String(src.data?.configType || '').startsWith(CONFIG_TYPES.TAP))) {
+                  if (!processedSrcIds.has(src.id)) {
+                    processedSrcIds.add(src.id);
                     taps = [src];
+                  }
+                } else if (src.type === 'inputNode') {
+                  // SPAN, ERSPAN, East-West, VMware input ports
+                  if (!processedSrcIds.has(src.id)) {
+                    processedSrcIds.add(src.id);
+                    const configType = (src.data?.configType as string) || CONFIG_TYPES.SPAN;
+                    const rawSpeed = (src.data?.portSpeed as string) || (src.data?.linkSpeed ? `${Number(src.data.linkSpeed) >= 1000 ? Number(src.data.linkSpeed) / 1000 : src.data.linkSpeed}G` : '10G');
+                    const isSM = String(src.data?.spanFiberMode || src.data?.fiberType || '').includes('Single');
+
+                    // Resolve suitable optic SKU for this speed / media on this chassis
+                    let resolvedOptic = '';
+                    if (rawSpeed === '100G') {
+                      resolvedOptic = chassisOptics.find(s => s.startsWith('Q28')) || (isSM ? 'Q28-503T' : 'Q28-502T');
+                    } else if (rawSpeed === '40G') {
+                      resolvedOptic = chassisOptics.find(s => s.startsWith('QSF')) || (isSM ? 'QSF-504T' : 'QSF-502T');
+                    } else if (rawSpeed === '25G') {
+                      resolvedOptic = chassisOptics.find(s => s.startsWith('SFP-53')) || (isSM ? 'SFP-533T' : 'SFP-532T');
+                    } else if (rawSpeed === '400G') {
+                      resolvedOptic = chassisOptics.find(s => s.startsWith('QDD')) || (isSM ? 'QDD-502T' : 'QDD-501T');
+                    } else {
+                      // 10G / 1G
+                      resolvedOptic = chassisOptics.find(s => s.startsWith('SFP-50') || s.startsWith('SFP-53')) || (isSM ? 'SFP-502T' : 'SFP-501T');
+                    }
+
+                    const typeName = configType.startsWith(CONFIG_TYPES.ERSPAN)
+                      ? 'ERSPAN tunnel'
+                      : configType.startsWith(CONFIG_TYPES.VMWARE)
+                      ? 'VMware feed'
+                      : configType.startsWith(CONFIG_TYPES.EAST_WEST)
+                      ? 'East/West source'
+                      : 'SPAN session';
+
+                    spanConns.push({
+                      label: (src.data?.label as string) || 'SPAN Port',
+                      count: 1,
+                      optic: resolvedOptic,
+                      typeName,
+                    });
                   }
                 }
 
@@ -473,18 +518,35 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               });
 
               let desc = '';
+              if (spanConns.length > 0) {
+                const groupedSpans = spanConns.reduce((acc, curr) => {
+                  const key = `${curr.optic}__${curr.typeName}`;
+                  if (!acc[key]) acc[key] = { count: 0, labels: new Set<string>(), optic: curr.optic, typeName: curr.typeName };
+                  acc[key].count += curr.count;
+                  acc[key].labels.add(curr.label);
+                  return acc;
+                }, {} as Record<string, { count: number, labels: Set<string>, optic: string, typeName: string }>);
+
+                desc += Object.values(groupedSpans).map((data) => {
+                  const labels = Array.from(data.labels).join(', ');
+                  const noun = data.count > 1 ? `${data.typeName}s` : data.typeName;
+                  return `Terminating ${data.count} ${noun} from ${labels} using ${data.optic}.`;
+                }).join('\n') + '\n\n';
+              }
+
               if (tapConns.length > 0) {
-                const grouped = tapConns.reduce((acc, curr) => {
+                const groupedTaps = tapConns.reduce((acc, curr) => {
                   if (!acc[curr.optic]) acc[curr.optic] = { links: 0, labels: new Set<string>() };
                   acc[curr.optic].links += curr.linksCount;
                   acc[curr.optic].labels.add(curr.label);
                   return acc;
                 }, {} as Record<string, { links: number, labels: Set<string> }>);
 
-                desc += Object.entries(grouped).map(([optic, data]) => {
+                desc += Object.entries(groupedTaps).map(([optic, data]) => {
                   const ports = data.links * 2;
                   const labels = Array.from(data.labels).join(', ');
-                  return `Terminating ${ports} TAP ports (from ${data.links} tapped links) from ${labels} using ${optic}.`;
+                  const linksNoun = data.links > 1 ? 'tapped links' : 'tapped link';
+                  return `Terminating ${ports} TAP ports (from ${data.links} ${linksNoun}) from ${labels} using ${optic}.`;
                 }).join('\n') + '\n\n';
               }
 

@@ -30,9 +30,22 @@ interface NodeSize {
   height: number;
 }
 
-function nodeSize(node: CustomNode): NodeSize {
-  const width = node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH;
-  const height = node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT;
+function nodeSize(node: CustomNode, isExportMode = false): NodeSize {
+  let width = node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH;
+  let height = node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT;
+
+  if (isExportMode) {
+    const model = String(node.data?.model || '').toUpperCase();
+    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
+    const isTap = model.includes('TAP') || String(node.data?.configType || '').toUpperCase().includes('TAP');
+    if (node.type === 'clusterNode') height = Math.max(height, 310);
+    else if (isChassis) height = Math.max(height, 380);
+    else if (isTap) height = Math.max(height, 190);
+    else if (node.type === 'inputNode') height = Math.max(height, 175);
+    else if (node.type === 'toolNode') height = Math.max(height, 190);
+    else if (node.type === 'mapNode' || node.type === 'filterNode' || node.type === 'gigaSmartNode') height = Math.max(height, 220);
+  }
+
   return { width, height };
 }
 
@@ -336,7 +349,7 @@ function assignSiteAwarePositions(
  * Grouped child nodes are left untouched - their position is relative to
  * their parent, which moves with the rest of its column as a single unit.
  */
-export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNode[] {
+export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMode = false): CustomNode[] {
   const topLevelNodes = nodes.filter((n) => !n.parentId && !n.hidden);
   if (topLevelNodes.length === 0) return nodes;
 
@@ -346,7 +359,7 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNod
   });
 
   const layoutIds = topLevelNodes.map((n) => n.id);
-  const sizeOf = new Map<string, NodeSize>(topLevelNodes.map((n) => [n.id, nodeSize(n)]));
+  const sizeOf = new Map<string, NodeSize>(topLevelNodes.map((n) => [n.id, nodeSize(n, isExportMode)]));
 
   const { succ, pred } = buildAdjacency(layoutIds, edges, parentOf);
   const rank = computeRanks(layoutIds, pred);
@@ -504,39 +517,45 @@ export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
 
   // Measure or estimate height for each node including export description box
   function getNodeHeight(n: CustomNode): number {
+    const model = String(n.data?.model || '').toUpperCase();
+    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
+    const isTap = model.includes('TAP') || String(n.data?.configType || '').toUpperCase().includes('TAP');
+
+    let minExpectedHeight = 170;
+    if (n.type === 'clusterNode') minExpectedHeight = 310;
+    else if (isChassis) minExpectedHeight = 380;
+    else if (isTap) minExpectedHeight = 190;
+    else if (n.type === 'inputNode') minExpectedHeight = 175;
+    else if (n.type === 'toolNode') minExpectedHeight = 190;
+    else if (n.type === 'mapNode' || n.type === 'filterNode' || n.type === 'gigaSmartNode') minExpectedHeight = 220;
+
     const domEl =
       typeof document !== 'undefined'
         ? (document.querySelector(`[data-id="${n.id}"]`) as HTMLElement)
         : null;
-    if (domEl && domEl.offsetHeight > 50) {
+    if (domEl && domEl.offsetHeight > minExpectedHeight) {
       return domEl.offsetHeight;
     }
-    const model = String(n.data?.model || '').toUpperCase();
-    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
-    const isTap = model.includes('TAP');
-    if (n.type === 'clusterNode') return 310;
-    if (isChassis) return 370;
-    if (isTap) return 190;
-    if (n.type === 'toolNode') return 190;
-    if (n.type === 'mapNode' || n.type === 'filterNode') return 220;
-    return n.measured?.height || 180;
+    return minExpectedHeight;
   }
 
   function getNodeWidth(n: CustomNode): number {
+    const model = String(n.data?.model || '').toUpperCase();
+    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
+    let minExpectedWidth = 240;
+    if (isChassis) minExpectedWidth = 330;
+    else if (n.type === 'clusterNode') minExpectedWidth = 310;
+    else if (n.type === 'toolNode') minExpectedWidth = 210;
+    else if (model.includes('TAP')) minExpectedWidth = 200;
+
     const domEl =
       typeof document !== 'undefined'
         ? (document.querySelector(`[data-id="${n.id}"]`) as HTMLElement)
         : null;
-    if (domEl && domEl.offsetWidth > 50) {
+    if (domEl && domEl.offsetWidth > minExpectedWidth) {
       return domEl.offsetWidth;
     }
-    const model = String(n.data?.model || '').toUpperCase();
-    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
-    if (isChassis) return 330;
-    if (n.type === 'clusterNode') return 310;
-    if (n.type === 'toolNode') return 210;
-    if (model.includes('TAP')) return 200;
-    return n.measured?.width || 240;
+    return minExpectedWidth;
   }
 
   // Cluster nodes into columns based on X position (within 80px tolerance)
