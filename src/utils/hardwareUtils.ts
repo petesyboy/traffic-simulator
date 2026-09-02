@@ -571,13 +571,13 @@ export const getGigaSmartEngineCount = (model: string, hwData: HardwareNodeData)
 };
 
 export const getTaLicenseLimits = (modelName: string, capacity: string): { [portType: string]: number; qsfp_400g: number } => {
-  const modelLower = modelName.toLowerCase();
   const cap = capacity || 'Full';
+  const modelLower = (modelName || '').toLowerCase();
 
-  const chassis = hardwareCatalogue.ta_series.find(c => c.model.toLowerCase() === modelLower);
+  const chassis = findChassisInCatalogue(modelName);
 
-  if (chassis && chassis.licensing && chassis.licensing.tiers) {
-    const tier = chassis.licensing.tiers.find(t => t.name.toLowerCase() === cap.toLowerCase());
+  if (chassis && (chassis as any).licensing && (chassis as any).licensing.tiers) {
+    const tier = (chassis as any).licensing.tiers.find((t: any) => t.name.toLowerCase() === cap.toLowerCase());
     if (tier) {
       const counts = sumPortCounts(tier.ports);
       return { ...counts, qsfp_400g: 0 };

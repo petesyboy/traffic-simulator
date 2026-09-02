@@ -2,8 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import type { CustomNode } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, InstalledOptic } from '../../../store/types';
 import { getSupportedBoards } from '../../../utils/opticValidation';
-import { getBoardDescription } from '../../../utils/hardwareUtils';
-import hardwareCatalogue from '../../../constants/hardwareCatalogue.json';
+import { getBoardDescription, findChassisInCatalogue } from '../../../utils/hardwareUtils';
 
 interface BoardSlotsPanelProps {
   selectedNode: CustomNode;
@@ -19,9 +18,7 @@ export const BoardSlotsPanel: React.FC<BoardSlotsPanelProps> = ({ selectedNode, 
 
   // Find catalogue details to get module_slots count (only hc_series entries have it)
   const details = useMemo((): { model?: string; module_slots?: number; module_slot_positions?: { number: number; label: string }[] } | null => {
-    if (model?.includes('TA')) return hardwareCatalogue.ta_series?.find((t) => t.sku === sku) || null;
-    if (model?.includes('HC')) return hardwareCatalogue.hc_series?.find((t) => t.sku === sku) || null;
-    return null;
+    return (findChassisInCatalogue(model, sku) as any) || null;
   }, [model, sku]);
 
   const supportedBoards = useMemo(() => {

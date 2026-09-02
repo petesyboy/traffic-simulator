@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore, type CustomNode } from '../../store/store';
 import { resolveNodeSkus } from '../../utils/skuResolver';
-import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType, isBreakoutPanelModel } from '../../utils/hardwareUtils';
+import { getOpticSpeed, getTaLicenseLimits, getOpticFiberType, isBreakoutPanelModel, findChassisInCatalogue } from '../../utils/hardwareUtils';
 import { SUPPORTED_TAP_OPTICS } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import { getMergedSkus } from '../../utils/skuOverrides';
@@ -82,9 +82,8 @@ export const HardwareNodePanel: React.FC<HardwareNodePanelProps> = ({
   // that would need to match every JSON variant.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let details: any = null;
-  if (model?.includes('TAP') || isBreakoutPanelModel(model)) details = hardwareCatalogue.taps.find(t => t.sku === sku);
-  else if (model?.includes('TA')) details = hardwareCatalogue.ta_series.find(t => t.sku === sku);
-  else if (model?.includes('HC')) details = hardwareCatalogue.hc_series.find(t => t.sku === sku);
+  if (model?.includes('TAP') || isBreakoutPanelModel(model)) details = hardwareCatalogue.taps.find(t => (sku && t.sku === sku) || t.model === model);
+  else details = findChassisInCatalogue(model, sku);
 
   const resolved = resolveNodeSkus({ ...node.data, model, sku }, projectLicenseMode);
 

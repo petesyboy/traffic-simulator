@@ -11,8 +11,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { HardwareNodeData } from '../../store/types';
-import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
-import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount, getModuleSlotPositions } from '../../utils/hardwareUtils';
+import { getCageCapacityBreakdown, getBoardDescription, getMaxChassisCapacityBySpeed, getGigaSmartEngineCount, getModuleSlotPositions, findChassisInCatalogue } from '../../utils/hardwareUtils';
 import { getChassisPorts, getPortOpticMap } from '../../utils/ports';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
@@ -25,17 +24,16 @@ interface PortSpec {
 
 interface ChassisSummaryModalProps {
   model: string;
-  sku: string;
-  displaySku: string;
+  sku?: string;
+  displaySku?: string;
   label: string;
   hwData: HardwareNodeData;
   onClose: () => void;
 }
 
 export const ChassisSummaryModal: React.FC<ChassisSummaryModalProps> = ({ model, sku, displaySku, label, hwData, onClose }) => {
+  const details = findChassisInCatalogue(model, sku);
   const isHc = model.includes('HC');
-  const catalogueSeries = isHc ? hardwareCatalogue.hc_series : hardwareCatalogue.ta_series;
-  const details = catalogueSeries.find(c => c.sku === sku || c.model === model);
   const detailsAny = details as unknown as {
     power?: string; fans?: number; airflow?: string; ports?: PortSpec[]; base_ports?: PortSpec[]; module_slots?: number;
     module_slot_positions?: { number: number; label: string; box?: { x: number; y: number; width: number; height: number } }[];

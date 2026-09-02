@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.723",
+    date: "2026-09-02",
+    summary: "Audited physical cage rules across all TA and HC chassis, extension modules, breakout panels, and TAP trays: normalized model and SKU lookups, added SMT-HC3-C08Q08/SMT-HC3-C16 to optic rules, and built comprehensive 69-test hardware matrix audit suite.",
+  },
+  {
     version: "1.0.722",
     date: "2026-09-02",
     summary: "Added DWDM Optical Transport Network node: models multi-site WAN and inter-DC interconnects over redundant 100 Gbps, 25 Gbps, and 400 Gbps optical wavelengths using optical lambda iconography.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.698",
     date: "2026-08-30",
     summary: "Added resizable columns and optimized table space in Live Traffic Injector.",
-  },
-  {
-    version: "1.0.697",
-    date: "2026-08-30",
-    summary: "Added automated flow generation with telco and mobile profile biasing.",
   },
 ];
