@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.730",
+    date: "2026-09-02",
+    summary: "Fixed GigaVUE-TA200E front panel optic overlay alignment: recalibrated the 64 QSFP28 port cage coordinates across 16 columns and 4 rows (2 tiers of stacked 2x2 cages), resolving the horizontal left-offset that caused port markers to render over the status LEDs and chassis bezel.",
+  },
+  {
     version: "1.0.729",
     date: "2026-09-02",
     summary: "Fixed Export Diagram Ready Mode vertical node clearance and chassis SPAN termination descriptions: automatically expanded vertical column spacing to prevent lower nodes from obscuring upper description boxes, distinguished SPAN sessions (1 feed per session) from physical TAP links in chassis termination text, and resolved precise fitted optic SKUs (e.g. Q28-502T) rather than falling back to default TAP optics.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.711",
     date: "2026-09-01",
     summary: "Fleshed out advanced Systems Engineer Reference Guide (README_advanced.md) with comprehensive source traffic modelling, optical TAP architectures, double-optic rules, multi-link trunks, and BOM diagnostics.",
-  },
-  {
-    version: "1.0.710",
-    date: "2026-09-01",
-    summary: "Integrated native File System Access API choosers for PDF reports, formal quotes, and diagram exports, streaming files directly to user-selected folders.",
   },
 ];

@@ -172,5 +172,36 @@ describe('ChassisFrontPanel fitted-optic markers', () => {
 
     expect(html).toContain(`left:${expectedLeftPct.toFixed(4)}%`);
   });
+
+  it('renders correctly aligned fitted-optic markers for GigaVUE-TA200E QSFP28 cages', () => {
+    const hwData: HardwareNodeData = {
+      label: 'TA200E',
+      model: 'GigaVUE-TA200E',
+      optics: [
+        { board: 'Base', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 4 },
+      ],
+    } as unknown as HardwareNodeData;
+
+    const ports = getChassisPorts('GigaVUE-TA200E', hwData);
+    const portOpticMap = getPortOpticMap(ports, hwData.optics);
+    const slotPositions = getModuleSlotPositions('GigaVUE-TA200E');
+
+    const html = renderToStaticMarkup(
+      <ChassisFrontPanel
+        chassisImage="ta200e.png"
+        model="GigaVUE-TA200E"
+        slotPositions={slotPositions}
+        installedBoards={{}}
+        ports={ports}
+        portOpticMap={portOpticMap}
+      />,
+    );
+
+    // Port c1 (Col 1, Row 1 - Tier 1 Top)
+    expect(html).toContain('left:10.52%');
+    expect(html).toContain('top:14.06%');
+    // Port c2 (Col 1, Row 2 - Tier 1 Bottom)
+    expect(html).toContain('top:34.38%');
+  });
 });
 
