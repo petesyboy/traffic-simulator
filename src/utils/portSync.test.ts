@@ -479,4 +479,38 @@ describe('BOM regression', () => {
     expect(errors.filter(err => err.type === 'port_capacity_exceeded')).toHaveLength(0);
     expect(errors.filter(err => err.type === 'insufficient_optics')).toHaveLength(0);
   });
+
+  it('prunes stale QSFP port links on a 10G SFP TAP connection and reallocates to SFP cages', () => {
+    const tap = tapNode('tap1', 6, 'SFP-533T (10G SFP+ LR)');
+    const ta = ta25eNode('ta1', 48, 'SFP-533T (10G SFP+ LR)');
+    const nodes = [tap, ta];
+
+    // Edge previously assigned to QSFP cages 1/1/c1..1/1/c8
+    const staleEdges: Edge[] = [
+      {
+        id: 'e-stale',
+        source: 'tap1',
+        target: 'ta1',
+        data: {
+          portLinks: [
+            { sourcePortId: 'L1-N', targetPortId: '1/1/c1' },
+            { sourcePortId: 'L1-S', targetPortId: '1/1/c2' },
+            { sourcePortId: 'L2-N', targetPortId: '1/1/c3' },
+            { sourcePortId: 'L2-S', targetPortId: '1/1/c4' },
+            { sourcePortId: 'L3-N', targetPortId: '1/1/c5' },
+            { sourcePortId: 'L3-S', targetPortId: '1/1/c6' },
+            { sourcePortId: 'L4-N', targetPortId: '1/1/c7' },
+            { sourcePortId: 'L4-S', targetPortId: '1/1/c8' },
+          ],
+        },
+      },
+    ];
+
+    const synced = syncPortAssignments(nodes, staleEdges);
+    const links = linksOf(synced[0]);
+
+    // Must reallocate 12 ports in SFP cages (x-prefix)
+    expect(links).toHaveLength(12);
+    links.forEach(l => expect(l.targetPortId).toMatch(/^1\/1\/x\d+$/));
+  });
 });

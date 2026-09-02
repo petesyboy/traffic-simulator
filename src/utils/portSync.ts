@@ -207,11 +207,11 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     const sourceIsPanel = sourceNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(sourceNode.data?.model || ''));
     const targetIsPanel = targetNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(targetNode.data?.model || ''));
 
-    // Only an end that actually has ports is expected to yield one. A chassis
-    // wired to a leaf tool legitimately has no port at the tool end, so an
-    // empty id there is normal rather than an exhausted chassis.
     const sourceExpectsPort = sourcePorts.length > 0 || sourceIsTap;
     const targetExpectsPort = targetPorts.length > 0 || targetIsTap;
+
+    const sourcePreferred = sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode, edge, nodes);
+    const targetPreferred = targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode, edge, nodes);
 
     const isValidId = (
       id: string,
@@ -220,10 +220,15 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
       ports: ChassisPort[],
       isTap: boolean,
       tapIds: string[],
+      expectedCage?: ChassisPort['cage'],
     ): boolean => {
       if (!expectsPort) return !id;
       if (!id || occupied.has(id)) return false;
-      return isTap ? tapIds.includes(id) : ports.some(p => p.id === id);
+      if (isTap) return tapIds.includes(id);
+      const port = ports.find(p => p.id === id);
+      if (!port) return false;
+      if (expectedCage && port.cage !== expectedCage) return false;
+      return true;
     };
 
     // A previously auto-allocated (non-pinned) link keeps its own port as long
@@ -241,8 +246,8 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
       const srcId = link.sourcePortId || '';
       const tgtId = link.targetPortId || '';
       if (
-        !isValidId(srcId, sourceExpectsPort, sourceOccupied, sourcePorts, sourceIsTap, sourceTapIds) ||
-        !isValidId(tgtId, targetExpectsPort, targetOccupied, targetPorts, targetIsTap, targetTapIds)
+        !isValidId(srcId, sourceExpectsPort, sourceOccupied, sourcePorts, sourceIsTap, sourceTapIds, sourcePreferred) ||
+        !isValidId(tgtId, targetExpectsPort, targetOccupied, targetPorts, targetIsTap, targetTapIds, targetPreferred)
       ) {
         continue;
       }
@@ -257,10 +262,10 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
 
     const sourceAuto = sourceIsTap
       ? sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode, edge, nodes)).map(p => p.id);
+      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourcePreferred).map(p => p.id);
     const targetAuto = targetIsTap
       ? targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode, edge, nodes)).map(p => p.id);
+      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetPreferred).map(p => p.id);
 
     const sourceOptics = opticsFor(sourceNode);
     const targetOptics = opticsFor(targetNode);

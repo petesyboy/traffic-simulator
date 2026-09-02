@@ -9,6 +9,7 @@ import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { resolveTapAllocations } from '../ports';
 import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, getCanonicalTrayModel, packTapTrayTargets, type TrayAllocationPreference } from '../trayModels';
 import { isBreakoutPanelModel } from '../hardwareUtils';
+import { getEdgeTapLinksCount } from '../clusterUtils';
 import { optimizeOpticPacks } from './opticPacks';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
@@ -87,7 +88,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
         const isClusterTap = sourceNode.type === NODE_TYPES.CLUSTER && sourceNode.data?.clusterType === 'tap';
         const isHardwareTap = sourceNode.type === NODE_TYPES.HARDWARE && String(sourceNode.data?.model || '').includes('TAP');
         const isInputTap = sourceNode.type === NODE_TYPES.INPUT && sourceNode.data?.configType === CONFIG_TYPES.TAP;
-        
+
         let tapNodesToProcess: CustomNode[] = [];
         if (isClusterTap) {
           const origSrc = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
@@ -96,18 +97,33 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
             if (memberNode && !processedMemberNodeIds.has(memberNode.id)) {
               processedMemberNodeIds.add(memberNode.id);
               tapNodesToProcess = [memberNode];
+            } else if (!memberNode && !processedMemberNodeIds.has(origSrc)) {
+              processedMemberNodeIds.add(origSrc);
+              const edgeLinks = getEdgeTapLinksCount(e, sourceNode, nodes);
+              const isSM = String(sourceNode.data?.sku || sourceNode.data?.label || '').includes('253') || String(sourceNode.data?.sku || sourceNode.data?.label || '').includes('273') || String(sourceNode.data?.sku || sourceNode.data?.label || '').includes('453') || (sourceNode.data as any)?.tapFiberMode === 'Singlemode';
+              const isM506T = String(sourceNode.data?.label || sourceNode.data?.model || '').includes('M506');
+              const defaultOptic = isM506T ? 'QSB-523T' : (isSM ? 'SFP-533T' : 'SFP-532T');
+              tapOpticsNeeded[defaultOptic] = (tapOpticsNeeded[defaultOptic] || 0) + edgeLinks * 2;
             }
           } else {
             const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
-            allMembers.forEach(m => {
-              if (!processedMemberNodeIds.has(m.id)) {
-                processedMemberNodeIds.add(m.id);
-                tapNodesToProcess.push(m);
-              }
-            });
+            if (allMembers.length > 0) {
+              allMembers.forEach(m => {
+                if (!processedMemberNodeIds.has(m.id)) {
+                  processedMemberNodeIds.add(m.id);
+                  tapNodesToProcess.push(m);
+                }
+              });
+            } else if (!processedMemberNodeIds.has(sourceNode.id)) {
+              processedMemberNodeIds.add(sourceNode.id);
+              tapNodesToProcess = [sourceNode];
+            }
           }
         } else if (isHardwareTap || isInputTap) {
-          tapNodesToProcess = [sourceNode];
+          if (!processedMemberNodeIds.has(sourceNode.id)) {
+            processedMemberNodeIds.add(sourceNode.id);
+            tapNodesToProcess = [sourceNode];
+          }
         }
 
         tapNodesToProcess.forEach(tapN => {

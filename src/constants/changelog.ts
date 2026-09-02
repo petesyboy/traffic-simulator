@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.720",
+    date: "2026-09-02",
+    summary: "Enforced cage-type validation during port link preservation: discarded stale QSFP assignments on SFP feeds, dynamically synchronized transceivers for collapsed TAP clusters, and auto-provisioned matching optics across connected links.",
+  },
+  {
     version: "1.0.719",
     date: "2026-09-02",
     summary: "Constrained TAP cluster port allocation to matching cage families (SFP vs QSFP): prevented 10G SFP TAP links from falling through to unpopulated QSFP cages (1/1/c1..c8) on hybrid chassis like GigaVUE-TA25E, eliminating false 'missing transceiver' and port shortfall errors.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.695",
     date: "2026-08-29",
     summary: "Resolved TAP cluster member optics accurately on chassis connections.",
-  },
-  {
-    version: "1.0.694",
-    date: "2026-08-28",
-    summary: "Expanded vertical and horizontal node spacing with auto-fitView in Export Diagram Mode.",
   },
 ];
