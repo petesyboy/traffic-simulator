@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import {
   ReactFlow,
   useReactFlow,
+  useViewport,
   Background,
   Controls,
   BackgroundVariant,
@@ -64,6 +65,7 @@ const CanvasArea: React.FC = () => {
   } = useStore();
 
   const { screenToFlowPosition, fitView } = useReactFlow();
+  const { zoom } = useViewport();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,10 +74,11 @@ const CanvasArea: React.FC = () => {
           nodes: fitViewNodeIds.map((id) => ({ id })),
           padding: 0.22,
           maxZoom: 1.6,
+          minZoom: 0.02,
           duration: 0,
         });
       } else {
-        fitView({ padding: 0.12, maxZoom: 1.8, duration: 0 });
+        fitView({ padding: 0.12, maxZoom: 1.8, minZoom: 0.02, duration: 0 });
       }
     }, 50);
     return () => clearTimeout(timer);
@@ -459,6 +462,8 @@ const CanvasArea: React.FC = () => {
     <div className="canvas-wrapper" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={canvasNodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+        minZoom={0.02} maxZoom={3}
+        fitViewOptions={{ padding: 0.12, maxZoom: 1.8, minZoom: 0.02 }}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
         onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart} onNodeDragStop={onNodeDragStop}
@@ -469,6 +474,27 @@ const CanvasArea: React.FC = () => {
         {showGrid && <Background variant={BackgroundVariant.Lines} color={theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)'} gap={15} size={1} />}
         <Controls />
         <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={() => fitView({ padding: 0.12, maxZoom: 1.8, minZoom: 0.02, duration: 300 })}
+            title="Fit entire architecture and all data centres into the visible canvas"
+            style={{
+              padding: '6px 12px',
+              fontSize: '11px',
+              fontWeight: 600,
+              background: 'var(--bg-tertiary, #1e1e1e)',
+              border: '1px solid var(--border-color, #333)',
+              borderRadius: '4px',
+              color: 'var(--accent-cyan, #00e5ff)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>🔍</span> Fit View ({Math.round(zoom * 100)}%)
+          </button>
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
           <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
           {hasTaggedSites && (

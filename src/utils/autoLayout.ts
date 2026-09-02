@@ -147,7 +147,7 @@ function assignPositions(columns: string[][], sizeOf: Map<string, NodeSize>): Ma
   return positions;
 }
 
-const SITE_GAP_Y = 120;
+const SITE_GAP_Y = 100;
 
 function computeSiteOrder(
   siteNames: string[],
@@ -291,7 +291,7 @@ function assignSiteAwarePositions(
     const hubsInThisGap = hubNodes.filter((h) => (hubBoundaryMap.get(h.id) ?? 0) === siteIndex);
     if (hubsInThisGap.length > 0 && siteIndex < siteOrder.length - 1) {
       const maxHubH = Math.max(...hubsInThisGap.map((h) => sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT));
-      const gapHeight = Math.max(SITE_GAP_Y, maxHubH + 2 * SITE_GAP_Y);
+      const gapHeight = Math.max(SITE_GAP_Y, maxHubH + 120);
 
       hubsInThisGap.forEach((h) => {
         const hHeight = sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT;
