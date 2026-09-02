@@ -13,6 +13,7 @@ import { MapNodePanel } from './config-panels/MapNodePanel';
 import { GigaSmartPanel } from './config-panels/GigaSmartPanel';
 import { ToolNodePanel } from './config-panels/ToolNodePanel';
 import { LinkDetailPanel } from './config-panels/LinkDetailPanel';
+import { DwdmNetworkPanel } from './config-panels/DwdmNetworkPanel';
 
 const ConfigPanel: React.FC = () => {
   const selectedNodeId = useStore((state) => state.selectedNodeId);
@@ -336,6 +337,12 @@ const ConfigPanel: React.FC = () => {
                 onAddCondition={handleAddCondition}
                 onRemoveCondition={handleRemoveCondition}
               />
+            </div>
+          )}
+          {(selectedNode.type === NODE_TYPES.DWDM_NETWORK || configType === CONFIG_TYPES.DWDM_NETWORK) && (
+            <div className="config-card">
+              <h3>🌐 Optical Transport Configuration</h3>
+              <DwdmNetworkPanel node={selectedNode} onGenericChange={handleGenericChange} />
             </div>
           )}
 

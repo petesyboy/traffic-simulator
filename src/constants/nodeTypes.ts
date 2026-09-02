@@ -34,6 +34,7 @@ export const NODE_TYPES = {
   GROUP:      'groupNode',
   HARDWARE:   'hardwareNode',
   CLUSTER:    'clusterNode',
+  DWDM_NETWORK: 'dwdmNetworkNode',
 } as const;
 
 /** Union of all valid node type strings. */
@@ -116,6 +117,9 @@ export const CONFIG_TYPES = {
 
   // Port group
   PORT_GROUP: 'Port Group',
+
+  // Optical Transport / Inter-DC WAN
+  DWDM_NETWORK: 'DWDM Network',
 } as const;
 
 /** Union of all valid configType strings. */

@@ -41,6 +41,12 @@ function preferredCage(peer: CustomNode | undefined, edge?: Edge, nodes: CustomN
   // always QSFP-family regardless of speed tier (40G/100G/400G) or MM/SM.
   if (peer.type === 'hardwareNode' && isBreakoutPanelModel(String(peer.data?.model || ''))) return 'QSFP';
 
+  // DWDM Optical Transport Network links take QSFP for 100G/400G and SFP for 25G/10G
+  if (peer.type === 'dwdmNetworkNode' || peer.data?.configType === 'DWDM Network') {
+    const speed = (peer.data as any)?.wavelengthSpeed || '100G';
+    return (speed === '100G' || speed === '400G' || speed === '40G') ? 'QSFP' : 'SFP';
+  }
+
   // If edge already carries an opticSku on any link, respect that optic's cage
   if (edge) {
     const links = (edge.data?.portLinks as PortLink[]) || [];

@@ -27,6 +27,7 @@ import {
   MetadataToolIcon,
   S3StorageIcon,
   WiresharkIcon,
+  DwdmNetworkIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { DEFAULT_TOOL_INGEST_LIMITS_MBPS, GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS } from '../constants/toolIngestLimits';
@@ -50,6 +51,7 @@ export {
   PacketToolIcon,
   MetadataToolIcon,
   S3StorageIcon,
+  DwdmNetworkIcon,
 };
 
 // ─── Application palette data ─────────────────────────────────────────────────
@@ -427,7 +429,7 @@ const Sidebar: React.FC = () => {
                       ],
                     },
                     {
-                      label: 'Traffic Routing',
+                      label: 'Traffic Routing & Transport',
                       items: [
                         { label: 'Traffic Map', desc: 'Traffic Map', type: NODE_TYPES.MAP, icon: MapIcon },
                         {
@@ -435,6 +437,21 @@ const Sidebar: React.FC = () => {
                           desc: 'VLAN Filter',
                           type: NODE_TYPES.FILTER,
                           icon: GreenCircleIcon,
+                        },
+                        {
+                          label: 'DWDM Transport Network',
+                          desc: 'DWDM Optical Ring',
+                          type: NODE_TYPES.DWDM_NETWORK,
+                          icon: DwdmNetworkIcon,
+                          tooltip: 'High-capacity DWDM optical transport network interconnecting data centres over redundant 100 Gbps / 25 Gbps wavelengths.',
+                          initial: {
+                            configType: CONFIG_TYPES.DWDM_NETWORK,
+                            wavelengthSpeed: '100G',
+                            protectionMode: 'Protected Ring (1+1)',
+                            spanDistanceKm: 40,
+                            latencyMs: 2.0,
+                            carrierName: 'Dark Fiber Optical WAN',
+                          },
                         },
                       ],
                     },

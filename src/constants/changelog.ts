@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.722",
+    date: "2026-09-02",
+    summary: "Added DWDM Optical Transport Network node: models multi-site WAN and inter-DC interconnects over redundant 100 Gbps, 25 Gbps, and 400 Gbps optical wavelengths using optical lambda iconography.",
+  },
+  {
     version: "1.0.721",
     date: "2026-09-02",
     summary: "Fixed chassis and module lookup normalization: corrected cage capacity calculation on modular HC-series chassis (e.g. GigaVUE-HC1-Plus with PRT-HC1-Q04X08) allowing all 8 QSFP cages to be fully populated with 100G optics.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.697",
     date: "2026-08-30",
     summary: "Added automated flow generation with telco and mobile profile biasing.",
-  },
-  {
-    version: "1.0.696",
-    date: "2026-08-29",
-    summary: "Showed sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links.",
   },
 ];

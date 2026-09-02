@@ -305,11 +305,13 @@ describe('describeInputNodeDetail', () => {
     stream({ sourceNodeId: 'in1', name: 'Stream A', vlan: '100', protocol: 'TCP', portDst: '443', bandwidth: 500 }),
   ];
 
-  it('lists link speed, matched traffic streams, downstream feed, and terminal destinations', () => {
+  it('lists link speed, port speed, site, downstream feed, and terminal destinations without experimental streams', () => {
     const detail = describeInputNodeDetail(nodes[0], nodes, edges, streams);
     expect(detail.headline).toBe('Core Tap 1 — TAP Hardware Device');
     expect(detail.bullets).toContain('Link speed: 10.00 Gbps');
-    expect(detail.bullets).toContain('Traffic stream "Stream A": VLAN 100, TCP, port 443 at 500.0 Mbps');
+    expect(detail.bullets).toContain('Port speed: 10.00 Gbps');
+    expect(detail.bullets).toContain('Site: Default Site');
+    expect(detail.bullets.some((b) => b.includes('Traffic stream'))).toBe(false);
     expect(detail.bullets).toContain('Feeds into: Core Map');
     expect(detail.bullets).toContain('Ultimately reaches: Vectra');
   });

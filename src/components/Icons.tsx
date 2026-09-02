@@ -372,3 +372,18 @@ export const WiresharkIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
     <path d="m2.95 0c-1.62 0-2.95 1.32-2.95 2.95v18.1c0 1.63 1.32 2.95 2.95 2.95h18.1c1.62 0 2.95-1.32 2.95-2.95v-18.1c-.00024-1.63-1.32-2.95-2.95-2.95zm0 1.09h18.1c1.04 0 1.85.818 1.85 1.86v14h-5.27c-.335-.796-2.57-6.47.283-10.9a.516.517 0 0 0-.443-.794c-5.24.0827-8.2 3.19-9.74 6.21-1.35 2.64-1.63 4.91-1.69 5.53h-4.95v-14c0-1.04.817-1.86 1.85-1.86zm13.6 5.24c-2.62 5.24.248 11.4.248 11.4a.516.517 0 0 0 .469.301h5.62v3.05c0 1.04-.817 1.86-1.85 1.86h-18.1c-1.04 0-1.85-.818-1.85-1.86v-3.05h5.39a.516.517 0 0 0 .514-.477s.226-2.8 1.66-5.62c1.34-2.62 3.67-5.17 7.91-5.57z" fill="white" />
   </svg>
 );
+
+/** Violet square with optical wavelength ring and lambda symbol — DWDM optical transport network. */
+export const DwdmNetworkIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="4" fill="#7c3aed" stroke="#6d28d9" strokeWidth="1" />
+    <circle cx="12" cy="12" r="7" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="1.2" strokeDasharray="2 1.5" fill="none" />
+    <circle cx="12" cy="5" r="1.5" fill="#38bdf8" />
+    <circle cx="19" cy="12" r="1.5" fill="#38bdf8" />
+    <circle cx="12" cy="19" r="1.5" fill="#38bdf8" />
+    <circle cx="5" cy="12" r="1.5" fill="#38bdf8" />
+    <path d="M9 16L12.5 8H14.5L11 16H9Z" fill="white" />
+    <path d="M11 12L15 16H13L9.5 12.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+);
+

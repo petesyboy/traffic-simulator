@@ -9,3 +9,4 @@ export { HardwareNode } from './HardwareNode';
 export { MissionPipelineNode } from './MissionPipelineNode';
 export { MissionCloudNode } from './MissionCloudNode';
 export { ClusterNode } from './ClusterNode';
+export { DwdmNetworkNode } from './DwdmNetworkNode';

@@ -12,7 +12,7 @@ import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, type CustomNode } from '../store/store';
 import type { GigaSmartNodeData } from '../store/types';
-import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode, ClusterNode } from './nodes';
+import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode, ClusterNode, DwdmNetworkNode } from './nodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
 import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
@@ -26,17 +26,18 @@ import { EdgeBanner } from './canvas/EdgeBanner';
 import { ParallelEdge, MissionBusEdge, MissionChaosEdge, MissionBackboneEdge } from './CustomEdges';
 
 const nodeTypes = {
-  [NODE_TYPES.INPUT]:      InputNode,
-  [NODE_TYPES.FILTER]:     FilterNode,
-  [NODE_TYPES.TOOL]:       ToolNode,
-  [NODE_TYPES.MAP]:        MapNode,
-  [NODE_TYPES.GIGASTREAM]: GigaStreamNode,
-  [NODE_TYPES.GIGASMART]:  GigaSmartNode,
-  [NODE_TYPES.GROUP]:      GroupNode,
-  [NODE_TYPES.HARDWARE]:   HardwareNode,
-  [NODE_TYPES.CLUSTER]:    ClusterNode,
-  missionPipelineNode:     MissionPipelineNode,
-  missionCloudNode:        MissionCloudNode,
+  [NODE_TYPES.INPUT]:        InputNode,
+  [NODE_TYPES.FILTER]:       FilterNode,
+  [NODE_TYPES.TOOL]:         ToolNode,
+  [NODE_TYPES.MAP]:          MapNode,
+  [NODE_TYPES.GIGASTREAM]:   GigaStreamNode,
+  [NODE_TYPES.GIGASMART]:    GigaSmartNode,
+  [NODE_TYPES.GROUP]:        GroupNode,
+  [NODE_TYPES.HARDWARE]:     HardwareNode,
+  [NODE_TYPES.CLUSTER]:      ClusterNode,
+  [NODE_TYPES.DWDM_NETWORK]: DwdmNetworkNode,
+  missionPipelineNode:       MissionPipelineNode,
+  missionCloudNode:          MissionCloudNode,
 };
 
 const edgeTypes = {

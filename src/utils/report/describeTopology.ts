@@ -428,24 +428,20 @@ export function describeInputNodeDetail(
   node: CustomNode,
   nodes: CustomNode[],
   edges: Edge[],
-  trafficStreams: TrafficStream[],
+  _trafficStreams?: TrafficStream[],
   nodeMetrics?: Record<string, NodeMetrics>,
 ): NodeDetail {
   const data = node.data as InputNodeData;
   const bullets: string[] = [];
 
-  if (data.linkSpeed) bullets.push(`Link speed: ${formatBandwidth(data.linkSpeed)}`);
-  if (data.portSpeed) bullets.push(`Port speed: ${data.portSpeed}`);
-  if (data.encryptedTrafficPercentage) bullets.push(`Encrypted traffic: ${data.encryptedTrafficPercentage}%`);
-  if (data.site) bullets.push(`Site: ${data.site}`);
+  const linkSpeed = data.linkSpeed ? formatBandwidth(data.linkSpeed) : '10.00 Gbps';
+  bullets.push(`Link speed: ${linkSpeed}`);
 
-  const streams = trafficStreams.filter((s) => s.sourceNodeId === node.id);
-  streams.forEach((s) => {
-    const parts = [s.vlan ? `VLAN ${s.vlan}` : null, s.protocol, s.portDst ? `port ${s.portDst}` : null].filter(
-      Boolean,
-    );
-    bullets.push(`Traffic stream "${s.name}": ${parts.join(', ')} at ${formatBandwidth(s.bandwidth)}`);
-  });
+  const portSpeed = data.portSpeed || (data.linkSpeed ? formatBandwidth(data.linkSpeed) : '10.00 Gbps');
+  bullets.push(`Port speed: ${portSpeed}`);
+
+  const site = data.site || 'Default Site';
+  bullets.push(`Site: ${site}`);
 
   if (String(data.configType || '').startsWith(CONFIG_TYPES.TAP)) {
     bullets.push(...describeTapPhysicalLink(node, nodes, edges));

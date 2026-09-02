@@ -286,6 +286,16 @@ export interface GigaStreamNodeData extends BaseNodeData {
   linkCount?: number;
 }
 
+export interface DwdmNetworkNodeData extends BaseNodeData {
+  configType: 'DWDM Network';
+  wavelengthSpeed?: '100G' | '25G' | '400G' | '10G';
+  channelCount?: number;
+  protectionMode?: 'Protected Ring (1+1)' | 'Dual Homed Mesh' | 'Point-to-Point Wavelength';
+  spanDistanceKm?: number;
+  latencyMs?: number;
+  carrierName?: string;
+}
+
 export interface HardwareNodeData extends BaseNodeData {
   model: string;
   sku?: string;
@@ -341,6 +351,7 @@ export type AnyNodeData =
   | FilterNodeData
   | GigaSmartNodeData
   | GigaStreamNodeData
+  | DwdmNetworkNodeData
   | HardwareNodeData
   | ToolNodeData
   | BaseNodeData;
