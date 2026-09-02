@@ -17,6 +17,7 @@ import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { findModuleBySku, getOpticSpeed, getTaLicenseLimits, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
 import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP, isMpoPortId, getBreakoutLcOptics } from './breakoutRules';
+import { getEdgeTapLinksCount } from './clusterUtils';
 
 /** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper, m = MPO family. */
 const CAGE_PREFIX: Record<ChassisPort['cage'], string> = { SFP: 'x', QSFP: 'c', RJ45: 'g', MPO: 'm' };
@@ -248,16 +249,53 @@ export function isTapNode(node: CustomNode | undefined): boolean {
  * re-implemented as an ad-hoc `* 2` in the BOM generator, the config validator,
  * graphSlice's connection handler and OpticsPanel.
  */
-export function getRequiredPortCount(sourceNode: CustomNode | undefined, targetNode: CustomNode | undefined): number {
+export function getRequiredPortCount(
+  sourceNode: CustomNode | undefined,
+  targetNode: CustomNode | undefined,
+  edge?: Edge,
+  allNodes?: CustomNode[],
+): number {
+  if (edge) {
+    if (sourceNode && isTapNode(sourceNode)) {
+      return getEdgeTapLinksCount(edge, sourceNode, allNodes) * 2;
+    }
+    if (targetNode && isTapNode(targetNode)) {
+      return getEdgeTapLinksCount(edge, targetNode, allNodes) * 2;
+    }
+  }
   if (isTapNode(sourceNode)) return getTappedLinkCount(sourceNode!) * 2;
   if (isTapNode(targetNode)) return getTappedLinkCount(targetNode!) * 2;
   return 1;
 }
 
 /** Synthetic port ids for a TAP's link ends, which have no catalogue ports. */
-export function getTapPortIds(node: CustomNode): string[] {
+export function getTapPortIds(
+  node: CustomNode,
+  edge?: Edge,
+  allNodes?: CustomNode[],
+  allEdges?: Edge[],
+): string[] {
+  let startLink = 1;
+  let linkCount = getTappedLinkCount(node);
+
+  if (edge) {
+    linkCount = getEdgeTapLinksCount(edge, node, allNodes);
+    if (allEdges && allEdges.length > 1) {
+      const parallelEdges = allEdges.filter(
+        (e) => e.source === node.id || e.target === node.id,
+      );
+      const edgeIndex = parallelEdges.findIndex((e) => e.id === edge.id);
+      if (edgeIndex > 0) {
+        startLink = 1;
+        for (let i = 0; i < edgeIndex; i++) {
+          startLink += getEdgeTapLinksCount(parallelEdges[i], node, allNodes);
+        }
+      }
+    }
+  }
+
   const ids: string[] = [];
-  for (let link = 1; link <= getTappedLinkCount(node); link++) {
+  for (let link = startLink; link < startLink + linkCount; link++) {
     ids.push(`L${link}-N`, `L${link}-S`);
   }
   return ids;

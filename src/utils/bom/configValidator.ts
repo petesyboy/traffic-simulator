@@ -10,9 +10,11 @@ import {
   getOpticCage,
   getPortOpticMap,
   getRequiredPortCount,
+  getTappedLinkCount,
   isTapNode,
   isTapUnconfigured,
 } from '../ports';
+import { getEdgeTapLinksCount } from '../clusterUtils';
 import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
 import { getMergedSkusMetadata } from '../skuOverrides';
 import { isParallelBreakoutOptic, getBreakoutLcOptics, panelFiberType, PANEL_MPO_GROUPS } from '../breakoutRules';
@@ -271,13 +273,28 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
 
     const connectedEdges = edges.filter((e) => e.target === chassis.id || e.source === chassis.id);
     let tappedLinks = 0;
+    const processedTapIds = new Set<string>();
     connectedEdges.forEach((e) => {
       const otherId = e.target === chassis.id ? e.source : e.target;
       const sourceNode = nodes.find((n) => n.id === otherId);
-      if (sourceNode?.type === NODE_TYPES.CLUSTER && sourceNode.data?.clusterType === 'tap') {
-        tappedLinks += (sourceNode.data?.summary?.totalLinks as number) || (sourceNode.data?.memberNodeIds as string[])?.length || 1;
-      } else if (sourceNode?.data?.model?.includes('TAP')) {
-        tappedLinks += (sourceNode.data.tappedLinksCount as number) ?? 1;
+      if (!sourceNode) return;
+      const isClusterTap = sourceNode.type === NODE_TYPES.CLUSTER && sourceNode.data?.clusterType === 'tap';
+      if (isClusterTap) {
+        const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+        if (origId) {
+          if (!processedTapIds.has(origId)) {
+            processedTapIds.add(origId);
+            const m = nodes.find((n) => n.id === origId);
+            tappedLinks += m ? getTappedLinkCount(m) : getEdgeTapLinksCount(e, sourceNode, nodes);
+          }
+        } else {
+          tappedLinks += getEdgeTapLinksCount(e, sourceNode, nodes);
+        }
+      } else if (sourceNode.data?.model?.includes('TAP') || isTapNode(sourceNode)) {
+        if (!processedTapIds.has(sourceNode.id)) {
+          processedTapIds.add(sourceNode.id);
+          tappedLinks += getTappedLinkCount(sourceNode);
+        }
       }
     });
 
@@ -662,7 +679,7 @@ function validatePortAssignments(nodes: CustomNode[], edges: Edge[], errors: Con
       if (ports.length === 0) return; // TAPs carry no catalogue ports
 
       const label = String(node.data?.label || node.data?.model || node.id);
-      const required = getRequiredPortCount(sourceNode, targetNode);
+      const required = getRequiredPortCount(sourceNode, targetNode, edge, nodes);
       const allocated = links.filter((l) => l[key]).length;
 
       if (allocated < required) {

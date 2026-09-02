@@ -177,7 +177,7 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     }
 
     const required = isTapNode(sourceNode) || isTapNode(targetNode)
-      ? getRequiredPortCount(sourceNode, targetNode)
+      ? getRequiredPortCount(sourceNode, targetNode, edge, nodes)
       : Math.max(1, existing.length);
     const pinned = existing.filter(l => l.pinned).slice(0, required);
     const autoCount = Math.max(0, required - pinned.length);
@@ -187,8 +187,8 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
 
     // A TAP's own ends aren't catalogue ports - they're its link north/south
     // feeds, so they're named rather than allocated.
-    const sourceTapIds = sourceIsTap && sourceNode ? getTapPortIds(sourceNode) : [];
-    const targetTapIds = targetIsTap && targetNode ? getTapPortIds(targetNode) : [];
+    const sourceTapIds = sourceIsTap && sourceNode ? getTapPortIds(sourceNode, edge, nodes, edges) : [];
+    const targetTapIds = targetIsTap && targetNode ? getTapPortIds(targetNode, edge, nodes, edges) : [];
 
     const sourceIsPanel = sourceNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(sourceNode.data?.model || ''));
     const targetIsPanel = targetNode?.type === 'hardwareNode' && isBreakoutPanelModel(String(targetNode.data?.model || ''));

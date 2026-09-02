@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.718",
+    date: "2026-09-02",
+    summary: "Fixed TAP cluster port and optic overcounting: corrected validation and port allocation for multi-member TAP stacks connected across single or multiple chassis, eliminating false 'insufficient optics' (384 optics demanded) and 'out of physical ports' errors.",
+  },
+  {
     version: "1.0.717",
     date: "2026-09-02",
     summary: "Ingested Worldwide Price List (WWPL Sept 2026) updates: clarified CCv1/CCv2 compatibility across HC3 bypass and port modules, updated EOS/EOL dates and replacement SKU mappings for QSB-504, IBP-TAC40, GTP-ATX02, GTP-ASF02, and G-TAP M Series modules.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.693",
     date: "2026-08-28",
     summary: "Auto-collapsed >4 TAPs and Tools into stacks during diagram and report screenshots.",
-  },
-  {
-    version: "1.0.692",
-    date: "2026-08-28",
-    summary: "Decoupled 3D card deck background from Export Diagram description box.",
   },
 ];

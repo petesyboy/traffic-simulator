@@ -529,6 +529,15 @@ export function getEdgeTapLinksCount(
     if (origId) {
       tapNode = allNodes.find((n) => n.id === origId);
     }
+    if (!tapNode) {
+      const summary = (srcNode.data as ClusterNodeData)?.summary;
+      const memberCount = ((srcNode.data as ClusterNodeData)?.memberNodeIds || []).length || 1;
+      const totalLinks = summary?.totalLinks || memberCount;
+      if (origId || memberCount > 1) {
+        return Math.max(1, Math.round(totalLinks / memberCount));
+      }
+      return totalLinks;
+    }
   } else if (isTapNode(srcNode) || srcNode.type === NODE_TYPES.INPUT) {
     tapNode = srcNode;
   }

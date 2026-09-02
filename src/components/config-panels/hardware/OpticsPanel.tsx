@@ -92,22 +92,39 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
 
   // ─── Optics status calculations ───────────────────────────────────
   const incomingTapEdges = edges.filter(e => e.target === selectedNode.id);
-  const uniqueIncomingTapSources = Array.from(new Set(incomingTapEdges.map(e => e.source)));
   let tappedLinks = 0;
   let requiredMMOptics = 0;
   let requiredSMOptics = 0;
   let requiredCopperOptics = 0;
+  const processedTapIds = new Set<string>();
 
-  uniqueIncomingTapSources.forEach(srcId => {
-    const sourceNode = nodes.find(n => n.id === srcId);
+  incomingTapEdges.forEach(e => {
+    const sourceNode = nodes.find(n => n.id === e.source);
     if (!sourceNode) return;
     const isClusterTap = sourceNode.type === 'clusterNode' && sourceNode.data?.clusterType === 'tap';
     let taps: CustomNode[] = [];
     if (isClusterTap) {
-      const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
-      taps = allMembers.length > 0 ? allMembers : [sourceNode];
+      const origId = (e.data?.originalSource as string) || (e.data?.originalTarget as string);
+      if (origId) {
+        const m = nodes.find(n => n.id === origId);
+        if (m && !processedTapIds.has(m.id)) {
+          processedTapIds.add(m.id);
+          taps = [m];
+        }
+      } else {
+        const allMembers = nodes.filter(n => (sourceNode.data?.memberNodeIds as string[])?.includes(n.id));
+        allMembers.forEach(m => {
+          if (!processedTapIds.has(m.id)) {
+            processedTapIds.add(m.id);
+            taps.push(m);
+          }
+        });
+      }
     } else if (sourceNode.data?.model?.includes('TAP') || (sourceNode.type === 'inputNode' && String(sourceNode.data?.configType || '').startsWith('TAP'))) {
-      taps = [sourceNode];
+      if (!processedTapIds.has(sourceNode.id)) {
+        processedTapIds.add(sourceNode.id);
+        taps = [sourceNode];
+      }
     }
 
     taps.forEach(tapN => {

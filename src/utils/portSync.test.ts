@@ -386,4 +386,95 @@ describe('BOM regression', () => {
 
     expect(after).toEqual(before);
   });
+
+  it('correctly allocates 12 ports per member link when an 8-TAP cluster connects across multiple chassis', () => {
+    // 8x TAP-M273T (6 links each = 48 total links = 96 ports)
+    const tapMembers: CustomNode[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `tap-m${i + 1}`,
+      type: 'hardwareNode',
+      position: { x: 0, y: i * 50 },
+      data: {
+        label: `TAP-M273T #${i + 1}`,
+        model: 'TAP-M273T',
+        sku: 'TAP-M273T',
+        tappedLinksCount: 6,
+        tappedLinkAllocations: [{ qty: 6, optic: 'SFP-533T (10G SFP+ LR)' }],
+      },
+    } as unknown as CustomNode));
+
+    const clusterNode: CustomNode = {
+      id: 'cluster-tap-8x',
+      type: 'clusterNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: '8x TAP-M273T',
+        clusterType: 'tap',
+        memberNodeIds: tapMembers.map((t) => t.id),
+        summary: { totalLinks: 48, count: 8 },
+      },
+    } as unknown as CustomNode;
+
+    const ta1: CustomNode = {
+      id: 'ta25e-1',
+      type: 'hardwareNode',
+      position: { x: 400, y: 0 },
+      data: {
+        label: 'GigaVUE-TA25E',
+        model: 'GigaVUE-TA25E',
+        sku: 'GVS-TAX21E-HW',
+        optics: [{ board: 'Base Ports', optic: 'SFP-533T (10G SFP+ LR)', qty: 48 }],
+      },
+    } as unknown as CustomNode;
+
+    const ta2: CustomNode = {
+      id: 'ta25e-2',
+      type: 'hardwareNode',
+      position: { x: 400, y: 200 },
+      data: {
+        label: 'GigaVUE-TA25E #2',
+        model: 'GigaVUE-TA25E',
+        sku: 'GVS-TAX21E-HW',
+        optics: [{ board: 'Base Ports', optic: 'SFP-533T (10G SFP+ LR)', qty: 48 }],
+      },
+    } as unknown as CustomNode;
+
+    const allNodes = [...tapMembers, clusterNode, ta1, ta2];
+
+    // 4 edges connect from cluster to ta1 (members 1-4), 4 edges connect from cluster to ta2 (members 5-8)
+    const edges: Edge[] = [
+      ...tapMembers.slice(0, 4).map((t, idx) => ({
+        id: `e-ta1-${idx + 1}`,
+        source: 'cluster-tap-8x',
+        target: 'ta25e-1',
+        sourceHandle: 'out',
+        data: { originalSource: t.id },
+      })),
+      ...tapMembers.slice(4, 8).map((t, idx) => ({
+        id: `e-ta2-${idx + 1}`,
+        source: 'cluster-tap-8x',
+        target: 'ta25e-2',
+        sourceHandle: 'out',
+        data: { originalSource: t.id },
+      })),
+    ];
+
+    const syncedEdges = syncPortAssignments(allNodes, edges);
+
+    // Verify ta1 receives 48 ports (4 links * 12 ports each)
+    const ta1Links = syncedEdges.filter(e => e.target === 'ta25e-1').flatMap(e => linksOf(e));
+    expect(ta1Links).toHaveLength(48);
+    const ta1TargetPorts = new Set(ta1Links.map(l => l.targetPortId));
+    expect(ta1TargetPorts.size).toBe(48);
+
+    // Verify ta2 receives 48 ports (4 links * 12 ports each)
+    const ta2Links = syncedEdges.filter(e => e.target === 'ta25e-2').flatMap(e => linksOf(e));
+    expect(ta2Links).toHaveLength(48);
+    const ta2TargetPorts = new Set(ta2Links.map(l => l.targetPortId));
+    expect(ta2TargetPorts.size).toBe(48);
+
+    // Verify configuration validator produces NO port capacity or insufficient optics errors
+    const errors = validateConfiguration(allNodes, syncedEdges);
+    expect(errors.filter(err => err.type === 'port_capacity_exceeded')).toHaveLength(0);
+    expect(errors.filter(err => err.type === 'insufficient_optics')).toHaveLength(0);
+  });
 });
