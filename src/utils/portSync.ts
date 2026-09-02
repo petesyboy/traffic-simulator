@@ -35,7 +35,7 @@ function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, Chassi
  * TAP/tool is using where there is one, so a 10G tapped or tool link takes an SFP cage and a
  * 100G one takes a QSFP cage rather than whatever happens to be free first.
  */
-function preferredCage(peer: CustomNode | undefined, edge?: Edge): ChassisPort['cage'] | undefined {
+function preferredCage(peer: CustomNode | undefined, edge?: Edge, nodes: CustomNode[] = []): ChassisPort['cage'] | undefined {
   if (!peer) return undefined;
   // A breakout panel's MPO side always takes a parallel optic, which is
   // always QSFP-family regardless of speed tier (40G/100G/400G) or MM/SM.
@@ -59,9 +59,18 @@ function preferredCage(peer: CustomNode | undefined, edge?: Edge): ChassisPort['
 
   // If peer is a tap cluster
   if (peer.type === 'clusterNode' && peer.data?.clusterType === 'tap') {
+    if (edge) {
+      const origId = (edge.data?.originalSource as string) || (edge.data?.originalTarget as string);
+      if (origId) {
+        const memberNode = nodes.find(n => n.id === origId);
+        if (memberNode) return preferredCage(memberNode, edge, nodes);
+      }
+    }
     const optic = (peer.data as any)?.tappedLinkOptic;
     if (optic && !String(optic).startsWith('Passive Optical Splitter')) return getOpticCage(String(optic));
-    return undefined;
+    const model = String(peer.data?.label || peer.data?.model || '');
+    if (model.includes('M506')) return 'QSFP';
+    return 'SFP';
   }
 
   const data = peer.data as HardwareNodeData | undefined;
@@ -72,8 +81,13 @@ function preferredCage(peer: CustomNode | undefined, edge?: Edge): ChassisPort['
   // ("Passive Optical Splitter (Multimode)") that carries no speed at all, and
   // reading that would wrongly place a 100G link into an SFP cage.
   const optic = alloc?.toolOptic || alloc?.optic || data?.tappedLinkOptic;
-  if (!optic || String(optic).startsWith('Passive Optical Splitter')) return undefined;
-  return getOpticCage(String(optic));
+  if (optic && !String(optic).startsWith('Passive Optical Splitter')) {
+    return getOpticCage(String(optic));
+  }
+  const model = String(peer.data?.model || peer.data?.sku || '');
+  if (model.includes('M506')) return 'QSFP';
+  if (isTapNode(peer)) return 'SFP';
+  return undefined;
 }
 
 /**
@@ -243,10 +257,10 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
 
     const sourceAuto = sourceIsTap
       ? sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode, edge)).map(p => p.id);
+      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourceIsPanel ? panelCagePreference(targetNode) : preferredCage(targetNode, edge, nodes)).map(p => p.id);
     const targetAuto = targetIsTap
       ? targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode, edge)).map(p => p.id);
+      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetIsPanel ? panelCagePreference(sourceNode) : preferredCage(sourceNode, edge, nodes)).map(p => p.id);
 
     const sourceOptics = opticsFor(sourceNode);
     const targetOptics = opticsFor(targetNode);

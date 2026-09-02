@@ -460,17 +460,19 @@ describe('BOM regression', () => {
 
     const syncedEdges = syncPortAssignments(allNodes, edges);
 
-    // Verify ta1 receives 48 ports (4 links * 12 ports each)
+    // Verify ta1 receives 48 ports (4 links * 12 ports each) all in SFP cages (x-prefix)
     const ta1Links = syncedEdges.filter(e => e.target === 'ta25e-1').flatMap(e => linksOf(e));
     expect(ta1Links).toHaveLength(48);
     const ta1TargetPorts = new Set(ta1Links.map(l => l.targetPortId));
     expect(ta1TargetPorts.size).toBe(48);
+    ta1Links.forEach(link => expect(link.targetPortId).toMatch(/^1\/1\/x\d+$/));
 
-    // Verify ta2 receives 48 ports (4 links * 12 ports each)
+    // Verify ta2 receives 48 ports (4 links * 12 ports each) all in SFP cages (x-prefix)
     const ta2Links = syncedEdges.filter(e => e.target === 'ta25e-2').flatMap(e => linksOf(e));
     expect(ta2Links).toHaveLength(48);
     const ta2TargetPorts = new Set(ta2Links.map(l => l.targetPortId));
     expect(ta2TargetPorts.size).toBe(48);
+    ta2Links.forEach(link => expect(link.targetPortId).toMatch(/^1\/1\/x\d+$/));
 
     // Verify configuration validator produces NO port capacity or insufficient optics errors
     const errors = validateConfiguration(allNodes, syncedEdges);

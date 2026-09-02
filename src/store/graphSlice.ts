@@ -234,9 +234,11 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const isHardwareB = nodeB.type === 'hardwareNode' && !String((nodeB.data as HardwareNodeData)?.model || '').includes('TAP');
     const isToolA = nodeA.type === 'toolNode';
     const isToolB = nodeB.type === 'toolNode';
+    const isClusterA = nodeA.type === 'clusterNode';
+    const isClusterB = nodeB.type === 'clusterNode';
 
-    // Allow multiple parallel physical/logical links between hardware chassis, from hardware to tools, and between tools
-    const allowsParallel = (isHardwareA && isHardwareB) || (isHardwareA && isToolB) || (isToolA && (isToolB || isHardwareB));
+    // Allow multiple parallel physical/logical links between hardware chassis, from hardware to tools, between tools, and clusters
+    const allowsParallel = (isHardwareA && isHardwareB) || (isHardwareA && isToolB) || (isToolA && (isToolB || isHardwareB)) || isClusterA || isClusterB;
 
     const isDuplicate = !allowsParallel && get().edges.some(
       (e) =>

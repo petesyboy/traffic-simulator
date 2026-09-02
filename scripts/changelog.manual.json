@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.719",
+    "date": "2026-09-02",
+    "summary": "Constrained TAP cluster port allocation to matching cage families (SFP vs QSFP): prevented 10G SFP TAP links from falling through to unpopulated QSFP cages (1/1/c1..c8) on hybrid chassis like GigaVUE-TA25E, eliminating false 'missing transceiver' and port shortfall errors."
+  },
+  {
     "version": "1.0.718",
     "date": "2026-09-02",
     "summary": "Fixed TAP cluster port and optic overcounting: corrected validation and port allocation for multi-member TAP stacks connected across single or multiple chassis, eliminating false 'insufficient optics' (384 optics demanded) and 'out of physical ports' errors."
