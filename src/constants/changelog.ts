@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.724",
+    date: "2026-09-02",
+    summary: "Implemented site-aware tidy layout and visual data centre enclosures: clustered equipment by physical site into dedicated swimlanes with clean inter-site routing, preventing cross-site column mixing and rendering interactive glassmorphic data centre boundaries.",
+  },
+  {
     version: "1.0.723",
     date: "2026-09-02",
     summary: "Audited physical cage rules across all TA and HC chassis, extension modules, breakout panels, and TAP trays: normalized model and SKU lookups, added SMT-HC3-C08Q08/SMT-HC3-C16 to optic rules, and built comprehensive 69-test hardware matrix audit suite.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.699",
     date: "2026-08-30",
     summary: "Preserved traffic flow through collapsed TAP clusters in simulation engine.",
-  },
-  {
-    version: "1.0.698",
-    date: "2026-08-30",
-    summary: "Added resizable columns and optimized table space in Live Traffic Injector.",
   },
 ];

@@ -20,6 +20,7 @@ import { isAutoTrayModel } from '../utils/trayModels';
 import { isTapNode, isToolNode, formatEdgeLinkPrefix } from '../utils/clusterUtils';
 import { FederatedEnclosures } from './canvas/FederatedEnclosures';
 import { FederatedDashboard } from './canvas/FederatedDashboard';
+import { SiteEnclosures } from './canvas/SiteEnclosures';
 import { GroupingBanner } from './canvas/GroupingBanner';
 import { EdgeBanner } from './canvas/EdgeBanner';
 
@@ -432,6 +433,12 @@ const CanvasArea: React.FC = () => {
     [nodes],
   );
 
+  const [showSiteEnclosures, setShowSiteEnclosures] = useState(true);
+  const hasTaggedSites = useMemo(
+    () => nodes.some(n => !n.hidden && Boolean(((n.data?.site as string) || '').trim())),
+    [nodes],
+  );
+
   return (
     <div className="canvas-wrapper" ref={reactFlowWrapper}>
       <ReactFlow
@@ -447,7 +454,30 @@ const CanvasArea: React.FC = () => {
         <Controls />
         <Panel position="bottom-left" style={{ margin: '0 0 10px 48px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
-          <button onClick={tidyLayout} title="Re-arrange the whole topology into clean left-to-right columns by pipeline stage, so nodes of the same kind line up" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
+          <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
+          {hasTaggedSites && (
+            <button
+              onClick={() => setShowSiteEnclosures((prev) => !prev)}
+              title={showSiteEnclosures ? 'Hide data centre boundary enclosures' : 'Show data centre boundary enclosures'}
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                background: showSiteEnclosures ? 'rgba(0, 229, 255, 0.12)' : 'var(--bg-tertiary, #1e1e1e)',
+                border: `1px solid ${showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
+                borderRadius: '4px',
+                color: showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🏢</span> Data Centres {showSiteEnclosures ? 'On' : 'Off'}
+            </button>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '6px 12px', fontSize: '11px', fontWeight: 600, color: exportDiagramMode ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', userSelect: 'none', transition: 'all 0.2s ease' }}>
             <input type="checkbox" checked={exportDiagramMode} onChange={(e) => setExportDiagramMode(e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan, #00e5ff)' }} /> Export Diagram Ready Mode
           </label>
@@ -455,6 +485,7 @@ const CanvasArea: React.FC = () => {
       </ReactFlow>
 
       <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
+      <SiteEnclosures nodes={canvasNodes} enabled={showSiteEnclosures} />
       <GroupingBanner
         selectedInputCount={selectedInputCount}
         selectedGroupCount={selectedGroupCount}

@@ -146,9 +146,152 @@ function assignPositions(columns: string[][], sizeOf: Map<string, NodeSize>): Ma
   return positions;
 }
 
+const SITE_GAP_Y = 120;
+
+function computeSiteOrder(
+  siteNames: string[],
+  siteGroups: Map<string, CustomNode[]>,
+  edges: Edge[],
+  parentOf: Map<string, string>,
+): string[] {
+  // Map node ID to its site
+  const nodeToSite = new Map<string, string>();
+  siteGroups.forEach((nodes, site) => {
+    nodes.forEach((n) => nodeToSite.set(n.id, site));
+  });
+
+  // Build inter-site directed graph
+  const siteSucc = new Map<string, Set<string>>();
+  const sitePred = new Map<string, Set<string>>();
+  siteNames.forEach((s) => {
+    siteSucc.set(s, new Set());
+    sitePred.set(s, new Set());
+  });
+
+  edges.forEach((e) => {
+    const src = layoutId(e.source, parentOf);
+    const tgt = layoutId(e.target, parentOf);
+    const srcSite = nodeToSite.get(src);
+    const tgtSite = nodeToSite.get(tgt);
+    if (srcSite && tgtSite && srcSite !== tgtSite) {
+      siteSucc.get(srcSite)?.add(tgtSite);
+      sitePred.get(tgtSite)?.add(srcSite);
+    }
+  });
+
+  // Compute site ranks (distance from upstream leaf sites)
+  const siteRank = new Map<string, number>();
+  const visiting = new Set<string>();
+
+  function dfsSite(s: string): number {
+    const cached = siteRank.get(s);
+    if (cached !== undefined) return cached;
+    if (visiting.has(s)) return 0;
+    visiting.add(s);
+    let r = 0;
+    for (const p of sitePred.get(s) || []) {
+      r = Math.max(r, dfsSite(p) + 1);
+    }
+    visiting.delete(s);
+    siteRank.set(s, r);
+    return r;
+  }
+
+  siteNames.forEach(dfsSite);
+
+  // For sites with the same topological rank, sort by their current median Y on canvas
+  function medianY(site: string): number {
+    const nodes = siteGroups.get(site) || [];
+    if (nodes.length === 0) return 0;
+    const ys = nodes.map((n) => n.position.y).sort((a, b) => a - b);
+    return ys[Math.floor(ys.length / 2)];
+  }
+
+  return [...siteNames].sort((a, b) => {
+    const rankDiff = (siteRank.get(a) ?? 0) - (siteRank.get(b) ?? 0);
+    if (rankDiff !== 0) return rankDiff;
+    return medianY(a) - medianY(b);
+  });
+}
+
+function assignSiteAwarePositions(
+  siteOrder: string[],
+  siteGroups: Map<string, CustomNode[]>,
+  globalRank: Map<string, number>,
+  sizeOf: Map<string, NodeSize>,
+  succ: Map<string, string[]>,
+  pred: Map<string, string[]>,
+): Map<string, { x: number; y: number }> {
+  const maxRank = Math.max(0, ...Array.from(globalRank.values()));
+
+  // Column widths match the widest node at each global pipeline stage across all sites
+  const colWidths: number[] = Array.from({ length: maxRank + 1 }, () => DEFAULT_NODE_WIDTH);
+  siteGroups.forEach((nodes) => {
+    nodes.forEach((n) => {
+      const r = globalRank.get(n.id) ?? 0;
+      const w = sizeOf.get(n.id)?.width ?? DEFAULT_NODE_WIDTH;
+      if (w > colWidths[r]) colWidths[r] = w;
+    });
+  });
+
+  const colX: number[] = [];
+  let currentX = LEFT_MARGIN;
+  colWidths.forEach((w, i) => {
+    colX[i] = currentX;
+    currentX += w + COLUMN_GAP;
+  });
+
+  const positions = new Map<string, { x: number; y: number }>();
+  let currentY = TOP_MARGIN;
+
+  siteOrder.forEach((siteName) => {
+    const siteNodes = siteGroups.get(siteName) || [];
+    if (siteNodes.length === 0) return;
+
+    // Group site nodes by their global column rank
+    const siteColumns: string[][] = Array.from({ length: maxRank + 1 }, () => []);
+    const byCurrentY = [...siteNodes].sort((a, b) => a.position.y - b.position.y);
+    byCurrentY.forEach((n) => {
+      const r = globalRank.get(n.id) ?? 0;
+      siteColumns[r].push(n.id);
+    });
+
+    // Apply barycenter heuristic to reduce edge crossings within this site
+    orderColumns(siteColumns, succ, pred);
+
+    // Measure height of each column in this site band
+    const colTotalHeights = siteColumns.map(
+      (col) =>
+        col.reduce((sum, id) => sum + (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT), 0) +
+        Math.max(0, col.length - 1) * ROW_GAP,
+    );
+    const siteMaxHeight = Math.max(0, ...colTotalHeights);
+
+    // Place nodes centered vertically within this site's band
+    siteColumns.forEach((col, r) => {
+      if (col.length === 0) return;
+      let y = currentY + (siteMaxHeight - colTotalHeights[r]) / 2;
+      col.forEach((id) => {
+        positions.set(id, { x: colX[r], y });
+        y += (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT) + ROW_GAP;
+      });
+    });
+
+    currentY += siteMaxHeight + SITE_GAP_Y;
+  });
+
+  return positions;
+}
+
 /**
  * Re-arranges top-level nodes (anything without a `parentId`, i.e. not
  * nested inside a group) into tidy left-to-right columns by pipeline stage.
+ *
+ * When equipment across 2 or more distinct physical data centres / sites
+ * is present (e.g. `DC1`, `DC2`, `DC3`), nodes are clustered by data centre,
+ * keeping equipment from the same facility together in dedicated horizontal
+ * bands with clean inter-site routing, instead of piling all nodes into one giant column.
+ *
  * Grouped child nodes are left untouched - their position is relative to
  * their parent, which moves with the rest of its column as a single unit.
  */
@@ -167,11 +310,57 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNod
   const { succ, pred } = buildAdjacency(layoutIds, edges, parentOf);
   const rank = computeRanks(layoutIds, pred);
 
+  // Check for multi-site topologies
+  const explicitSites = new Set(
+    topLevelNodes
+      .map((n) => ((n.data?.site as string) || '').trim())
+      .filter(Boolean),
+  );
+
+  if (explicitSites.size >= 2) {
+    // Multi-site layout: partition nodes into site groups
+    const nodeSiteMap = new Map<string, string>();
+
+    // Pass 1: Tag nodes with their explicit site
+    topLevelNodes.forEach((n) => {
+      const s = ((n.data?.site as string) || '').trim();
+      if (s) nodeSiteMap.set(n.id, s);
+    });
+
+    // Pass 2: For unassigned nodes, infer site if they only connect to one site
+    topLevelNodes.forEach((n) => {
+      if (!nodeSiteMap.has(n.id)) {
+        const neighbors = [...(succ.get(n.id) || []), ...(pred.get(n.id) || [])];
+        const neighborSites = new Set(neighbors.map((nb) => nodeSiteMap.get(nb)).filter(Boolean));
+        if (neighborSites.size === 1) {
+          nodeSiteMap.set(n.id, Array.from(neighborSites)[0] as string);
+        } else {
+          nodeSiteMap.set(n.id, 'Shared / Transport');
+        }
+      }
+    });
+
+    const siteGroups = new Map<string, CustomNode[]>();
+    topLevelNodes.forEach((n) => {
+      const site = nodeSiteMap.get(n.id) || 'Shared / Transport';
+      if (!siteGroups.has(site)) siteGroups.set(site, []);
+      siteGroups.get(site)!.push(n);
+    });
+
+    const allSiteNames = Array.from(siteGroups.keys());
+    const siteOrder = computeSiteOrder(allSiteNames, siteGroups, edges, parentOf);
+
+    const positions = assignSiteAwarePositions(siteOrder, siteGroups, rank, sizeOf, succ, pred);
+
+    return nodes.map((n) => {
+      const pos = positions.get(n.id);
+      return pos ? { ...n, position: pos } : n;
+    });
+  }
+
+  // Single-site or untagged topology: classic single-pipeline layout
   const maxRank = Math.max(0, ...Array.from(rank.values()));
   const columns: string[][] = Array.from({ length: maxRank + 1 }, () => []);
-  // Stable initial order within each column follows current vertical position,
-  // so a "tidy up" reads as a gentle cleanup of the existing arrangement
-  // rather than a random reshuffle.
   const byCurrentY = [...topLevelNodes].sort((a, b) => a.position.y - b.position.y);
   byCurrentY.forEach((n) => columns[rank.get(n.id)!].push(n.id));
 
