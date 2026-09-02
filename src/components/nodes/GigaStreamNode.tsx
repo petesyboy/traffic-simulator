@@ -9,10 +9,10 @@ import { Handle, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import { formatBandwidth } from '../../utils/format';
 import { AppIcon } from '../Icons';
-import { useGlowClass, getHandleSides } from './nodeStyles';
+import { useGlowClass, useHandleSides } from './nodeStyles';
 
 const GigaStreamNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const edges = useStore((state) => state.edges);

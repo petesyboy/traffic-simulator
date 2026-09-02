@@ -18,7 +18,7 @@ import {
 import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
-import { useGlowClass, getHandleSides, getTapDetails, getConditionsSummary } from './nodeStyles';
+import { useGlowClass, useHandleSides, getTapDetails, getConditionsSummary } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
@@ -27,7 +27,7 @@ import { getChassisPorts, getPortOccupancy, getPortOpticMap } from '../../utils/
 import { getModuleSlotPositions, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);

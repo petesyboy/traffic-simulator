@@ -17,7 +17,7 @@ import { getNodeValueProposition } from '../../constants/nodeValues';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { GSA_DEFAULT_DATA_PORT_OPTIC, isValidGsaDataPortOptic } from '../../constants/gsaOptics';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
-import { useGlowClass, getHandleSides } from './nodeStyles';
+import { useGlowClass, useHandleSides } from './nodeStyles';
 
 // Short on-canvas tags for each GigaSMART app, shown next to the GSA's title
 // so its pipeline is visible at a glance without opening the config panel.
@@ -30,7 +30,7 @@ const GSA_APP_ABBREVIATIONS: Record<string, string> = {
 };
 
 const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const peakRxMbps = useStore((state) => state.peakNodeRxMbps[id]);

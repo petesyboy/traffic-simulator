@@ -13,11 +13,11 @@ import {
 } from '../Icons';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass, getHandleSides } from './nodeStyles';
+import { useGlowClass, useHandleSides } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const configType = (data.configType as string) || '';

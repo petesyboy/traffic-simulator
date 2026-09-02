@@ -6,10 +6,10 @@
 
 import React from 'react';
 import { Handle, type NodeProps } from '@xyflow/react';
-import { getHandleSides } from './nodeStyles';
+import { useHandleSides } from './nodeStyles';
 
-const GroupNodeComponent: React.FC<NodeProps> = ({ data, selected }) => {
-  const { outSide } = getHandleSides(data);
+const GroupNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { outSide } = useHandleSides(id, data);
   return (
     /*
      * GroupNode uses width/height from its `style` prop (set dynamically in

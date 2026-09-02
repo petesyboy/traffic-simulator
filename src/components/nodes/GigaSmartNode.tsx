@@ -11,10 +11,10 @@ import { formatBandwidth } from '../../utils/format';
 import { AppIcon } from '../Icons';
 import { ACTION_TYPES, isMetadataAction, isDedupAction, isGtpAction, isHeaderStripAction, isTunnelingAction } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass, getHandleSides } from './nodeStyles';
+import { useGlowClass, useHandleSides } from './nodeStyles';
 
 const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const actionType = (data.actionType as string) || ACTION_TYPES.DEDUPLICATION;

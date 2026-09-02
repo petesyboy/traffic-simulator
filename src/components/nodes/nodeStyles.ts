@@ -4,12 +4,18 @@
  * Shared hooks, helpers, and style utilities used by individual node components.
  */
 
-import { Position } from '@xyflow/react';
+import { useEffect, useRef } from 'react';
+import { Position, useStoreApi } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition } from '../../store/types';
 
 /**
  * Which side of a node its ingress and egress handles sit on.
+ *
+ * Moving the handle is only half the job: ReactFlow caches each node's handle
+ * bounds and re-adopts a changed node with the bounds it had before, so the
+ * store also drops the node's `measured` when flipping direction, which is what
+ * makes ReactFlow re-measure and the edges re-route (see setNodeFlowDirection).
  *
  * Handle *IDs* never change - a mirrored node still ingests on 'in' and
  * egresses on 'out', so every existing edge, preset and saved project keeps
@@ -22,6 +28,63 @@ export const getHandleSides = (data: unknown): { inSide: Position; outSide: Posi
   return rtl
     ? { inSide: Position.Right, outSide: Position.Left }
     : { inSide: Position.Left, outSide: Position.Right };
+};
+
+/**
+ * The hook every node renderer uses. Painting a handle on the other side is not
+ * enough on its own: ReactFlow caches each node's handle bounds and only
+ * re-measures them when told to, so without updateNodeInternals the handle
+ * moves but every edge keeps routing to where it used to be.
+ */
+/** The slice of ReactFlow's internal store that a forced re-measure needs. */
+export interface ReactFlowInternals {
+  domNode: HTMLElement | null;
+  updateNodeInternals: (
+    updates: Map<string, { id: string; nodeElement: Element; force: boolean }>,
+    options: { triggerFitView: boolean },
+  ) => void;
+}
+
+/**
+ * Makes ReactFlow re-measure one node's handle bounds from the live DOM.
+ *
+ * `force` is what matters: without it the update is skipped unless the node's
+ * dimensions changed, and moving a handle from one side to the other doesn't
+ * change them. Returns whether the measurement was requested, so a caller can
+ * tell a missing node from a completed update.
+ */
+export function forceRemeasure(state: ReactFlowInternals, id: string): boolean {
+  const nodeElement = state.domNode?.querySelector(`.react-flow__node[data-id="${id}"]`);
+  if (!nodeElement) return false;
+  state.updateNodeInternals(new Map([[id, { id, nodeElement, force: true }]]), { triggerFitView: false });
+  return true;
+}
+
+/**
+ * The hook every node renderer uses to place its handles.
+ *
+ * Painting a handle on the other side is only half the job: ReactFlow caches
+ * each node's handle bounds and re-adopts a changed node with the bounds it
+ * already had, so without a forced re-measure every edge keeps routing to where
+ * the handle used to be. This runs in the node's own effect, which is the first
+ * moment its new handle positions exist in the DOM, and calls the store
+ * directly - `useUpdateNodeInternals` defers to requestAnimationFrame, which
+ * measures too late to be reliable.
+ */
+export const useHandleSides = (id: string, data: unknown): { inSide: Position; outSide: Position } => {
+  const storeApi = useStoreApi();
+  const flowDirection = (data as { flowDirection?: string } | undefined)?.flowDirection === 'rtl' ? 'rtl' : 'ltr';
+  const previousDirection = useRef(flowDirection);
+
+  useEffect(() => {
+    // Nothing to correct on mount - ReactFlow measures new nodes itself.
+    if (previousDirection.current === flowDirection) return;
+    previousDirection.current = flowDirection;
+
+    forceRemeasure(storeApi.getState() as unknown as ReactFlowInternals, id);
+  }, [id, flowDirection, storeApi]);
+
+  return getHandleSides(data);
 };
 
 /** Returns the glow CSS class when a node is being highlighted in presentation mode. */

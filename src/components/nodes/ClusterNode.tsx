@@ -9,13 +9,13 @@
 
 import React, { useMemo } from 'react';
 import { Handle, type NodeProps } from '@xyflow/react';
-import { getHandleSides } from './nodeStyles';
+import { useHandleSides } from './nodeStyles';
 import { useStore } from '../../store/store';
 import type { ClusterNodeData } from '../../store/types';
 import { formatBandwidth } from '../../utils/format';
 
 export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const cData = data as unknown as ClusterNodeData;
   const toggleClusterCollapse = useStore((s) => s.toggleClusterCollapse);
   const dissolveCluster = useStore((s) => s.dissolveCluster);

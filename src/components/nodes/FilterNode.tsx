@@ -11,10 +11,10 @@ import { formatBandwidth } from '../../utils/format';
 import { SmartIcon } from '../Icons';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass, getHandleSides } from './nodeStyles';
+import { useGlowClass, useHandleSides } from './nodeStyles';
 
 const FilterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const advancedMode = useStore((state) => state.advancedMode);

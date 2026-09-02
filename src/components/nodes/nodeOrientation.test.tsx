@@ -7,7 +7,7 @@ import { HardwareNode } from './HardwareNode';
 import { ToolNode } from './ToolNode';
 import { InputNode } from './InputNode';
 import { GigaStreamNode } from './GigaStreamNode';
-import { getHandleSides } from './nodeStyles';
+import { getHandleSides, forceRemeasure, type ReactFlowInternals } from './nodeStyles';
 
 interface RenderedHandle {
   id: string;
@@ -114,5 +114,54 @@ describe('node renderers honour flowDirection', () => {
     expect(rtl.find((h) => h.id === 'out-bottom')?.pos).toBe('bottom');
     expect(rtl.find((h) => h.id === 'in')?.pos).toBe('right');
     expect(rtl.find((h) => h.id === 'out')?.pos).toBe('left');
+  });
+});
+
+describe('forceRemeasure', () => {
+  const makeState = (hasNode: boolean) => {
+    const calls: Array<{ updates: Map<string, { id: string; nodeElement: Element; force: boolean }>; options: { triggerFitView: boolean } }> = [];
+    const state = {
+      domNode: {
+        querySelector: (selector: string) => (hasNode ? ({ selector } as unknown as Element) : null),
+      } as unknown as HTMLElement,
+      updateNodeInternals: (updates, options) => calls.push({ updates, options }),
+    } as ReactFlowInternals;
+    return { state, calls };
+  };
+
+  it('asks ReactFlow to re-measure the node with force set', () => {
+    const { state, calls } = makeState(true);
+
+    expect(forceRemeasure(state, 'node-1')).toBe(true);
+    expect(calls).toHaveLength(1);
+
+    const update = calls[0].updates.get('node-1');
+    // `force` is the whole point: moving a handle from one side to the other
+    // leaves the node's dimensions unchanged, so an unforced update is skipped
+    // and every edge keeps routing to the handle's old side.
+    expect(update?.force).toBe(true);
+    expect(update?.id).toBe('node-1');
+    expect(calls[0].options.triggerFitView).toBe(false);
+  });
+
+  it('targets the node by its data-id', () => {
+    const { state, calls } = makeState(true);
+    forceRemeasure(state, 'node-map-1');
+    expect((calls[0].updates.get('node-map-1')?.nodeElement as unknown as { selector: string }).selector).toBe(
+      '.react-flow__node[data-id="node-map-1"]',
+    );
+  });
+
+  it('does nothing when the node is not in the DOM', () => {
+    const { state, calls } = makeState(false);
+    expect(forceRemeasure(state, 'missing')).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('does nothing before ReactFlow has mounted', () => {
+    const calls: unknown[] = [];
+    const state = { domNode: null, updateNodeInternals: () => calls.push(1) } as unknown as ReactFlowInternals;
+    expect(forceRemeasure(state, 'n1')).toBe(false);
+    expect(calls).toHaveLength(0);
   });
 });

@@ -11,10 +11,10 @@ import type { MapCondition } from '../../store/types';
 import { formatBandwidth } from '../../utils/format';
 import { MapIcon } from '../Icons';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass, getHandleSides, getConditionsSummary } from './nodeStyles';
+import { useGlowClass, useHandleSides, getConditionsSummary } from './nodeStyles';
 
 const MapNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
-  const { inSide, outSide } = getHandleSides(data);
+  const { inSide, outSide } = useHandleSides(id, data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const conditions = (data.conditions as MapCondition[]) || [];
