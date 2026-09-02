@@ -18,9 +18,15 @@ export function getSupportedBoards(model: string, portCapacity?: string): OpticS
   // otherwise a longer key that happens to start with this model's name (e.g. the
   // "GigaVUE-HC1-Plus" rules block starting with "GigaVUE-HC1") would shadow the
   // model's own exact rules block once sorted longest-first, silently handing a base
-  // chassis a variant's optic/speed capabilities (e.g. 100G cages HC1 doesn't have).
   const exactMatch = keys.find(k => k === model);
-  const match = exactMatch ?? [...keys]
+  const cleanModel = model.toLowerCase().trim();
+  const strippedModel = cleanModel.replace(/^gigavue[- ]/i, '');
+  const normalizedMatch = exactMatch ?? keys.find(k => {
+    const kLower = k.toLowerCase();
+    const kStripped = kLower.replace(/^gigavue[- ]/i, '');
+    return kLower === cleanModel || kStripped === strippedModel || kLower === strippedModel || kStripped === cleanModel;
+  });
+  const match = normalizedMatch ?? [...keys]
     .sort((a, b) => b.length - a.length)
     .find(k => k.startsWith(model + ' ') || model.startsWith(k.split(' ')[0]));
   if (!match) return [];

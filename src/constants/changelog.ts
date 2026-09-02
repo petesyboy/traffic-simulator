@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.721",
+    date: "2026-09-02",
+    summary: "Fixed chassis and module lookup normalization: corrected cage capacity calculation on modular HC-series chassis (e.g. GigaVUE-HC1-Plus with PRT-HC1-Q04X08) allowing all 8 QSFP cages to be fully populated with 100G optics.",
+  },
+  {
     version: "1.0.720",
     date: "2026-09-02",
     summary: "Enforced cage-type validation during port link preservation: discarded stale QSFP assignments on SFP feeds, dynamically synchronized transceivers for collapsed TAP clusters, and auto-provisioned matching optics across connected links.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.696",
     date: "2026-08-29",
     summary: "Showed sequential multi-link ranges (e.g. Links 1 to 6, 7 to 12) for TAP stack links.",
-  },
-  {
-    version: "1.0.695",
-    date: "2026-08-29",
-    summary: "Resolved TAP cluster member optics accurately on chassis connections.",
   },
 ];

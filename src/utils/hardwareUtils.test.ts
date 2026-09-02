@@ -336,6 +336,22 @@ describe('hardwareUtils', () => {
       expect(breakdown.totalQsfpCages).toBe(4);
     });
 
+    it('sums 8 QSFP cages on an HC1-Plus with PRT-HC1-Q04X08 installed and handles (Slot 2) suffix', () => {
+      const breakdown = getCageCapacityBreakdown('HC1-Plus', {
+        label: 'Test', configType: 'Hardware', model: 'HC1-Plus',
+        optics: [
+          { board: 'HC1P-BASE (Main Board)', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 4 },
+          { board: 'PRT-HC1-Q04X08 (Slot 2)', optic: 'Q28-502T (100G QSFP28 SR4)', qty: 3 },
+        ],
+        installedBoards: { '2': 'PRT-HC1-Q04X08 (Slot 2)' },
+      } as unknown as HardwareNodeData);
+      // base (SFP28:8, QSFP28:4) + PRT-HC1-Q04X08 (SFP28:8, QSFP28:4) = 16 SFP, 8 QSFP
+      expect(breakdown.totalSfpCages).toBe(16);
+      expect(breakdown.totalQsfpCages).toBe(8);
+      expect(breakdown.usedQsfpOptics).toBe(7);
+      expect(breakdown.remainingQsfpCages).toBe(1);
+    });
+
     it('sums cages across all four slots on an HC3, mixing SFP-only, QSFP-only, and mixed boards', () => {
       const breakdown = getCageCapacityBreakdown('GigaVUE-HC3', {
         label: 'Test', configType: 'Hardware', model: 'GigaVUE-HC3',

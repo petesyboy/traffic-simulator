@@ -82,8 +82,28 @@ export const getOpticSpeedMbps = (opticName: string): number => {
  * by SKU should go through this helper rather than a fresh `===`/`find`.
  */
 export const findModuleBySku = (boardSku: string) => {
-  const name = boardSku.toLowerCase();
-  return hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === name);
+  if (!boardSku) return undefined;
+  const cleanSku = boardSku.replace(/\s*\(Slot\s*\d+\)/i, '').replace(/\s*\(Main\s*Board\)/i, '').replace(/\s*\(Base\s*Ports\)/i, '').trim().toLowerCase();
+  return hardwareCatalogue.modules.find(m => m.sku.toLowerCase() === cleanSku || m.model.toLowerCase() === cleanSku);
+};
+
+/**
+ * Robust catalogue lookup for a chassis across TA and HC series, supporting normalized names.
+ */
+export const findChassisInCatalogue = (model: string, sku?: string) => {
+  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
+  if (sku) {
+    const skuMatch = allSeries.find(c => c.sku?.toLowerCase() === sku.toLowerCase());
+    if (skuMatch) return skuMatch;
+  }
+  if (!model) return undefined;
+  const cleanModel = model.trim().toLowerCase();
+  const stripped = cleanModel.replace(/^gigavue[- ]/i, '');
+  return allSeries.find(c => {
+    const cModel = c.model.toLowerCase();
+    const cStripped = cModel.replace(/^gigavue[- ]/i, '');
+    return cModel === cleanModel || cStripped === stripped || cModel === stripped || cStripped === cleanModel;
+  });
 };
 
 /**
@@ -114,8 +134,7 @@ export interface ModuleSlotPosition {
  * falls back to a plain 1..N sequence.
  */
 export const getModuleSlotPositions = (model: string, sku?: string): ModuleSlotPosition[] => {
-  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
-  const chassis = allSeries.find(c => (sku && c.sku === sku) || c.model === model) as
+  const chassis = findChassisInCatalogue(model, sku) as
     | { module_slots?: number; module_slot_positions?: ModuleSlotPosition[] }
     | undefined;
   if (!chassis) return [];
@@ -125,8 +144,7 @@ export const getModuleSlotPositions = (model: string, sku?: string): ModuleSlotP
 
 /** Catalogue front-panel photo path (relative, e.g. `./hardware-icons/GigaVUE-HC1.png`) for a chassis model/SKU — resolve with `resolveHardwareIcon` before use. */
 export const getChassisImagePath = (model: string, sku?: string): string | undefined => {
-  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
-  const chassis = allSeries.find(c => (sku && c.sku === sku) || c.model === model) as { image?: string } | undefined;
+  const chassis = findChassisInCatalogue(model, sku) as { image?: string } | undefined;
   return chassis?.image;
 };
 
@@ -267,8 +285,7 @@ export const getBoardIcon = (boardSku: string): string | undefined => {
  * Returns base port capacity for a given chassis model (no boards installed).
  */
 export const getChassisBasePortCapacity = (model: string): { [portType: string]: number } => {
-  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
-  const chassis = allSeries.find(c => c.model === model);
+  const chassis = findChassisInCatalogue(model);
 
   if (chassis) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- catalogue entries mix `ports` (new schema) and `base_ports` (legacy)
@@ -374,9 +391,9 @@ export const getBoardDescription = (boardName: string, model: string): string =>
 };
 
 /**
- * Some shared modules split their SFP-form-factor cages across two speed tiers
- * depending on which chassis they're installed in - e.g. PRT-HC1-Q04X08 on
- * GigaVUE-HCT only supports 25G on 4 of its 8 SFP cages (the rest cap at 10G),
+ * Some modules expose cages that run at different maximum speeds depending on
+ * the chassis they're plugged into - e.g. PRT-HC1-Q04X08 on GigaVUE-HCT runs 4
+ * of its SFP cages at 25G and the other 4 at 10G (on HC1/HC1-Plus all 8 run 25G),
  * per its SKU description. The aggregate SFP cage count alone can't express
  * that split, so this returns a per-speed cap for the given board/model, or
  * Infinity if no such sub-cap applies.
@@ -392,8 +409,7 @@ const getBoardPortSpecs = (boardSku: string): PortInfo[] => {
 };
 
 const getChassisBasePortSpecs = (model: string): PortInfo[] => {
-  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
-  const chassis = allSeries.find(c => c.model === model) as { ports?: PortInfo[]; base_ports?: PortInfo[] } | undefined;
+  const chassis = findChassisInCatalogue(model) as { ports?: PortInfo[]; base_ports?: PortInfo[] } | undefined;
   return chassis?.ports || chassis?.base_ports || [];
 };
 
@@ -466,8 +482,7 @@ const breakoutCountAtSpeed = (model: string, board: string, portSpecs: PortInfo[
  * slots (TA-series, fixed-configuration units).
  */
 export const getMaxChassisCapacityBySpeed = (model: string): MaxSpeedCapacity[] => {
-  const allSeries = [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series];
-  const chassis = allSeries.find(c => c.model === model) as { module_slots?: number } | undefined;
+  const chassis = findChassisInCatalogue(model) as { module_slots?: number } | undefined;
   const slotCount = chassis?.module_slots || 0;
   if (!slotCount) return [];
 

@@ -13,8 +13,7 @@
  */
 import type { Edge } from '@xyflow/react';
 import type { ChassisPort, CustomNode, HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
-import hardwareCatalogue from '../constants/hardwareCatalogue.json';
-import { findModuleBySku, getOpticSpeed, getTaLicenseLimits, isBreakoutPanelModel } from './hardwareUtils';
+import { findModuleBySku, findChassisInCatalogue, getOpticSpeed, getTaLicenseLimits, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
 import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP, isMpoPortId, getBreakoutLcOptics } from './breakoutRules';
 import { getEdgeTapLinksCount } from './clusterUtils';
@@ -85,7 +84,7 @@ function getPanelPorts(): ChassisPort[] {
 
 /** Catalogue entry for a chassis, across both TA and HC series. */
 function findChassis(model: string) {
-  return [...hardwareCatalogue.ta_series, ...hardwareCatalogue.hc_series].find(c => c.model === model);
+  return findChassisInCatalogue(model);
 }
 
 /**
