@@ -5,15 +5,16 @@
  */
 
 import React from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition } from '../../store/types';
 import { formatBandwidth } from '../../utils/format';
 import { MapIcon } from '../Icons';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass, getConditionsSummary } from './nodeStyles';
+import { useGlowClass, getHandleSides, getConditionsSummary } from './nodeStyles';
 
 const MapNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const conditions = (data.conditions as MapCondition[]) || [];
@@ -26,7 +27,7 @@ const MapNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node map-node ${selected ? 'selected-node' : ''} ${glowClass}`}>
-        <Handle type="target" position={Position.Left} id="in" />
+        <Handle type="target" position={inSide} id="in" />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapIcon size={20} />
@@ -75,7 +76,7 @@ const MapNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <span>Out: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
-        <Handle type="source" position={Position.Right} id="out" />
+        <Handle type="source" position={outSide} id="out" />
       </div>
 
       {exportDiagramMode && (

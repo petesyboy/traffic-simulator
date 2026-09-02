@@ -8,12 +8,14 @@
  */
 
 import React, { useMemo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, type NodeProps } from '@xyflow/react';
+import { getHandleSides } from './nodeStyles';
 import { useStore } from '../../store/store';
 import type { ClusterNodeData } from '../../store/types';
 import { formatBandwidth } from '../../utils/format';
 
 export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const cData = data as unknown as ClusterNodeData;
   const toggleClusterCollapse = useStore((s) => s.toggleClusterCollapse);
   const dissolveCluster = useStore((s) => s.dissolveCluster);
@@ -239,13 +241,13 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
           {/* Handles to ensure ReactFlow always has registered endpoints */}
           <Handle
             type="target"
-            position={Position.Left}
+            position={inSide}
             id="in"
             style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
           />
           <Handle
             type="source"
-            position={Position.Right}
+            position={outSide}
             id="out"
             style={{ opacity: 0, pointerEvents: 'none', width: '1px', height: '1px' }}
           />
@@ -309,7 +311,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
         {/* Handles */}
         <Handle
           type="target"
-          position={Position.Left}
+          position={inSide}
           id="in"
           style={{
             background: themeColor,
@@ -321,7 +323,7 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
         />
         <Handle
           type="source"
-          position={Position.Right}
+          position={outSide}
           id="out"
           style={{
             background: themeColor,

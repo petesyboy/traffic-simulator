@@ -60,6 +60,8 @@ export interface GraphSlice {
   snapAllNodesToGrid: () => void;
   tidyLayout: () => void;
   optimizeDwdmHandles: () => void;
+  setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
+  mirrorSelectedNodes: () => void;
   clearCanvas: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
@@ -309,6 +311,51 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (nextEdges !== get().edges) {
       set({ edges: nextEdges });
     }
+  },
+
+  // Picking a direction by hand locks it, so a later auto-layout pass leaves
+  // that choice alone rather than silently undoing the fix. 'auto' clears both
+  // fields and hands the node back to the layout engine.
+  setNodeFlowDirection: (nodeId, direction) => {
+    get().pushHistory();
+    set({
+      nodes: get().nodes.map((node) => {
+        if (node.id !== nodeId) return node;
+        const data = { ...node.data } as Record<string, unknown>;
+        if (direction === 'auto') {
+          delete data.flowDirection;
+          delete data.flowDirectionLocked;
+        } else {
+          data.flowDirection = direction;
+          data.flowDirectionLocked = true;
+        }
+        return { ...node, data } as CustomNode;
+      }),
+    });
+  },
+
+  // Flips every selected node at once, falling back to the single node open in
+  // the config panel when nothing is multi-selected.
+  mirrorSelectedNodes: () => {
+    const { nodes, selectedNodeId } = get();
+    const targets = new Set(nodes.filter((n) => n.selected).map((n) => n.id));
+    if (targets.size === 0 && selectedNodeId) targets.add(selectedNodeId);
+    if (targets.size === 0) return;
+    get().pushHistory();
+    set({
+      nodes: nodes.map((node) =>
+        targets.has(node.id)
+          ? ({
+              ...node,
+              data: {
+                ...node.data,
+                flowDirection: node.data?.flowDirection === 'rtl' ? 'ltr' : 'rtl',
+                flowDirectionLocked: true,
+              },
+            } as CustomNode)
+          : node,
+      ),
+    });
   },
   clearCanvas: () => {
     get().pushHistory();

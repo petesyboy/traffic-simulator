@@ -54,6 +54,7 @@ function App() {
   const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
   const undo = useStore((state) => state.undo);
   const redo = useStore((state) => state.redo);
+  const mirrorSelectedNodes = useStore((state) => state.mirrorSelectedNodes);
 
   // State for export, moved up from SaveSlotModal
   const nodes               = useStore((s) => s.nodes);
@@ -279,8 +280,14 @@ function App() {
         e.preventDefault();
         toggleSimulation();
       }
+
+      if (e.key.toLowerCase() === 'm' && !isCtrl && !e.altKey) {
+        // M → mirror the selected node(s) between left-to-right and right-to-left
+        e.preventDefault();
+        mirrorSelectedNodes();
+      }
     },
-    [toggleSimulation, undo, redo]
+    [toggleSimulation, undo, redo, mirrorSelectedNodes]
   );
 
   useEffect(() => {

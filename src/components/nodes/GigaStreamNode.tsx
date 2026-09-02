@@ -5,13 +5,14 @@
  */
 
 import React from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import { formatBandwidth } from '../../utils/format';
 import { AppIcon } from '../Icons';
-import { useGlowClass } from './nodeStyles';
+import { useGlowClass, getHandleSides } from './nodeStyles';
 
 const GigaStreamNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const edges = useStore((state) => state.edges);
@@ -29,7 +30,7 @@ const GigaStreamNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =>
     <>
       <NodeResizer minWidth={170} minHeight={75} isVisible={selected} />
       <div className={`custom-node gigasmart-node ${selected ? 'selected-node' : ''} ${isActive ? 'gigastream-active' : ''} ${glowClass}`}>
-        <Handle type="target" position={Position.Left} id="in" />
+        <Handle type="target" position={inSide} id="in" />
         <div className="node-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <AppIcon type="Load Balancing" size={20} />
@@ -68,10 +69,10 @@ const GigaStreamNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =>
             <span>Tx: {formatBandwidth(metrics?.txMbps)}</span>
           </div>
         )}
-        <Handle type="source" position={Position.Right} id="out" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="source" position={Position.Right} id="out-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={outSide} id="out" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={outSide} id="out-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={outSide} id="out-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="source" position={outSide} id="out-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
       </div>
     </>
   );

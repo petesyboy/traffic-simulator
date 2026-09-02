@@ -13,10 +13,11 @@ import {
 } from '../Icons';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
 import { getNodeValueProposition } from '../../constants/nodeValues';
-import { useGlowClass } from './nodeStyles';
+import { useGlowClass, getHandleSides } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 
 const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const configType = (data.configType as string) || '';
@@ -97,9 +98,9 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {/* Multi-directional handles for hierarchical topology routing */}
         <Handle type="target" position={Position.Top} id="in-top" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
-        <Handle type="target" position={Position.Left} id="in" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
+        <Handle type="target" position={inSide} id="in" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
         <Handle type="source" position={Position.Bottom} id="out-bottom" style={{ opacity: 0.6, width: '8px', height: '8px', background: '#3b82f6' }} />
-        <Handle type="source" position={Position.Right} id="out" />
+        <Handle type="source" position={outSide} id="out" />
       </div>
 
       {exportDiagramMode && (

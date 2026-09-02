@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition, HardwareNodeData, GigaSmartNodeData, CustomNode } from '../../store/types';
 import { CONFIG_TYPES } from '../../constants/nodeTypes';
@@ -18,7 +18,7 @@ import {
 import { resolveNodeSkus } from '../../utils/skuResolver';
 import { getNodeValueProposition } from '../../constants/nodeValues';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
-import { useGlowClass, getTapDetails, getConditionsSummary } from './nodeStyles';
+import { useGlowClass, getHandleSides, getTapDetails, getConditionsSummary } from './nodeStyles';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
@@ -27,6 +27,7 @@ import { getChassisPorts, getPortOccupancy, getPortOpticMap } from '../../utils/
 import { getModuleSlotPositions, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
@@ -162,7 +163,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             Site: {data.site as string}
           </div>
         )}
-        <Handle type="target" position={Position.Left} id="in" />
+        <Handle type="target" position={inSide} id="in" />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {iconComponent}
@@ -386,7 +387,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
           </div>
         )}
 
-        <Handle type="source" position={Position.Right} id="out" />
+        <Handle type="source" position={outSide} id="out" />
       </div>
 
       {showSummary && (

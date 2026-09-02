@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { CustomNode, GigaSmartNodeData } from '../../store/types';
 import { formatBandwidth, formatBytes } from '../../utils/format';
@@ -17,7 +17,7 @@ import { getNodeValueProposition } from '../../constants/nodeValues';
 import { getDefaultIngestLimitMbps } from '../../constants/toolIngestLimits';
 import { GSA_DEFAULT_DATA_PORT_OPTIC, isValidGsaDataPortOptic } from '../../constants/gsaOptics';
 import { generateSingleNodeBom } from '../../utils/bomEngine';
-import { useGlowClass } from './nodeStyles';
+import { useGlowClass, getHandleSides } from './nodeStyles';
 
 // Short on-canvas tags for each GigaSMART app, shown next to the GSA's title
 // so its pipeline is visible at a glance without opening the config panel.
@@ -30,6 +30,7 @@ const GSA_APP_ABBREVIATIONS: Record<string, string> = {
 };
 
 const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
+  const { inSide, outSide } = getHandleSides(data);
   const isRunning = useStore((state) => state.isRunning);
   const metrics = useStore((state) => state.nodeMetrics[id]);
   const peakRxMbps = useStore((state) => state.peakNodeRxMbps[id]);
@@ -125,10 +126,10 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             Site: {data.site as string}
           </div>
         )}
-        <Handle type="target" position={Position.Left} id="in" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
-        <Handle type="target" position={Position.Left} id="in-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={inSide} id="in" style={{ top: '20%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={inSide} id="in-2" style={{ top: '40%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={inSide} id="in-3" style={{ top: '60%', width: '8px', height: '8px', background: '#00e5ff' }} />
+        <Handle type="target" position={inSide} id="in-4" style={{ top: '80%', width: '8px', height: '8px', background: '#00e5ff' }} />
         <div className="node-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
             {renderIcon()}
@@ -241,7 +242,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         {canLinkOut && (
           <Handle
             type="source"
-            position={Position.Right}
+            position={outSide}
             id="out"
             style={hasMetadataApp ? { top: '30%' } : undefined}
             title={isGigaSmartAppliance ? 'Processed packets - must return to a GigaVUE TA/HC chassis (400G data port)' : undefined}
@@ -250,7 +251,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
         {hasMetadataApp && (
           <Handle
             type="source"
-            position={Position.Right}
+            position={outSide}
             id="metadata-out"
             style={{ top: '70%', background: '#ffb74d' }}
             title="Generated metadata (AMI/AMX) to metadata tools"

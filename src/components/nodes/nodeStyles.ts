@@ -4,8 +4,25 @@
  * Shared hooks, helpers, and style utilities used by individual node components.
  */
 
+import { Position } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { MapCondition } from '../../store/types';
+
+/**
+ * Which side of a node its ingress and egress handles sit on.
+ *
+ * Handle *IDs* never change - a mirrored node still ingests on 'in' and
+ * egresses on 'out', so every existing edge, preset and saved project keeps
+ * resolving. Only the side the handle is painted on moves, which is enough for
+ * ReactFlow to re-route the edge, and for a right-to-left pipeline to read
+ * correctly when sites are mirrored around a central transport hub.
+ */
+export const getHandleSides = (data: unknown): { inSide: Position; outSide: Position } => {
+  const rtl = (data as { flowDirection?: string } | undefined)?.flowDirection === 'rtl';
+  return rtl
+    ? { inSide: Position.Right, outSide: Position.Left }
+    : { inSide: Position.Left, outSide: Position.Right };
+};
 
 /** Returns the glow CSS class when a node is being highlighted in presentation mode. */
 export const useGlowClass = (id: string): string => {

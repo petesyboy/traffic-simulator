@@ -452,6 +452,15 @@ const CanvasArea: React.FC = () => {
     [nodes],
   );
 
+  // Drives the Mirror button: a multi-selection wins, otherwise the single node
+  // open in the config panel is the implicit target.
+  const mirrorSelectedNodes = useStore((state) => state.mirrorSelectedNodes);
+  const selectedNodeId = useStore((state) => state.selectedNodeId);
+  const selectionCount = useMemo(() => {
+    const multi = nodes.filter((n) => n.selected && !n.hidden).length;
+    return multi > 0 ? multi : selectedNodeId ? 1 : 0;
+  }, [nodes, selectedNodeId]);
+
   const [showSiteEnclosures, setShowSiteEnclosures] = useState(true);
   const hasTaggedSites = useMemo(
     () => nodes.some(n => !n.hidden && Boolean(((n.data?.site as string) || '').trim())),
@@ -497,6 +506,15 @@ const CanvasArea: React.FC = () => {
           </button>
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
           <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
+          {selectionCount > 0 && (
+            <button
+              onClick={mirrorSelectedNodes}
+              title={`Mirror ${selectionCount} selected node${selectionCount === 1 ? '' : 's'} between left-to-right and right-to-left (shortcut: M)`}
+              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}
+            >
+              <span>↔</span> Mirror{selectionCount > 1 ? ` ${selectionCount}` : ''}
+            </button>
+          )}
           {hasTaggedSites && (
             <button
               onClick={() => setShowSiteEnclosures((prev) => !prev)}

@@ -5,9 +5,11 @@
  */
 
 import React from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, type NodeProps } from '@xyflow/react';
+import { getHandleSides } from './nodeStyles';
 
 const GroupNodeComponent: React.FC<NodeProps> = ({ data, selected }) => {
+  const { outSide } = getHandleSides(data);
   return (
     /*
      * GroupNode uses width/height from its `style` prop (set dynamically in
@@ -20,7 +22,7 @@ const GroupNodeComponent: React.FC<NodeProps> = ({ data, selected }) => {
         <span>📦 {data.label as string}</span>
       </div>
       {/* The group output handle connects to a downstream Traffic Map */}
-      <Handle type="source" position={Position.Right} id="out" style={{ top: '50%' }} />
+      <Handle type="source" position={outSide} id="out" style={{ top: '50%' }} />
     </div>
   );
 };

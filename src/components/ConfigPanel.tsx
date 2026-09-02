@@ -15,11 +15,18 @@ import { ToolNodePanel } from './config-panels/ToolNodePanel';
 import { LinkDetailPanel } from './config-panels/LinkDetailPanel';
 import { DwdmNetworkPanel } from './config-panels/DwdmNetworkPanel';
 
+const FLOW_DIRECTION_OPTIONS = [
+  { value: 'ltr' as const, label: '→ LTR', title: 'Ingest on the left, egress on the right (the classic pipeline direction)' },
+  { value: 'rtl' as const, label: '← RTL', title: 'Ingest on the right, egress on the left - for sites mirrored to the right of a transport hub' },
+  { value: 'auto' as const, label: 'Auto', title: 'Let the layout engine choose, and follow it on every re-tidy' },
+];
+
 const ConfigPanel: React.FC = () => {
   const selectedNodeId = useStore((state) => state.selectedNodeId);
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const setNodeFlowDirection = useStore((state) => state.setNodeFlowDirection);
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
   const isRunning      = useStore((state) => state.isRunning);
   const panelTextScale = useStore((state) => state.panelTextScale);
@@ -255,6 +262,47 @@ const ConfigPanel: React.FC = () => {
               onChange={handleLabelChange}
             />
           </FormGroup>
+
+          {/* Mirrors this node's ingress/egress handles. Needed for hub layouts
+              where sites sit to the right of a central transport node and so read
+              right-to-left. The DWDM node already has handles on all four sides. */}
+          {selectedNode.type !== NODE_TYPES.DWDM_NETWORK && (
+            <FormGroup label="Flow Direction">
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {FLOW_DIRECTION_OPTIONS.map((opt) => {
+                  const current = selectedNode.data?.flowDirectionLocked
+                    ? ((selectedNode.data?.flowDirection as string) || 'ltr')
+                    : 'auto';
+                  const active = current === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setNodeFlowDirection(selectedNode.id, opt.value)}
+                      title={opt.title}
+                      style={{
+                        flex: 1,
+                        padding: '5px 4px',
+                        fontSize: '10px',
+                        fontWeight: active ? 700 : 500,
+                        background: active ? 'rgba(0, 229, 255, 0.15)' : 'var(--bg-tertiary, #1e1e1e)',
+                        border: `1px solid ${active ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
+                        borderRadius: '4px',
+                        color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ margin: '6px 0 0 0', fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                Swaps which side this node's input and output handles sit on. Auto hands the
+                choice back to Tidy Layout. Shortcut: <b>M</b> mirrors the selection.
+              </p>
+            </FormGroup>
+          )}
 
           {selectedNode.type === NODE_TYPES.GROUP && (
             <div style={{ padding: '12px', background: 'rgba(0, 229, 255, 0.05)', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.15)', fontSize: '12px', color: '#00e5ff', marginBottom: '15px' }}>

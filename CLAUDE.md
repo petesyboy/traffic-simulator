@@ -154,6 +154,7 @@ JSON export/import (`.gvp` files) is also supported for sharing topologies via f
 - `Ctrl/Cmd+Z` — undo
 - `Ctrl/Cmd+Shift+Z` or `Ctrl+Y` — redo
 - `Space` — toggle simulation run/pause
+- `M` — mirror selected nodes between left-to-right and right-to-left flow
 - `Delete/Backspace` — delete selected nodes (ReactFlow native)
 
 ## Project Conventions
