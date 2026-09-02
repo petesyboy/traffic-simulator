@@ -69,4 +69,30 @@ describe('SiteEnclosures', () => {
     expect(html).toContain('site-enclosure');
     expect(html).toContain('site-enclosure-header');
   });
+
+  it('renders DWDM ring membership chip when equipment connects to a DWDM node', async () => {
+    const edges = [
+      { id: 'e1', source: 'ta1', target: 'dwdm1' },
+    ];
+
+    const nodes: CustomNode[] = [
+      { id: 'ta1', type: 'hardwareNode', position: { x: 50, y: 50 }, data: { label: 'TA25E', site: 'DC2' } } as CustomNode,
+      {
+        id: 'dwdm1',
+        type: 'dwdmNetworkNode',
+        position: { x: 200, y: 200 },
+        data: { label: 'DWDM Transport', wavelengthSpeed: '100G', protectionMode: 'Protected Ring (1+1)' },
+      } as CustomNode,
+    ];
+
+    const html = renderToStaticMarkup(
+      <ReactFlowProvider>
+        <SiteEnclosures nodes={nodes} edges={edges} enabled={true} />
+      </ReactFlowProvider>
+    );
+
+    expect(html).toContain('Data Centre: DC2');
+    expect(html).toContain('λ DWDM Ring · 100G Protected');
+    expect(html).toContain('site-enclosure-dwdm-chip');
+  });
 });

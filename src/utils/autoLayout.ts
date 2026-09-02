@@ -15,6 +15,7 @@
  */
 import type { Edge } from '@xyflow/react';
 import type { CustomNode } from '../store/types';
+import { NODE_TYPES } from '../constants/nodeTypes';
 
 const DEFAULT_NODE_WIDTH = 220;
 const DEFAULT_NODE_HEIGHT = 80;
@@ -217,21 +218,28 @@ function computeSiteOrder(
 function assignSiteAwarePositions(
   siteOrder: string[],
   siteGroups: Map<string, CustomNode[]>,
+  hubNodes: CustomNode[],
+  hubBoundaryMap: Map<string, number>,
   globalRank: Map<string, number>,
   sizeOf: Map<string, NodeSize>,
   succ: Map<string, string[]>,
   pred: Map<string, string[]>,
 ): Map<string, { x: number; y: number }> {
-  const maxRank = Math.max(0, ...Array.from(globalRank.values()));
+  // Max rank across all nodes (including hubs)
+  const allNodes: CustomNode[] = [];
+  siteGroups.forEach((nodes) => allNodes.push(...nodes));
+  allNodes.push(...hubNodes);
 
-  // Column widths match the widest node at each global pipeline stage across all sites
+  const maxRank = Math.max(0, ...allNodes.map((n) => globalRank.get(n.id) ?? 0));
+
+  // Column widths include both site nodes AND hub nodes so wide DWDM nodes don't overlap adjacent columns
   const colWidths: number[] = Array.from({ length: maxRank + 1 }, () => DEFAULT_NODE_WIDTH);
-  siteGroups.forEach((nodes) => {
-    nodes.forEach((n) => {
-      const r = globalRank.get(n.id) ?? 0;
-      const w = sizeOf.get(n.id)?.width ?? DEFAULT_NODE_WIDTH;
-      if (w > colWidths[r]) colWidths[r] = w;
-    });
+  allNodes.forEach((n) => {
+    const r = globalRank.get(n.id) ?? 0;
+    const w = sizeOf.get(n.id)?.width ?? DEFAULT_NODE_WIDTH;
+    if (r < colWidths.length && w > colWidths[r]) {
+      colWidths[r] = w;
+    }
   });
 
   const colX: number[] = [];
@@ -244,7 +252,7 @@ function assignSiteAwarePositions(
   const positions = new Map<string, { x: number; y: number }>();
   let currentY = TOP_MARGIN;
 
-  siteOrder.forEach((siteName) => {
+  siteOrder.forEach((siteName, siteIndex) => {
     const siteNodes = siteGroups.get(siteName) || [];
     if (siteNodes.length === 0) return;
 
@@ -277,7 +285,36 @@ function assignSiteAwarePositions(
       });
     });
 
-    currentY += siteMaxHeight + SITE_GAP_Y;
+    currentY += siteMaxHeight;
+
+    // Check if any hub nodes belong in the gutter after this site band
+    const hubsInThisGap = hubNodes.filter((h) => (hubBoundaryMap.get(h.id) ?? 0) === siteIndex);
+    if (hubsInThisGap.length > 0 && siteIndex < siteOrder.length - 1) {
+      const maxHubH = Math.max(...hubsInThisGap.map((h) => sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT));
+      const gapHeight = Math.max(SITE_GAP_Y, maxHubH + 2 * SITE_GAP_Y);
+
+      hubsInThisGap.forEach((h) => {
+        const hHeight = sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT;
+        const hubY = currentY + (gapHeight - hHeight) / 2;
+        const hubR = globalRank.get(h.id) ?? 0;
+        const hubX = colX[hubR] ?? LEFT_MARGIN;
+        positions.set(h.id, { x: hubX, y: hubY });
+      });
+
+      currentY += gapHeight;
+    } else {
+      currentY += SITE_GAP_Y;
+    }
+  });
+
+  // Fallback for any hub nodes not assigned to an inter-site gap
+  hubNodes.forEach((h) => {
+    if (!positions.has(h.id)) {
+      const hubR = globalRank.get(h.id) ?? 0;
+      const hubX = colX[hubR] ?? LEFT_MARGIN;
+      positions.set(h.id, { x: hubX, y: currentY });
+      currentY += (sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT) + SITE_GAP_Y;
+    }
   });
 
   return positions;
@@ -291,6 +328,10 @@ function assignSiteAwarePositions(
  * is present (e.g. `DC1`, `DC2`, `DC3`), nodes are clustered by data centre,
  * keeping equipment from the same facility together in dedicated horizontal
  * bands with clean inter-site routing, instead of piling all nodes into one giant column.
+ *
+ * Multi-site transport nodes (such as DWDM Optical Networks) are positioned
+ * in reserved inter-site gutters between the data centres they bridge,
+ * ensuring they never overlap local chassis or intrude on site boundaries.
  *
  * Grouped child nodes are left untouched - their position is relative to
  * their parent, which moves with the rest of its column as a single unit.
@@ -318,31 +359,51 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNod
   );
 
   if (explicitSites.size >= 2) {
-    // Multi-site layout: partition nodes into site groups
+    // Multi-site layout: separate genuine data centre nodes from transport hub nodes
+    const isDwdmOrWanNode = (n: CustomNode): boolean => {
+      if (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') return true;
+      const s = ((n.data?.site as string) || '').trim().toUpperCase();
+      if (s === 'WAN' || s === 'TRANSPORT') return true;
+      return false;
+    };
+
+    const hubNodes: CustomNode[] = [];
+    const nonHubTopLevelNodes: CustomNode[] = [];
+    topLevelNodes.forEach((n) => {
+      if (isDwdmOrWanNode(n)) {
+        hubNodes.push(n);
+      } else {
+        nonHubTopLevelNodes.push(n);
+      }
+    });
+
     const nodeSiteMap = new Map<string, string>();
 
-    // Pass 1: Tag nodes with their explicit site
-    topLevelNodes.forEach((n) => {
+    // Pass 1: Tag non-hub nodes with their explicit site
+    nonHubTopLevelNodes.forEach((n) => {
       const s = ((n.data?.site as string) || '').trim();
       if (s) nodeSiteMap.set(n.id, s);
     });
 
-    // Pass 2: For unassigned nodes, infer site if they only connect to one site
-    topLevelNodes.forEach((n) => {
+    // Pass 2: For unassigned non-hub nodes, infer site if they only connect to one site
+    nonHubTopLevelNodes.forEach((n) => {
       if (!nodeSiteMap.has(n.id)) {
         const neighbors = [...(succ.get(n.id) || []), ...(pred.get(n.id) || [])];
         const neighborSites = new Set(neighbors.map((nb) => nodeSiteMap.get(nb)).filter(Boolean));
         if (neighborSites.size === 1) {
           nodeSiteMap.set(n.id, Array.from(neighborSites)[0] as string);
+        } else if (neighborSites.size >= 2) {
+          hubNodes.push(n);
         } else {
-          nodeSiteMap.set(n.id, 'Shared / Transport');
+          nodeSiteMap.set(n.id, Array.from(explicitSites)[0] as string);
         }
       }
     });
 
+    const genuineSiteNodes = nonHubTopLevelNodes.filter((n) => nodeSiteMap.has(n.id) && !hubNodes.includes(n));
     const siteGroups = new Map<string, CustomNode[]>();
-    topLevelNodes.forEach((n) => {
-      const site = nodeSiteMap.get(n.id) || 'Shared / Transport';
+    genuineSiteNodes.forEach((n) => {
+      const site = nodeSiteMap.get(n.id)!;
       if (!siteGroups.has(site)) siteGroups.set(site, []);
       siteGroups.get(site)!.push(n);
     });
@@ -350,7 +411,66 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[]): CustomNod
     const allSiteNames = Array.from(siteGroups.keys());
     const siteOrder = computeSiteOrder(allSiteNames, siteGroups, edges, parentOf);
 
-    const positions = assignSiteAwarePositions(siteOrder, siteGroups, rank, sizeOf, succ, pred);
+    // Compute hub column rank from peer non-hub nodes (cycle-safe)
+    const hubIdSet = new Set(hubNodes.map((h) => h.id));
+    hubNodes.forEach((h) => {
+      const pRanks = (pred.get(h.id) || []).filter((id) => !hubIdSet.has(id)).map((id) => rank.get(id) ?? 0);
+      const sRanks = (succ.get(h.id) || []).filter((id) => !hubIdSet.has(id)).map((id) => rank.get(id) ?? 0);
+      const allPeerRanks = [...pRanks, ...sRanks];
+
+      let hubRank = 1;
+      if (pRanks.length > 0 && sRanks.length > 0) {
+        const maxP = Math.max(...pRanks);
+        const minS = Math.min(...sRanks);
+        if (maxP < minS) {
+          hubRank = maxP + 1;
+        } else {
+          // Bidirectional ring: derive from median peer rank
+          const sorted = [...allPeerRanks].sort((a, b) => a - b);
+          hubRank = sorted[Math.floor(sorted.length / 2)] ?? 1;
+        }
+      } else if (pRanks.length > 0) {
+        hubRank = Math.max(...pRanks) + 1;
+      } else if (sRanks.length > 0) {
+        hubRank = Math.max(0, Math.min(...sRanks) - 1);
+      } else if (allPeerRanks.length > 0) {
+        const sorted = [...allPeerRanks].sort((a, b) => a - b);
+        hubRank = sorted[Math.floor(sorted.length / 2)] ?? 1;
+      }
+      rank.set(h.id, hubRank);
+    });
+
+    // Determine target boundary gap for each hub (widen inter-site gutter nearest peers)
+    const hubBoundaryMap = new Map<string, number>();
+    hubNodes.forEach((h) => {
+      const neighbors = [...(succ.get(h.id) || []), ...(pred.get(h.id) || [])].filter((id) => !hubIdSet.has(id));
+      const peerSiteIndices = neighbors
+        .map((id) => {
+          const s = nodeSiteMap.get(id);
+          return s ? siteOrder.indexOf(s) : -1;
+        })
+        .filter((idx) => idx >= 0)
+        .sort((a, b) => a - b);
+
+      let targetGap = 0;
+      if (peerSiteIndices.length > 0) {
+        const minIdx = peerSiteIndices[0];
+        const maxIdx = peerSiteIndices[peerSiteIndices.length - 1];
+        targetGap = Math.min(siteOrder.length - 2, Math.max(0, Math.floor((minIdx + maxIdx) / 2)));
+      }
+      hubBoundaryMap.set(h.id, targetGap);
+    });
+
+    const positions = assignSiteAwarePositions(
+      siteOrder,
+      siteGroups,
+      hubNodes,
+      hubBoundaryMap,
+      rank,
+      sizeOf,
+      succ,
+      pred,
+    );
 
     return nodes.map((n) => {
       const pos = positions.get(n.id);
@@ -481,4 +601,88 @@ export function autoSpaceNodesForExport(nodes: CustomNode[]): CustomNode[] {
     return pos ? { ...n, position: pos } : n;
   });
 }
+
+/**
+ * Optimises source and target handles on edges connecting into or out of
+ * DWDM Optical Transport Network nodes (which declare in-top, in-bottom,
+ * in-left, in-right, out-top, out-bottom, out-left, out-right).
+ *
+ * Gated strictly to nodes of type DWDM_NETWORK so peer chassis and tools
+ * retain their standard handles.
+ */
+export function optimizeDwdmEdgeHandles(nodes: CustomNode[], edges: Edge[]): Edge[] {
+  const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
+  const sizeMap = new Map<string, NodeSize>(nodes.map((n) => [n.id, nodeSize(n)]));
+
+  let changed = false;
+  const newEdges = edges.map((edge) => {
+    const srcNode = nodeMap.get(edge.source);
+    const tgtNode = nodeMap.get(edge.target);
+    if (!srcNode || !tgtNode) return edge;
+
+    const isSrcDwdm = srcNode.type === NODE_TYPES.DWDM_NETWORK || srcNode.type === 'dwdmNetworkNode';
+    const isTgtDwdm = tgtNode.type === NODE_TYPES.DWDM_NETWORK || tgtNode.type === 'dwdmNetworkNode';
+
+    // Gate strictly to DWDM nodes
+    if (!isSrcDwdm && !isTgtDwdm) return edge;
+
+    const srcPos = srcNode.position;
+    const tgtPos = tgtNode.position;
+    const srcSize = sizeMap.get(srcNode.id) || { width: DEFAULT_NODE_WIDTH, height: DEFAULT_NODE_HEIGHT };
+    const tgtSize = sizeMap.get(tgtNode.id) || { width: DEFAULT_NODE_WIDTH, height: DEFAULT_NODE_HEIGHT };
+
+    const srcCenter = { x: srcPos.x + srcSize.width / 2, y: srcPos.y + srcSize.height / 2 };
+    const tgtCenter = { x: tgtPos.x + tgtSize.width / 2, y: tgtPos.y + tgtSize.height / 2 };
+
+    let newSourceHandle = edge.sourceHandle;
+    let newTargetHandle = edge.targetHandle;
+
+    if (isTgtDwdm) {
+      // Edge enters DWDM: evaluate vector from DWDM centre to source centre
+      const dx = srcCenter.x - tgtCenter.x;
+      const dy = srcCenter.y - tgtCenter.y;
+      const hThreshold = tgtSize.height * 0.35;
+
+      if (dy < -hThreshold && Math.abs(dy) > Math.abs(dx) * 0.35) {
+        newTargetHandle = 'in-top';
+      } else if (dy > hThreshold && Math.abs(dy) > Math.abs(dx) * 0.35) {
+        newTargetHandle = 'in-bottom';
+      } else if (dx < 0) {
+        newTargetHandle = 'in-left';
+      } else {
+        newTargetHandle = 'in-right';
+      }
+    }
+
+    if (isSrcDwdm) {
+      // Edge leaves DWDM: evaluate vector from DWDM centre to target centre
+      const dx = tgtCenter.x - srcCenter.x;
+      const dy = tgtCenter.y - srcCenter.y;
+      const hThreshold = srcSize.height * 0.35;
+
+      if (dy < -hThreshold && Math.abs(dy) > Math.abs(dx) * 0.35) {
+        newSourceHandle = 'out-top';
+      } else if (dy > hThreshold && Math.abs(dy) > Math.abs(dx) * 0.35) {
+        newSourceHandle = 'out-bottom';
+      } else if (dx > 0) {
+        newSourceHandle = 'out-right';
+      } else {
+        newSourceHandle = 'out-left';
+      }
+    }
+
+    if (newSourceHandle !== edge.sourceHandle || newTargetHandle !== edge.targetHandle) {
+      changed = true;
+      return {
+        ...edge,
+        sourceHandle: newSourceHandle,
+        targetHandle: newTargetHandle,
+      };
+    }
+    return edge;
+  });
+
+  return changed ? newEdges : edges;
+}
+
 

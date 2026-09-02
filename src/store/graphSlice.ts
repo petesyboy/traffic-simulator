@@ -15,7 +15,7 @@ import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
 import { getRequiredPortCount, isTapUnconfigured, getOpticCage } from '../utils/ports';
-import { computeTidyLayout, autoSpaceNodesForExport } from '../utils/autoLayout';
+import { computeTidyLayout, autoSpaceNodesForExport, optimizeDwdmEdgeHandles } from '../utils/autoLayout';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
 import { formatBandwidth } from '../utils/format';
@@ -59,6 +59,7 @@ export interface GraphSlice {
   setExportDiagramMode: (val: boolean) => void;
   snapAllNodesToGrid: () => void;
   tidyLayout: () => void;
+  optimizeDwdmHandles: () => void;
   clearCanvas: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
@@ -297,7 +298,18 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     }
   },
   snapAllNodesToGrid: () => { get().pushHistory(); set({ nodes: get().nodes.map((node) => ({ ...node, position: { x: Math.round(node.position.x / 15) * 15, y: Math.round(node.position.y / 15) * 15 } })) }); },
-  tidyLayout: () => { get().pushHistory(); set({ nodes: computeTidyLayout(get().nodes, get().edges), fitViewTrigger: get().fitViewTrigger + 1 }); },
+  tidyLayout: () => {
+    get().pushHistory();
+    const newNodes = computeTidyLayout(get().nodes, get().edges);
+    const newEdges = optimizeDwdmEdgeHandles(newNodes, get().edges);
+    set({ nodes: newNodes, edges: newEdges, fitViewTrigger: get().fitViewTrigger + 1 });
+  },
+  optimizeDwdmHandles: () => {
+    const nextEdges = optimizeDwdmEdgeHandles(get().nodes, get().edges);
+    if (nextEdges !== get().edges) {
+      set({ edges: nextEdges });
+    }
+  },
   clearCanvas: () => {
     get().pushHistory();
     set({ nodes: [], edges: [], selectedNodeId: null, isRunning: false, activeEdges: [], blockedEdges: [], encryptedEdges: [], decryptedEdges: [], trafficStreams: [], deliveredStreams: [], uniqueEgressMbps: 0 });

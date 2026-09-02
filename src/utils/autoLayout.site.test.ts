@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { Edge } from '@xyflow/react';
 import type { CustomNode } from '../store/types';
-import { computeTidyLayout } from './autoLayout';
+import { computeTidyLayout, optimizeDwdmEdgeHandles } from './autoLayout';
 
-const node = (id: string, x: number, y: number, site?: string, overrides: Partial<CustomNode> = {}): CustomNode =>
+const node = (id: string, x: number, y: number, site?: string, overrides: Record<string, any> = {}): CustomNode =>
   ({
     id,
     type: 'inputNode',
@@ -161,5 +161,133 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     once.forEach((n, i) => {
       expect(twice[i].position).toEqual(n.position);
     });
+  });
+
+  it('positions DWDM network hub in an inter-site gutter without overlapping any data centre band', () => {
+    // 3 data centres (DC3, DC2, DC1) interconnected via a central DWDM transport network
+    const nodes: CustomNode[] = [
+      // DC3
+      node('dc3-in', 0, 0, 'DC3'),
+      node('dc3-ta', 100, 0, 'DC3', { type: 'hardwareNode' }),
+
+      // DC2
+      node('dc2-in', 0, 300, 'DC2'),
+      node('dc2-ta', 100, 300, 'DC2', { type: 'hardwareNode' }),
+
+      // DC1
+      node('dc1-in', 0, 600, 'DC1'),
+      node('dc1-hc', 200, 600, 'DC1', { type: 'hardwareNode' }),
+
+      // DWDM Optical Transport Network (connects DC3 & DC2 to DC1)
+      node('dwdm-ring', 150, 400, undefined, {
+        type: 'dwdmNetworkNode',
+        width: 280,
+        height: 135,
+        data: { label: 'DWDM Transport Network', wavelengthSpeed: '100G', protectionMode: 'Protected Ring (1+1)' },
+      }),
+    ];
+
+    const edges: Edge[] = [
+      edge('dc3-in', 'dc3-ta'),
+      edge('dc2-in', 'dc2-ta'),
+      edge('dc1-in', 'dc1-hc'),
+
+      // Cross-site WAN connections through DWDM
+      edge('dc3-ta', 'dwdm-ring'),
+      edge('dc2-ta', 'dwdm-ring'),
+      edge('dwdm-ring', 'dc1-hc'),
+    ];
+
+    const result = computeTidyLayout(nodes, edges);
+    const posMap = new Map(result.map((n) => [n.id, n.position]));
+
+    const dwdmY = posMap.get('dwdm-ring')!.y;
+    const dwdmHeight = 135;
+    const dwdmBottom = dwdmY + dwdmHeight;
+
+    // Verify non-overlap with all site bands
+    ['DC3', 'DC2', 'DC1'].forEach((site) => {
+      const siteNodes = result.filter((n) => n.data?.site === site);
+      const siteMinY = Math.min(...siteNodes.map((n) => n.position.y));
+      const siteMaxY = Math.max(...siteNodes.map((n) => n.position.y + 80)); // 80 default height
+
+      // The DWDM vertical span [dwdmY, dwdmBottom] must NOT overlap [siteMinY, siteMaxY]
+      const overlaps = Math.max(dwdmY, siteMinY) < Math.min(dwdmBottom, siteMaxY);
+      expect(overlaps).toBe(false);
+    });
+
+    // Idempotency with DWDM hub present
+    const twice = computeTidyLayout(result, edges);
+    result.forEach((n, i) => {
+      expect(twice[i].position).toEqual(n.position);
+    });
+  });
+
+  it('correctly derives column rank for bidirectional rings without collapsing to column 0', () => {
+    // Bidirectional ring where DC1 chassis connects to DWDM and DWDM connects back to DC1 chassis
+    const nodes: CustomNode[] = [
+      node('dc2-ta', 100, 0, 'DC2', { type: 'hardwareNode' }),
+      node('dc1-ta', 100, 300, 'DC1', { type: 'hardwareNode' }),
+      node('dwdm-ring', 0, 0, undefined, {
+        type: 'dwdmNetworkNode',
+        width: 280,
+        height: 135,
+        data: { label: 'DWDM Ring' },
+      }),
+    ];
+
+    const edges: Edge[] = [
+      edge('dc2-ta', 'dwdm-ring'),
+      edge('dwdm-ring', 'dc2-ta'),
+      edge('dc1-ta', 'dwdm-ring'),
+      edge('dwdm-ring', 'dc1-ta'),
+    ];
+
+    const result = computeTidyLayout(nodes, edges);
+    const posMap = new Map(result.map((n) => [n.id, n.position]));
+
+    const taX = posMap.get('dc2-ta')!.x;
+    const dwdmX = posMap.get('dwdm-ring')!.x;
+
+    // Because DC2 TA is rank 0 (or peer rank), DWDM should not collapse or collide
+    expect(dwdmX).toBeGreaterThanOrEqual(taX);
+  });
+
+  it('assigns directional handles on DWDM node based on relative node geometry', () => {
+    const dwdm = node('dwdm', 200, 300, undefined, {
+      type: 'dwdmNetworkNode',
+      width: 280,
+      height: 135,
+    });
+    // Node clearly above DWDM
+    const aboveNode = node('above', 200, 50, 'DC3', { type: 'hardwareNode' });
+    // Node clearly below DWDM
+    const belowNode = node('below', 200, 600, 'DC1', { type: 'hardwareNode' });
+    // Node clearly to the left of DWDM
+    const leftNode = node('left', 0, 300, 'DC2', { type: 'hardwareNode' });
+    // Node clearly to the right of DWDM
+    const rightNode = node('right', 600, 300, 'DC1', { type: 'hardwareNode' });
+
+    const edges: Edge[] = [
+      edge('above', 'dwdm'),
+      edge('below', 'dwdm'),
+      edge('left', 'dwdm'),
+      edge('dwdm', 'right'),
+      edge('dwdm', 'above'),
+    ];
+
+    const optimized = optimizeDwdmEdgeHandles([dwdm, aboveNode, belowNode, leftNode, rightNode], edges);
+    const edgeMap = new Map(optimized.map((e) => [e.id, e]));
+
+    // Incoming from above enters top handle
+    expect(edgeMap.get('above-dwdm')?.targetHandle).toBe('in-top');
+    // Incoming from below enters bottom handle
+    expect(edgeMap.get('below-dwdm')?.targetHandle).toBe('in-bottom');
+    // Incoming from left enters left handle
+    expect(edgeMap.get('left-dwdm')?.targetHandle).toBe('in-left');
+    // Outgoing to right leaves from right handle
+    expect(edgeMap.get('dwdm-right')?.sourceHandle).toBe('out-right');
+    // Outgoing to above leaves from top handle
+    expect(edgeMap.get('dwdm-above')?.sourceHandle).toBe('out-top');
   });
 });

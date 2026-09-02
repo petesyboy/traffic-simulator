@@ -416,6 +416,22 @@ const CanvasArea: React.FC = () => {
   // Checkpoint once at the start of a drag gesture (not per-pixel) so undo reverts
   // the whole move in one step rather than only its last increment.
   const onNodeDragStart = useCallback(() => pushHistory(), [pushHistory]);
+
+  const optimizeDwdmHandles = useStore((state) => state.optimizeDwdmHandles);
+  const onNodeDragStop = useCallback(
+    (_event: unknown, node: CustomNode) => {
+      const isDwdm = node.type === NODE_TYPES.DWDM_NETWORK || node.type === 'dwdmNetworkNode';
+      const isConnectedToDwdm = edges.some(
+        (e) =>
+          (e.source === node.id && nodes.find((n) => n.id === e.target)?.type === NODE_TYPES.DWDM_NETWORK) ||
+          (e.target === node.id && nodes.find((n) => n.id === e.source)?.type === NODE_TYPES.DWDM_NETWORK),
+      );
+      if (isDwdm || isConnectedToDwdm) {
+        optimizeDwdmHandles();
+      }
+    },
+    [edges, nodes, optimizeDwdmHandles],
+  );
   
   const selectedInputCount = nodes.filter(n => n.selected && n.type === 'inputNode').length;
   const selectedGroupCount = nodes.filter(n => n.selected && n.type === 'groupNode').length;
@@ -445,7 +461,7 @@ const CanvasArea: React.FC = () => {
         nodes={canvasNodes} edges={styledEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
-        onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart}
+        onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart} onNodeDragStop={onNodeDragStop}
         onNodeDoubleClick={(_, node) => { const s = useStore.getState(); s.setGlowingNodeId(s.glowingNodeId === node.id ? null : node.id); }}
         onPaneClick={() => useStore.getState().setGlowingNodeId(null)}
         deleteKeyCode={['Backspace', 'Delete']} nodeOrigin={[0.5, 0.5]} snapToGrid={snapToGrid} snapGrid={[15, 15]}
@@ -485,7 +501,7 @@ const CanvasArea: React.FC = () => {
       </ReactFlow>
 
       <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
-      <SiteEnclosures nodes={canvasNodes} enabled={showSiteEnclosures} />
+      <SiteEnclosures nodes={canvasNodes} edges={edges} enabled={showSiteEnclosures} />
       <GroupingBanner
         selectedInputCount={selectedInputCount}
         selectedGroupCount={selectedGroupCount}

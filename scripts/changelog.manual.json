@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.726",
+    "date": "2026-09-02",
+    "summary": "Implemented central WAN hub layout for DWDM transport networks with reserved inter-site gutters, directional 8-way handle optimisation, cycle-safe peer column ranking, and interactive data centre DWDM ring membership indicators."
+  },
+  {
     "version": "1.0.725",
     "date": "2026-09-02",
     "summary": "Refined report traffic source terminology: dynamically adapted topology diagrams, schematics, and work orders to specify 'SPAN allocations', 'TAP allocations', or 'TAP/SPAN allocations' based on actual deployed sources rather than hardcoding TAP references."

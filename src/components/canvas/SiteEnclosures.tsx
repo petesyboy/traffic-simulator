@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { useViewport, useReactFlow } from '@xyflow/react';
-import { type CustomNode } from '../../store/types';
+import { useViewport, useReactFlow, type Edge } from '@xyflow/react';
+import { type CustomNode, useStore } from '../../store/store';
 import { isAutoTrayModel } from '../../utils/trayModels';
+import { NODE_TYPES } from '../../constants/nodeTypes';
 
 interface SiteEnclosuresProps {
   nodes: CustomNode[];
+  edges?: Edge[];
   enabled?: boolean;
 }
 
@@ -31,9 +33,11 @@ function getSitePalette(siteName: string, index: number) {
   return SITE_PALETTES[idx];
 }
 
-export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, enabled = true }) => {
+export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: propEdges, enabled = true }) => {
   const { x: vpX, y: vpY, zoom } = useViewport();
   const { getNodesBounds } = useReactFlow();
+  const storeEdges = useStore((state) => state.edges);
+  const edges = propEdges ?? storeEdges ?? [];
 
   const siteGroups = useMemo(() => {
     if (!enabled) return [];
@@ -73,6 +77,22 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, enabled =
 
         const palette = getSitePalette(site, idx);
 
+        // Check if any node in this site is connected to a DWDM Optical Transport node
+        const siteNodeIdSet = new Set(siteNodes.map((n) => n.id));
+        const connectedDwdm = nodes.find(
+          (n) =>
+            (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') &&
+            edges.some(
+              (e) =>
+                (siteNodeIdSet.has(e.source) && e.target === n.id) ||
+                (siteNodeIdSet.has(e.target) && e.source === n.id),
+            ),
+        );
+
+        const dwdmSpeed = connectedDwdm ? (connectedDwdm.data?.wavelengthSpeed as string) || '100G' : '';
+        const dwdmProt = connectedDwdm ? (connectedDwdm.data?.protectionMode as string) || 'Protected Ring (1+1)' : '';
+        const dwdmShortProt = dwdmProt.includes('1+1') ? 'Protected' : dwdmProt.includes('Mesh') ? 'Mesh' : 'Unprotected';
+
         return (
           <div
             key={`site-enclosure-${site}`}
@@ -108,6 +128,27 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, enabled =
               >
                 {siteNodes.length} {siteNodes.length === 1 ? 'device' : 'devices'}
               </span>
+              {connectedDwdm && (
+                <span
+                  className="site-enclosure-dwdm-chip"
+                  style={{
+                    background: 'rgba(168, 85, 247, 0.2)',
+                    color: '#e9d5ff',
+                    border: '1px solid rgba(168, 85, 247, 0.5)',
+                    borderRadius: '10px',
+                    padding: '1px 7px',
+                    fontSize: '9.5px',
+                    fontWeight: 600,
+                    letterSpacing: '0.2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title={`Interconnected via ${dwdmSpeed} Optical Transport Network (${dwdmProt})`}
+                >
+                  λ DWDM Ring · {dwdmSpeed} {dwdmShortProt}
+                </span>
+              )}
             </div>
           </div>
         );

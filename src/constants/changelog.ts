@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.726",
+    date: "2026-09-02",
+    summary: "Implemented central WAN hub layout for DWDM transport networks with reserved inter-site gutters, directional 8-way handle optimisation, cycle-safe peer column ranking, and interactive data centre DWDM ring membership indicators.",
+  },
+  {
     version: "1.0.725",
     date: "2026-09-02",
     summary: "Refined report traffic source terminology: dynamically adapted topology diagrams, schematics, and work orders to specify 'SPAN allocations', 'TAP allocations', or 'TAP/SPAN allocations' based on actual deployed sources rather than hardcoding TAP references.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.707",
     date: "2026-09-01",
     summary: "Added Multi-Edition build pipelines (Internal vs Partner), GigaSMART reduction metrics, tool cluster load balancing, and dynamic site input improvements.",
-  },
-  {
-    version: "1.0.700",
-    date: "2026-08-30",
-    summary: "Added link utilisation level selector for traffic generation.",
   },
 ];
