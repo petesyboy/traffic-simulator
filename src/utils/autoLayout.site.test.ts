@@ -75,17 +75,15 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     // Find vertical bounds (minY, maxY) for each data centre
     const dc3Ys = result.filter((n) => n.data?.site === 'DC3').map((n) => n.position.y);
     const dc2Ys = result.filter((n) => n.data?.site === 'DC2').map((n) => n.position.y);
-    const dc1Ys = result.filter((n) => n.data?.site === 'DC1').map((n) => n.position.y);
 
     const maxDc3Y = Math.max(...dc3Ys);
-    const minDc2Y = Math.min(...dc2Ys), maxDc2Y = Math.max(...dc2Ys);
-    const minDc1Y = Math.min(...dc1Ys);
+    const minDc2Y = Math.min(...dc2Ys);
 
-    // DC3 and DC2 are upstream of DC1, so DC3 and DC2 sit above DC1
+    // DC3 and DC2 are upstream of DC1, so DC3 and DC2 sit on the West side stacked vertically,
+    // and DC1 sits downstream on the East side
     expect(maxDc3Y).toBeLessThan(minDc2Y);
-    expect(maxDc2Y).toBeLessThan(minDc1Y);
 
-    // Check horizontal column alignment:
+    // Check horizontal column alignment within each site's local coordinate space:
     // In DC3, all SPANs share the same column X, and TA25 is strictly downstream
     const dc3SpanX = posMap.get('dc3-span1')!.x;
     expect(posMap.get('dc3-span2')!.x).toBe(dc3SpanX);
@@ -95,21 +93,25 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
 
     // In DC2, all SPANs share the same column X, and TA200 is strictly downstream
     const dc2SpanX = posMap.get('dc2-span1')!.x;
-    expect(dc2SpanX).toBe(dc3SpanX); // Aligned to global Col 0
+    expect(posMap.get('dc2-span2')!.x).toBe(dc2SpanX);
+    expect(posMap.get('dc2-span3')!.x).toBe(dc2SpanX);
+    expect(posMap.get('dc2-span4')!.x).toBe(dc2SpanX);
     expect(posMap.get('dc2-ta200')!.x).toBeGreaterThan(dc2SpanX);
 
-    // In DC1, SPANs -> TA200 -> HC1-Plus -> Tool follow strictly increasing X coordinates
+    // In DC1, SPANs -> TA200 -> HC1-Plus -> Tool follow strictly increasing local X coordinates
     const dc1SpanX = posMap.get('dc1-span1')!.x;
     const dc1TaX = posMap.get('dc1-ta200')!.x;
     const dc1Hc1pX = posMap.get('dc1-hc1p')!.x;
     const dc1ToolX = posMap.get('dc1-tool')!.x;
 
-    expect(dc1SpanX).toBe(dc3SpanX); // Aligned to global Col 0
-    expect(dc1TaX).toBe(posMap.get('dc3-ta25')!.x); // Aligned to global Col 1
-    expect(dc1Hc1pX).toBeGreaterThan(dc1TaX); // Col 2
-    expect(dc1ToolX).toBeGreaterThan(dc1Hc1pX); // Col 3
+    expect(posMap.get('dc1-span2')!.x).toBe(dc1SpanX);
+    expect(dc1TaX).toBeGreaterThan(dc1SpanX);
+    expect(dc1Hc1pX).toBeGreaterThan(dc1TaX);
+    expect(dc1ToolX).toBeGreaterThan(dc1Hc1pX);
 
-    // Inter-site links from DC3 TA25 and DC2 TA200 flow forward (left-to-right) into DC1 HC1-Plus
+    // DC1 is downstream on the East side, so DC1 sits to the right of upstream West sites
+    expect(dc1SpanX).toBeGreaterThan(posMap.get('dc3-ta25')!.x);
+    expect(dc1SpanX).toBeGreaterThan(posMap.get('dc2-ta200')!.x);
     expect(posMap.get('dc3-ta25')!.x).toBeLessThan(posMap.get('dc1-hc1p')!.x);
     expect(posMap.get('dc2-ta200')!.x).toBeLessThan(posMap.get('dc1-hc1p')!.x);
   });
@@ -163,7 +165,7 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     });
   });
 
-  it('positions DWDM network hub in an inter-site gutter without overlapping any data centre band', () => {
+  it('positions DWDM network hub in central channel between West and East sites without overlapping site enclosures', () => {
     // 3 data centres (DC3, DC2, DC1) interconnected via a central DWDM transport network
     const nodes: CustomNode[] = [
       // DC3
@@ -201,19 +203,33 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     const result = computeTidyLayout(nodes, edges);
     const posMap = new Map(result.map((n) => [n.id, n.position]));
 
+    const dwdmX = posMap.get('dwdm-ring')!.x;
     const dwdmY = posMap.get('dwdm-ring')!.y;
+    const dwdmWidth = 280;
     const dwdmHeight = 135;
     const dwdmBottom = dwdmY + dwdmHeight;
 
-    // Verify non-overlap with all site bands
+    // Upstream sites (DC3, DC2) sit West of DWDM; downstream site (DC1) sits East of DWDM
+    const westMaxX = Math.max(
+      posMap.get('dc3-ta')!.x + 220,
+      posMap.get('dc2-ta')!.x + 220,
+    );
+    const eastMinX = Math.min(posMap.get('dc1-in')!.x, posMap.get('dc1-hc')!.x);
+
+    expect(dwdmX).toBeGreaterThanOrEqual(westMaxX);
+    expect(dwdmX + dwdmWidth).toBeLessThanOrEqual(eastMinX);
+
+    // Verify 2D non-overlap with all site enclosures
     ['DC3', 'DC2', 'DC1'].forEach((site) => {
       const siteNodes = result.filter((n) => n.data?.site === site);
+      const siteMinX = Math.min(...siteNodes.map((n) => n.position.x));
+      const siteMaxX = Math.max(...siteNodes.map((n) => n.position.x + 220));
       const siteMinY = Math.min(...siteNodes.map((n) => n.position.y));
-      const siteMaxY = Math.max(...siteNodes.map((n) => n.position.y + 80)); // 80 default height
+      const siteMaxY = Math.max(...siteNodes.map((n) => n.position.y + 80));
 
-      // The DWDM vertical span [dwdmY, dwdmBottom] must NOT overlap [siteMinY, siteMaxY]
-      const overlaps = Math.max(dwdmY, siteMinY) < Math.min(dwdmBottom, siteMaxY);
-      expect(overlaps).toBe(false);
+      const overlapsX = Math.max(dwdmX, siteMinX) < Math.min(dwdmX + dwdmWidth, siteMaxX);
+      const overlapsY = Math.max(dwdmY, siteMinY) < Math.min(dwdmBottom, siteMaxY);
+      expect(overlapsX && overlapsY).toBe(false);
     });
 
     // Idempotency with DWDM hub present
@@ -221,6 +237,92 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     result.forEach((n, i) => {
       expect(twice[i].position).toEqual(n.position);
     });
+  });
+
+  it('confines flow direction propagation to its own site without bleeding through DWDM hub', () => {
+    const nodes: CustomNode[] = [
+      // DC3: locked RTL on a tool node
+      node('dc3-tap', 0, 0, 'DC3'),
+      node('dc3-ta', 100, 0, 'DC3', { type: 'hardwareNode' }),
+      node('dc3-tool', 200, 0, 'DC3', {
+        type: 'toolNode',
+        data: { flowDirection: 'rtl', flowDirectionLocked: true, site: 'DC3' },
+      }),
+
+      // DWDM hub
+      node('dwdm-ring', 300, 100, undefined, {
+        type: 'dwdmNetworkNode',
+        width: 280,
+        height: 135,
+      }),
+
+      // DC1: unconfigured flow direction (should remain LTR, not infected by DC3's RTL)
+      node('dc1-tap', 0, 300, 'DC1'),
+      node('dc1-ta', 100, 300, 'DC1', { type: 'hardwareNode' }),
+    ];
+
+    const edges: Edge[] = [
+      edge('dc3-tap', 'dc3-ta'),
+      edge('dc3-ta', 'dc3-tool'),
+      edge('dc3-ta', 'dwdm-ring'),
+      edge('dwdm-ring', 'dc1-ta'),
+      edge('dc1-tap', 'dc1-ta'),
+    ];
+
+    const result = computeTidyLayout(nodes, edges);
+    const dc1Tap = result.find((n) => n.id === 'dc1-tap')!;
+    const dc1Ta = result.find((n) => n.id === 'dc1-ta')!;
+
+    // DC1 TAP (source) must remain to the left of DC1 TA (downstream)
+    expect(dc1Tap.position.x).toBeLessThan(dc1Ta.position.x);
+    // DC1 must not have flowDirection set to RTL
+    expect(dc1Tap.data?.flowDirection).not.toBe('rtl');
+  });
+
+  it('greedily balances sites by node count on bidirectional DWDM rings', () => {
+    // 3 sites on a bidirectional ring: DC1 has 14 nodes, DC2 has 7 nodes, DC3 has 7 nodes
+    const nodes: CustomNode[] = [];
+    const edges: Edge[] = [];
+
+    // DC1 (14 nodes)
+    for (let i = 0; i < 14; i++) {
+      nodes.push(node(`dc1-n${i}`, 0, i * 40, 'DC1'));
+    }
+    // DC2 (7 nodes)
+    for (let i = 0; i < 7; i++) {
+      nodes.push(node(`dc2-n${i}`, 100, i * 40, 'DC2'));
+    }
+    // DC3 (7 nodes)
+    for (let i = 0; i < 7; i++) {
+      nodes.push(node(`dc3-n${i}`, 200, i * 40, 'DC3'));
+    }
+
+    const dwdm = node('dwdm-ring', 150, 0, undefined, {
+      type: 'dwdmNetworkNode',
+      width: 280,
+      height: 135,
+    });
+    nodes.push(dwdm);
+
+    // Bidirectional connections between all sites and DWDM
+    ['dc1-n0', 'dc2-n0', 'dc3-n0'].forEach((chassisId) => {
+      edges.push(edge(chassisId, 'dwdm-ring'));
+      edges.push(edge('dwdm-ring', chassisId));
+    });
+
+    const result = computeTidyLayout(nodes, edges);
+    const posMap = new Map(result.map((n) => [n.id, n.position]));
+
+    const dc1X = posMap.get('dc1-n0')!.x;
+    const dwdmX = posMap.get('dwdm-ring')!.x;
+    const dc2X = posMap.get('dc2-n0')!.x;
+    const dc3X = posMap.get('dc3-n0')!.x;
+
+    // DC1 (14 nodes) is placed West of DWDM
+    expect(dc1X).toBeLessThan(dwdmX);
+    // DC2 (7 nodes) and DC3 (7 nodes) are placed East of DWDM (14 vs 14 balance)
+    expect(dc2X).toBeGreaterThan(dwdmX);
+    expect(dc3X).toBeGreaterThan(dwdmX);
   });
 
   it('correctly derives column rank for bidirectional rings without collapsing to column 0', () => {
@@ -246,11 +348,13 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     const result = computeTidyLayout(nodes, edges);
     const posMap = new Map(result.map((n) => [n.id, n.position]));
 
-    const taX = posMap.get('dc2-ta')!.x;
+    const dc1X = posMap.get('dc1-ta')!.x;
+    const dc2X = posMap.get('dc2-ta')!.x;
     const dwdmX = posMap.get('dwdm-ring')!.x;
 
-    // Because DC2 TA is rank 0 (or peer rank), DWDM should not collapse or collide
-    expect(dwdmX).toBeGreaterThanOrEqual(taX);
+    // DWDM is positioned in the central channel between the two peer sites without collapsing or colliding
+    expect(Math.min(dc1X, dc2X)).toBeLessThan(dwdmX);
+    expect(Math.max(dc1X, dc2X)).toBeGreaterThan(dwdmX);
   });
 
   it('assigns directional handles on DWDM node based on relative node geometry', () => {

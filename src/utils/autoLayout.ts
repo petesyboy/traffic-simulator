@@ -161,13 +161,16 @@ function assignPositions(columns: string[][], sizeOf: Map<string, NodeSize>): Ma
 }
 
 const SITE_GAP_Y = 100;
+const SITE_GAP_X = 140;
+const HUB_GAP_X = 160;
 
-function computeSiteOrder(
+function computeSiteRanks(
   siteNames: string[],
   siteGroups: Map<string, CustomNode[]>,
+  hubNodes: CustomNode[],
   edges: Edge[],
   parentOf: Map<string, string>,
-): string[] {
+): { siteRank: Map<string, number>; siteMedianY: Map<string, number> } {
   // Map node ID to its site
   const nodeToSite = new Map<string, string>();
   siteGroups.forEach((nodes, site) => {
@@ -193,6 +196,36 @@ function computeSiteOrder(
     }
   });
 
+  // Trace inter-site dependencies through transport hubs (e.g. srcSite -> Hub -> tgtSite)
+  if (hubNodes.length > 0) {
+    hubNodes.forEach((h) => {
+      const hubInSites = new Set<string>();
+      const hubOutSites = new Set<string>();
+
+      edges.forEach((e) => {
+        const src = layoutId(e.source, parentOf);
+        const tgt = layoutId(e.target, parentOf);
+        if (tgt === h.id) {
+          const s = nodeToSite.get(src);
+          if (s) hubInSites.add(s);
+        }
+        if (src === h.id) {
+          const s = nodeToSite.get(tgt);
+          if (s) hubOutSites.add(s);
+        }
+      });
+
+      hubInSites.forEach((inSite) => {
+        hubOutSites.forEach((outSite) => {
+          if (inSite !== outSite) {
+            siteSucc.get(inSite)?.add(outSite);
+            sitePred.get(outSite)?.add(inSite);
+          }
+        });
+      });
+    });
+  }
+
   // Compute site ranks (distance from upstream leaf sites)
   const siteRank = new Map<string, number>();
   const visiting = new Set<string>();
@@ -213,124 +246,108 @@ function computeSiteOrder(
 
   siteNames.forEach(dfsSite);
 
-  // For sites with the same topological rank, sort by their current median Y on canvas
-  function medianY(site: string): number {
-    const nodes = siteGroups.get(site) || [];
-    if (nodes.length === 0) return 0;
-    const ys = nodes.map((n) => n.position.y).sort((a, b) => a - b);
-    return ys[Math.floor(ys.length / 2)];
-  }
-
-  return [...siteNames].sort((a, b) => {
-    const rankDiff = (siteRank.get(a) ?? 0) - (siteRank.get(b) ?? 0);
-    if (rankDiff !== 0) return rankDiff;
-    return medianY(a) - medianY(b);
+  // Measure median Y coordinate on canvas for each site
+  const siteMedianY = new Map<string, number>();
+  siteNames.forEach((s) => {
+    const nodes = siteGroups.get(s) || [];
+    if (nodes.length === 0) {
+      siteMedianY.set(s, 0);
+    } else {
+      const ys = nodes.map((n) => n.position.y).sort((a, b) => a - b);
+      siteMedianY.set(s, ys[Math.floor(ys.length / 2)]);
+    }
   });
+
+  return { siteRank, siteMedianY };
 }
 
-function assignSiteAwarePositions(
-  siteOrder: string[],
-  siteGroups: Map<string, CustomNode[]>,
+function getSiteHubRole(
+  _siteName: string,
+  siteNodes: CustomNode[],
   hubNodes: CustomNode[],
-  hubBoundaryMap: Map<string, number>,
-  globalRank: Map<string, number>,
-  sizeOf: Map<string, NodeSize>,
-  succ: Map<string, string[]>,
-  pred: Map<string, string[]>,
-): Map<string, { x: number; y: number }> {
-  // Max rank across all nodes (including hubs)
-  const allNodes: CustomNode[] = [];
-  siteGroups.forEach((nodes) => allNodes.push(...nodes));
-  allNodes.push(...hubNodes);
+  edges: Edge[],
+  parentOf: Map<string, string>,
+): 'source' | 'sink' | 'peer' | 'none' {
+  if (hubNodes.length === 0) return 'none';
+  const siteNodeIds = new Set(siteNodes.map((n) => n.id));
+  const hubNodeIds = new Set(hubNodes.map((h) => h.id));
 
-  const maxRank = Math.max(0, ...allNodes.map((n) => globalRank.get(n.id) ?? 0));
+  let sendsToHub = false;
+  let receivesFromHub = false;
 
-  // Column widths include both site nodes AND hub nodes so wide DWDM nodes don't overlap adjacent columns
-  const colWidths: number[] = Array.from({ length: maxRank + 1 }, () => DEFAULT_NODE_WIDTH);
-  allNodes.forEach((n) => {
-    const r = globalRank.get(n.id) ?? 0;
-    const w = sizeOf.get(n.id)?.width ?? DEFAULT_NODE_WIDTH;
-    if (r < colWidths.length && w > colWidths[r]) {
-      colWidths[r] = w;
-    }
+  edges.forEach((e) => {
+    const src = layoutId(e.source, parentOf);
+    const tgt = layoutId(e.target, parentOf);
+    if (siteNodeIds.has(src) && hubNodeIds.has(tgt)) sendsToHub = true;
+    if (hubNodeIds.has(src) && siteNodeIds.has(tgt)) receivesFromHub = true;
   });
+
+  if (sendsToHub && receivesFromHub) return 'peer';
+  if (sendsToHub) return 'source';
+  if (receivesFromHub) return 'sink';
+  return 'none';
+}
+
+interface SiteLayoutResult {
+  width: number;
+  height: number;
+  nodeLocalPositions: Map<string, { x: number; y: number }>;
+}
+
+function layoutSiteInternally(
+  siteNodes: CustomNode[],
+  edges: Edge[],
+  parentOf: Map<string, string>,
+  sizeOf: Map<string, NodeSize>,
+  nodeDirections: Map<string, NodeFlow>,
+): SiteLayoutResult {
+  const siteNodeIds = siteNodes.map((n) => n.id);
+
+  // Local adjacency inside site
+  const { succ, pred } = buildAdjacency(siteNodeIds, edges, parentOf);
+  const localRank = computeRanks(siteNodeIds, pred);
+
+  // Mirror ranks if flow direction is RTL
+  const mirroredRank = mirrorRanksForFlow(localRank, nodeDirections);
+  const maxRank = Math.max(0, ...Array.from(mirroredRank.values()));
+
+  const columns: string[][] = Array.from({ length: maxRank + 1 }, () => []);
+  const byCurrentY = [...siteNodes].sort((a, b) => a.position.y - b.position.y);
+  byCurrentY.forEach((n) => columns[mirroredRank.get(n.id)!].push(n.id));
+
+  orderColumns(columns, succ, pred);
+
+  // Measure column widths
+  const colWidths = columns.map((col) =>
+    Math.max(DEFAULT_NODE_WIDTH, ...col.map((id) => sizeOf.get(id)?.width ?? DEFAULT_NODE_WIDTH)),
+  );
 
   const colX: number[] = [];
-  let currentX = LEFT_MARGIN;
-  colWidths.forEach((w, i) => {
-    colX[i] = currentX;
-    currentX += w + COLUMN_GAP;
+  let curX = 0;
+  columns.forEach((_col, i) => {
+    colX[i] = curX;
+    curX += colWidths[i] + COLUMN_GAP;
   });
 
-  const positions = new Map<string, { x: number; y: number }>();
-  let currentY = TOP_MARGIN;
+  const totalWidth = curX > 0 ? curX - COLUMN_GAP : DEFAULT_NODE_WIDTH;
 
-  siteOrder.forEach((siteName, siteIndex) => {
-    const siteNodes = siteGroups.get(siteName) || [];
-    if (siteNodes.length === 0) return;
+  const colHeights = columns.map(
+    (col) =>
+      col.reduce((sum, id) => sum + (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT), 0) +
+      Math.max(0, col.length - 1) * ROW_GAP,
+  );
+  const totalHeight = Math.max(DEFAULT_NODE_HEIGHT, ...colHeights);
 
-    // Group site nodes by their global column rank
-    const siteColumns: string[][] = Array.from({ length: maxRank + 1 }, () => []);
-    const byCurrentY = [...siteNodes].sort((a, b) => a.position.y - b.position.y);
-    byCurrentY.forEach((n) => {
-      const r = globalRank.get(n.id) ?? 0;
-      siteColumns[r].push(n.id);
+  const nodeLocalPositions = new Map<string, { x: number; y: number }>();
+  columns.forEach((col, c) => {
+    let y = (totalHeight - colHeights[c]) / 2;
+    col.forEach((id) => {
+      nodeLocalPositions.set(id, { x: colX[c], y });
+      y += (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT) + ROW_GAP;
     });
-
-    // Apply barycenter heuristic to reduce edge crossings within this site
-    orderColumns(siteColumns, succ, pred);
-
-    // Measure height of each column in this site band
-    const colTotalHeights = siteColumns.map(
-      (col) =>
-        col.reduce((sum, id) => sum + (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT), 0) +
-        Math.max(0, col.length - 1) * ROW_GAP,
-    );
-    const siteMaxHeight = Math.max(0, ...colTotalHeights);
-
-    // Place nodes centered vertically within this site's band
-    siteColumns.forEach((col, r) => {
-      if (col.length === 0) return;
-      let y = currentY + (siteMaxHeight - colTotalHeights[r]) / 2;
-      col.forEach((id) => {
-        positions.set(id, { x: colX[r], y });
-        y += (sizeOf.get(id)?.height ?? DEFAULT_NODE_HEIGHT) + ROW_GAP;
-      });
-    });
-
-    currentY += siteMaxHeight;
-
-    // Check if any hub nodes belong in the gutter after this site band
-    const hubsInThisGap = hubNodes.filter((h) => (hubBoundaryMap.get(h.id) ?? 0) === siteIndex);
-    if (hubsInThisGap.length > 0 && siteIndex < siteOrder.length - 1) {
-      const maxHubH = Math.max(...hubsInThisGap.map((h) => sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT));
-      const gapHeight = Math.max(SITE_GAP_Y, maxHubH + 120);
-
-      hubsInThisGap.forEach((h) => {
-        const hHeight = sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT;
-        const hubY = currentY + (gapHeight - hHeight) / 2;
-        const hubR = globalRank.get(h.id) ?? 0;
-        const hubX = colX[hubR] ?? LEFT_MARGIN;
-        positions.set(h.id, { x: hubX, y: hubY });
-      });
-
-      currentY += gapHeight;
-    } else {
-      currentY += SITE_GAP_Y;
-    }
   });
 
-  // Fallback for any hub nodes not assigned to an inter-site gap
-  hubNodes.forEach((h) => {
-    if (!positions.has(h.id)) {
-      const hubR = globalRank.get(h.id) ?? 0;
-      const hubX = colX[hubR] ?? LEFT_MARGIN;
-      positions.set(h.id, { x: hubX, y: currentY });
-      currentY += (sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT) + SITE_GAP_Y;
-    }
-  });
-
-  return positions;
+  return { width: totalWidth, height: totalHeight, nodeLocalPositions };
 }
 
 type NodeFlow = 'ltr' | 'rtl';
@@ -338,17 +355,15 @@ type NodeFlow = 'ltr' | 'rtl';
 /**
  * Which way each node should be laid out.
  *
- * A clean link needs the source's egress and the target's ingress to face each
- * other, and that only holds when both ends read the same way round - a
- * mirrored node feeding an unmirrored one has no placement that satisfies both.
- * So a hand-locked mirrored node spreads 'rtl' through its unlocked neighbours,
- * making the chain around it consistent. Locking a node left-to-right pins the
- * boundary and stops the spread there.
+ * Scoped strictly per site so flow direction cannot bleed across data centre
+ * boundaries or through central DWDM / WAN transport hubs.
  */
 function resolveFlowDirections(
   nodes: CustomNode[],
   succ: Map<string, string[]>,
   pred: Map<string, string[]>,
+  nodeSiteMap?: Map<string, string>,
+  hubIdSet?: Set<string>,
 ): Map<string, NodeFlow> {
   const locked = new Map<string, NodeFlow>();
   nodes.forEach((n) => {
@@ -365,7 +380,13 @@ function resolveFlowDirections(
   const seen = new Set(queue);
   while (queue.length > 0) {
     const id = queue.shift()!;
+    const idSite = nodeSiteMap?.get(id);
     for (const neighbour of [...(succ.get(id) || []), ...(pred.get(id) || [])]) {
+      // Never propagate into or through transport hubs
+      if (hubIdSet?.has(neighbour)) continue;
+      // Confine propagation strictly within the same site
+      if (nodeSiteMap && idSite && nodeSiteMap.get(neighbour) !== idSite) continue;
+
       if (seen.has(neighbour) || locked.has(neighbour)) continue;
       seen.add(neighbour);
       directions.set(neighbour, 'rtl');
@@ -419,13 +440,10 @@ function withLayoutResult(
  * nested inside a group) into tidy left-to-right columns by pipeline stage.
  *
  * When equipment across 2 or more distinct physical data centres / sites
- * is present (e.g. `DC1`, `DC2`, `DC3`), nodes are clustered by data centre,
- * keeping equipment from the same facility together in dedicated horizontal
- * bands with clean inter-site routing, instead of piling all nodes into one giant column.
- *
- * Multi-site transport nodes (such as DWDM Optical Networks) are positioned
- * in reserved inter-site gutters between the data centres they bridge,
- * ensuring they never overlap local chassis or intrude on site boundaries.
+ * is present (e.g. `DC1`, `DC2`, `DC3`), nodes are clustered by data centre in
+ * a balanced 2D architecture. Sites are partitioned into West (upstream/sources)
+ * and East (downstream/destinations) with any central transport hub (e.g. DWDM Optical Ring)
+ * positioned cleanly in the middle channel.
  *
  * Grouped child nodes are left untouched - their position is relative to
  * their parent, which moves with the rest of its column as a single unit.
@@ -444,45 +462,40 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
 
   const { succ, pred } = buildAdjacency(layoutIds, edges, parentOf);
   const rank = computeRanks(layoutIds, pred);
-  // A mirrored node reads right-to-left, so its column has to be flipped or
-  // every link into it doubles back on itself.
-  const flowDirections = resolveFlowDirections(topLevelNodes, succ, pred);
 
-  // Check for multi-site topologies
+  // Identify transport hubs vs non-hub equipment
+  const isDwdmOrWanNode = (n: CustomNode): boolean => {
+    if (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') return true;
+    const s = ((n.data?.site as string) || '').trim().toUpperCase();
+    if (s === 'WAN' || s === 'TRANSPORT') return true;
+    return false;
+  };
+
+  const hubNodes: CustomNode[] = [];
+  const nonHubTopLevelNodes: CustomNode[] = [];
+  topLevelNodes.forEach((n) => {
+    if (isDwdmOrWanNode(n)) {
+      hubNodes.push(n);
+    } else {
+      nonHubTopLevelNodes.push(n);
+    }
+  });
+
   const explicitSites = new Set(
-    topLevelNodes
+    nonHubTopLevelNodes
       .map((n) => ((n.data?.site as string) || '').trim())
       .filter(Boolean),
   );
 
-  if (explicitSites.size >= 2) {
-    // Multi-site layout: separate genuine data centre nodes from transport hub nodes
-    const isDwdmOrWanNode = (n: CustomNode): boolean => {
-      if (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') return true;
-      const s = ((n.data?.site as string) || '').trim().toUpperCase();
-      if (s === 'WAN' || s === 'TRANSPORT') return true;
-      return false;
-    };
-
-    const hubNodes: CustomNode[] = [];
-    const nonHubTopLevelNodes: CustomNode[] = [];
-    topLevelNodes.forEach((n) => {
-      if (isDwdmOrWanNode(n)) {
-        hubNodes.push(n);
-      } else {
-        nonHubTopLevelNodes.push(n);
-      }
-    });
-
-    const nodeSiteMap = new Map<string, string>();
-
-    // Pass 1: Tag non-hub nodes with their explicit site
+  const nodeSiteMap = new Map<string, string>();
+  if (explicitSites.size >= 1) {
+    // Pass 1: explicit sites
     nonHubTopLevelNodes.forEach((n) => {
       const s = ((n.data?.site as string) || '').trim();
       if (s) nodeSiteMap.set(n.id, s);
     });
 
-    // Pass 2: For unassigned non-hub nodes, infer site if they only connect to one site
+    // Pass 2: infer site for unassigned nodes if neighbours belong to a single site
     nonHubTopLevelNodes.forEach((n) => {
       if (!nodeSiteMap.has(n.id)) {
         const neighbors = [...(succ.get(n.id) || []), ...(pred.get(n.id) || [])];
@@ -491,13 +504,20 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
           nodeSiteMap.set(n.id, Array.from(neighborSites)[0] as string);
         } else if (neighborSites.size >= 2) {
           hubNodes.push(n);
-        } else {
+        } else if (explicitSites.size > 0) {
           nodeSiteMap.set(n.id, Array.from(explicitSites)[0] as string);
         }
       }
     });
+  }
 
-    const genuineSiteNodes = nonHubTopLevelNodes.filter((n) => nodeSiteMap.has(n.id) && !hubNodes.includes(n));
+  const hubIdSet = new Set(hubNodes.map((h) => h.id));
+
+  // Resolve user-locked & intra-site flow directions (strictly scoped per site)
+  const flowDirections = resolveFlowDirections(topLevelNodes, succ, pred, nodeSiteMap, hubIdSet);
+
+  if (explicitSites.size >= 2) {
+    const genuineSiteNodes = nonHubTopLevelNodes.filter((n) => nodeSiteMap.has(n.id) && !hubIdSet.has(n.id));
     const siteGroups = new Map<string, CustomNode[]>();
     genuineSiteNodes.forEach((n) => {
       const site = nodeSiteMap.get(n.id)!;
@@ -506,70 +526,242 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
     });
 
     const allSiteNames = Array.from(siteGroups.keys());
-    const siteOrder = computeSiteOrder(allSiteNames, siteGroups, edges, parentOf);
+    const { siteRank, siteMedianY } = computeSiteRanks(allSiteNames, siteGroups, hubNodes, edges, parentOf);
 
-    // Compute hub column rank from peer non-hub nodes (cycle-safe)
-    const hubIdSet = new Set(hubNodes.map((h) => h.id));
-    hubNodes.forEach((h) => {
-      const pRanks = (pred.get(h.id) || []).filter((id) => !hubIdSet.has(id)).map((id) => rank.get(id) ?? 0);
-      const sRanks = (succ.get(h.id) || []).filter((id) => !hubIdSet.has(id)).map((id) => rank.get(id) ?? 0);
-      const allPeerRanks = [...pRanks, ...sRanks];
+    const westSites: string[] = [];
+    const eastSites: string[] = [];
 
-      let hubRank = 1;
-      if (pRanks.length > 0 && sRanks.length > 0) {
-        const maxP = Math.max(...pRanks);
-        const minS = Math.min(...sRanks);
-        if (maxP < minS) {
-          hubRank = maxP + 1;
+    if (hubNodes.length > 0) {
+      // Hub topology: classify each site relative to the hub
+      const sources: string[] = [];
+      const sinks: string[] = [];
+      const peers: string[] = [];
+
+      allSiteNames.forEach((s) => {
+        const role = getSiteHubRole(s, siteGroups.get(s) || [], hubNodes, edges, parentOf);
+        if (role === 'source') sources.push(s);
+        else if (role === 'sink') sinks.push(s);
+        else peers.push(s);
+      });
+
+      // Sources go West, sinks go East
+      let westCount = 0;
+      let eastCount = 0;
+
+      sources.forEach((s) => {
+        westSites.push(s);
+        westCount += siteGroups.get(s)?.length ?? 0;
+      });
+      sinks.forEach((s) => {
+        eastSites.push(s);
+        eastCount += siteGroups.get(s)?.length ?? 0;
+      });
+
+      // Peers (and any unclassified) are greedily balanced by node count
+      const sortedPeers = [...peers].sort((a, b) => {
+        const countDiff = (siteGroups.get(b)?.length ?? 0) - (siteGroups.get(a)?.length ?? 0);
+        if (countDiff !== 0) return countDiff;
+        const rankDiff = (siteRank.get(a) ?? 0) - (siteRank.get(b) ?? 0);
+        if (rankDiff !== 0) return rankDiff;
+        return (siteMedianY.get(a) ?? 0) - (siteMedianY.get(b) ?? 0);
+      });
+
+      sortedPeers.forEach((s) => {
+        const count = siteGroups.get(s)?.length ?? 0;
+        if (westCount <= eastCount) {
+          westSites.push(s);
+          westCount += count;
         } else {
-          // Bidirectional ring: derive from median peer rank
-          const sorted = [...allPeerRanks].sort((a, b) => a - b);
-          hubRank = sorted[Math.floor(sorted.length / 2)] ?? 1;
+          eastSites.push(s);
+          eastCount += count;
         }
-      } else if (pRanks.length > 0) {
-        hubRank = Math.max(...pRanks) + 1;
-      } else if (sRanks.length > 0) {
-        hubRank = Math.max(0, Math.min(...sRanks) - 1);
-      } else if (allPeerRanks.length > 0) {
-        const sorted = [...allPeerRanks].sort((a, b) => a - b);
-        hubRank = sorted[Math.floor(sorted.length / 2)] ?? 1;
+      });
+    } else {
+      // Direct inter-site links (no hub): topological rank 0 West, downstream rank > 0 East
+      const hasDownstream = Array.from(siteRank.values()).some((r) => r > 0);
+      if (hasDownstream) {
+        allSiteNames.forEach((s) => {
+          if ((siteRank.get(s) ?? 0) === 0) {
+            westSites.push(s);
+          } else {
+            eastSites.push(s);
+          }
+        });
+      } else {
+        // All sites independent: stack vertically on West
+        allSiteNames.forEach((s) => westSites.push(s));
       }
-      rank.set(h.id, hubRank);
+    }
+
+    // Sort sites within West and East by median Y
+    westSites.sort((a, b) => (siteMedianY.get(a) ?? 0) - (siteMedianY.get(b) ?? 0));
+    eastSites.sort((a, b) => (siteMedianY.get(a) ?? 0) - (siteMedianY.get(b) ?? 0));
+
+    // Determine symmetric Tier 3 engine-assigned direction for each site
+    const engineSiteDirection = new Map<string, NodeFlow>();
+
+    westSites.forEach((site) => {
+      const role = getSiteHubRole(site, siteGroups.get(site) || [], hubNodes, edges, parentOf);
+      if (role === 'sink') {
+        engineSiteDirection.set(site, 'rtl');
+      } else {
+        engineSiteDirection.set(site, 'ltr');
+      }
     });
 
-    // Determine target boundary gap for each hub (widen inter-site gutter nearest peers)
-    const hubBoundaryMap = new Map<string, number>();
-    hubNodes.forEach((h) => {
-      const neighbors = [...(succ.get(h.id) || []), ...(pred.get(h.id) || [])].filter((id) => !hubIdSet.has(id));
-      const peerSiteIndices = neighbors
-        .map((id) => {
-          const s = nodeSiteMap.get(id);
-          return s ? siteOrder.indexOf(s) : -1;
-        })
-        .filter((idx) => idx >= 0)
-        .sort((a, b) => a - b);
-
-      let targetGap = 0;
-      if (peerSiteIndices.length > 0) {
-        const minIdx = peerSiteIndices[0];
-        const maxIdx = peerSiteIndices[peerSiteIndices.length - 1];
-        targetGap = Math.min(siteOrder.length - 2, Math.max(0, Math.floor((minIdx + maxIdx) / 2)));
+    eastSites.forEach((site) => {
+      const role = getSiteHubRole(site, siteGroups.get(site) || [], hubNodes, edges, parentOf);
+      if (role === 'source') {
+        engineSiteDirection.set(site, 'rtl');
+      } else {
+        engineSiteDirection.set(site, 'ltr');
       }
-      hubBoundaryMap.set(h.id, targetGap);
     });
 
-    const positions = assignSiteAwarePositions(
-      siteOrder,
-      siteGroups,
-      hubNodes,
-      hubBoundaryMap,
-      mirrorRanksForFlow(rank, flowDirections),
-      sizeOf,
-      succ,
-      pred,
-    );
+    // Build effective direction map per node
+    const effectiveNodeFlow = new Map<string, NodeFlow>();
+    genuineSiteNodes.forEach((n) => {
+      const site = nodeSiteMap.get(n.id);
+      const siteDir = (site ? engineSiteDirection.get(site) : undefined) ?? 'ltr';
+      if (n.data?.flowDirectionLocked) {
+        effectiveNodeFlow.set(n.id, (n.data?.flowDirection as string) === 'rtl' ? 'rtl' : 'ltr');
+      } else if (flowDirections.has(n.id) && flowDirections.get(n.id) !== 'ltr') {
+        effectiveNodeFlow.set(n.id, flowDirections.get(n.id)!);
+      } else {
+        effectiveNodeFlow.set(n.id, siteDir);
+      }
+    });
 
-    return nodes.map((n) => withLayoutResult(n, positions.get(n.id), flowDirections.get(n.id)));
+    // Lay out all sites internally in local coordinate space
+    const siteLayouts = new Map<string, SiteLayoutResult>();
+    allSiteNames.forEach((s) => {
+      const sNodes = siteGroups.get(s) || [];
+      siteLayouts.set(s, layoutSiteInternally(sNodes, edges, parentOf, sizeOf, effectiveNodeFlow));
+    });
+
+    // Calculate West stack geometry
+    let westWidth = 0;
+    let westTotalHeight = 0;
+    const westSitePositions = new Map<string, { x: number; y: number }>();
+    let curY = TOP_MARGIN;
+
+    westSites.forEach((s, idx) => {
+      const layout = siteLayouts.get(s)!;
+      westWidth = Math.max(westWidth, layout.width);
+      westSitePositions.set(s, { x: LEFT_MARGIN, y: curY });
+      curY += layout.height;
+      if (idx < westSites.length - 1) curY += SITE_GAP_Y;
+    });
+    westTotalHeight = curY - TOP_MARGIN;
+
+    // Calculate East stack geometry
+    let eastWidth = 0;
+    let eastTotalHeight = 0;
+    const eastSitePositions = new Map<string, { x: number; y: number }>();
+    curY = TOP_MARGIN;
+
+    eastSites.forEach((s, idx) => {
+      const layout = siteLayouts.get(s)!;
+      eastWidth = Math.max(eastWidth, layout.width);
+      eastSitePositions.set(s, { x: 0, y: curY });
+      curY += layout.height;
+      if (idx < eastSites.length - 1) curY += SITE_GAP_Y;
+    });
+    eastTotalHeight = curY - TOP_MARGIN;
+
+    const hasWest = westSites.length > 0;
+    const hasEast = eastSites.length > 0;
+    const hasHub = hubNodes.length > 0;
+
+    let hubX = LEFT_MARGIN;
+    let eastStartX = LEFT_MARGIN;
+
+    const maxHubWidth = hasHub
+      ? Math.max(...hubNodes.map((h) => sizeOf.get(h.id)?.width ?? DEFAULT_NODE_WIDTH))
+      : 0;
+
+    if (hasWest && hasHub && hasEast) {
+      hubX = LEFT_MARGIN + westWidth + HUB_GAP_X;
+      eastStartX = hubX + maxHubWidth + HUB_GAP_X;
+    } else if (hasWest && hasHub) {
+      hubX = LEFT_MARGIN + westWidth + HUB_GAP_X;
+    } else if (hasHub && hasEast) {
+      hubX = LEFT_MARGIN;
+      eastStartX = hubX + maxHubWidth + HUB_GAP_X;
+    } else if (hasWest && hasEast) {
+      eastStartX = LEFT_MARGIN + westWidth + SITE_GAP_X;
+    }
+
+    // Vertically balance West and East stacks
+    const maxHeight = Math.max(westTotalHeight, eastTotalHeight);
+    if (hasWest && hasEast) {
+      if (westTotalHeight < maxHeight) {
+        const shiftY = (maxHeight - westTotalHeight) / 2;
+        westSites.forEach((s) => {
+          const p = westSitePositions.get(s)!;
+          westSitePositions.set(s, { x: p.x, y: p.y + shiftY });
+        });
+      }
+      if (eastTotalHeight < maxHeight) {
+        const shiftY = (maxHeight - eastTotalHeight) / 2;
+        eastSites.forEach((s) => {
+          const p = eastSitePositions.get(s)!;
+          eastSitePositions.set(s, { x: eastStartX, y: p.y + shiftY });
+        });
+      } else {
+        eastSites.forEach((s) => {
+          const p = eastSitePositions.get(s)!;
+          eastSitePositions.set(s, { x: eastStartX, y: p.y });
+        });
+      }
+    } else if (hasEast) {
+      eastSites.forEach((s) => {
+        const p = eastSitePositions.get(s)!;
+        eastSitePositions.set(s, { x: eastStartX, y: p.y });
+      });
+    }
+
+    // Position hub(s) vertically centered in the middle channel
+    const hubPositions = new Map<string, { x: number; y: number }>();
+    if (hasHub) {
+      const totalHubH = hubNodes.reduce(
+        (sum, h) => sum + (sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT),
+        0,
+      ) + Math.max(0, hubNodes.length - 1) * ROW_GAP;
+
+      let hY = TOP_MARGIN + (maxHeight - totalHubH) / 2;
+      if (hY < TOP_MARGIN) hY = TOP_MARGIN;
+
+      hubNodes.forEach((h) => {
+        hubPositions.set(h.id, { x: hubX, y: hY });
+        hY += (sizeOf.get(h.id)?.height ?? DEFAULT_NODE_HEIGHT) + ROW_GAP;
+      });
+    }
+
+    // Apply absolute positions
+    const positions = new Map<string, { x: number; y: number }>();
+
+    westSites.forEach((s) => {
+      const origin = westSitePositions.get(s)!;
+      const layout = siteLayouts.get(s)!;
+      layout.nodeLocalPositions.forEach((localPos, nodeId) => {
+        positions.set(nodeId, { x: origin.x + localPos.x, y: origin.y + localPos.y });
+      });
+    });
+
+    eastSites.forEach((s) => {
+      const origin = eastSitePositions.get(s)!;
+      const layout = siteLayouts.get(s)!;
+      layout.nodeLocalPositions.forEach((localPos, nodeId) => {
+        positions.set(nodeId, { x: origin.x + localPos.x, y: origin.y + localPos.y });
+      });
+    });
+
+    hubPositions.forEach((pos, hubId) => {
+      positions.set(hubId, pos);
+    });
+
+    return nodes.map((n) => withLayoutResult(n, positions.get(n.id), effectiveNodeFlow.get(n.id)));
   }
 
   // Single-site or untagged topology: classic single-pipeline layout
