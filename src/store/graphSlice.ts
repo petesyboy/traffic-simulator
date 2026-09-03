@@ -259,9 +259,21 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     const isToolB = nodeB.type === 'toolNode';
     const isClusterA = nodeA.type === 'clusterNode';
     const isClusterB = nodeB.type === 'clusterNode';
+    // A protected optical ring carries a working and a protection path between
+    // the same pair of endpoints, so parallel links into the transport node are
+    // the normal case rather than an accidental duplicate.
+    const isDwdmA = nodeA.type === NODE_TYPES.DWDM_NETWORK;
+    const isDwdmB = nodeB.type === NODE_TYPES.DWDM_NETWORK;
 
-    // Allow multiple parallel physical/logical links between hardware chassis, from hardware to tools, between tools, and clusters
-    const allowsParallel = (isHardwareA && isHardwareB) || (isHardwareA && isToolB) || (isToolA && (isToolB || isHardwareB)) || isClusterA || isClusterB;
+    // Allow multiple parallel physical/logical links between hardware chassis, from hardware to tools, between tools, clusters, and to an optical transport ring
+    const allowsParallel =
+      (isHardwareA && isHardwareB) ||
+      (isHardwareA && isToolB) ||
+      (isToolA && (isToolB || isHardwareB)) ||
+      isClusterA ||
+      isClusterB ||
+      isDwdmA ||
+      isDwdmB;
 
     const isDuplicate = !allowsParallel && get().edges.some(
       (e) =>

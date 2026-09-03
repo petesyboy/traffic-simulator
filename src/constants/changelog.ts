@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.737",
+    date: "2026-09-03",
+    summary: "Redundant links into the DWDM optical ring are now accepted. A second link between the same chassis and the ring was treated as an accidental duplicate and silently dropped, which made a 1+1 protected ring impossible to draw - the working and protection paths run between exactly the same pair of endpoints. Parallel links to the transport ring are now allowed, so each site can take its own working and protection pair in both directions, drawn as separate fanned curves and labelled Link 1/2 and Link 2/2. There is no fixed limit on how many a ring can carry.",
+  },
+  {
     version: "1.0.736",
     date: "2026-09-03",
     summary: "The data centre title bar is now a handle for the whole site. Drag it to carry every device in that data centre across the canvas together, or click it to select the site so the flow direction control turns all of its equipment round at once - no more dragging or picking equipment one piece at a time. A drag is a single undo step, and clicking to select never enters the history at all.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.718",
     date: "2026-09-02",
     summary: "Fixed TAP cluster port and optic overcounting: corrected validation and port allocation for multi-member TAP stacks connected across single or multiple chassis, eliminating false 'insufficient optics' (384 optics demanded) and 'out of physical ports' errors.",
-  },
-  {
-    version: "1.0.717",
-    date: "2026-09-02",
-    summary: "Ingested Worldwide Price List (WWPL Sept 2026) updates: clarified CCv1/CCv2 compatibility across HC3 bypass and port modules, updated EOS/EOL dates and replacement SKU mappings for QSB-504, IBP-TAC40, GTP-ATX02, GTP-ASF02, and G-TAP M Series modules.",
   },
 ];
