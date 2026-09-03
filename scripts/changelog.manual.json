@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.735",
+    "date": "2026-09-03",
+    "summary": "Restored smooth curved links in right-to-left layouts. A link that ran against its own flow was routed as a stepped path looping under the row, but that was decided purely on the source sitting to the right of the target - which in a mirrored layout is every link, so they all turned square and collided. It now reads the side the source's egress handle sits on, so a mirrored link flowing right-to-left keeps the curve it had before, and a genuine backhaul link still loops under whichever way round the layout reads."
+  },
+  {
     "version": "1.0.734",
     "date": "2026-09-03",
     "summary": "Tidy Layout now understands mirrored nodes, and the configuration panel works on a whole selection. Laying out a right-to-left node used to put it in its usual left-to-right column, so every link into it doubled back; a mirrored chain is now laid out with its sources on the right and its tools on the left, the order its handles actually point in. Mirroring one node pulls the neighbours it feeds the same way round, so the picture stays consistent, and locking a node left-to-right pins the boundary. Selecting several nodes now opens a panel showing what is selected and lets you set the flow direction for all of them at once."

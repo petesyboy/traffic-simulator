@@ -1,6 +1,6 @@
 import React from 'react';
 import type { EdgeProps } from '@xyflow/react';
-import { getBezierPath, getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react';
+import { getBezierPath, getSmoothStepPath, EdgeLabelRenderer, Position } from '@xyflow/react';
 
 // How far past the source/target node the path drops before turning, when
 // looping a "backward" edge (e.g. a GigaSMART Appliance's packet return to a
@@ -272,11 +272,19 @@ export const ParallelEdge: React.FC<EdgeProps> = ({
 }: EdgeProps & { className?: string; data?: { parallelIndex?: number; totalParallel?: number } }) => {
   const parallelIndex = data?.parallelIndex ?? 0;
   const totalParallel = data?.totalParallel ?? 1;
-  // A bezier curve assumes left-to-right flow and folds back over the nodes
-  // it connects when the source sits to the right of the target (e.g. a GSA
-  // returning packets to a TA/HC placed to its left) - route those as a
-  // stepped path that loops underneath the row instead.
-  const isBackward = totalParallel <= 1 && sourceX > targetX + BACKWARD_MARGIN;
+  // A bezier curve folds back over the nodes it connects when a link runs
+  // against its own flow (e.g. a GSA returning packets to a TA/HC placed behind
+  // it) - those are routed as a stepped path looping underneath the row instead.
+  //
+  // "Against its own flow" is decided by the side the source's egress handle
+  // sits on, not simply by right-to-left: a mirrored node egresses on its left,
+  // so reaching a target further left is its normal case, and treating that as a
+  // backhaul loop turns every link in a right-to-left layout into a colliding
+  // square.
+  const egressPointsLeft = sourcePosition === Position.Left;
+  const isBackward =
+    totalParallel <= 1 &&
+    (egressPointsLeft ? targetX > sourceX + BACKWARD_MARGIN : sourceX > targetX + BACKWARD_MARGIN);
 
   let edgePath: string;
   let labelX: number;
