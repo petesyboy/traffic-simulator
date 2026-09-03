@@ -60,6 +60,7 @@ export interface GraphSlice {
   snapAllNodesToGrid: () => void;
   tidyLayout: () => void;
   optimizeDwdmHandles: () => void;
+  convertHubToPerSiteDwdm: (hubNodeId: string) => void;
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
   setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;
@@ -343,6 +344,120 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (nextEdges !== get().edges) {
       set({ edges: nextEdges });
     }
+  },
+  convertHubToPerSiteDwdm: (hubNodeId: string) => {
+    const { nodes, edges } = get();
+    const hubNode = nodes.find((n) => n.id === hubNodeId);
+    if (!hubNode) return;
+
+    const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
+    const connectedEdges = edges.filter((e) => e.source === hubNodeId || e.target === hubNodeId);
+    if (connectedEdges.length === 0) return;
+
+    // Determine distinct connected sites
+    const siteToEdges = new Map<string, Edge[]>();
+    connectedEdges.forEach((e) => {
+      const peerId = e.source === hubNodeId ? e.target : e.source;
+      const peerNode = nodeMap.get(peerId);
+      const site = ((peerNode?.data?.site as string) || '').trim();
+      if (!site) return;
+      if (!siteToEdges.has(site)) siteToEdges.set(site, []);
+      siteToEdges.get(site)!.push(e);
+    });
+
+    const uniqueSites = Array.from(siteToEdges.keys()).sort((a, b) => a.localeCompare(b));
+    if (uniqueSites.length < 2) return;
+
+    get().pushHistory();
+
+    const timestamp = Date.now();
+    const newDwdmNodes: CustomNode[] = [];
+    const siteToNewDwdmId = new Map<string, string>();
+
+    // Create a local DWDM gateway for each connected site
+    uniqueSites.forEach((site, idx) => {
+      const siteNodes = nodes.filter((n) => ((n.data?.site as string) || '').trim() === site && n.id !== hubNodeId);
+      const avgX = siteNodes.length > 0 ? siteNodes.reduce((acc, n) => acc + n.position.x, 0) / siteNodes.length : hubNode.position.x;
+      const avgY = siteNodes.length > 0 ? siteNodes.reduce((acc, n) => acc + n.position.y, 0) / siteNodes.length : hubNode.position.y;
+
+      const safeSiteKey = site.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const newId = `dwdm-${safeSiteKey}-${timestamp}-${idx}`;
+      siteToNewDwdmId.set(site, newId);
+
+      const localDwdmNode: CustomNode = {
+        id: newId,
+        type: NODE_TYPES.DWDM_NETWORK,
+        position: { x: avgX + 200, y: avgY },
+        data: {
+          ...hubNode.data,
+          label: `DWDM - ${site}`,
+          site,
+          configType: 'DWDM Network',
+        },
+      };
+      newDwdmNodes.push(localDwdmNode);
+    });
+
+    // Rewire intra-site edges from the hub to the respective site's local DWDM node
+    const rewiredEdges: Edge[] = edges.map((e) => {
+      if (e.source === hubNodeId) {
+        const peerNode = nodeMap.get(e.target);
+        const site = ((peerNode?.data?.site as string) || '').trim();
+        const localId = siteToNewDwdmId.get(site);
+        if (localId) {
+          return { ...e, source: localId };
+        }
+      }
+      if (e.target === hubNodeId) {
+        const peerNode = nodeMap.get(e.source);
+        const site = ((peerNode?.data?.site as string) || '').trim();
+        const localId = siteToNewDwdmId.get(site);
+        if (localId) {
+          return { ...e, target: localId };
+        }
+      }
+      return e;
+    });
+
+    // Filter out edges that were still attached to the removed hub
+    const filteredEdges = rewiredEdges.filter((e) => e.source !== hubNodeId && e.target !== hubNodeId);
+
+    // Create inter-site ring edges between the new local DWDM gateways
+    const ringEdges: Edge[] = [];
+    for (let i = 0; i < uniqueSites.length; i++) {
+      const currentSite = uniqueSites[i];
+      const nextSite = uniqueSites[(i + 1) % uniqueSites.length];
+      const srcId = siteToNewDwdmId.get(currentSite)!;
+      const tgtId = siteToNewDwdmId.get(nextSite)!;
+      ringEdges.push({
+        id: `edge-${srcId}-${tgtId}`,
+        source: srcId,
+        target: tgtId,
+        sourceHandle: 'out-right',
+        targetHandle: 'in-left',
+        data: {
+          wavelengthSpeed: hubNode.data?.wavelengthSpeed || '100G',
+          protectionMode: hubNode.data?.protectionMode || 'Protected Ring (1+1)',
+          carrierName: hubNode.data?.carrierName || 'Dark Fiber Transport',
+          spanDistanceKm: hubNode.data?.spanDistanceKm || 40,
+          latencyMs: hubNode.data?.latencyMs || 2.0,
+        },
+      });
+    }
+
+    const combinedNodes = nodes.filter((n) => n.id !== hubNodeId).concat(newDwdmNodes);
+    const combinedEdges = [...filteredEdges, ...ringEdges];
+
+    // Compute tidy layout immediately with 2D triangular/macro placement
+    const tidyNodes = computeTidyLayout(combinedNodes, combinedEdges, get().exportDiagramMode);
+    const tidyEdges = optimizeDwdmEdgeHandles(tidyNodes, combinedEdges);
+
+    set({
+      nodes: tidyNodes,
+      edges: tidyEdges,
+      selectedNodeId: newDwdmNodes[0]?.id || null,
+      fitViewTrigger: get().fitViewTrigger + 1,
+    });
   },
 
   setNodeFlowDirection: (nodeId, direction) => {

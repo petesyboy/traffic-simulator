@@ -484,6 +484,7 @@ export interface RFState {
   snapAllNodesToGrid: () => void;
   tidyLayout: () => void;
   optimizeDwdmHandles: () => void;
+  convertHubToPerSiteDwdm: (hubNodeId: string) => void;
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
   setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;

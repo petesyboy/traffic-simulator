@@ -18,6 +18,7 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
   const edges = useStore((state) => state.edges);
   const nodes = useStore((state) => state.nodes);
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const convertHubToPerSiteDwdm = useStore((state) => state.convertHubToPerSiteDwdm);
 
   const wavelengthSpeed = (node.data?.wavelengthSpeed as string) || '100G';
   const protectionMode = (node.data?.protectionMode as string) || 'Protected Ring (1+1)';
@@ -35,6 +36,18 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
     return nodes.filter((n) => connectedNodeIds.has(n.id));
   }, [edges, nodes, node.id]);
 
+  const connectedSites = useMemo(() => {
+    const sites = new Set<string>();
+    connectedEndpoints.forEach((ep) => {
+      const site = ((ep.data?.site as string) || '').trim();
+      if (site) sites.add(site);
+    });
+    return Array.from(sites).sort((a, b) => a.localeCompare(b));
+  }, [connectedEndpoints]);
+
+  const isExternalHub = !((node.data?.site as string) || '').trim();
+  const canConvertToPerSite = isExternalHub && connectedSites.length >= 2;
+
   const handleSpanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     const dist = isNaN(val) ? 0 : val;
@@ -49,6 +62,49 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {canConvertToPerSite && (
+        <div
+          style={{
+            padding: '12px',
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(59, 130, 246, 0.15))',
+            border: '1px solid rgba(168, 85, 247, 0.45)',
+            borderRadius: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f3e8ff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>⚡</span> Convert to Per-Site DWDM Gateways
+          </div>
+          <div style={{ fontSize: '11px', color: '#e9d5ff', lineHeight: '1.4' }}>
+            This transport hub links <strong>{connectedSites.length} data centres</strong> ({connectedSites.join(', ')}). Convert it into dedicated site-local DWDM gateways linked in an optical ring with 2D triangular auto-layout.
+          </div>
+          <button
+            type="button"
+            onClick={() => convertHubToPerSiteDwdm(node.id)}
+            style={{
+              padding: '8px 12px',
+              background: '#9333ea',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = '#a855f7')}
+            onMouseOut={(e) => (e.currentTarget.style.background = '#9333ea')}
+          >
+            <span>✨</span> Convert to Per-Site Gateways
+          </button>
+        </div>
+      )}
       <div
         style={{
           padding: '10px 12px',
