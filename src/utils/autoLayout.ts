@@ -333,6 +333,87 @@ function assignSiteAwarePositions(
   return positions;
 }
 
+type NodeFlow = 'ltr' | 'rtl';
+
+/**
+ * Which way each node should be laid out.
+ *
+ * A clean link needs the source's egress and the target's ingress to face each
+ * other, and that only holds when both ends read the same way round - a
+ * mirrored node feeding an unmirrored one has no placement that satisfies both.
+ * So a hand-locked mirrored node spreads 'rtl' through its unlocked neighbours,
+ * making the chain around it consistent. Locking a node left-to-right pins the
+ * boundary and stops the spread there.
+ */
+function resolveFlowDirections(
+  nodes: CustomNode[],
+  succ: Map<string, string[]>,
+  pred: Map<string, string[]>,
+): Map<string, NodeFlow> {
+  const locked = new Map<string, NodeFlow>();
+  nodes.forEach((n) => {
+    if (n.data?.flowDirectionLocked) {
+      locked.set(n.id, (n.data?.flowDirection as string) === 'rtl' ? 'rtl' : 'ltr');
+    }
+  });
+
+  const directions = new Map<string, NodeFlow>();
+  nodes.forEach((n) => directions.set(n.id, locked.get(n.id) ?? 'ltr'));
+  if (locked.size === 0) return directions;
+
+  const queue = [...locked.entries()].filter(([, dir]) => dir === 'rtl').map(([id]) => id);
+  const seen = new Set(queue);
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    for (const neighbour of [...(succ.get(id) || []), ...(pred.get(id) || [])]) {
+      if (seen.has(neighbour) || locked.has(neighbour)) continue;
+      seen.add(neighbour);
+      directions.set(neighbour, 'rtl');
+      queue.push(neighbour);
+    }
+  }
+
+  return directions;
+}
+
+/**
+ * Flips the column of every mirrored node about the widest column, so a
+ * right-to-left chain is laid out with its sources on the right and its tools
+ * on the left - the order its handles actually point in.
+ */
+function mirrorRanksForFlow(rank: Map<string, number>, directions: Map<string, NodeFlow>): Map<string, number> {
+  if (![...directions.values()].includes('rtl')) return rank;
+  const maxRank = Math.max(0, ...Array.from(rank.values()));
+  const mirrored = new Map<string, number>();
+  rank.forEach((r, id) => mirrored.set(id, directions.get(id) === 'rtl' ? maxRank - r : r));
+  return mirrored;
+}
+
+/**
+ * Applies a laid-out position, and for a node the engine is free to move, the
+ * direction it was laid out in. A node placed on the mirrored side has to be
+ * drawn mirrored too, or its links leave the wrong edge and double back. A
+ * hand-locked node keeps whatever direction its owner chose.
+ */
+function withLayoutResult(
+  node: CustomNode,
+  position: { x: number; y: number } | undefined,
+  direction: NodeFlow | undefined,
+): CustomNode {
+  if (!position) return node;
+  const next = { ...node, position } as CustomNode;
+  if (node.data?.flowDirectionLocked || !direction) return next;
+
+  const current = (node.data?.flowDirection as string) || 'ltr';
+  if (current === direction) return next;
+
+  const data = { ...node.data } as Record<string, unknown>;
+  // 'ltr' is the default, so it is stored as absence rather than a value.
+  if (direction === 'rtl') data.flowDirection = 'rtl';
+  else delete data.flowDirection;
+  return { ...next, data } as CustomNode;
+}
+
 /**
  * Re-arranges top-level nodes (anything without a `parentId`, i.e. not
  * nested inside a group) into tidy left-to-right columns by pipeline stage.
@@ -363,6 +444,9 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
 
   const { succ, pred } = buildAdjacency(layoutIds, edges, parentOf);
   const rank = computeRanks(layoutIds, pred);
+  // A mirrored node reads right-to-left, so its column has to be flipped or
+  // every link into it doubles back on itself.
+  const flowDirections = resolveFlowDirections(topLevelNodes, succ, pred);
 
   // Check for multi-site topologies
   const explicitSites = new Set(
@@ -479,31 +563,26 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
       siteGroups,
       hubNodes,
       hubBoundaryMap,
-      rank,
+      mirrorRanksForFlow(rank, flowDirections),
       sizeOf,
       succ,
       pred,
     );
 
-    return nodes.map((n) => {
-      const pos = positions.get(n.id);
-      return pos ? { ...n, position: pos } : n;
-    });
+    return nodes.map((n) => withLayoutResult(n, positions.get(n.id), flowDirections.get(n.id)));
   }
 
   // Single-site or untagged topology: classic single-pipeline layout
-  const maxRank = Math.max(0, ...Array.from(rank.values()));
+  const layoutRank = mirrorRanksForFlow(rank, flowDirections);
+  const maxRank = Math.max(0, ...Array.from(layoutRank.values()));
   const columns: string[][] = Array.from({ length: maxRank + 1 }, () => []);
   const byCurrentY = [...topLevelNodes].sort((a, b) => a.position.y - b.position.y);
-  byCurrentY.forEach((n) => columns[rank.get(n.id)!].push(n.id));
+  byCurrentY.forEach((n) => columns[layoutRank.get(n.id)!].push(n.id));
 
   orderColumns(columns, succ, pred);
   const positions = assignPositions(columns, sizeOf);
 
-  return nodes.map((n) => {
-    const pos = positions.get(n.id);
-    return pos ? { ...n, position: pos } : n;
-  });
+  return nodes.map((n) => withLayoutResult(n, positions.get(n.id), flowDirections.get(n.id)));
 }
 
 /**

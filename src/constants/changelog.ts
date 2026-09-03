@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.734",
+    date: "2026-09-03",
+    summary: "Tidy Layout now understands mirrored nodes, and the configuration panel works on a whole selection. Laying out a right-to-left node used to put it in its usual left-to-right column, so every link into it doubled back; a mirrored chain is now laid out with its sources on the right and its tools on the left, the order its handles actually point in. Mirroring one node pulls the neighbours it feeds the same way round, so the picture stays consistent, and locking a node left-to-right pins the boundary. Selecting several nodes now opens a panel showing what is selected and lets you set the flow direction for all of them at once.",
+  },
+  {
     version: "1.0.733",
     date: "2026-09-03",
     summary: "Added a flow direction control for the whole selection: hold Ctrl (or Shift-drag a box) to pick several nodes, then set them all left-to-right, right-to-left or Auto in one click from the canvas toolbar. The control shows how many nodes it will change, and highlights a direction only when the whole selection already agrees, so a mixed selection is obvious at a glance.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.715",
     date: "2026-09-01",
     summary: "Isolated site topology capture in state store: strictly filtered active canvas nodes and links during site sub-diagram captures to eliminate stray links, foreign TAPs, and external interconnects.",
-  },
-  {
-    version: "1.0.714",
-    date: "2026-09-01",
-    summary: "Fixed site diagram screenshot framing and multi-site layout capture: eliminated cross-site TAP auto-bundling and adjusted viewport padding and zoom for balanced, centered site sub-diagrams.",
   },
 ];

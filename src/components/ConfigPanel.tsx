@@ -14,12 +14,8 @@ import { GigaSmartPanel } from './config-panels/GigaSmartPanel';
 import { ToolNodePanel } from './config-panels/ToolNodePanel';
 import { LinkDetailPanel } from './config-panels/LinkDetailPanel';
 import { DwdmNetworkPanel } from './config-panels/DwdmNetworkPanel';
-
-const FLOW_DIRECTION_OPTIONS = [
-  { value: 'ltr' as const, label: '→ LTR', title: 'Ingest on the left, egress on the right (the classic pipeline direction)' },
-  { value: 'rtl' as const, label: '← RTL', title: 'Ingest on the right, egress on the left - for sites mirrored to the right of a transport hub' },
-  { value: 'auto' as const, label: 'Auto', title: 'Let the layout engine choose, and follow it on every re-tidy' },
-];
+import { FlowDirectionControl } from './config-panels/FlowDirectionControl';
+import { sharedFlowDirection } from '../utils/flowDirection';
 
 const ConfigPanel: React.FC = () => {
   const selectedNodeId = useStore((state) => state.selectedNodeId);
@@ -27,6 +23,7 @@ const ConfigPanel: React.FC = () => {
   const edges          = useStore((state) => state.edges);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const setNodeFlowDirection = useStore((state) => state.setNodeFlowDirection);
+  const setSelectionFlowDirection = useStore((state) => state.setSelectionFlowDirection);
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
   const isRunning      = useStore((state) => state.isRunning);
   const panelTextScale = useStore((state) => state.panelTextScale);
@@ -79,6 +76,7 @@ const ConfigPanel: React.FC = () => {
   }
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  const multiSelectedNodes = nodes.filter((n) => n.selected && !n.hidden);
 
   // ── Event handlers ──────────────────────────────────────────────────────────
 
@@ -210,6 +208,71 @@ const ConfigPanel: React.FC = () => {
       );
     }
 
+    // More than one node selected: the per-type panels below edit a single node,
+    // but the settings that are meaningful across a mixed selection belong here
+    // rather than only on the canvas toolbar.
+    if (multiSelectedNodes.length > 1) {
+      return (
+        <aside
+          className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
+          style={{
+            width: isCollapsed ? '0px' : `${width}px`,
+            padding: '0px',
+            borderLeft: isCollapsed ? 'none' : '1px solid var(--border-color)',
+            position: 'relative',
+            overflow: 'visible',
+            transition: isResizing ? 'none' : 'width 0.3s ease, padding 0.3s ease, border-color 0.3s ease',
+            flexShrink: 0,
+            zoom: panelTextScale,
+          }}
+        >
+          {collapseToggle}
+          {resizeHandle}
+          {!isCollapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', height: '100%', padding: '16px', overflowY: 'auto', boxSizing: 'border-box' }}>
+              <h2>{multiSelectedNodes.length} Nodes Selected</h2>
+
+              <FormGroup label="Flow Direction">
+                <FlowDirectionControl
+                  current={sharedFlowDirection(multiSelectedNodes)}
+                  onChange={setSelectionFlowDirection}
+                  hint={
+                    <>
+                      Applies to all {multiSelectedNodes.length} selected nodes at once. Nothing is
+                      highlighted when the selection is mixed. Shortcut: <b>M</b> flips each one instead.
+                    </>
+                  }
+                />
+              </FormGroup>
+
+              <div className="config-card">
+                <h3>📋 Selection</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {multiSelectedNodes.slice(0, 12).map((n) => (
+                    <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {(n.data?.label as string) || n.id}
+                      </span>
+                      <span style={{ color: n.data?.flowDirectionLocked ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary)', flexShrink: 0 }}>
+                        {n.data?.flowDirectionLocked ? ((n.data?.flowDirection as string) === 'rtl' ? '← RTL' : '→ LTR') : 'Auto'}
+                      </span>
+                    </div>
+                  ))}
+                  {multiSelectedNodes.length > 12 && (
+                    <div style={{ fontStyle: 'italic' }}>+{multiSelectedNodes.length - 12} more</div>
+                  )}
+                </div>
+              </div>
+
+              <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                Select a single node to edit its own configuration.
+              </p>
+            </div>
+          )}
+        </aside>
+      );
+    }
+
     return (
       <aside
         className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
@@ -268,39 +331,16 @@ const ConfigPanel: React.FC = () => {
               right-to-left. The DWDM node already has handles on all four sides. */}
           {selectedNode.type !== NODE_TYPES.DWDM_NETWORK && (
             <FormGroup label="Flow Direction">
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {FLOW_DIRECTION_OPTIONS.map((opt) => {
-                  const current = selectedNode.data?.flowDirectionLocked
-                    ? ((selectedNode.data?.flowDirection as string) || 'ltr')
-                    : 'auto';
-                  const active = current === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => setNodeFlowDirection(selectedNode.id, opt.value)}
-                      title={opt.title}
-                      style={{
-                        flex: 1,
-                        padding: '5px 4px',
-                        fontSize: '10px',
-                        fontWeight: active ? 700 : 500,
-                        background: active ? 'rgba(0, 229, 255, 0.15)' : 'var(--bg-tertiary, #1e1e1e)',
-                        border: `1px solid ${active ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
-                        borderRadius: '4px',
-                        color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p style={{ margin: '6px 0 0 0', fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                Swaps which side this node's input and output handles sit on. Auto hands the
-                choice back to Tidy Layout. Shortcut: <b>M</b> mirrors the selection.
-              </p>
+              <FlowDirectionControl
+                current={sharedFlowDirection([selectedNode])}
+                onChange={(direction) => setNodeFlowDirection(selectedNode.id, direction)}
+                hint={
+                  <>
+                    Swaps which side this node&apos;s input and output handles sit on. Auto hands the
+                    choice back to Tidy Layout. Shortcut: <b>M</b> mirrors the selection.
+                  </>
+                }
+              />
             </FormGroup>
           )}
 

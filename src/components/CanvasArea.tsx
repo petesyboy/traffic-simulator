@@ -22,6 +22,7 @@ import { isTapNode, isToolNode, formatEdgeLinkPrefix } from '../utils/clusterUti
 import { FederatedEnclosures } from './canvas/FederatedEnclosures';
 import { FederatedDashboard } from './canvas/FederatedDashboard';
 import { SiteEnclosures } from './canvas/SiteEnclosures';
+import { FLOW_DIRECTION_OPTIONS, sharedFlowDirection } from '../utils/flowDirection';
 import { GroupingBanner } from './canvas/GroupingBanner';
 import { EdgeBanner } from './canvas/EdgeBanner';
 
@@ -48,12 +49,6 @@ const edgeTypes = {
   missionChaosEdge: MissionChaosEdge,
   missionBackboneEdge: MissionBackboneEdge,
 };
-
-const SELECTION_FLOW_OPTIONS = [
-  { value: 'ltr' as const, label: '→ LTR', title: 'Ingest on the left, egress on the right' },
-  { value: 'rtl' as const, label: '← RTL', title: 'Ingest on the right, egress on the left' },
-  { value: 'auto' as const, label: 'Auto', title: 'Let the layout engine choose' },
-];
 
 const CanvasArea: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -472,13 +467,7 @@ const CanvasArea: React.FC = () => {
   const selectionCount = selectedForFlow.length;
   // Only light a button up when the whole selection agrees - a mixed selection
   // shows none, so it is obvious that clicking will change every node.
-  const selectionDirection = useMemo(() => {
-    if (selectedForFlow.length === 0) return null;
-    const directions = new Set(
-      selectedForFlow.map((n) => (n.data?.flowDirectionLocked ? (n.data?.flowDirection as string) || 'ltr' : 'auto')),
-    );
-    return directions.size === 1 ? [...directions][0] : null;
-  }, [selectedForFlow]);
+  const selectionDirection = useMemo(() => sharedFlowDirection(selectedForFlow), [selectedForFlow]);
 
   const [showSiteEnclosures, setShowSiteEnclosures] = useState(true);
   const hasTaggedSites = useMemo(
@@ -533,7 +522,7 @@ const CanvasArea: React.FC = () => {
               <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary, #ccc)', whiteSpace: 'nowrap' }}>
                 ↔ {selectionCount} selected
               </span>
-              {SELECTION_FLOW_OPTIONS.map((opt) => {
+              {FLOW_DIRECTION_OPTIONS.map((opt) => {
                 const active = selectionDirection === opt.value;
                 return (
                   <button
