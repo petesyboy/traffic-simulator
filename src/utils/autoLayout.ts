@@ -19,8 +19,8 @@ import { NODE_TYPES } from '../constants/nodeTypes';
 
 const DEFAULT_NODE_WIDTH = 220;
 const DEFAULT_NODE_HEIGHT = 80;
-const COLUMN_GAP = 90;
-const ROW_GAP = 40;
+const COLUMN_GAP = 140;
+const ROW_GAP = 36;
 const LEFT_MARGIN = 60;
 const TOP_MARGIN = 80;
 const ORDERING_PASSES = 4;
@@ -31,19 +31,49 @@ interface NodeSize {
 }
 
 function nodeSize(node: CustomNode, isExportMode = false): NodeSize {
+  // Query DOM element if running in browser to get real layout measurements
+  if (typeof document !== 'undefined') {
+    const domEl = document.querySelector(`[data-id="${node.id}"]`) as HTMLElement;
+    if (domEl && domEl.offsetWidth > 0 && domEl.offsetHeight > 0) {
+      return {
+        width: Math.max(domEl.offsetWidth, DEFAULT_NODE_WIDTH),
+        height: Math.max(domEl.offsetHeight, DEFAULT_NODE_HEIGHT),
+      };
+    }
+  }
+
+  const model = String(node.data?.model || '').toUpperCase();
+  const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
+  const isTap = model.includes('TAP') || String(node.data?.configType || '').toUpperCase().includes('TAP');
+
   let width = node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH;
   let height = node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT;
 
+  if (isChassis) {
+    width = Math.max(width, 380);
+    height = Math.max(height, 260);
+  } else if (node.type === 'clusterNode') {
+    width = Math.max(width, 310);
+    height = Math.max(height, 280);
+  } else if (isTap) {
+    width = Math.max(width, 220);
+    height = Math.max(height, 160);
+  } else if (node.type === 'inputNode') {
+    width = Math.max(width, 240);
+    height = Math.max(height, 150);
+  } else if (node.type === 'toolNode') {
+    width = Math.max(width, 220);
+    height = Math.max(height, 160);
+  } else if (node.type === 'mapNode' || node.type === 'filterNode' || node.type === 'gigaSmartNode') {
+    width = Math.max(width, 240);
+    height = Math.max(height, 200);
+  } else if (node.type === NODE_TYPES.DWDM_NETWORK || node.type === 'dwdmNetworkNode') {
+    width = Math.max(width, 280);
+    height = Math.max(height, 135);
+  }
+
   if (isExportMode) {
-    const model = String(node.data?.model || '').toUpperCase();
-    const isChassis = (model.includes('HC') || model.includes('TA')) && !model.includes('TAP');
-    const isTap = model.includes('TAP') || String(node.data?.configType || '').toUpperCase().includes('TAP');
-    if (node.type === 'clusterNode') height = Math.max(height, 310);
-    else if (isChassis) height = Math.max(height, 380);
-    else if (isTap) height = Math.max(height, 190);
-    else if (node.type === 'inputNode') height = Math.max(height, 175);
-    else if (node.type === 'toolNode') height = Math.max(height, 190);
-    else if (node.type === 'mapNode' || node.type === 'filterNode' || node.type === 'gigaSmartNode') height = Math.max(height, 220);
+    if (isChassis) height = Math.max(height, 380);
   }
 
   return { width, height };
@@ -544,20 +574,25 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
         else peers.push(s);
       });
 
-      // Sources go West, sinks go East
       let westCount = 0;
       let eastCount = 0;
 
-      sources.forEach((s) => {
-        westSites.push(s);
-        westCount += siteGroups.get(s)?.length ?? 0;
-      });
-      sinks.forEach((s) => {
-        eastSites.push(s);
-        eastCount += siteGroups.get(s)?.length ?? 0;
-      });
+      if (sources.length > 0 && sinks.length > 0) {
+        // Clear upstream/downstream flow through hub: sources West, sinks East
+        sources.forEach((s) => {
+          westSites.push(s);
+          westCount += siteGroups.get(s)?.length ?? 0;
+        });
+        sinks.forEach((s) => {
+          eastSites.push(s);
+          eastCount += siteGroups.get(s)?.length ?? 0;
+        });
+      } else {
+        // Ring or peer topology: treat all sites as candidate peers to balance across hub
+        peers.push(...sources, ...sinks);
+      }
 
-      // Peers (and any unclassified) are greedily balanced by node count
+      // Greedily balance peer sites by node count descending
       const sortedPeers = [...peers].sort((a, b) => {
         const countDiff = (siteGroups.get(b)?.length ?? 0) - (siteGroups.get(a)?.length ?? 0);
         if (countDiff !== 0) return countDiff;
@@ -597,26 +632,9 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
     westSites.sort((a, b) => (siteMedianY.get(a) ?? 0) - (siteMedianY.get(b) ?? 0));
     eastSites.sort((a, b) => (siteMedianY.get(a) ?? 0) - (siteMedianY.get(b) ?? 0));
 
-    // Determine symmetric Tier 3 engine-assigned direction for each site
+    // Default site flow direction is LTR unless a site has nodes locked as RTL
     const engineSiteDirection = new Map<string, NodeFlow>();
-
-    westSites.forEach((site) => {
-      const role = getSiteHubRole(site, siteGroups.get(site) || [], hubNodes, edges, parentOf);
-      if (role === 'sink') {
-        engineSiteDirection.set(site, 'rtl');
-      } else {
-        engineSiteDirection.set(site, 'ltr');
-      }
-    });
-
-    eastSites.forEach((site) => {
-      const role = getSiteHubRole(site, siteGroups.get(site) || [], hubNodes, edges, parentOf);
-      if (role === 'source') {
-        engineSiteDirection.set(site, 'rtl');
-      } else {
-        engineSiteDirection.set(site, 'ltr');
-      }
-    });
+    allSiteNames.forEach((s) => engineSiteDirection.set(s, 'ltr'));
 
     // Build effective direction map per node
     const effectiveNodeFlow = new Map<string, NodeFlow>();

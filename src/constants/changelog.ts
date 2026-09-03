@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.740",
+    date: "2026-09-03",
+    summary: "2D site-aware multi-site tidy layout with central transport hub placement and site-bounded flow direction (v1.0.740)",
+  },
+  {
     version: "1.0.739",
     date: "2026-09-03",
     summary: "Added a Colour Vision setting for red-green colour vision deficiency. Project Settings now offers a red-green friendly palette that moves the status greens to blue, so they read against the reds they are paired with across the canvas, the node panels, the BOM and the quote. Reds are left as they are, since red stays visible - it is the red-against-green pairing that carries no information. The choice is saved for you rather than with the project, so it follows you into someone else's topology; PDF exports still use the standard palette.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.721",
     date: "2026-09-02",
     summary: "Fixed chassis and module lookup normalization: corrected cage capacity calculation on modular HC-series chassis (e.g. GigaVUE-HC1-Plus with PRT-HC1-Q04X08) allowing all 8 QSFP cages to be fully populated with 100G optics.",
-  },
-  {
-    version: "1.0.720",
-    date: "2026-09-02",
-    summary: "Enforced cage-type validation during port link preservation: discarded stale QSFP assignments on SFP feeds, dynamically synchronized transceivers for collapsed TAP clusters, and auto-provisioned matching optics across connected links.",
   },
 ];
