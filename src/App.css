@@ -1369,6 +1369,9 @@
 }
 
 .site-enclosure-header {
+  /* The enclosure itself stays click-through; only its header is a handle. */
+  pointer-events: auto;
+  cursor: grab;
   position: absolute;
   top: -12px;
   left: 20px;
@@ -1382,7 +1385,10 @@
   gap: 6px;
   user-select: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
+}
+
+.site-enclosure-header:active {
+  cursor: grabbing;
 }
 
 .site-enclosure-count {
@@ -1996,4 +2002,4 @@
   border-radius: 8px;
   padding: 24px;
   box-shadow: var(--shadow-lg);
-}
+}

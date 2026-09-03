@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.736",
+    date: "2026-09-03",
+    summary: "The data centre title bar is now a handle for the whole site. Drag it to carry every device in that data centre across the canvas together, or click it to select the site so the flow direction control turns all of its equipment round at once - no more dragging or picking equipment one piece at a time. A drag is a single undo step, and clicking to select never enters the history at all.",
+  },
+  {
     version: "1.0.735",
     date: "2026-09-03",
     summary: "Restored smooth curved links in right-to-left layouts. A link that ran against its own flow was routed as a stepped path looping under the row, but that was decided purely on the source sitting to the right of the target - which in a mirrored layout is every link, so they all turned square and collided. It now reads the side the source's egress handle sits on, so a mirrored link flowing right-to-left keeps the curve it had before, and a genuine backhaul link still loops under whichever way round the layout reads.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.717",
     date: "2026-09-02",
     summary: "Ingested Worldwide Price List (WWPL Sept 2026) updates: clarified CCv1/CCv2 compatibility across HC3 bypass and port modules, updated EOS/EOL dates and replacement SKU mappings for QSB-504, IBP-TAC40, GTP-ATX02, GTP-ASF02, and G-TAP M Series modules.",
-  },
-  {
-    version: "1.0.716",
-    date: "2026-09-01",
-    summary: "Paired standalone VMware and virtual cloud source estates with their connected aggregation chassis in site architecture sub-diagrams, ensuring full feed context is illustrated rather than orphaned nodes.",
   },
 ];

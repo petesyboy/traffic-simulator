@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useViewport, useReactFlow, type Edge } from '@xyflow/react';
 import { type CustomNode, useStore } from '../../store/store';
 import { isAutoTrayModel } from '../../utils/trayModels';
@@ -38,6 +38,54 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
   const { getNodesBounds } = useReactFlow();
   const storeEdges = useStore((state) => state.edges);
   const edges = propEdges ?? storeEdges ?? [];
+  const selectNodesBySite = useStore((state) => state.selectNodesBySite);
+  const moveNodesTo = useStore((state) => state.moveNodesTo);
+
+  /**
+   * The header doubles as a handle for the whole data centre: pressing it
+   * selects every device in the site - so the flow direction control acts on
+   * all of them at once - and dragging carries them across the canvas together.
+   */
+  const beginSiteDrag = useCallback(
+    (event: React.MouseEvent, site: string, siteNodes: CustomNode[]) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      selectNodesBySite(site);
+
+      // Children move with their parent, so only top-level nodes are carried.
+      const origin = siteNodes
+        .filter((n) => !n.parentId)
+        .map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }));
+      const startX = event.clientX;
+      const startY = event.clientY;
+      let moved = false;
+
+      const handleMove = (moveEvent: MouseEvent) => {
+        const dx = (moveEvent.clientX - startX) / zoom;
+        const dy = (moveEvent.clientY - startY) / zoom;
+        if (!moved) {
+          if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+          // Checkpointed once, at the point the press becomes a drag, so undo
+          // reverts the whole move rather than its last increment - and a plain
+          // click to select never lands in the history at all.
+          moved = true;
+          useStore.getState().pushHistory();
+        }
+        moveNodesTo(origin.map((n) => ({ id: n.id, position: { x: n.x + dx, y: n.y + dy } })));
+      };
+
+      const handleUp = () => {
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleUp);
+      };
+
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+    },
+    [moveNodesTo, selectNodesBySite, zoom],
+  );
 
   const siteGroups = useMemo(() => {
     if (!enabled) return [];
@@ -109,6 +157,8 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
           >
             <div
               className="site-enclosure-header"
+              onMouseDown={(e) => beginSiteDrag(e, site, siteNodes)}
+              title={`Drag to move all of ${site} together, or click to select the whole site`}
               style={{
                 borderColor: palette.border,
                 color: palette.text,

@@ -63,6 +63,8 @@ export interface GraphSlice {
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
   setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;
+  selectNodesBySite: (site: string) => void;
+  moveNodesTo: (updates: Array<{ id: string; position: { x: number; y: number } }>) => void;
   clearCanvas: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
@@ -346,6 +348,32 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     if (targets.size === 0) return;
     get().pushHistory();
     set({ nodes: nodes.map((node) => (targets.has(node.id) ? applyFlowDirection(node, direction) : node)) });
+  },
+
+  // Selecting a whole data centre from its enclosure header, so its equipment
+  // can be moved or turned round as one unit instead of node by node.
+  selectNodesBySite: (site) => {
+    const target = site.trim();
+    set({
+      nodes: get().nodes.map((node) => {
+        const selected = ((node.data?.site as string) || '').trim() === target;
+        return node.selected === selected ? node : { ...node, selected };
+      }),
+      selectedNodeId: null,
+    });
+  },
+
+  // Bulk position write for dragging a whole site. History is checkpointed by
+  // the caller at the start of the gesture, not per pixel.
+  moveNodesTo: (updates) => {
+    if (updates.length === 0) return;
+    const byId = new Map(updates.map((u) => [u.id, u.position]));
+    set({
+      nodes: get().nodes.map((node) => {
+        const position = byId.get(node.id);
+        return position ? { ...node, position } : node;
+      }),
+    });
   },
 
   // Flips every selected node at once, falling back to the single node open in
