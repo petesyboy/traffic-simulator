@@ -101,6 +101,30 @@
   --transition-normal: 0.2s ease;
 }
 
+/* ── Colour vision ──────────────────────────────────────────────────────────
+   Status greens are named rather than hard-coded so they can be remapped for
+   red-green colour vision deficiency, where a green paired against a red
+   carries no information. The defaults are the original values, so with the
+   setting off nothing changes. Reds are left alone - red stays visible; it is
+   the red-against-green pairing that fails, and moving the green to blue is
+   enough to separate the pair. See ColourVisionMode in uiSlice.ts. */
+:root {
+  --status-green-strong: #16a34a;
+  --status-green: #22c55e;
+  --status-green-mid: #10b981;
+  --status-green-soft: #34d399;
+  --status-green-light: #4ade80;
+}
+
+:root[data-colour-vision='red-green'] {
+  --status-green-strong: #0369a1;
+  --status-green: #0284c7;
+  --status-green-mid: #0ea5e9;
+  --status-green-soft: #38bdf8;
+  --status-green-light: #7dd3fc;
+}
+
+
 [data-theme='light'] {
   --bg-primary: #f8fafc;      /* Canvas/main background */
   --bg-secondary: #ffffff;    /* Inner elements sidebar */

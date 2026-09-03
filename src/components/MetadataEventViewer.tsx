@@ -315,7 +315,7 @@ export const MetadataEventViewer: React.FC<MetadataEventViewerProps> = ({ select
 
       {/* Bandwidth savings — single compact line */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px', padding: '3px 6px', marginBottom: '4px', fontSize: '10px' }}>
-        <span style={{ color: '#34d399', fontWeight: 600 }}>⚡ 95% bandwidth saved</span>
+        <span style={{ color: 'var(--status-green-soft, #34d399)', fontWeight: 600 }}>⚡ 95% bandwidth saved</span>
         <span style={{ color: '#9ca3af', fontFamily: 'monospace', fontSize: '9px' }}>~1.4k evt/s</span>
       </div>
 

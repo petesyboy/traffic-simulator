@@ -17,7 +17,7 @@ const PAD_BOTTOM = 32;
 const SITE_PALETTES = [
   { border: 'rgba(0, 229, 255, 0.45)', bg: 'rgba(0, 229, 255, 0.035)', glow: 'rgba(0, 229, 255, 0.12)', text: '#00e5ff', badgeBg: 'rgba(0, 229, 255, 0.12)' },
   { border: 'rgba(168, 85, 247, 0.45)', bg: 'rgba(168, 85, 247, 0.035)', glow: 'rgba(168, 85, 247, 0.12)', text: '#c084fc', badgeBg: 'rgba(168, 85, 247, 0.12)' },
-  { border: 'rgba(16, 185, 129, 0.45)', bg: 'rgba(16, 185, 129, 0.035)', glow: 'rgba(16, 185, 129, 0.12)', text: '#34d399', badgeBg: 'rgba(16, 185, 129, 0.12)' },
+  { border: 'rgba(16, 185, 129, 0.45)', bg: 'rgba(16, 185, 129, 0.035)', glow: 'rgba(16, 185, 129, 0.12)', text: 'var(--status-green-soft, #34d399)', badgeBg: 'rgba(16, 185, 129, 0.12)' },
   { border: 'rgba(245, 158, 11, 0.45)', bg: 'rgba(245, 158, 11, 0.035)', glow: 'rgba(245, 158, 11, 0.12)', text: '#fbbf24', badgeBg: 'rgba(245, 158, 11, 0.12)' },
   { border: 'rgba(244, 63, 94, 0.45)', bg: 'rgba(244, 63, 94, 0.035)', glow: 'rgba(244, 63, 94, 0.12)', text: '#fb7185', badgeBg: 'rgba(244, 63, 94, 0.12)' },
   { border: 'rgba(56, 189, 248, 0.45)', bg: 'rgba(56, 189, 248, 0.035)', glow: 'rgba(56, 189, 248, 0.12)', text: '#38bdf8', badgeBg: 'rgba(56, 189, 248, 0.12)' },

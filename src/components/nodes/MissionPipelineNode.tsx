@@ -129,7 +129,7 @@ const MissionPipelineNodeComponent: React.FC<NodeProps> = ({ id, selected }) => 
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
           <span style={{ color: '#94a3b8' }}>Optimised Tool Egress:</span>
-          <span style={{ fontWeight: 'bold', color: '#4ade80' }}>{formatBandwidth(tx || 55950)}</span>
+          <span style={{ fontWeight: 'bold', color: 'var(--status-green-light, #4ade80)' }}>{formatBandwidth(tx || 55950)}</span>
         </div>
         <div
           style={{

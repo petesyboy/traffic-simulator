@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.739",
+    date: "2026-09-03",
+    summary: "Added a Colour Vision setting for red-green colour vision deficiency. Project Settings now offers a red-green friendly palette that moves the status greens to blue, so they read against the reds they are paired with across the canvas, the node panels, the BOM and the quote. Reds are left as they are, since red stays visible - it is the red-against-green pairing that carries no information. The choice is saved for you rather than with the project, so it follows you into someone else's topology; PDF exports still use the standard palette.",
+  },
+  {
     version: "1.0.738",
     date: "2026-09-03",
     summary: "The DWDM ring now shows you where a link can land. Its eight ports looked identical, so there was no way to tell an ingress from an egress before letting go. Dragging a link now lights up in green, and enlarges, only the ports that can accept it - the ingress ports when you drag from a chassis output, the egress ports when you drag from an input - and dims the rest, with a prompt on the ring itself. Hovering any port names what it takes and which direction it faces.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.720",
     date: "2026-09-02",
     summary: "Enforced cage-type validation during port link preservation: discarded stale QSFP assignments on SFP feeds, dynamically synchronized transceivers for collapsed TAP clusters, and auto-provisioned matching optics across connected links.",
-  },
-  {
-    version: "1.0.719",
-    date: "2026-09-02",
-    summary: "Constrained TAP cluster port allocation to matching cage families (SFP vs QSFP): prevented 10G SFP TAP links from falling through to unpopulated QSFP cages (1/1/c1..c8) on hybrid chassis like GigaVUE-TA25E, eliminating false 'missing transceiver' and port shortfall errors.",
   },
 ];

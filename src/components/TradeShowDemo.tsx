@@ -290,7 +290,7 @@ export const TradeShowDemo: React.FC = () => {
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'rgba(18, 18, 18, 0.95)',
-        border: '2px solid #22c55e',
+        border: '2px solid var(--status-green, #22c55e)',
         borderRadius: '8px',
         padding: '12px 24px',
         zIndex: 1000,
@@ -311,12 +311,12 @@ export const TradeShowDemo: React.FC = () => {
             width: '12px', 
             height: '12px', 
             borderRadius: '50%', 
-            background: '#22c55e',
-            boxShadow: '0 0 8px #22c55e'
+            background: 'var(--status-green, #22c55e)',
+            boxShadow: '0 0 8px var(--status-green, #22c55e)'
           }} 
         />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#22c55e', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--status-green, #22c55e)', fontWeight: 'bold', letterSpacing: '0.05em' }}>
             TRADE SHOW AUTO-DEMO ACTIVE
           </span>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#e0e0e0' }}>

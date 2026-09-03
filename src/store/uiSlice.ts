@@ -21,9 +21,32 @@ const getInitialTheme = (): 'dark' | 'light' => {
   return 'dark';
 };
 
+export type ColourVisionMode = 'off' | 'red-green';
+
+/**
+ * A personal accessibility preference, so it is stored per person like the theme
+ * rather than in the project file - opening someone else's topology must not
+ * silently turn it off.
+ */
+const getInitialColourVision = (): ColourVisionMode => {
+  let mode: ColourVisionMode = 'off';
+  if (typeof localStorage !== 'undefined') {
+    try {
+      if (localStorage.getItem('fm-simulator-colour-vision') === 'red-green') mode = 'red-green';
+    } catch {
+      // ignore
+    }
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-colour-vision', mode);
+  }
+  return mode;
+};
+
 export interface UISlice {
   activeView: 'canvas' | 'rack';
   theme: 'dark' | 'light';
+  colourVisionMode: ColourVisionMode;
   sidebarMessage: string | null;
   currentScenarioName: string | null;
   isTradeShowDemoActive: boolean;
@@ -41,6 +64,7 @@ export interface UISlice {
 
   setActiveView: (view: 'canvas' | 'rack') => void;
   setTheme: (theme: 'dark' | 'light') => void;
+  setColourVisionMode: (mode: ColourVisionMode) => void;
   toggleTheme: () => void;
   setSidebarMessage: (msg: string | null) => void;
   setCurrentScenarioName: (name: string | null) => void;
@@ -60,6 +84,7 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
   return {
     activeView: 'canvas',
     theme: initialTheme,
+    colourVisionMode: getInitialColourVision(),
     sidebarMessage: null,
     currentScenarioName: null,
     isTradeShowDemoActive: false,
@@ -84,6 +109,19 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
         document.documentElement.setAttribute('data-theme', theme);
       }
       set({ theme });
+    },
+    setColourVisionMode: (mode) => {
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('fm-simulator-colour-vision', mode);
+        } catch {
+          // ignore
+        }
+      }
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-colour-vision', mode);
+      }
+      set({ colourVisionMode: mode });
     },
     toggleTheme: () => {
       const next = get().theme === 'dark' ? 'light' : 'dark';

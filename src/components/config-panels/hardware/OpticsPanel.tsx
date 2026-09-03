@@ -570,8 +570,8 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
                 fontSize: '11px',
                 fontWeight: 600,
                 background: replaceFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                border: `1px solid ${replaceFeedback.type === 'success' ? '#22c55e' : '#ef4444'}`,
-                color: replaceFeedback.type === 'success' ? '#4ade80' : '#f87171',
+                border: `1px solid ${replaceFeedback.type === 'success' ? 'var(--status-green, #22c55e)' : '#ef4444'}`,
+                color: replaceFeedback.type === 'success' ? 'var(--status-green-light, #4ade80)' : '#f87171',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -700,7 +700,7 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
                       <div style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'normal', marginTop: '3px' }}>
                         Installed on this chassis: <span style={{ color: '#38bdf8', fontWeight: 600 }}>{thisNodeCount} units</span>
                         {projectCount > thisNodeCount && (
-                          <span> • Project-wide: <span style={{ color: '#34d399', fontWeight: 600 }}>{projectCount} units</span></span>
+                          <span> • Project-wide: <span style={{ color: 'var(--status-green-soft, #34d399)', fontWeight: 600 }}>{projectCount} units</span></span>
                         )}
                       </div>
                     </div>
@@ -808,8 +808,8 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
                       style={{
                         fontSize: '11px',
                         padding: '5px 14px',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        border: '1px solid #34d399',
+                        background: 'linear-gradient(135deg, var(--status-green-mid, #10b981) 0%, #059669 100%)',
+                        border: '1px solid var(--status-green-soft, #34d399)',
                         color: '#fff',
                         fontWeight: 'bold',
                         cursor: !bulkReplaceTarget ? 'not-allowed' : 'pointer',

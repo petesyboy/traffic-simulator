@@ -382,6 +382,8 @@ export interface RFState {
   exportDiagramMode: boolean;
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
+  colourVisionMode: 'off' | 'red-green';
+  setColourVisionMode: (mode: 'off' | 'red-green') => void;
   toggleTheme: () => void;
   fitViewTrigger: number;
   fitViewNodeIds: string[] | null;

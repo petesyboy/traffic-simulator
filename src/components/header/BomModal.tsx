@@ -439,7 +439,7 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
             <button
               className="btn btn-primary"
               onClick={handleExportPhysicalCsv}
-              style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.5)', color: '#22c55e' }}
+              style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.5)', color: 'var(--status-green, #22c55e)' }}
             >
               Export Deployment CSV
             </button>
@@ -803,7 +803,7 @@ function renderPhysicalTab(
           <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>
             Total Max Power
           </div>
-          <div style={{ fontSize: '20px', color: '#22c55e', fontWeight: 'bold' }}>{totalPower} W</div>
+          <div style={{ fontSize: '20px', color: 'var(--status-green, #22c55e)', fontWeight: 'bold' }}>{totalPower} W</div>
         </div>
         <div
           style={{

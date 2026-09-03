@@ -16,6 +16,8 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
   const setProjectLicenseMode = useStore((s) => s.setProjectLicenseMode);
   const defaultTermDuration = useStore((s) => s.defaultTermDuration);
   const setDefaultTermDuration = useStore((s) => s.setDefaultTermDuration);
+  const colourVisionMode = useStore((s) => s.colourVisionMode);
+  const setColourVisionMode = useStore((s) => s.setColourVisionMode);
   const projectRegion = useStore((s) => s.projectRegion);
   const setProjectRegion = useStore((s) => s.setProjectRegion);
   const disableDcWarnings = useStore((s) => s.disableDcWarnings);
@@ -104,6 +106,27 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
               onChange={(e) => setDefaultTermDuration(e.target.value)}
               onBlur={handleTermBlur}
             />
+          </div>
+
+          {/* Colour vision - stored per person, not in the project file, so it
+              follows you into someone else's topology. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>
+              Colour Vision
+            </label>
+            <select
+              className="form-input"
+              value={colourVisionMode}
+              onChange={(e) => setColourVisionMode(e.target.value as 'off' | 'red-green')}
+            >
+              <option value="off">Standard palette</option>
+              <option value="red-green">Red-green friendly (protanopia / deuteranopia)</option>
+            </select>
+            <span className="text-muted" style={{ fontSize: '10px', lineHeight: 1.4 }}>
+              Moves status greens to blue so they read against the reds they are paired with.
+              Applies to the canvas and every panel; PDF exports still use the standard palette.
+              Saved for you rather than with the project.
+            </span>
           </div>
 
           {/* Checkboxes */}

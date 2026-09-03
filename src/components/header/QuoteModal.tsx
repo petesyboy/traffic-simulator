@@ -67,7 +67,7 @@ const CATEGORY_COLORS: Record<QuoteCategory, string> = {
   Chassis: '#38bdf8',
   Module: '#06b6d4',
   Optic: '#f59e0b',
-  TAP: '#10b981',
+  TAP: 'var(--status-green-mid, #10b981)',
   Support: '#ec4899',
   Accessory: '#64748b',
   Other: '#94a3b8',
@@ -882,7 +882,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                       background: '#1f2937',
                       border: '1px solid #4b5563',
                       borderRadius: '4px',
-                      color: globalLicenseMode === 'HTL' ? '#38bdf8' : '#34d399',
+                      color: globalLicenseMode === 'HTL' ? '#38bdf8' : 'var(--status-green-soft, #34d399)',
                       fontSize: '11px',
                       fontWeight: 700,
                       padding: '2px 6px',
@@ -1071,13 +1071,13 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   alignItems: 'center',
                   gap: '5px',
                   background: freePowerCords ? 'rgba(34, 197, 94, 0.15)' : '#1f2937',
-                  border: `1px solid ${freePowerCords ? '#22c55e' : '#374151'}`,
+                  border: `1px solid ${freePowerCords ? 'var(--status-green, #22c55e)' : '#374151'}`,
                   padding: '5px 9px',
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '11px',
                   fontWeight: 600,
-                  color: freePowerCords ? '#4ade80' : '#d1d5db',
+                  color: freePowerCords ? 'var(--status-green-light, #4ade80)' : '#d1d5db',
                   userSelect: 'none',
                 }}
                 title="Apply 100% discount on TA & HC international power cords (PCD-00003/5/7/9 & PCD-000R3/5/7/9, included free of charge)"
@@ -1086,7 +1086,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                   type="checkbox"
                   checked={freePowerCords}
                   onChange={(e) => setFreePowerCords(e.target.checked)}
-                  style={{ cursor: 'pointer', accentColor: '#22c55e' }}
+                  style={{ cursor: 'pointer', accentColor: 'var(--status-green, #22c55e)' }}
                 />
                 🔌 100% Disc Power Cords
               </label>
@@ -1094,7 +1094,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 <div
                   style={{
                     fontSize: '10px',
-                    color: '#4ade80',
+                    color: 'var(--status-green-light, #4ade80)',
                     fontWeight: 'bold',
                     marginTop: '3px',
                     display: 'flex',
@@ -1227,8 +1227,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 fontSize: '11px',
                 padding: '5px 10px',
                 background: '#1f2937',
-                border: '1px solid #10b981',
-                color: '#34d399',
+                border: '1px solid var(--status-green-mid, #10b981)',
+                color: 'var(--status-green-soft, #34d399)',
                 fontWeight: 600,
               }}
               title="Save this customized commercial quote with all overrides as a JSON file"
@@ -1572,7 +1572,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#34d399', marginBottom: '3px' }}>TAPs & Trays %</label>
+                <label style={{ display: 'block', fontSize: '10px', color: 'var(--status-green-soft, #34d399)', marginBottom: '3px' }}>TAPs & Trays %</label>
                 <input
                   type="text"
                   value={rawDiscountInputs.taps}
@@ -1583,7 +1583,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                     borderRadius: '4px',
                     background: '#111827',
                     border: '1px solid #059669',
-                    color: '#34d399',
+                    color: 'var(--status-green-soft, #34d399)',
                     fontSize: '12px',
                     fontWeight: 'bold',
                   }}
@@ -1791,11 +1791,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '10px', color: '#34d399', textTransform: 'uppercase' }}>Commercial Discount Savings</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--status-green-soft, #34d399)', textTransform: 'uppercase' }}>Commercial Discount Savings</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--status-green-soft, #34d399)', marginTop: '2px' }}>
                 {formatCurrency(summary.totalDiscountAmount)}
               </div>
-              <div style={{ fontSize: '10px', color: '#10b981', marginTop: '2px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--status-green-mid, #10b981)', marginTop: '2px' }}>
                 {summary.effectiveDiscountPercent.toFixed(1)}% Overall Savings
               </div>
             </div>
@@ -2097,7 +2097,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                               borderRadius: '4px',
                               background: !item.applyDiscount ? '#374151' : '#111827',
                               border: item.discountOverride !== undefined ? '1px solid #38bdf8' : '1px solid #4b5563',
-                              color: item.effectiveDiscountPercent > 0 ? '#34d399' : '#9ca3af',
+                              color: item.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
                               fontSize: '12px',
                               fontWeight: item.discountOverride !== undefined ? 'bold' : 'normal',
                               textAlign: 'center',
@@ -2197,7 +2197,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                       padding: '12px 12px',
                       textAlign: 'center',
                       fontFamily: 'monospace',
-                      color: summary.effectiveDiscountPercent > 0 ? '#34d399' : '#9ca3af',
+                      color: summary.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
                       fontSize: '12px',
                     }}
                   >
@@ -2277,8 +2277,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 fontSize: '12px',
                 padding: '6px 13px',
                 background: '#1f2937',
-                border: '1px solid #10b981',
-                color: '#34d399',
+                border: '1px solid var(--status-green-mid, #10b981)',
+                color: 'var(--status-green-soft, #34d399)',
                 fontWeight: 600,
               }}
               title="Save this customized quote (with all overrides, term durations, and discounts) to a JSON file"

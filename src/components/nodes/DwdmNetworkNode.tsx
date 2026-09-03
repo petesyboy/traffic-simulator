@@ -107,7 +107,7 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
                 ...port.offset,
                 width: canAccept ? '18px' : '10px',
                 height: canAccept ? '18px' : '10px',
-                background: canAccept ? '#4ade80' : port.type === 'target' ? '#c084fc' : '#a855f7',
+                background: canAccept ? 'var(--status-green-light, #4ade80)' : port.type === 'target' ? '#c084fc' : '#a855f7',
                 border: canAccept ? '2px solid #bbf7d0' : '1px solid rgba(12, 10, 28, 0.8)',
                 boxShadow: canAccept ? '0 0 0 4px rgba(74, 222, 128, 0.25), 0 0 14px rgba(74, 222, 128, 0.9)' : 'none',
                 opacity: dimmed ? 0.18 : 1,
@@ -208,7 +208,7 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d8b4fe', marginBottom: '2px', fontWeight: 600 }}>
             <span>Connected Endpoints:</span>
-            <span style={{ color: connectedNodes.length > 0 ? '#4ade80' : '#94a3b8' }}>
+            <span style={{ color: connectedNodes.length > 0 ? 'var(--status-green-light, #4ade80)' : '#94a3b8' }}>
               {connectedNodes.length} Chassis
             </span>
           </div>

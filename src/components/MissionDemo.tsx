@@ -559,7 +559,7 @@ export const MissionDemo: React.FC = () => {
           <button
             onClick={() => setIsPaused(!isPaused)}
             style={{
-              background: isPaused ? '#10b981' : 'rgba(255,255,255,0.08)',
+              background: isPaused ? 'var(--status-green-mid, #10b981)' : 'rgba(255,255,255,0.08)',
               color: '#fff',
               border: '1px solid rgba(255,255,255,0.15)',
               borderRadius: '6px',
@@ -646,7 +646,7 @@ export const MissionDemo: React.FC = () => {
           </span>
         )}
         {isPaused && (
-          <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '16px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--status-green-mid, #10b981)', fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '16px' }}>
             ⏸ Paused
           </span>
         )}
@@ -665,7 +665,7 @@ export const MissionDemo: React.FC = () => {
         <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '14px' }}>📉</span>
           <div>
-            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#4ade80' }}>35%+ Ingest Savings</div>
+            <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--status-green-light, #4ade80)' }}>35%+ Ingest Savings</div>
             <div style={{ fontSize: '8.5px', color: '#94a3b8' }}>De-dup & Noise Filtering</div>
           </div>
         </div>
