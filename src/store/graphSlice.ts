@@ -62,6 +62,7 @@ export interface GraphSlice {
   optimizeDwdmHandles: () => void;
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
+  setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;
   clearCanvas: () => void;
   groupSelectedNodes: () => void;
   ungroupGroup: (groupId: string) => void;
@@ -70,6 +71,23 @@ export interface GraphSlice {
   dissolveCluster: (clusterNodeId: string) => void;
   duplicateSolution: (newSiteName: string) => void;
   autoScaleToolForFeed: (nodeId: string) => { ok: boolean; message: string };
+}
+
+/**
+ * Writes a flow direction onto one node. A hand-picked direction is locked so a
+ * later auto-layout pass leaves that choice alone; 'auto' clears both fields and
+ * hands the node back to the layout engine.
+ */
+function applyFlowDirection(node: CustomNode, direction: 'ltr' | 'rtl' | 'auto'): CustomNode {
+  const data = { ...node.data } as Record<string, unknown>;
+  if (direction === 'auto') {
+    delete data.flowDirection;
+    delete data.flowDirectionLocked;
+  } else {
+    data.flowDirection = direction;
+    data.flowDirectionLocked = true;
+  }
+  return { ...node, data } as CustomNode;
 }
 
 export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set, get) => ({
@@ -313,25 +331,21 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     }
   },
 
-  // Picking a direction by hand locks it, so a later auto-layout pass leaves
-  // that choice alone rather than silently undoing the fix. 'auto' clears both
-  // fields and hands the node back to the layout engine.
   setNodeFlowDirection: (nodeId, direction) => {
     get().pushHistory();
-    set({
-      nodes: get().nodes.map((node) => {
-        if (node.id !== nodeId) return node;
-        const data = { ...node.data } as Record<string, unknown>;
-        if (direction === 'auto') {
-          delete data.flowDirection;
-          delete data.flowDirectionLocked;
-        } else {
-          data.flowDirection = direction;
-          data.flowDirectionLocked = true;
-        }
-        return { ...node, data } as CustomNode;
-      }),
-    });
+    set({ nodes: get().nodes.map((node) => (node.id === nodeId ? applyFlowDirection(node, direction) : node)) });
+  },
+
+  // Sets one direction across the whole selection, rather than flipping each
+  // node the way mirroring does - a mixed selection all ends up the same way
+  // round, which is what you want when turning a whole site to face a hub.
+  setSelectionFlowDirection: (direction) => {
+    const { nodes, selectedNodeId } = get();
+    const targets = new Set(nodes.filter((n) => n.selected).map((n) => n.id));
+    if (targets.size === 0 && selectedNodeId) targets.add(selectedNodeId);
+    if (targets.size === 0) return;
+    get().pushHistory();
+    set({ nodes: nodes.map((node) => (targets.has(node.id) ? applyFlowDirection(node, direction) : node)) });
   },
 
   // Flips every selected node at once, falling back to the single node open in

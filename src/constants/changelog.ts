@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.733",
+    date: "2026-09-03",
+    summary: "Added a flow direction control for the whole selection: hold Ctrl (or Shift-drag a box) to pick several nodes, then set them all left-to-right, right-to-left or Auto in one click from the canvas toolbar. The control shows how many nodes it will change, and highlights a direction only when the whole selection already agrees, so a mixed selection is obvious at a glance.",
+  },
+  {
     version: "1.0.732",
     date: "2026-09-02",
     summary: "Fixed mirrored nodes so their links actually follow the handles: flipping a node between left-to-right and right-to-left now forces ReactFlow to re-measure that node, so every connected link re-routes to the new side instead of continuing to point at where the handle used to be.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.714",
     date: "2026-09-01",
     summary: "Fixed site diagram screenshot framing and multi-site layout capture: eliminated cross-site TAP auto-bundling and adjusted viewport padding and zoom for balanced, centered site sub-diagrams.",
-  },
-  {
-    version: "1.0.713",
-    date: "2026-09-01",
-    summary: "Updated packet-consuming tools catalogue: replaced FortiNDR, Arista NDR, NetWitness, and Trend Micro with Armis (2 Gbps sensor profile) beneath Nozomi, including full appliance profiling and PDF report purpose descriptions.",
   },
 ];

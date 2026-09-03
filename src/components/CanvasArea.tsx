@@ -49,6 +49,12 @@ const edgeTypes = {
   missionBackboneEdge: MissionBackboneEdge,
 };
 
+const SELECTION_FLOW_OPTIONS = [
+  { value: 'ltr' as const, label: '→ LTR', title: 'Ingest on the left, egress on the right' },
+  { value: 'rtl' as const, label: '← RTL', title: 'Ingest on the right, egress on the left' },
+  { value: 'auto' as const, label: 'Auto', title: 'Let the layout engine choose' },
+];
+
 const CanvasArea: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -452,14 +458,27 @@ const CanvasArea: React.FC = () => {
     [nodes],
   );
 
-  // Drives the Mirror button: a multi-selection wins, otherwise the single node
-  // open in the config panel is the implicit target.
-  const mirrorSelectedNodes = useStore((state) => state.mirrorSelectedNodes);
+  // Drives the flow-direction control: a multi-selection wins, otherwise the
+  // single node open in the config panel is the implicit target. The M shortcut
+  // still toggles the same set (see App.tsx).
   const selectedNodeId = useStore((state) => state.selectedNodeId);
-  const selectionCount = useMemo(() => {
-    const multi = nodes.filter((n) => n.selected && !n.hidden).length;
-    return multi > 0 ? multi : selectedNodeId ? 1 : 0;
+  const setSelectionFlowDirection = useStore((state) => state.setSelectionFlowDirection);
+  const selectedForFlow = useMemo(() => {
+    const multi = nodes.filter((n) => n.selected && !n.hidden);
+    if (multi.length > 0) return multi;
+    const single = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : undefined;
+    return single ? [single] : [];
   }, [nodes, selectedNodeId]);
+  const selectionCount = selectedForFlow.length;
+  // Only light a button up when the whole selection agrees - a mixed selection
+  // shows none, so it is obvious that clicking will change every node.
+  const selectionDirection = useMemo(() => {
+    if (selectedForFlow.length === 0) return null;
+    const directions = new Set(
+      selectedForFlow.map((n) => (n.data?.flowDirectionLocked ? (n.data?.flowDirection as string) || 'ltr' : 'auto')),
+    );
+    return directions.size === 1 ? [...directions][0] : null;
+  }, [selectedForFlow]);
 
   const [showSiteEnclosures, setShowSiteEnclosures] = useState(true);
   const hasTaggedSites = useMemo(
@@ -507,13 +526,27 @@ const CanvasArea: React.FC = () => {
           <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
           <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
           {selectionCount > 0 && (
-            <button
-              onClick={mirrorSelectedNodes}
-              title={`Mirror ${selectionCount} selected node${selectionCount === 1 ? '' : 's'} between left-to-right and right-to-left (shortcut: M)`}
-              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))' }}
+              onMouseDown={(e) => e.stopPropagation()}
             >
-              <span>↔</span> Mirror{selectionCount > 1 ? ` ${selectionCount}` : ''}
-            </button>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary, #ccc)', whiteSpace: 'nowrap' }}>
+                ↔ {selectionCount} selected
+              </span>
+              {SELECTION_FLOW_OPTIONS.map((opt) => {
+                const active = selectionDirection === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectionFlowDirection(opt.value)}
+                    title={`${opt.title} - applies to all ${selectionCount} selected node${selectionCount === 1 ? '' : 's'}`}
+                    style={{ padding: '3px 8px', fontSize: '10px', fontWeight: active ? 700 : 500, background: active ? 'rgba(0, 229, 255, 0.15)' : 'transparent', border: `1px solid ${active ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`, borderRadius: '3px', color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           )}
           {hasTaggedSites && (
             <button

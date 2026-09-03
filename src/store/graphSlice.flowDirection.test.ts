@@ -86,4 +86,64 @@ describe('flow direction actions', () => {
 
     expect(useStore.getState().nodes).toBe(nodes);
   });
+
+  it('setSelectionFlowDirection sets one direction across a mixed selection', () => {
+    useStore.setState({
+      nodes: [
+        makeNode('a', { selected: true }),
+        makeNode('b', { selected: true, data: { label: 'b', configType: 'Hardware', flowDirection: 'rtl', flowDirectionLocked: true } }),
+        makeNode('c', { selected: true, data: { label: 'c', configType: 'Hardware', flowDirection: 'ltr', flowDirectionLocked: true } }),
+        makeNode('d'),
+      ],
+    });
+
+    useStore.getState().setSelectionFlowDirection('rtl');
+
+    const byId = new Map(useStore.getState().nodes.map((n) => [n.id, n]));
+    // Every selected node ends up the same way round - unlike mirroring, which
+    // would have flipped each one and left the selection mixed.
+    expect(byId.get('a')!.data.flowDirection).toBe('rtl');
+    expect(byId.get('b')!.data.flowDirection).toBe('rtl');
+    expect(byId.get('c')!.data.flowDirection).toBe('rtl');
+    expect(byId.get('d')!.data.flowDirection).toBeUndefined();
+  });
+
+  it("setSelectionFlowDirection 'auto' clears the lock across the selection", () => {
+    useStore.setState({
+      nodes: [
+        makeNode('a', { selected: true, data: { label: 'a', configType: 'Hardware', flowDirection: 'rtl', flowDirectionLocked: true } }),
+        makeNode('b', { selected: true, data: { label: 'b', configType: 'Hardware', flowDirection: 'ltr', flowDirectionLocked: true } }),
+      ],
+    });
+
+    useStore.getState().setSelectionFlowDirection('auto');
+
+    useStore.getState().nodes.forEach((n) => {
+      expect(n.data.flowDirection).toBeUndefined();
+      expect(n.data.flowDirectionLocked).toBeUndefined();
+    });
+  });
+
+  it('setSelectionFlowDirection falls back to the node open in the config panel', () => {
+    useStore.setState({ nodes: [makeNode('a'), makeNode('b')], selectedNodeId: 'b' });
+
+    useStore.getState().setSelectionFlowDirection('rtl');
+
+    const byId = new Map(useStore.getState().nodes.map((n) => [n.id, n]));
+    expect(byId.get('b')!.data.flowDirection).toBe('rtl');
+    expect(byId.get('a')!.data.flowDirection).toBeUndefined();
+  });
+
+  it('setSelectionFlowDirection is undoable and a no-op with nothing selected', () => {
+    const nodes = [makeNode('a')];
+    useStore.setState({ nodes });
+    useStore.getState().setSelectionFlowDirection('rtl');
+    expect(useStore.getState().nodes).toBe(nodes);
+
+    useStore.setState({ nodes: [makeNode('a', { selected: true })] });
+    useStore.getState().setSelectionFlowDirection('rtl');
+    expect(useStore.getState().nodes[0].data.flowDirection).toBe('rtl');
+    useStore.getState().undo();
+    expect(useStore.getState().nodes[0].data.flowDirection).toBeUndefined();
+  });
 });
