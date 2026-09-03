@@ -43,6 +43,10 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
     updateNodeData(node.id, { spanDistanceKm: dist, latencyMs: lat });
   };
 
+  const uniqueSites = useMemo(() => {
+    return Array.from(new Set(nodes.map((n) => n.data?.site).filter((s) => typeof s === 'string' && (s as string).trim() !== ''))) as string[];
+  }, [nodes]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div
@@ -61,6 +65,21 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
         </div>
         Provides high-capacity, multi-site optical wavelength transport between data centres and aggregation nodes (e.g. TA200/TA25/HC1-Plus).
       </div>
+
+      <FormGroup label="Site Assignment (Optional)">
+        <datalist id="existing-sites-dwdm-list">
+          {uniqueSites.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+        <input
+          type="text"
+          list="existing-sites-dwdm-list"
+          placeholder="e.g. DC1, DC2, DC3 (leave empty for external hub)"
+          value={(node.data?.site as string) || ''}
+          onChange={(e) => onGenericChange('site', e.target.value)}
+        />
+      </FormGroup>
 
       <FormGroup label="Carrier / Transport Domain">
         <input

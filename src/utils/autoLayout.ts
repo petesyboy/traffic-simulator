@@ -200,7 +200,7 @@ function computeSiteRanks(
   hubNodes: CustomNode[],
   edges: Edge[],
   parentOf: Map<string, string>,
-): { siteRank: Map<string, number>; siteMedianY: Map<string, number> } {
+): { siteRank: Map<string, number>; siteMedianY: Map<string, number>; siteMedianX: Map<string, number>; isRing: boolean } {
   // Map node ID to its site
   const nodeToSite = new Map<string, string>();
   siteGroups.forEach((nodes, site) => {
@@ -259,11 +259,15 @@ function computeSiteRanks(
   // Compute site ranks (distance from upstream leaf sites)
   const siteRank = new Map<string, number>();
   const visiting = new Set<string>();
+  let hasCycle = false;
 
   function dfsSite(s: string): number {
     const cached = siteRank.get(s);
     if (cached !== undefined) return cached;
-    if (visiting.has(s)) return 0;
+    if (visiting.has(s)) {
+      hasCycle = true;
+      return 0;
+    }
     visiting.add(s);
     let r = 0;
     for (const p of sitePred.get(s) || []) {
@@ -276,19 +280,25 @@ function computeSiteRanks(
 
   siteNames.forEach(dfsSite);
 
-  // Measure median Y coordinate on canvas for each site
+  // Measure median Y and X coordinates on canvas for each site
   const siteMedianY = new Map<string, number>();
+  const siteMedianX = new Map<string, number>();
   siteNames.forEach((s) => {
     const nodes = siteGroups.get(s) || [];
     if (nodes.length === 0) {
       siteMedianY.set(s, 0);
+      siteMedianX.set(s, 0);
     } else {
       const ys = nodes.map((n) => n.position.y).sort((a, b) => a - b);
+      const xs = nodes.map((n) => n.position.x).sort((a, b) => a - b);
       siteMedianY.set(s, ys[Math.floor(ys.length / 2)]);
+      siteMedianX.set(s, xs[Math.floor(xs.length / 2)]);
     }
   });
 
-  return { siteRank, siteMedianY };
+  const isRing = hasCycle || (siteNames.length >= 3 && siteNames.every((s) => ((siteSucc.get(s)?.size || 0) + (sitePred.get(s)?.size || 0)) >= 2));
+
+  return { siteRank, siteMedianY, siteMedianX, isRing };
 }
 
 function getSiteHubRole(
@@ -493,11 +503,14 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
   const { succ, pred } = buildAdjacency(layoutIds, edges, parentOf);
   const rank = computeRanks(layoutIds, pred);
 
-  // Identify transport hubs vs non-hub equipment
+  // Identify external transport hubs vs site-local equipment
   const isDwdmOrWanNode = (n: CustomNode): boolean => {
-    if (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') return true;
     const s = ((n.data?.site as string) || '').trim().toUpperCase();
-    if (s === 'WAN' || s === 'TRANSPORT') return true;
+    if (s === 'WAN' || s === 'TRANSPORT' || s === 'CLOUD') return true;
+    if (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') {
+      // A DWDM node with an explicit site assigned belongs to that site's local equipment
+      return !s;
+    }
     return false;
   };
 
@@ -556,7 +569,7 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
     });
 
     const allSiteNames = Array.from(siteGroups.keys());
-    const { siteRank, siteMedianY } = computeSiteRanks(allSiteNames, siteGroups, hubNodes, edges, parentOf);
+    const { siteRank, siteMedianY, siteMedianX, isRing } = computeSiteRanks(allSiteNames, siteGroups, hubNodes, edges, parentOf);
 
     const westSites: string[] = [];
     const eastSites: string[] = [];
@@ -656,6 +669,61 @@ export function computeTidyLayout(nodes: CustomNode[], edges: Edge[], isExportMo
       const sNodes = siteGroups.get(s) || [];
       siteLayouts.set(s, layoutSiteInternally(sNodes, edges, parentOf, sizeOf, effectiveNodeFlow));
     });
+
+    // Check for 3-site triangular topology (e.g. DC3 North, DC1 South-West, DC2 South-East)
+    if (allSiteNames.length === 3 && hubNodes.length === 0 && isRing) {
+      const sortedByY = [...allSiteNames].sort((a, b) => {
+        const yA = siteMedianY.get(a) ?? 0;
+        const yB = siteMedianY.get(b) ?? 0;
+        if (Math.abs(yA - yB) > 40) return yA - yB;
+        return a.localeCompare(b);
+      });
+
+      const northSite = sortedByY[0];
+      const bottomCandidates = [sortedByY[1], sortedByY[2]].sort((a, b) => {
+        const xA = siteMedianX.get(a) ?? 0;
+        const xB = siteMedianX.get(b) ?? 0;
+        if (Math.abs(xA - xB) > 40) return xA - xB;
+        return a.localeCompare(b);
+      });
+      const swSite = bottomCandidates[0];
+      const seSite = bottomCandidates[1];
+
+      const northLayout = siteLayouts.get(northSite)!;
+      const swLayout = siteLayouts.get(swSite)!;
+      const seLayout = siteLayouts.get(seSite)!;
+
+      const bottomRowWidth = swLayout.width + SITE_GAP_X + seLayout.width;
+
+      const northOrigin = {
+        x: LEFT_MARGIN + Math.max(0, (bottomRowWidth - northLayout.width) / 2),
+        y: TOP_MARGIN,
+      };
+
+      const bottomY = TOP_MARGIN + northLayout.height + SITE_GAP_Y;
+      const swOrigin = {
+        x: LEFT_MARGIN,
+        y: bottomY,
+      };
+      const seOrigin = {
+        x: LEFT_MARGIN + swLayout.width + SITE_GAP_X,
+        y: bottomY,
+      };
+
+      const positions = new Map<string, { x: number; y: number }>();
+      const applySitePos = (s: string, origin: { x: number; y: number }) => {
+        const layout = siteLayouts.get(s)!;
+        layout.nodeLocalPositions.forEach((localPos, nodeId) => {
+          positions.set(nodeId, { x: origin.x + localPos.x, y: origin.y + localPos.y });
+        });
+      };
+
+      applySitePos(northSite, northOrigin);
+      applySitePos(swSite, swOrigin);
+      applySitePos(seSite, seOrigin);
+
+      return nodes.map((n) => withLayoutResult(n, positions.get(n.id), effectiveNodeFlow.get(n.id)));
+    }
 
     // Calculate West stack geometry
     let westWidth = 0;

@@ -121,7 +121,25 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
     const isTargetTool = targetNode?.type === 'toolNode';
     const isSourceTool = sourceNode?.type === 'toolNode';
     const isGsa = sourceNode?.data?.toolName === 'GigaSMART Appliance' || targetNode?.data?.toolName === 'GigaSMART Appliance';
+    const isSourceDwdm = sourceNode?.type === 'dwdmNetworkNode' || sourceNode?.data?.configType === 'DWDM Network';
+    const isTargetDwdm = targetNode?.type === 'dwdmNetworkNode' || targetNode?.data?.configType === 'DWDM Network';
 
+    if (isSourceDwdm && isTargetDwdm) {
+      return {
+        title: 'Inter-Site Optical Transport Span',
+        description: 'High-capacity DWDM dark fibre span interconnecting data centre sites over dedicated optical wavelengths with sub-millisecond propagation latency.',
+        badge: 'DWDM TRANSPORT',
+        badgeColor: '#a855f7',
+      };
+    }
+    if (isSourceDwdm || isTargetDwdm) {
+      return {
+        title: 'DWDM Client Access Link',
+        description: 'Transports aggregated network traffic between a local GigaVUE chassis and the optical transport gateway for cross-site transmission.',
+        badge: 'DWDM ACCESS',
+        badgeColor: '#c084fc',
+      };
+    }
     if (isSourceTap && isTargetHw) {
       return {
         title: 'TAP Ingress Feed',

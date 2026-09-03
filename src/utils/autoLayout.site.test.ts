@@ -394,4 +394,95 @@ describe('computeTidyLayout — Site-Aware Multi-Site Layout', () => {
     // Outgoing to above leaves from top handle
     expect(edgeMap.get('dwdm-above')?.sourceHandle).toBe('out-top');
   });
+
+  it('keeps site-assigned DWDM gateway inside its site and ranks it downstream of local chassis', () => {
+    const nodes: CustomNode[] = [
+      node('dc1-span', 0, 0, 'DC1'),
+      node('dc1-ta', 100, 0, 'DC1', { type: 'hardwareNode' }),
+      node('dc1-dwdm', 200, 0, 'DC1', { type: 'dwdmNetworkNode' }),
+      node('dc2-span', 0, 200, 'DC2'),
+      node('dc2-ta', 100, 200, 'DC2', { type: 'hardwareNode' }),
+      node('dc2-dwdm', 200, 200, 'DC2', { type: 'dwdmNetworkNode' }),
+    ];
+    const edges: Edge[] = [
+      edge('dc1-span', 'dc1-ta'),
+      edge('dc1-ta', 'dc1-dwdm'),
+      edge('dc2-span', 'dc2-ta'),
+      edge('dc2-ta', 'dc2-dwdm'),
+      edge('dc1-dwdm', 'dc2-dwdm'),
+    ];
+
+    const result = computeTidyLayout(nodes, edges);
+    const posMap = new Map(result.map((n) => [n.id, n.position]));
+
+    // dc1-dwdm ranks downstream of dc1-ta
+    expect(posMap.get('dc1-dwdm')!.x).toBeGreaterThan(posMap.get('dc1-ta')!.x);
+    expect(posMap.get('dc1-ta')!.x).toBeGreaterThan(posMap.get('dc1-span')!.x);
+
+    // dc2-dwdm ranks downstream of dc2-ta
+    expect(posMap.get('dc2-dwdm')!.x).toBeGreaterThan(posMap.get('dc2-ta')!.x);
+    expect(posMap.get('dc2-ta')!.x).toBeGreaterThan(posMap.get('dc2-span')!.x);
+  });
+
+  it('lays out 3 interconnected sites with per-site DWDM gateways in a 2D triangular topology', () => {
+    // Top-centre DC3, bottom-left DC1, bottom-right DC2
+    const nodes: CustomNode[] = [
+      // DC3 placed highest up
+      node('dc3-span', 200, 50, 'DC3'),
+      node('dc3-ta', 300, 50, 'DC3', { type: 'hardwareNode' }),
+      node('dc3-dwdm', 400, 50, 'DC3', { type: 'dwdmNetworkNode' }),
+
+      // DC1 placed lower-left
+      node('dc1-span', 0, 400, 'DC1'),
+      node('dc1-ta', 100, 400, 'DC1', { type: 'hardwareNode' }),
+      node('dc1-dwdm', 200, 400, 'DC1', { type: 'dwdmNetworkNode' }),
+
+      // DC2 placed lower-right
+      node('dc2-span', 500, 400, 'DC2'),
+      node('dc2-ta', 600, 400, 'DC2', { type: 'hardwareNode' }),
+      node('dc2-dwdm', 700, 400, 'DC2', { type: 'dwdmNetworkNode' }),
+    ];
+
+    const edges: Edge[] = [
+      // Intra-site feeds
+      edge('dc3-span', 'dc3-ta'),
+      edge('dc3-ta', 'dc3-dwdm'),
+      edge('dc1-span', 'dc1-ta'),
+      edge('dc1-ta', 'dc1-dwdm'),
+      edge('dc2-span', 'dc2-ta'),
+      edge('dc2-ta', 'dc2-dwdm'),
+
+      // Inter-site DWDM triangle
+      edge('dc3-dwdm', 'dc1-dwdm'),
+      edge('dc1-dwdm', 'dc2-dwdm'),
+      edge('dc2-dwdm', 'dc3-dwdm'),
+    ];
+
+    const result = computeTidyLayout(nodes, edges);
+    const posMap = new Map(result.map((n) => [n.id, n.position]));
+
+    // DC3 is North (top): its Y coordinate is strictly less than DC1 and DC2
+    const dc3Y = posMap.get('dc3-span')!.y;
+    const dc1Y = posMap.get('dc1-span')!.y;
+    const dc2Y = posMap.get('dc2-span')!.y;
+
+    expect(dc3Y).toBeLessThan(dc1Y);
+    expect(dc3Y).toBeLessThan(dc2Y);
+
+    // DC1 (South-West) is strictly to the left of DC2 (South-East)
+    const dc1SpanX = posMap.get('dc1-span')!.x;
+    const dc2SpanX = posMap.get('dc2-span')!.x;
+    expect(dc1SpanX).toBeLessThan(dc2SpanX);
+
+    // DC1 and DC2 sit on the bottom row at the same Y level
+    expect(dc1Y).toBe(dc2Y);
+
+    // Test handle optimization for the triangular DWDM mesh
+    const optimized = optimizeDwdmEdgeHandles(result, edges);
+    const edgeMap = new Map(optimized.map((e) => [e.id, e]));
+
+    // DC1 DWDM to DC2 DWDM runs left-to-right across the bottom
+    expect(edgeMap.get('dc1-dwdm-dc2-dwdm')?.sourceHandle).toBe('out-right');
+    expect(edgeMap.get('dc1-dwdm-dc2-dwdm')?.targetHandle).toBe('in-left');
+  });
 });

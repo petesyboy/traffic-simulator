@@ -125,17 +125,19 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
 
         const palette = getSitePalette(site, idx);
 
-        // Check if any node in this site is connected to a DWDM Optical Transport node
+        // Check if this site contains or is connected to a DWDM Optical Transport node
         const siteNodeIdSet = new Set(siteNodes.map((n) => n.id));
-        const connectedDwdm = nodes.find(
-          (n) =>
-            (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') &&
-            edges.some(
-              (e) =>
-                (siteNodeIdSet.has(e.source) && e.target === n.id) ||
-                (siteNodeIdSet.has(e.target) && e.source === n.id),
-            ),
-        );
+        const connectedDwdm =
+          siteNodes.find((n) => n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') ||
+          nodes.find(
+            (n) =>
+              (n.type === NODE_TYPES.DWDM_NETWORK || n.type === 'dwdmNetworkNode') &&
+              edges.some(
+                (e) =>
+                  (siteNodeIdSet.has(e.source) && e.target === n.id) ||
+                  (siteNodeIdSet.has(e.target) && e.source === n.id),
+              ),
+          );
 
         const dwdmSpeed = connectedDwdm ? (connectedDwdm.data?.wavelengthSpeed as string) || '100G' : '';
         const dwdmProt = connectedDwdm ? (connectedDwdm.data?.protectionMode as string) || 'Protected Ring (1+1)' : '';

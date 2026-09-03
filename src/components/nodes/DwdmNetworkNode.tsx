@@ -89,6 +89,11 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
+        {Boolean(data.site) && (
+          <div style={{ position: 'absolute', top: '-8px', left: '8px', background: '#3b82f6', color: '#fff', fontSize: '9px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', zIndex: 10, border: '1px solid #60a5fa' }}>
+            Site: {data.site as string}
+          </div>
+        )}
         {/* Ingress and egress on all four sides for multi-site interconnectivity.
             Hovering names each port; dragging a link lights up the ones that
             can take it. */}
