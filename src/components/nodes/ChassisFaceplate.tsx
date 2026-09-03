@@ -39,11 +39,20 @@ function getPortState(port: ChassisPort, occupant: PortOccupant | undefined): Po
   return port.licensed ? 'free' : 'unlicensed';
 }
 
-/** SFP banks are physically two staggered rows; QSFP and RJ45 sit in one. */
+/**
+ * High-density port banks (SFP > 12 or QSFP > 16, e.g. TA200's 64 cages) are
+ * physically two stacked rows with odd ports on top and even ports on bottom.
+ */
 function rowsFor(ports: ChassisPort[], cage: ChassisPort['cage']): ChassisPort[][] {
-  if (cage !== 'SFP' || ports.length <= 12) return [ports];
-  const half = Math.ceil(ports.length / 2);
-  return [ports.slice(0, half), ports.slice(half)];
+  const isHighDensity = (cage === 'SFP' && ports.length > 12) || (cage === 'QSFP' && ports.length > 16);
+  if (!isHighDensity) return [ports];
+  const top: ChassisPort[] = [];
+  const bottom: ChassisPort[] = [];
+  ports.forEach((p, idx) => {
+    if (idx % 2 === 0) top.push(p);
+    else bottom.push(p);
+  });
+  return [top, bottom];
 }
 
 const CAGE_LABEL: Record<ChassisPort['cage'], string> = { QSFP: 'QSFP', SFP: 'SFP', RJ45: 'RJ45', MPO: 'MPO' };

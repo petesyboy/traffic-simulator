@@ -110,4 +110,22 @@ describe('ChassisFaceplate', () => {
     expect(html).toContain('MPO');
     expect(countByColour(html, GREY)).toBe(15); // 3 MPO + 12 LC, all unwired
   });
+
+  it('renders a TA200 64-port QSFP faceplate in two stacked rows of 32', () => {
+    const ports = getChassisPorts('GigaVUE-TA200E', hw({ portCapacity: 'Half' }));
+    const html = renderToStaticMarkup(<ChassisFaceplate ports={ports} occupancy={new Map()} />);
+
+    expect(html).toContain('QSFP');
+    expect(ports.length).toBe(64);
+    // 32 ports licensed (grey), 32 unlicensed (red)
+    expect(countByColour(html, GREY)).toBe(32);
+    expect(html).toContain('32 free');
+    expect(html).toContain('32 unlicensed');
+
+    // Both top row (odd ports) and bottom row (even ports) are rendered
+    expect(html).toContain('1/1/c1');
+    expect(html).toContain('1/1/c2');
+    expect(html).toContain('1/1/c63');
+    expect(html).toContain('1/1/c64');
+  });
 });

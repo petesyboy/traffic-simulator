@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.741",
+    date: "2026-09-03",
+    summary: "Resolve chassis collision into SPAN ports and refine multi-site column spacing (v1.0.741)",
+  },
+  {
     version: "1.0.740",
     date: "2026-09-03",
     summary: "2D site-aware multi-site tidy layout with central transport hub placement and site-bounded flow direction (v1.0.740)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.722",
     date: "2026-09-02",
     summary: "Added DWDM Optical Transport Network node: models multi-site WAN and inter-DC interconnects over redundant 100 Gbps, 25 Gbps, and 400 Gbps optical wavelengths using optical lambda iconography.",
-  },
-  {
-    version: "1.0.721",
-    date: "2026-09-02",
-    summary: "Fixed chassis and module lookup normalization: corrected cage capacity calculation on modular HC-series chassis (e.g. GigaVUE-HC1-Plus with PRT-HC1-Q04X08) allowing all 8 QSFP cages to be fully populated with 100G optics.",
   },
 ];
