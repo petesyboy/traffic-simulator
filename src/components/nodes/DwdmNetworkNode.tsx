@@ -7,10 +7,25 @@
  */
 
 import React, { useMemo } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeResizer, useConnection, type NodeProps } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import { formatBandwidth } from '../../utils/format';
 import { useGlowClass } from './nodeStyles';
+
+/**
+ * The ring's eight ports. Ingress and egress sit on all four sides so links can
+ * come in from whichever direction a site happens to be laid out.
+ */
+const RING_PORTS = [
+  { id: 'in-left', type: 'target' as const, position: Position.Left, offset: { top: '35%' }, label: 'Ingress ← from a site to the west' },
+  { id: 'out-left', type: 'source' as const, position: Position.Left, offset: { top: '65%' }, label: 'Egress → to a site to the west' },
+  { id: 'in-right', type: 'target' as const, position: Position.Right, offset: { top: '35%' }, label: 'Ingress → from a site to the east' },
+  { id: 'out-right', type: 'source' as const, position: Position.Right, offset: { top: '65%' }, label: 'Egress ← to a site to the east' },
+  { id: 'in-top', type: 'target' as const, position: Position.Top, offset: { left: '35%' }, label: 'Ingress ↓ from a site above' },
+  { id: 'out-top', type: 'source' as const, position: Position.Top, offset: { left: '65%' }, label: 'Egress ↑ to a site above' },
+  { id: 'in-bottom', type: 'target' as const, position: Position.Bottom, offset: { left: '35%' }, label: 'Ingress ↑ from a site below' },
+  { id: 'out-bottom', type: 'source' as const, position: Position.Bottom, offset: { left: '65%' }, label: 'Egress ↓ to a site below' },
+];
 
 const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const isRunning = useStore((state) => state.isRunning);
@@ -33,6 +48,21 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
     });
     return nodes.filter((n) => connectedNodeIds.has(n.id));
   }, [edges, nodes, id]);
+
+  // While a link is being dragged, only the opposite kind of port can accept it:
+  // a drag started at another node's output needs one of this ring's inputs, and
+  // vice versa. Anything else is dimmed so there is one obvious place to drop.
+  const connection = useConnection((c) => ({
+    inProgress: c.inProgress,
+    fromType: c.inProgress ? c.fromHandle?.type : undefined,
+    fromNodeId: c.inProgress ? c.fromNode?.id : undefined,
+  }));
+  const acceptingType =
+    connection.inProgress && connection.fromNodeId !== id
+      ? connection.fromType === 'source'
+        ? 'target'
+        : 'source'
+      : null;
 
   const glowClass = useGlowClass(id);
   const isActive = isRunning && ((metrics?.rxMbps || 0) > 0 || (metrics?.txMbps || 0) > 0);
@@ -59,18 +89,34 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
-        {/* Handles on all 4 sides for intuitive multi-site interconnectivity */}
-        <Handle type="target" position={Position.Left} id="in-left" style={{ top: '35%', background: '#c084fc', width: '8px', height: '8px' }} />
-        <Handle type="source" position={Position.Left} id="out-left" style={{ top: '65%', background: '#a855f7', width: '8px', height: '8px' }} />
-
-        <Handle type="target" position={Position.Right} id="in-right" style={{ top: '35%', background: '#c084fc', width: '8px', height: '8px' }} />
-        <Handle type="source" position={Position.Right} id="out-right" style={{ top: '65%', background: '#a855f7', width: '8px', height: '8px' }} />
-
-        <Handle type="target" position={Position.Top} id="in-top" style={{ left: '35%', background: '#c084fc', width: '8px', height: '8px' }} />
-        <Handle type="source" position={Position.Top} id="out-top" style={{ left: '65%', background: '#a855f7', width: '8px', height: '8px' }} />
-
-        <Handle type="target" position={Position.Bottom} id="in-bottom" style={{ left: '35%', background: '#c084fc', width: '8px', height: '8px' }} />
-        <Handle type="source" position={Position.Bottom} id="out-bottom" style={{ left: '65%', background: '#a855f7', width: '8px', height: '8px' }} />
+        {/* Ingress and egress on all four sides for multi-site interconnectivity.
+            Hovering names each port; dragging a link lights up the ones that
+            can take it. */}
+        {RING_PORTS.map((port) => {
+          const canAccept = acceptingType === port.type;
+          const dimmed = acceptingType !== null && !canAccept;
+          return (
+            <Handle
+              key={port.id}
+              type={port.type}
+              position={port.position}
+              id={port.id}
+              title={port.label}
+              className={canAccept ? 'dwdm-port-open' : undefined}
+              style={{
+                ...port.offset,
+                width: canAccept ? '18px' : '10px',
+                height: canAccept ? '18px' : '10px',
+                background: canAccept ? '#4ade80' : port.type === 'target' ? '#c084fc' : '#a855f7',
+                border: canAccept ? '2px solid #bbf7d0' : '1px solid rgba(12, 10, 28, 0.8)',
+                boxShadow: canAccept ? '0 0 0 4px rgba(74, 222, 128, 0.25), 0 0 14px rgba(74, 222, 128, 0.9)' : 'none',
+                opacity: dimmed ? 0.18 : 1,
+                zIndex: canAccept ? 12 : 1,
+                transition: 'width 0.12s ease, height 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease',
+              }}
+            />
+          );
+        })}
 
         {/* Node Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -106,6 +152,21 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
 
         {/* Transport Specifications Badges */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          {acceptingType && (
+            <div
+              style={{
+                fontSize: '10px',
+                padding: '2px 7px',
+                borderRadius: '4px',
+                background: 'rgba(74, 222, 128, 0.2)',
+                border: '1px solid rgba(74, 222, 128, 0.6)',
+                color: '#bbf7d0',
+                fontWeight: 700,
+              }}
+            >
+              ↳ Drop on a glowing {acceptingType === 'target' ? 'ingress' : 'egress'} port
+            </div>
+          )}
           <div
             style={{
               fontSize: '10px',

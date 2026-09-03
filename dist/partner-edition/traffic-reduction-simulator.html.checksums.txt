@@ -1,4 +1,4 @@
 File:   traffic-reduction-simulator.html
-Size:   6432630 bytes
-MD5:    eb2f4790f7855a86a04c9b45c768de53
-SHA256: a137cf4b4314a096d9ea776a9e262e1a0d78a3b267d2cd476b7c6125308a54ad
+Size:   6434047 bytes
+MD5:    4cf5fab59a4ba62fdabad3941815e82a
+SHA256: 4e6c9372d196d234ed6ce6b0904c53898d592644c3783a70cf200eb780e9f17a

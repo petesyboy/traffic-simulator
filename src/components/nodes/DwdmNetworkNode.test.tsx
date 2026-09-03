@@ -168,3 +168,56 @@ describe('DwdmNetworkNode', () => {
     expect(result.metrics['dst-1'].rxMbps).toBe(40000);
   });
 });
+
+describe('DwdmNetworkNode ports', () => {
+  const render = () =>
+    renderToStaticMarkup(
+      <ReactFlowProvider>
+        <DwdmNetworkNode
+          {...({
+            id: 'dwdm-1',
+            data: { label: 'Metro Ring', configType: CONFIG_TYPES.DWDM_NETWORK },
+            selected: false,
+            type: NODE_TYPES.DWDM_NETWORK,
+            zIndex: 1,
+            isConnectable: true,
+            positionAbsoluteX: 0,
+            positionAbsoluteY: 0,
+            dragging: false,
+            draggable: true,
+            selectable: true,
+            deletable: true,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any)}
+        />
+      </ReactFlowProvider>,
+    );
+
+  it('offers ingress and egress on all four sides', () => {
+    const html = render();
+    const ports = (html.match(/<div[^>]*react-flow__handle[^>]*>/g) || []).map((tag) => ({
+      id: (tag.match(/data-handleid="([^"]*)"/) || [])[1],
+      pos: (tag.match(/data-handlepos="([^"]*)"/) || [])[1],
+      kind: tag.includes(' source ') ? 'source' : 'target',
+    }));
+
+    // These ids are what every saved project's ring links resolve against, so
+    // renaming one silently breaks existing topologies.
+    expect(ports.map((p) => p.id).sort()).toEqual([
+      'in-bottom', 'in-left', 'in-right', 'in-top',
+      'out-bottom', 'out-left', 'out-right', 'out-top',
+    ]);
+    expect(ports.filter((p) => p.kind === 'target')).toHaveLength(4);
+    expect(ports.filter((p) => p.kind === 'source')).toHaveLength(4);
+    ports.forEach((p) => {
+      expect(p.id.startsWith(p.kind === 'target' ? 'in-' : 'out-')).toBe(true);
+      expect(p.id.endsWith(p.pos as string)).toBe(true);
+    });
+  });
+
+  it('names every port so hovering explains what it accepts', () => {
+    const html = render();
+    const titles = (html.match(/title="[^"]*(?:Ingress|Egress)[^"]*"/g) || []).length;
+    expect(titles).toBe(8);
+  });
+});

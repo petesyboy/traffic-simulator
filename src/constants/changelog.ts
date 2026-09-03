@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.738",
+    date: "2026-09-03",
+    summary: "The DWDM ring now shows you where a link can land. Its eight ports looked identical, so there was no way to tell an ingress from an egress before letting go. Dragging a link now lights up in green, and enlarges, only the ports that can accept it - the ingress ports when you drag from a chassis output, the egress ports when you drag from an input - and dims the rest, with a prompt on the ring itself. Hovering any port names what it takes and which direction it faces.",
+  },
+  {
     version: "1.0.737",
     date: "2026-09-03",
     summary: "Redundant links into the DWDM optical ring are now accepted. A second link between the same chassis and the ring was treated as an accidental duplicate and silently dropped, which made a 1+1 protected ring impossible to draw - the working and protection paths run between exactly the same pair of endpoints. Parallel links to the transport ring are now allowed, so each site can take its own working and protection pair in both directions, drawn as separate fanned curves and labelled Link 1/2 and Link 2/2. There is no fixed limit on how many a ring can carry.",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.719",
     date: "2026-09-02",
     summary: "Constrained TAP cluster port allocation to matching cage families (SFP vs QSFP): prevented 10G SFP TAP links from falling through to unpopulated QSFP cages (1/1/c1..c8) on hybrid chassis like GigaVUE-TA25E, eliminating false 'missing transceiver' and port shortfall errors.",
-  },
-  {
-    version: "1.0.718",
-    date: "2026-09-02",
-    summary: "Fixed TAP cluster port and optic overcounting: corrected validation and port allocation for multi-member TAP stacks connected across single or multiple chassis, eliminating false 'insufficient optics' (384 optics demanded) and 'out of physical ports' errors.",
   },
 ];
