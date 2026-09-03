@@ -1,0 +1,24 @@
+# Line endings
+# ─────────────────────────────────────────────────────────────────────────────
+# Every text file is stored in the repository with LF and converted to the
+# platform's native form on checkout. Without this, an editor or script that
+# rewrites a file with different endings turns a three-line change into a
+# whole-file diff and destroys `git blame` for everything before it.
+* text=auto
+
+# Shipped deliverables
+# ─────────────────────────────────────────────────────────────────────────────
+# The single-file builds are checksummed (scripts/generate-checksums.mjs) so a
+# user can verify their copy has not been altered. They must survive checkout
+# byte for byte - any line-ending conversion would break verification against
+# the published .checksums.txt. Git already infers this from their content;
+# saying it explicitly stops that inference from silently flipping.
+dist/**/*.html -text
+
+# Binary assets Git should never inspect, convert or try to diff.
+*.png binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.vss binary
