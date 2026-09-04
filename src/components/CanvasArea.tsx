@@ -390,6 +390,7 @@ const CanvasArea: React.FC = () => {
       } 
     };
     addNode(newNode);
+    setSelectedNodeId(newNode.id);
 
     if (edgeToInterpose) {
       const leftEdge = { id: `e-${uuidv4()}`, source: edgeToInterpose.source, sourceHandle: edgeToInterpose.sourceHandle, target: newNode.id, targetHandle: 'in' };
@@ -483,9 +484,10 @@ const CanvasArea: React.FC = () => {
         fitViewOptions={{ padding: 0.12, maxZoom: 1.8, minZoom: 0.02 }}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={() => setHoveredEdgeId(null)}
+        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
         onSelectionChange={onSelectionChange} onNodeDragStart={onNodeDragStart} onNodeDragStop={onNodeDragStop}
         onNodeDoubleClick={(_, node) => { const s = useStore.getState(); s.setGlowingNodeId(s.glowingNodeId === node.id ? null : node.id); }}
-        onPaneClick={() => useStore.getState().setGlowingNodeId(null)}
+        onPaneClick={() => { setSelectedNodeId(null); useStore.getState().setGlowingNodeId(null); }}
         deleteKeyCode={['Backspace', 'Delete']} nodeOrigin={[0.5, 0.5]} snapToGrid={snapToGrid} snapGrid={[15, 15]}
       >
         {showGrid && <Background variant={BackgroundVariant.Lines} color={theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)'} gap={15} size={1} />}

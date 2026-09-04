@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.749",
+    date: "2026-09-04",
+    summary: "Preserve Swedish and international letters in export file names (v1.0.749)",
+  },
+  {
     version: "1.0.748",
     date: "2026-09-04",
     summary: "Distinguish DWDM in and out handles with I/O labels, distinct colours, and legend",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.729",
     date: "2026-09-02",
     summary: "Fixed Export Diagram Ready Mode vertical node clearance and chassis SPAN termination descriptions: automatically expanded vertical column spacing to prevent lower nodes from obscuring upper description boxes, distinguished SPAN sessions (1 feed per session) from physical TAP links in chassis termination text, and resolved precise fitted optic SKUs (e.g. Q28-502T) rather than falling back to default TAP optics.",
-  },
-  {
-    version: "1.0.728",
-    date: "2026-09-02",
-    summary: "Enhanced report site diagram isolation with DWDM transport ring inclusion and added SPAN speed/fibre type descriptors in Export Diagram Ready Mode: each per-site report diagram now captures the isolated local data centre plus its connected DWDM ring, and SPAN nodes display configured port speed and fibre media specifications.",
   },
 ];

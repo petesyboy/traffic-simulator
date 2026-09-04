@@ -140,15 +140,29 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       });
     }
 
+    const hasSelectChange = changes.some((c) => c.type === 'select');
+    let nextSelectedNodeId = get().selectedNodeId;
+    if (hasSelectChange) {
+      const selectedNodes = nextNodes.filter((n) => n.selected && !n.hidden);
+      if (selectedNodes.length === 1) {
+        nextSelectedNodeId = selectedNodes[0].id;
+      } else {
+        nextSelectedNodeId = null;
+      }
+    }
+
     if (deletedNodeIds.length > 0) {
+      if (deletedNodeIds.includes(nextSelectedNodeId || '')) {
+        nextSelectedNodeId = null;
+      }
       const nextTraffic = get().trafficStreams.filter(
         (s) => !deletedNodeIds.includes(s.sourceNodeId)
       );
       // A deleted node may have been a tap module (freeing up a tray) or a tray
       // itself (never happens today - trays have no delete UI - but harmless).
-      set({ nodes: syncTapTrays(nextNodes, get().trayAllocationPreference), trafficStreams: nextTraffic });
+      set({ nodes: syncTapTrays(nextNodes, get().trayAllocationPreference), trafficStreams: nextTraffic, selectedNodeId: nextSelectedNodeId });
     } else {
-      set({ nodes: nextNodes });
+      set({ nodes: nextNodes, ...(hasSelectChange ? { selectedNodeId: nextSelectedNodeId } : {}) });
     }
   },
 
