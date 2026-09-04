@@ -100,4 +100,51 @@ describe('convertHubToPerSiteDwdm', () => {
     // DC1 and DC2 sit on the same bottom row Y
     expect(dc1Dwdm.position.y).toBe(dc2Dwdm.position.y);
   });
+
+  it('deploys per-site DWDM ring with zero pre-existing edges by auto-connecting local aggregation chassis', () => {
+    // Fresh DWDM hub dropped in middle with 3 sites, NO edges connected yet
+    const nodes: CustomNode[] = [
+      chassis('dc3-ta', 'DC3', 300, 50),
+      chassis('dc1-ta', 'DC1', 100, 400),
+      chassis('dc2-ta', 'DC2', 500, 400),
+      hub('dwdm-hub'),
+    ];
+
+    useStore.setState({ nodes, edges: [] });
+
+    // Execute 1-click deployment to all 3 sites with autoConnectLocalChassis = true
+    useStore.getState().deployPerSiteDwdmRing('dwdm-hub', ['DC1', 'DC2', 'DC3'], true);
+
+    const state = useStore.getState();
+
+    // Central hub is removed
+    expect(state.nodes.find((n) => n.id === 'dwdm-hub')).toBeUndefined();
+
+    // 3 per-site DWDM nodes exist
+    const dwdmNodes = state.nodes.filter(
+      (n) => n.type === NODE_TYPES.DWDM_NETWORK || n.data?.configType === 'DWDM Network',
+    );
+    expect(dwdmNodes).toHaveLength(3);
+
+    const dwdmBySite = new Map<string, CustomNode>();
+    dwdmNodes.forEach((n) => dwdmBySite.set(n.data?.site as string, n));
+
+    const dc1Dwdm = dwdmBySite.get('DC1')!;
+    const dc2Dwdm = dwdmBySite.get('DC2')!;
+    const dc3Dwdm = dwdmBySite.get('DC3')!;
+
+    // Verify each site's local chassis was automatically wired to its local DWDM gateway
+    expect(state.edges.some((e) => e.source === 'dc1-ta' && e.target === dc1Dwdm.id)).toBe(true);
+    expect(state.edges.some((e) => e.source === 'dc2-ta' && e.target === dc2Dwdm.id)).toBe(true);
+    expect(state.edges.some((e) => e.source === 'dc3-ta' && e.target === dc3Dwdm.id)).toBe(true);
+
+    // Verify inter-site ring links exist between the 3 DWDM nodes
+    const dwdmIds = new Set([dc1Dwdm.id, dc2Dwdm.id, dc3Dwdm.id]);
+    const interDwdmEdges = state.edges.filter((e) => dwdmIds.has(e.source) && dwdmIds.has(e.target));
+    expect(interDwdmEdges).toHaveLength(3);
+
+    // Verify triangular layout
+    expect(dc3Dwdm.position.y).toBeLessThan(dc1Dwdm.position.y);
+    expect(dc1Dwdm.position.x).toBeLessThan(dc2Dwdm.position.x);
+  });
 });

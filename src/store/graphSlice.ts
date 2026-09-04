@@ -61,6 +61,7 @@ export interface GraphSlice {
   tidyLayout: () => void;
   optimizeDwdmHandles: () => void;
   convertHubToPerSiteDwdm: (hubNodeId: string) => void;
+  deployPerSiteDwdmRing: (hubNodeId: string, targetSites: string[], autoConnectLocalChassis?: boolean) => void;
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
   setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;
@@ -345,36 +346,23 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       set({ edges: nextEdges });
     }
   },
-  convertHubToPerSiteDwdm: (hubNodeId: string) => {
+  deployPerSiteDwdmRing: (hubNodeId: string, targetSites: string[], autoConnectLocalChassis = true) => {
     const { nodes, edges } = get();
     const hubNode = nodes.find((n) => n.id === hubNodeId);
     if (!hubNode) return;
 
-    const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
-    const connectedEdges = edges.filter((e) => e.source === hubNodeId || e.target === hubNodeId);
-    if (connectedEdges.length === 0) return;
-
-    // Determine distinct connected sites
-    const siteToEdges = new Map<string, Edge[]>();
-    connectedEdges.forEach((e) => {
-      const peerId = e.source === hubNodeId ? e.target : e.source;
-      const peerNode = nodeMap.get(peerId);
-      const site = ((peerNode?.data?.site as string) || '').trim();
-      if (!site) return;
-      if (!siteToEdges.has(site)) siteToEdges.set(site, []);
-      siteToEdges.get(site)!.push(e);
-    });
-
-    const uniqueSites = Array.from(siteToEdges.keys()).sort((a, b) => a.localeCompare(b));
+    // Filter to valid unique sites
+    const uniqueSites = Array.from(new Set(targetSites.map((s) => s.trim()))).filter(Boolean).sort((a, b) => a.localeCompare(b));
     if (uniqueSites.length < 2) return;
 
     get().pushHistory();
 
+    const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
     const timestamp = Date.now();
     const newDwdmNodes: CustomNode[] = [];
     const siteToNewDwdmId = new Map<string, string>();
 
-    // Create a local DWDM gateway for each connected site
+    // 1. Create a local DWDM gateway for each site
     uniqueSites.forEach((site, idx) => {
       const siteNodes = nodes.filter((n) => ((n.data?.site as string) || '').trim() === site && n.id !== hubNodeId);
       const avgX = siteNodes.length > 0 ? siteNodes.reduce((acc, n) => acc + n.position.x, 0) / siteNodes.length : hubNode.position.x;
@@ -398,31 +386,62 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       newDwdmNodes.push(localDwdmNode);
     });
 
-    // Rewire intra-site edges from the hub to the respective site's local DWDM node
+    // 2. Rewire any existing edges connected to hubNode
     const rewiredEdges: Edge[] = edges.map((e) => {
       if (e.source === hubNodeId) {
         const peerNode = nodeMap.get(e.target);
         const site = ((peerNode?.data?.site as string) || '').trim();
         const localId = siteToNewDwdmId.get(site);
-        if (localId) {
-          return { ...e, source: localId };
-        }
+        if (localId) return { ...e, source: localId };
       }
       if (e.target === hubNodeId) {
         const peerNode = nodeMap.get(e.source);
         const site = ((peerNode?.data?.site as string) || '').trim();
         const localId = siteToNewDwdmId.get(site);
-        if (localId) {
-          return { ...e, target: localId };
-        }
+        if (localId) return { ...e, target: localId };
       }
       return e;
     });
 
-    // Filter out edges that were still attached to the removed hub
+    // Remove any remaining dangling edges to old hub
     const filteredEdges = rewiredEdges.filter((e) => e.source !== hubNodeId && e.target !== hubNodeId);
 
-    // Create inter-site ring edges between the new local DWDM gateways
+    // 3. If autoConnectLocalChassis is true, check each site. If no link exists between site equipment and that site's DWDM gateway, auto-wire the primary chassis!
+    const autoEdges: Edge[] = [];
+    if (autoConnectLocalChassis) {
+      uniqueSites.forEach((site) => {
+        const localDwdmId = siteToNewDwdmId.get(site)!;
+        const alreadyLinked = filteredEdges.some(
+          (e) => e.source === localDwdmId || e.target === localDwdmId,
+        );
+        if (!alreadyLinked) {
+          // Find candidates in site (prefer hardware nodes, highest X / downstream packet brokers like HC1-Plus, TA200, TA25)
+          const siteHwNodes = nodes.filter(
+            (n) => ((n.data?.site as string) || '').trim() === site && n.type === NODE_TYPES.HARDWARE && n.id !== hubNodeId,
+          );
+          const candidates = siteHwNodes.length > 0 ? siteHwNodes : nodes.filter(
+            (n) => ((n.data?.site as string) || '').trim() === site && n.id !== hubNodeId && n.type !== 'inputNode',
+          );
+
+          if (candidates.length > 0) {
+            // Sort by position.x descending to pick the most downstream aggregator in that site
+            const primaryChassis = [...candidates].sort((a, b) => b.position.x - a.position.x)[0];
+            autoEdges.push({
+              id: `edge-${primaryChassis.id}-${localDwdmId}-${timestamp}`,
+              source: primaryChassis.id,
+              target: localDwdmId,
+              sourceHandle: 'out',
+              targetHandle: 'in-left',
+              data: {
+                purpose: 'DWDM Client Access Link',
+              },
+            });
+          }
+        }
+      });
+    }
+
+    // 4. Create inter-site ring links between the new local DWDM gateways
     const ringEdges: Edge[] = [];
     for (let i = 0; i < uniqueSites.length; i++) {
       const currentSite = uniqueSites[i];
@@ -430,7 +449,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       const srcId = siteToNewDwdmId.get(currentSite)!;
       const tgtId = siteToNewDwdmId.get(nextSite)!;
       ringEdges.push({
-        id: `edge-${srcId}-${tgtId}`,
+        id: `edge-${srcId}-${tgtId}-${timestamp}`,
         source: srcId,
         target: tgtId,
         sourceHandle: 'out-right',
@@ -446,9 +465,9 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     }
 
     const combinedNodes = nodes.filter((n) => n.id !== hubNodeId).concat(newDwdmNodes);
-    const combinedEdges = [...filteredEdges, ...ringEdges];
+    const combinedEdges = [...filteredEdges, ...autoEdges, ...ringEdges];
 
-    // Compute tidy layout immediately with 2D triangular/macro placement
+    // 5. Compute tidy layout immediately with 2D triangular/macro placement
     const tidyNodes = computeTidyLayout(combinedNodes, combinedEdges, get().exportDiagramMode);
     const tidyEdges = optimizeDwdmEdgeHandles(tidyNodes, combinedEdges);
 
@@ -458,6 +477,25 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       selectedNodeId: newDwdmNodes[0]?.id || null,
       fitViewTrigger: get().fitViewTrigger + 1,
     });
+  },
+  convertHubToPerSiteDwdm: (hubNodeId: string) => {
+    const { nodes, edges } = get();
+    const connectedEdges = edges.filter((e) => e.source === hubNodeId || e.target === hubNodeId);
+    const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
+
+    // Determine distinct connected sites
+    const sites = new Set<string>();
+    connectedEdges.forEach((e) => {
+      const peerId = e.source === hubNodeId ? e.target : e.source;
+      const peerNode = nodeMap.get(peerId);
+      const site = ((peerNode?.data?.site as string) || '').trim();
+      if (site) sites.add(site);
+    });
+
+    const uniqueSites = Array.from(sites).sort((a, b) => a.localeCompare(b));
+    if (uniqueSites.length >= 2) {
+      get().deployPerSiteDwdmRing(hubNodeId, uniqueSites, false);
+    }
   },
 
   setNodeFlowDirection: (nodeId, direction) => {

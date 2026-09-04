@@ -4,7 +4,7 @@
  * Configuration panel for the DWDM Optical Transport Network node.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { CustomNode } from '../../store/types';
 import { useStore } from '../../store/store';
 import { FormGroup } from './LiveMetrics';
@@ -18,7 +18,7 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
   const edges = useStore((state) => state.edges);
   const nodes = useStore((state) => state.nodes);
   const updateNodeData = useStore((state) => state.updateNodeData);
-  const convertHubToPerSiteDwdm = useStore((state) => state.convertHubToPerSiteDwdm);
+  const deployPerSiteDwdmRing = useStore((state) => state.deployPerSiteDwdmRing);
 
   const wavelengthSpeed = (node.data?.wavelengthSpeed as string) || '100G';
   const protectionMode = (node.data?.protectionMode as string) || 'Protected Ring (1+1)';
@@ -36,17 +36,31 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
     return nodes.filter((n) => connectedNodeIds.has(n.id));
   }, [edges, nodes, node.id]);
 
-  const connectedSites = useMemo(() => {
+  // All valid data centre sites detected on canvas
+  const allSites = useMemo(() => {
     const sites = new Set<string>();
-    connectedEndpoints.forEach((ep) => {
-      const site = ((ep.data?.site as string) || '').trim();
-      if (site) sites.add(site);
+    nodes.forEach((n) => {
+      const s = ((n.data?.site as string) || '').trim();
+      if (s && s.toUpperCase() !== 'WAN' && s.toUpperCase() !== 'TRANSPORT' && s.toUpperCase() !== 'CLOUD') {
+        sites.add(s);
+      }
     });
     return Array.from(sites).sort((a, b) => a.localeCompare(b));
-  }, [connectedEndpoints]);
+  }, [nodes]);
+
+  // Selected sites for multi-site deployment
+  const [selectedSites, setSelectedSites] = useState<string[]>([]);
+  const [autoConnectChassis, setAutoConnectChassis] = useState<boolean>(true);
+
+  // Preselect all detected sites
+  useEffect(() => {
+    if (allSites.length >= 2 && selectedSites.length === 0) {
+      setSelectedSites(allSites);
+    }
+  }, [allSites, selectedSites.length]);
 
   const isExternalHub = !((node.data?.site as string) || '').trim();
-  const canConvertToPerSite = isExternalHub && connectedSites.length >= 2;
+  const canDeployRing = isExternalHub && allSites.length >= 2;
 
   const handleSpanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -62,7 +76,7 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {canConvertToPerSite && (
+      {canDeployRing && (
         <div
           style={{
             padding: '12px',
@@ -71,37 +85,94 @@ export const DwdmNetworkPanel: React.FC<DwdmNetworkPanelProps> = ({ node, onGene
             borderRadius: '8px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '10px',
           }}
         >
           <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f3e8ff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>⚡</span> Convert to Per-Site DWDM Gateways
+            <span>⚡</span> Deploy Per-Site Optical Ring
           </div>
           <div style={{ fontSize: '11px', color: '#e9d5ff', lineHeight: '1.4' }}>
-            This transport hub links <strong>{connectedSites.length} data centres</strong> ({connectedSites.join(', ')}). Convert it into dedicated site-local DWDM gateways linked in an optical ring with 2D triangular auto-layout.
+            Detected <strong>{allSites.length} data centres</strong> on canvas. Instantly deploy a dedicated DWDM gateway to each site and link them in an optical ring with clean 2D triangular layout.
           </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {allSites.map((s) => {
+              const isChecked = selectedSites.includes(s);
+              const count = nodes.filter((n) => ((n.data?.site as string) || '').trim() === s && n.id !== node.id).length;
+              return (
+                <label
+                  key={s}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    background: isChecked ? 'rgba(147, 51, 234, 0.4)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${isChecked ? '#a855f7' : 'rgba(255, 255, 255, 0.12)'}`,
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    color: isChecked ? '#f3e8ff' : '#94a3b8',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedSites((prev) => Array.from(new Set([...prev, s])).sort((a, b) => a.localeCompare(b)));
+                      } else {
+                        setSelectedSites((prev) => prev.filter((item) => item !== s));
+                      }
+                    }}
+                    style={{ cursor: 'pointer', margin: 0 }}
+                  />
+                  <span style={{ fontWeight: 600 }}>{s}</span>
+                  <span style={{ fontSize: '9.5px', opacity: 0.7 }}>({count})</span>
+                </label>
+              );
+            })}
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#c084fc', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={autoConnectChassis}
+              onChange={(e) => setAutoConnectChassis(e.target.checked)}
+              style={{ cursor: 'pointer', margin: 0 }}
+            />
+            <span>Auto-connect local packet broker / chassis in each data centre</span>
+          </label>
+
           <button
             type="button"
-            onClick={() => convertHubToPerSiteDwdm(node.id)}
+            disabled={selectedSites.length < 2}
+            onClick={() => deployPerSiteDwdmRing(node.id, selectedSites, autoConnectChassis)}
             style={{
               padding: '8px 12px',
-              background: '#9333ea',
-              color: '#ffffff',
+              background: selectedSites.length >= 2 ? '#9333ea' : 'rgba(255, 255, 255, 0.1)',
+              color: selectedSites.length >= 2 ? '#ffffff' : '#64748b',
               border: 'none',
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: selectedSites.length >= 2 ? 'pointer' : 'not-allowed',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+              boxShadow: selectedSites.length >= 2 ? '0 2px 6px rgba(147, 51, 234, 0.35)' : 'none',
+              transition: 'background 0.15s ease',
             }}
-            onMouseOver={(e) => (e.currentTarget.style.background = '#a855f7')}
-            onMouseOut={(e) => (e.currentTarget.style.background = '#9333ea')}
+            onMouseOver={(e) => {
+              if (selectedSites.length >= 2) e.currentTarget.style.background = '#a855f7';
+            }}
+            onMouseOut={(e) => {
+              if (selectedSites.length >= 2) e.currentTarget.style.background = '#9333ea';
+            }}
           >
-            <span>✨</span> Convert to Per-Site Gateways
+            <span>🚀</span> Deploy Optical Ring ({selectedSites.length} Sites)
           </button>
         </div>
       )}

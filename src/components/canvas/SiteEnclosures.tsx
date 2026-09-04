@@ -11,8 +11,9 @@ interface SiteEnclosuresProps {
 }
 
 const PAD_X = 36;
-const PAD_TOP = 48;
+const PAD_TOP = 56;
 const PAD_BOTTOM = 32;
+const MIN_SITE_WIDTH = 290;
 
 const SITE_PALETTES = [
   { border: 'rgba(0, 229, 255, 0.45)', bg: 'rgba(0, 229, 255, 0.035)', glow: 'rgba(0, 229, 255, 0.12)', text: '#00e5ff', badgeBg: 'rgba(0, 229, 255, 0.12)' },
@@ -118,9 +119,11 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
           return null;
         }
 
-        const left = (bounds.x - PAD_X) * zoom + vpX;
+        const rawWidth = Math.max(bounds.width + PAD_X * 2, MIN_SITE_WIDTH);
+        const extraX = (rawWidth - (bounds.width + PAD_X * 2)) / 2;
+        const left = (bounds.x - PAD_X - extraX) * zoom + vpX;
         const top = (bounds.y - PAD_TOP) * zoom + vpY;
-        const width = (bounds.width + PAD_X * 2) * zoom;
+        const width = rawWidth * zoom;
         const height = (bounds.height + PAD_TOP + PAD_BOTTOM) * zoom;
 
         const palette = getSitePalette(site, idx);
@@ -164,10 +167,11 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
               style={{
                 borderColor: palette.border,
                 color: palette.text,
+                whiteSpace: 'nowrap',
               }}
             >
-              <span style={{ fontSize: '11px' }}>🏢</span>
-              <span style={{ fontWeight: 700, letterSpacing: '0.3px' }}>
+              <span style={{ fontSize: '11px', flexShrink: 0 }}>🏢</span>
+              <span style={{ fontWeight: 700, letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                 Data Centre: {site}
               </span>
               <span
@@ -176,6 +180,8 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
                   background: palette.badgeBg,
                   color: palette.text,
                   borderColor: palette.border,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 {siteNodes.length} {siteNodes.length === 1 ? 'device' : 'devices'}

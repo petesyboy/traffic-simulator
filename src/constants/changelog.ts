@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.744",
+    date: "2026-09-03",
+    summary: "Add 1-click conversion from central DWDM hub to per-site gateways with optical ring (v1.0.744)",
+  },
+  {
     version: "1.0.743",
     date: "2026-09-03",
     summary: "Support per-site DWDM gateways, 2D triangular multi-site layout, and inter-DWDM transport spans (v1.0.743)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.725",
     date: "2026-09-02",
     summary: "Refined report traffic source terminology: dynamically adapted topology diagrams, schematics, and work orders to specify 'SPAN allocations', 'TAP allocations', or 'TAP/SPAN allocations' based on actual deployed sources rather than hardcoding TAP references.",
-  },
-  {
-    version: "1.0.724",
-    date: "2026-09-02",
-    summary: "Implemented site-aware tidy layout and visual data centre enclosures: clustered equipment by physical site into dedicated swimlanes with clean inter-site routing, preventing cross-site column mixing and rendering interactive glassmorphic data centre boundaries.",
   },
 ];

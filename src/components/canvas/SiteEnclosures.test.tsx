@@ -95,4 +95,22 @@ describe('SiteEnclosures', () => {
     expect(html).toContain('λ DWDM Ring · 100G Protected');
     expect(html).toContain('site-enclosure-dwdm-chip');
   });
+
+  it('enforces a minimum width and clean single-line header for a single small TAP node without obscuring it', () => {
+    const nodes: CustomNode[] = [
+      { id: 'tap1', type: 'inputNode', position: { x: 100, y: 100 }, data: { label: 'TAP-1', model: 'TAP-M200', site: 'DC4' } } as CustomNode,
+    ];
+
+    const html = renderToStaticMarkup(
+      <ReactFlowProvider>
+        <SiteEnclosures nodes={nodes} enabled={true} />
+      </ReactFlowProvider>
+    );
+
+    expect(html).toContain('Data Centre: DC4');
+    expect(html).toContain('1 device');
+    // Enclosure width must be at least MIN_SITE_WIDTH (290px)
+    expect(html).toMatch(/width:\s*290px/);
+    expect(html).toContain('white-space:nowrap');
+  });
 });

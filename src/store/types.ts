@@ -485,6 +485,7 @@ export interface RFState {
   tidyLayout: () => void;
   optimizeDwdmHandles: () => void;
   convertHubToPerSiteDwdm: (hubNodeId: string) => void;
+  deployPerSiteDwdmRing: (hubNodeId: string, targetSites: string[], autoConnectLocalChassis?: boolean) => void;
   setNodeFlowDirection: (nodeId: string, direction: 'ltr' | 'rtl' | 'auto') => void;
   mirrorSelectedNodes: () => void;
   setSelectionFlowDirection: (direction: 'ltr' | 'rtl' | 'auto') => void;
