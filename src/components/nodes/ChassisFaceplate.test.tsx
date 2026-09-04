@@ -128,4 +128,22 @@ describe('ChassisFaceplate', () => {
     expect(html).toContain('1/1/c63');
     expect(html).toContain('1/1/c64');
   });
+
+  it('renders TA25E 48 SFP ports in 3 physical rows of 16', () => {
+    const ports = getChassisPorts('GigaVUE-TA25E', hw({}));
+    const sfpPorts = ports.filter((p) => p.cage === 'SFP');
+    expect(sfpPorts.length).toBe(48);
+
+    const html = renderToStaticMarkup(<ChassisFaceplate ports={ports} occupancy={new Map()} />);
+    expect(html).toContain('SFP');
+    expect(html).toContain('QSFP');
+
+    // Ports x1 (top), x2 (mid), x3 (bot) exist in respective rows
+    expect(html).toContain('1/1/x1');
+    expect(html).toContain('1/1/x2');
+    expect(html).toContain('1/1/x3');
+    expect(html).toContain('1/1/x46');
+    expect(html).toContain('1/1/x47');
+    expect(html).toContain('1/1/x48');
+  });
 });

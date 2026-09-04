@@ -40,10 +40,34 @@ function getPortState(port: ChassisPort, occupant: PortOccupant | undefined): Po
 }
 
 /**
- * High-density port banks (SFP > 12 or QSFP > 16, e.g. TA200's 64 cages) are
- * physically two stacked rows with odd ports on top and even ports on bottom.
+ * High-density port banks (e.g. TA25E's 3 rows of 16 SFP28 cages, TA200's stacked QSFP cages)
+ * are arranged into physical rows. If port bounding boxes are available with distinct
+ * vertical positions, groups them by their vertical Y-levels. Otherwise falls back to
+ * standard alternating odd/even rows for high-density banks.
  */
 function rowsFor(ports: ChassisPort[], cage: ChassisPort['cage']): ChassisPort[][] {
+  const withBoxes = ports.filter((p) => p.box);
+  if (withBoxes.length === ports.length && withBoxes.length > 0) {
+    const yLevels: number[] = [];
+    for (const p of ports) {
+      const y = p.box!.y;
+      const existing = yLevels.find((level) => Math.abs(level - y) < 0.02);
+      if (existing === undefined) {
+        yLevels.push(y);
+      }
+    }
+    yLevels.sort((a, b) => a - b);
+    if (yLevels.length > 1) {
+      const rows: ChassisPort[][] = yLevels.map(() => []);
+      for (const p of ports) {
+        const rowIdx = yLevels.findIndex((level) => Math.abs(level - p.box!.y) < 0.02);
+        rows[rowIdx].push(p);
+      }
+      rows.forEach((r) => r.sort((a, b) => (a.box?.x || 0) - (b.box?.x || 0)));
+      return rows;
+    }
+  }
+
   const isHighDensity = (cage === 'SFP' && ports.length > 12) || (cage === 'QSFP' && ports.length > 16);
   if (!isHighDensity) return [ports];
   const top: ChassisPort[] = [];
