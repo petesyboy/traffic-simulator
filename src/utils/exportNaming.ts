@@ -28,9 +28,13 @@
 export function sanitizeSolutionName(scenarioName?: string | null, fallback = 'Solution'): string {
   if (!scenarioName || !scenarioName.trim()) return fallback;
 
+  // Replaces spaces and non-alphanumeric characters with underscores, collapsing repeats.
+  // Uses Unicode letter (\p{L}) and number (\p{N}) property escapes so international
+  // characters (such as Swedish Ö, Å, Ä, German Ü, accented letters, etc.) are preserved
+  // while unsafe filesystem and punctuation characters are safely replaced.
   let clean = scenarioName
     .trim()
-    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
     .replace(/^_+|_+$/g, '');
 
   if (!clean) return fallback;

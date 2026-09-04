@@ -9,6 +9,13 @@ describe('exportNaming', () => {
       expect(sanitizeSolutionName('  DC - Core & Edge  ')).toBe('DC_Core_Edge');
     });
 
+    it('preserves international letters including Swedish Ö, Å, Ä and accented characters', () => {
+      expect(sanitizeSolutionName('Göteborg Stad')).toBe('Göteborg_Stad');
+      expect(sanitizeSolutionName('Malmö & Lund')).toBe('Malmö_Lund');
+      expect(sanitizeSolutionName('  Åland Islands - Öckerö  ')).toBe('Åland_Islands_Öckerö');
+      expect(sanitizeSolutionName('Zürich & Genève')).toBe('Zürich_Genève');
+    });
+
     it('falls back to default when empty or invalid', () => {
       expect(sanitizeSolutionName('')).toBe('Solution');
       expect(sanitizeSolutionName(null)).toBe('Solution');
