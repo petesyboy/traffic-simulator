@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.750",
+    date: "2026-09-04",
+    summary: "Restore single-click selection for canvas nodes and auto-select on drop (v1.0.750)",
+  },
+  {
     version: "1.0.749",
     date: "2026-09-04",
     summary: "Preserve Swedish and international letters in export file names (v1.0.749)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.730",
     date: "2026-09-02",
     summary: "Fixed GigaVUE-TA200E front panel optic overlay alignment: recalibrated the 64 QSFP28 port cage coordinates across 16 columns and 4 rows (2 tiers of stacked 2x2 cages), resolving the horizontal left-offset that caused port markers to render over the status LEDs and chassis bezel.",
-  },
-  {
-    version: "1.0.729",
-    date: "2026-09-02",
-    summary: "Fixed Export Diagram Ready Mode vertical node clearance and chassis SPAN termination descriptions: automatically expanded vertical column spacing to prevent lower nodes from obscuring upper description boxes, distinguished SPAN sessions (1 feed per session) from physical TAP links in chassis termination text, and resolved precise fitted optic SKUs (e.g. Q28-502T) rather than falling back to default TAP optics.",
   },
 ];
