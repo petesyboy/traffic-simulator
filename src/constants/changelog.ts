@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.747",
+    date: "2026-09-04",
+    summary: "Anchor DWDM connector handles strictly to outer perimeter",
+  },
+  {
     version: "1.0.746",
     date: "2026-09-04",
     summary: "Enforce min site enclosure width to prevent obscuring single TAPs & add instant DWDM ring wizard (v1.0.746)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.727",
     date: "2026-09-02",
     summary: "Expanded canvas viewport zoom limits down to 2% (minZoom: 0.02) and enabled auto-fitting for large multi-site architectures: eliminated the 50% zoom restriction, added a live zoom readout and one-click Fit View control, and compacted inter-site vertical spacing.",
-  },
-  {
-    version: "1.0.726",
-    date: "2026-09-02",
-    summary: "Implemented central WAN hub layout for DWDM transport networks with reserved inter-site gutters, directional 8-way handle optimisation, cycle-safe peer column ranking, and interactive data centre DWDM ring membership indicators.",
   },
 ];

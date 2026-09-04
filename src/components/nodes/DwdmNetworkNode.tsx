@@ -17,14 +17,14 @@ import { useGlowClass } from './nodeStyles';
  * come in from whichever direction a site happens to be laid out.
  */
 const RING_PORTS = [
-  { id: 'in-left', type: 'target' as const, position: Position.Left, offset: { top: '35%', left: 0 }, label: 'Ingress ← from a site to the west' },
-  { id: 'out-left', type: 'source' as const, position: Position.Left, offset: { top: '65%', left: 0 }, label: 'Egress → to a site to the west' },
-  { id: 'in-right', type: 'target' as const, position: Position.Right, offset: { top: '35%', right: 0, left: 'auto' }, label: 'Ingress → from a site to the east' },
-  { id: 'out-right', type: 'source' as const, position: Position.Right, offset: { top: '65%', right: 0, left: 'auto' }, label: 'Egress ← to a site to the east' },
-  { id: 'in-top', type: 'target' as const, position: Position.Top, offset: { left: '35%', top: 0, bottom: 'auto' }, label: 'Ingress ↓ from a site above' },
-  { id: 'out-top', type: 'source' as const, position: Position.Top, offset: { left: '65%', top: 0, bottom: 'auto' }, label: 'Egress ↑ to a site above' },
-  { id: 'in-bottom', type: 'target' as const, position: Position.Bottom, offset: { left: '35%', bottom: 0, top: 'auto' }, label: 'Ingress ↑ from a site below' },
-  { id: 'out-bottom', type: 'source' as const, position: Position.Bottom, offset: { left: '65%', bottom: 0, top: 'auto' }, label: 'Egress ↓ to a site below' },
+  { id: 'in-left', type: 'target' as const, position: Position.Left, offset: { top: '35%', left: 0 }, label: 'Ingress (RX) ← from a site to the west', indicator: 'IN' },
+  { id: 'out-left', type: 'source' as const, position: Position.Left, offset: { top: '65%', left: 0 }, label: 'Egress (TX) → to a site to the west', indicator: 'OUT' },
+  { id: 'in-right', type: 'target' as const, position: Position.Right, offset: { top: '35%', right: 0, left: 'auto' }, label: 'Ingress (RX) → from a site to the east', indicator: 'IN' },
+  { id: 'out-right', type: 'source' as const, position: Position.Right, offset: { top: '65%', right: 0, left: 'auto' }, label: 'Egress (TX) ← to a site to the east', indicator: 'OUT' },
+  { id: 'in-top', type: 'target' as const, position: Position.Top, offset: { left: '35%', top: 0, bottom: 'auto' }, label: 'Ingress (RX) ↓ from a site above', indicator: 'IN' },
+  { id: 'out-top', type: 'source' as const, position: Position.Top, offset: { left: '65%', top: 0, bottom: 'auto' }, label: 'Egress (TX) ↑ to a site above', indicator: 'OUT' },
+  { id: 'in-bottom', type: 'target' as const, position: Position.Bottom, offset: { left: '35%', bottom: 0, top: 'auto' }, label: 'Ingress (RX) ↑ from a site below', indicator: 'IN' },
+  { id: 'out-bottom', type: 'source' as const, position: Position.Bottom, offset: { left: '65%', bottom: 0, top: 'auto' }, label: 'Egress (TX) ↓ to a site below', indicator: 'OUT' },
 ];
 
 const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
@@ -96,30 +96,58 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
         )}
         {/* Ingress and egress on all four sides for multi-site interconnectivity.
             Hovering names each port; dragging a link lights up the ones that
-            can take it. */}
+            can take it. Ingress is Sky Blue (IN), Egress is Rose Red (OUT). */}
         {RING_PORTS.map((port) => {
           const canAccept = acceptingType === port.type;
           const dimmed = acceptingType !== null && !canAccept;
+          const isTarget = port.type === 'target';
+          const defaultHandleClass = isTarget ? 'dwdm-handle-in' : 'dwdm-handle-out';
+          
           return (
-            <Handle
-              key={port.id}
-              type={port.type}
-              position={port.position}
-              id={port.id}
-              title={port.label}
-              className={canAccept ? 'dwdm-port-open' : undefined}
-              style={{
-                ...port.offset,
-                width: canAccept ? '18px' : '10px',
-                height: canAccept ? '18px' : '10px',
-                background: canAccept ? 'var(--status-green-light, #4ade80)' : port.type === 'target' ? '#c084fc' : '#a855f7',
-                border: canAccept ? '2px solid #bbf7d0' : '1px solid rgba(12, 10, 28, 0.8)',
-                boxShadow: canAccept ? '0 0 0 4px rgba(74, 222, 128, 0.25), 0 0 14px rgba(74, 222, 128, 0.9)' : 'none',
-                opacity: dimmed ? 0.18 : 1,
-                zIndex: canAccept ? 12 : 1,
-                transition: 'width 0.12s ease, height 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease',
-              }}
-            />
+            <React.Fragment key={port.id}>
+              <Handle
+                type={port.type}
+                position={port.position}
+                id={port.id}
+                title={port.label}
+                className={canAccept ? 'dwdm-handle-open' : defaultHandleClass}
+                style={{
+                  ...port.offset,
+                  width: canAccept ? '20px' : '14px',
+                  height: canAccept ? '20px' : '14px',
+                  background: canAccept
+                    ? 'var(--status-green-light, #4ade80)'
+                    : isTarget
+                    ? '#38bdf8'
+                    : '#f43f5e',
+                  border: canAccept
+                    ? '2px solid #bbf7d0'
+                    : isTarget
+                    ? '2px solid #0284c7'
+                    : '2px solid #be123c',
+                  boxShadow: canAccept
+                    ? '0 0 0 4px rgba(74, 222, 128, 0.25), 0 0 14px rgba(74, 222, 128, 0.9)'
+                    : isTarget
+                    ? '0 0 8px rgba(56, 189, 248, 0.7)'
+                    : '0 0 8px rgba(244, 63, 94, 0.7)',
+                  opacity: dimmed ? 0.18 : 1,
+                  zIndex: canAccept ? 12 : 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontSize: '7px',
+                  fontWeight: 900,
+                  letterSpacing: '-0.5px',
+                  lineHeight: '1',
+                  userSelect: 'none',
+                  pointerEvents: 'all',
+                  transition: 'width 0.12s ease, height 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease',
+                }}
+              >
+                {canAccept ? '✓' : isTarget ? 'I' : 'O'}
+              </Handle>
+            </React.Fragment>
           );
         })}
 
@@ -155,9 +183,9 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
           </div>
         </div>
 
-        {/* Transport Specifications Badges */}
+        {/* Port Legend & Transport Specifications Badges */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          {acceptingType && (
+          {acceptingType ? (
             <div
               style={{
                 fontSize: '10px',
@@ -169,7 +197,32 @@ const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) =
                 fontWeight: 700,
               }}
             >
-              ↳ Drop on a glowing {acceptingType === 'target' ? 'ingress' : 'egress'} port
+              ↳ Drop on a glowing {acceptingType === 'target' ? 'ingress (I / blue)' : 'egress (O / rose)'} port
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '9px',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: 'rgba(0, 0, 0, 0.35)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                color: '#e2e8f0',
+              }}
+              title="DWDM Optical Ports: Cyan/Blue (I) = Ingress (RX from site), Rose/Red (O) = Egress (TX to site)"
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#38bdf8', display: 'inline-block', boxShadow: '0 0 4px #38bdf8' }} />
+                <strong style={{ color: '#38bdf8' }}>I</strong> Ingress
+              </span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#f43f5e', display: 'inline-block', boxShadow: '0 0 4px #f43f5e' }} />
+                <strong style={{ color: '#f43f5e' }}>O</strong> Egress
+              </span>
             </div>
           )}
           <div

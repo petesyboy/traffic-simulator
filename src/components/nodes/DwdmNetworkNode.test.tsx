@@ -217,8 +217,9 @@ describe('DwdmNetworkNode ports', () => {
 
   it('names every port so hovering explains what it accepts', () => {
     const html = render();
-    const titles = (html.match(/title="[^"]*(?:Ingress|Egress)[^"]*"/g) || []).length;
-    expect(titles).toBe(8);
+    const handleTags = html.match(/<div[^>]*react-flow__handle[^>]*>/g) || [];
+    const handleTitles = handleTags.filter((tag) => /title="[^"]*(?:Ingress|Egress)[^"]*"/.test(tag)).length;
+    expect(handleTitles).toBe(8);
   });
 
   it('positions bottom and top handles strictly on the outer perimeter', () => {
@@ -226,5 +227,13 @@ describe('DwdmNetworkNode ports', () => {
     // Bottom handles must have bottom: 0 and top: auto so they do not float in the centre
     expect(html).toContain('bottom:0');
     expect(html).toContain('top:auto');
+  });
+
+  it('visually distinguishes ingress (I / cyan-blue) and egress (O / rose-red) handles with indicators and legend', () => {
+    const html = render();
+    expect(html).toContain('dwdm-handle-in');
+    expect(html).toContain('dwdm-handle-out');
+    expect(html).toContain('Ingress');
+    expect(html).toContain('Egress');
   });
 });

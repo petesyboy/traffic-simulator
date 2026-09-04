@@ -1149,6 +1149,25 @@
   border-color: var(--color-blue) !important;
 }
 
+/* DWDM Node Distinct Ingress / Egress Handles */
+.dwdm-handle-in {
+  background-color: #38bdf8 !important; /* Sky blue for Ingress / RX */
+  border: 2px solid #0284c7 !important;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8) !important;
+}
+
+.dwdm-handle-out {
+  background-color: #f43f5e !important; /* Rose/amber-red for Egress / TX */
+  border: 2px solid #be123c !important;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.8) !important;
+}
+
+.dwdm-handle-open {
+  background-color: #4ade80 !important;
+  border: 2px solid #16a34a !important;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.9) !important;
+}
+
 
 /* 5. Config Panel Styles (Matches dark slate palette) */
 .config-panel {
