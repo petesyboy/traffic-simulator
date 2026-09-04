@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.754",
+    date: "2026-09-04",
+    summary: "Add human-readable specification to optic labels in export diagram mode (v1.0.754)",
+  },
+  {
     version: "1.0.753",
     date: "2026-09-04",
     summary: "Update passive TAP and breakout panel faceplate graphics (v1.0.753)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.732",
     date: "2026-09-02",
     summary: "Fixed mirrored nodes so their links actually follow the handles: flipping a node between left-to-right and right-to-left now forces ReactFlow to re-measure that node, so every connected link re-routes to the new side instead of continuing to point at where the handle used to be.",
-  },
-  {
-    version: "1.0.731",
-    date: "2026-09-02",
-    summary: "Added left-to-right / right-to-left flow direction for nodes: any node's input and output handles can now be mirrored so a pipeline reads either way, via a Flow Direction control in the node configuration panel, a Mirror button on the canvas toolbar, and the M keyboard shortcut for the current selection. A hand-picked direction is locked so automatic layout leaves that choice alone.",
   },
 ];

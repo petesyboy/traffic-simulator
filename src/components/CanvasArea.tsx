@@ -273,11 +273,21 @@ const CanvasArea: React.FC = () => {
       if (file.name.endsWith('.json') || file.type.includes('json') || file.type.includes('text')) {
         try {
           const raw = typeof file.text === 'function' ? await file.text() : await file.slice().text();
-          const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj } = JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          const { nodes: n, edges: e_list, trafficStreams: t, settings: s_obj, quoteWorkspace: quoteWs } = parsed;
           if (n && e_list) {
             useStore.getState().restoreState(n, e_list, t || [], s_obj);
-            const scenarioName = file.name.replace(/\.json$/i, '');
+            const scenarioName =
+              parsed.projectName ||
+              file.name
+                .replace(/\.(gvp|gvproj|json)$/i, '')
+                .replace(/^GigaVUE_Project_|^Solution_Overview_/i, '')
+                .replace(/_/g, ' ');
             useStore.getState().setCurrentScenarioName(scenarioName);
+            if (quoteWs) {
+              const { saveProjectQuoteWorkspace } = await import('../utils/projectQuoteStorage');
+              saveProjectQuoteWorkspace(scenarioName, quoteWs);
+            }
             return;
           }
         } catch (err) {

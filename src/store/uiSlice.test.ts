@@ -57,4 +57,22 @@ describe('uiSlice theme management', () => {
     useStore.getState().setTheme('dark');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
+
+  it('updates currentScenarioName and syncs to fm-simulator-last-slot and fm-simulator-autosave', () => {
+    localStorage.setItem(
+      'fm-simulator-autosave',
+      JSON.stringify({ nodes: [], edges: [], projectName: 'Old Project' })
+    );
+
+    useStore.getState().setCurrentScenarioName('Saab-DUAL-TA25E');
+    expect(useStore.getState().currentScenarioName).toBe('Saab-DUAL-TA25E');
+    expect(localStorage.getItem('fm-simulator-last-slot')).toBe('Saab-DUAL-TA25E');
+
+    const autosave = JSON.parse(localStorage.getItem('fm-simulator-autosave') || '{}');
+    expect(autosave.projectName).toBe('Saab-DUAL-TA25E');
+
+    useStore.getState().setCurrentScenarioName(null);
+    expect(useStore.getState().currentScenarioName).toBeNull();
+    expect(localStorage.getItem('fm-simulator-last-slot')).toBeNull();
+  });
 });

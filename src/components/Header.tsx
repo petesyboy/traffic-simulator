@@ -61,7 +61,7 @@ interface HeaderProps {
   /** Called when the user clicks "Load Layout" — opens the load slot modal in App.tsx. */
   onLoadClick: () => void;
   /** Called when the user clicks "Save to File" — directly triggers a file download. */
-  onSaveFileClick: () => void;
+  onSaveFileClick: (customName?: string) => void;
   /** Called when the user selects a file to load. */
   onLoadFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -193,6 +193,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
     setActiveView('canvas');
     setShowNewProjectConfirm(false);
     setExportPackageStatus(null);
+    try {
+      localStorage.removeItem('fm-simulator-autosave');
+      localStorage.removeItem('fm-simulator-last-slot');
+    } catch {
+      // ignore
+    }
   };
 
   const handleOpenBom = () => {
@@ -674,8 +680,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       className="header-dropdown-item"
                       onClick={() => {
                         setShowProjectMenu(false);
-                        ensureProjectNamed(() => {
-                          onSaveFileClick();
+                        ensureProjectNamed((confirmedName) => {
+                          onSaveFileClick(confirmedName);
                         });
                       }}
                       style={{ color: '#38bdf8', fontWeight: 600 }}

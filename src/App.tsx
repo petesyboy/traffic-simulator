@@ -79,16 +79,19 @@ function App() {
   const [modalMode, setModalMode] = useState<'save' | 'load' | null>(null);
   const [saveToast, setSaveToast] = useState('');
 
-  const handleExportStateToFile = useCallback(async () => {
-    const resolvedName = currentScenarioName || 'Untitled Project';
-    const quoteWorkspace = getProjectQuoteWorkspace(currentScenarioName);
-    const filename = getStandardExportFilename('project-gvp', currentScenarioName);
+  const handleExportStateToFile = useCallback(async (customName?: string) => {
+    const activeName =
+      typeof customName === 'string' && customName.trim()
+        ? customName.trim()
+        : currentScenarioName || 'Untitled Project';
+    const quoteWorkspace = getProjectQuoteWorkspace(activeName);
+    const filename = getStandardExportFilename('project-gvp', activeName);
     const projectData = {
       format: 'gigamon-project',
       version: '2.0',
       appVersion: pkg.version,
       exportedAt: new Date().toISOString(),
-      projectName: resolvedName,
+      projectName: activeName,
       nodes,
       edges,
       trafficStreams,
@@ -113,6 +116,7 @@ function App() {
     });
 
     if (res.saved) {
+      setCurrentScenarioName(activeName);
       setSaveToast(`Saved project to "${res.filename}"`);
       setTimeout(() => setSaveToast(''), 5000);
     }
@@ -129,6 +133,7 @@ function App() {
     showGrid,
     snapToGrid,
     currentScenarioName,
+    setCurrentScenarioName,
   ]);
 
   const handleImportStateFromFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,15 +194,18 @@ function App() {
   // ── Auto-restore on first mount ──────────────────────────────────────────
 
   useEffect(() => {
-    // Check autosave, last slot, or legacy default save
+    // Check autosave or legacy default save
     const savedState = localStorage.getItem('fm-simulator-autosave') || localStorage.getItem('fm-simulator-default-file');
     if (savedState) {
       try {
-        const { nodes: n, edges: e, trafficStreams: t, settings: s_obj } = JSON.parse(savedState);
+        const parsed = JSON.parse(savedState);
+        const { nodes: n, edges: e, trafficStreams: t, settings: s_obj, projectName, currentScenarioName: savedName } = parsed;
         if (n && e) {
           restoreState(n, e, t || [], s_obj);
-          const lastSlot = localStorage.getItem('fm-simulator-last-slot');
-          if (lastSlot) setCurrentScenarioName(lastSlot);
+          const resolvedName = projectName || savedName || localStorage.getItem('fm-simulator-last-slot') || null;
+          if (resolvedName) {
+            setCurrentScenarioName(resolvedName);
+          }
         }
       } catch (error) {
         console.error('Failed to parse the saved canvas state:', error);
@@ -211,6 +219,10 @@ function App() {
     const timer = setTimeout(() => {
       if (nodes.length > 0) {
         const flow = {
+          format: 'gigamon-project',
+          version: '2.0',
+          appVersion: pkg.version,
+          projectName: currentScenarioName,
           nodes,
           edges,
           trafficStreams,
@@ -237,6 +249,7 @@ function App() {
     nodes,
     edges,
     trafficStreams,
+    currentScenarioName,
     advancedMode,
     projectLicenseMode,
     defaultTermDuration,

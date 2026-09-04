@@ -128,7 +128,26 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
       get().setTheme(next);
     },
     setSidebarMessage: (msg) => set({ sidebarMessage: msg }),
-    setCurrentScenarioName: (name) => set({ currentScenarioName: name }),
+    setCurrentScenarioName: (name) => {
+      if (typeof localStorage !== 'undefined') {
+        try {
+          if (name && name.trim()) {
+            localStorage.setItem('fm-simulator-last-slot', name.trim());
+          } else {
+            localStorage.removeItem('fm-simulator-last-slot');
+          }
+          const savedAutosave = localStorage.getItem('fm-simulator-autosave');
+          if (savedAutosave) {
+            const parsed = JSON.parse(savedAutosave);
+            parsed.projectName = name ? name.trim() : null;
+            localStorage.setItem('fm-simulator-autosave', JSON.stringify(parsed));
+          }
+        } catch {
+          // ignore localStorage errors
+        }
+      }
+      set({ currentScenarioName: name });
+    },
     setTradeShowDemoActive: (active) => set({ isTradeShowDemoActive: active }),
     setTradeShowDemoStep: (step) => set({ tradeShowDemoStep: step }),
     setTradeShowDemoStatus: (status) => set({ tradeShowDemoStatus: status }),
