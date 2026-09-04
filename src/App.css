@@ -1118,6 +1118,17 @@
   transform: translate(50%, -50%) !important;
 }
 
+.react-flow__handle-top {
+  top: 0 !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.react-flow__handle-bottom {
+  top: auto !important;
+  bottom: 0 !important;
+  transform: translate(-50%, 50%) !important;
+}
+
 .react-flow__handle-left:hover {
   transform: translate(-50%, -50%) scale(1.4) !important;
   border-color: var(--color-blue) !important;
@@ -1125,6 +1136,16 @@
 
 .react-flow__handle-right:hover {
   transform: translate(50%, -50%) scale(1.4) !important;
+  border-color: var(--color-blue) !important;
+}
+
+.react-flow__handle-top:hover {
+  transform: translate(-50%, -50%) scale(1.4) !important;
+  border-color: var(--color-blue) !important;
+}
+
+.react-flow__handle-bottom:hover {
+  transform: translate(-50%, 50%) scale(1.4) !important;
   border-color: var(--color-blue) !important;
 }
 

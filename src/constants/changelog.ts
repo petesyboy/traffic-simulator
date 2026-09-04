@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.746",
+    date: "2026-09-04",
+    summary: "Enforce min site enclosure width to prevent obscuring single TAPs & add instant DWDM ring wizard (v1.0.746)",
+  },
+  {
     version: "1.0.744",
     date: "2026-09-03",
     summary: "Add 1-click conversion from central DWDM hub to per-site gateways with optical ring (v1.0.744)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.726",
     date: "2026-09-02",
     summary: "Implemented central WAN hub layout for DWDM transport networks with reserved inter-site gutters, directional 8-way handle optimisation, cycle-safe peer column ranking, and interactive data centre DWDM ring membership indicators.",
-  },
-  {
-    version: "1.0.725",
-    date: "2026-09-02",
-    summary: "Refined report traffic source terminology: dynamically adapted topology diagrams, schematics, and work orders to specify 'SPAN allocations', 'TAP allocations', or 'TAP/SPAN allocations' based on actual deployed sources rather than hardcoding TAP references.",
   },
 ];

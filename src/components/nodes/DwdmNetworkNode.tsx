@@ -17,14 +17,14 @@ import { useGlowClass } from './nodeStyles';
  * come in from whichever direction a site happens to be laid out.
  */
 const RING_PORTS = [
-  { id: 'in-left', type: 'target' as const, position: Position.Left, offset: { top: '35%' }, label: 'Ingress ← from a site to the west' },
-  { id: 'out-left', type: 'source' as const, position: Position.Left, offset: { top: '65%' }, label: 'Egress → to a site to the west' },
-  { id: 'in-right', type: 'target' as const, position: Position.Right, offset: { top: '35%' }, label: 'Ingress → from a site to the east' },
-  { id: 'out-right', type: 'source' as const, position: Position.Right, offset: { top: '65%' }, label: 'Egress ← to a site to the east' },
-  { id: 'in-top', type: 'target' as const, position: Position.Top, offset: { left: '35%' }, label: 'Ingress ↓ from a site above' },
-  { id: 'out-top', type: 'source' as const, position: Position.Top, offset: { left: '65%' }, label: 'Egress ↑ to a site above' },
-  { id: 'in-bottom', type: 'target' as const, position: Position.Bottom, offset: { left: '35%' }, label: 'Ingress ↑ from a site below' },
-  { id: 'out-bottom', type: 'source' as const, position: Position.Bottom, offset: { left: '65%' }, label: 'Egress ↓ to a site below' },
+  { id: 'in-left', type: 'target' as const, position: Position.Left, offset: { top: '35%', left: 0 }, label: 'Ingress ← from a site to the west' },
+  { id: 'out-left', type: 'source' as const, position: Position.Left, offset: { top: '65%', left: 0 }, label: 'Egress → to a site to the west' },
+  { id: 'in-right', type: 'target' as const, position: Position.Right, offset: { top: '35%', right: 0, left: 'auto' }, label: 'Ingress → from a site to the east' },
+  { id: 'out-right', type: 'source' as const, position: Position.Right, offset: { top: '65%', right: 0, left: 'auto' }, label: 'Egress ← to a site to the east' },
+  { id: 'in-top', type: 'target' as const, position: Position.Top, offset: { left: '35%', top: 0, bottom: 'auto' }, label: 'Ingress ↓ from a site above' },
+  { id: 'out-top', type: 'source' as const, position: Position.Top, offset: { left: '65%', top: 0, bottom: 'auto' }, label: 'Egress ↑ to a site above' },
+  { id: 'in-bottom', type: 'target' as const, position: Position.Bottom, offset: { left: '35%', bottom: 0, top: 'auto' }, label: 'Ingress ↑ from a site below' },
+  { id: 'out-bottom', type: 'source' as const, position: Position.Bottom, offset: { left: '65%', bottom: 0, top: 'auto' }, label: 'Egress ↓ to a site below' },
 ];
 
 const DwdmNetworkNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {

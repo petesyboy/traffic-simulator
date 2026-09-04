@@ -220,4 +220,11 @@ describe('DwdmNetworkNode ports', () => {
     const titles = (html.match(/title="[^"]*(?:Ingress|Egress)[^"]*"/g) || []).length;
     expect(titles).toBe(8);
   });
+
+  it('positions bottom and top handles strictly on the outer perimeter', () => {
+    const html = render();
+    // Bottom handles must have bottom: 0 and top: auto so they do not float in the centre
+    expect(html).toContain('bottom:0');
+    expect(html).toContain('top:auto');
+  });
 });
