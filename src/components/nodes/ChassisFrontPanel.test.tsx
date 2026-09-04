@@ -108,8 +108,8 @@ describe('ChassisFrontPanel fitted-optic markers', () => {
       />,
     );
 
-    expect(html).toContain('left:6.8%');
-    expect(html).toContain('left:77.2%');
+    expect(html).toContain('left:8.02%');
+    expect(html).toContain('left:68.27%');
   });
 
   it('renders fitted-optic markers for TA200 fixed QSFP28 ports', () => {
