@@ -24,7 +24,7 @@ import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
 import { getChassisPorts, getPortOccupancy, getPortOpticMap } from '../../utils/ports';
-import { getModuleSlotPositions, isBreakoutPanelModel } from '../../utils/hardwareUtils';
+import { getModuleSlotPositions, isBreakoutPanelModel, getOpticFriendlyDescription } from '../../utils/hardwareUtils';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const { inSide, outSide } = useHandleSides(id, data);
@@ -422,7 +422,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               const allocations = (hwData.tappedLinkAllocations as { qty: number, optic: string }[]) || [
                 { qty: hwData.tappedLinksCount ?? 1, optic: (hwData.tappedLinkOptic as string) || (tapInfo?.media?.includes('SMF') ? 'SFP-533' : 'SFP-532') }
               ];
-              const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${a.optic} to mirror traffic.`);
+              const descLines = allocations.map(a => `Tapping ${a.qty} network link(s) using ${getOpticFriendlyDescription(a.optic)} to mirror traffic.`);
               return descLines.join('\n');
             } else {
               // Find incoming source links (deduplicated by source node to prevent double-counting)
@@ -521,8 +521,9 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               let desc = '';
               if (spanConns.length > 0) {
                 const groupedSpans = spanConns.reduce((acc, curr) => {
-                  const key = `${curr.optic}__${curr.typeName}`;
-                  if (!acc[key]) acc[key] = { count: 0, labels: new Set<string>(), optic: curr.optic, typeName: curr.typeName };
+                  const friendlyOptic = getOpticFriendlyDescription(curr.optic);
+                  const key = `${friendlyOptic}__${curr.typeName}`;
+                  if (!acc[key]) acc[key] = { count: 0, labels: new Set<string>(), optic: friendlyOptic, typeName: curr.typeName };
                   acc[key].count += curr.count;
                   acc[key].labels.add(curr.label);
                   return acc;
@@ -537,9 +538,10 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
 
               if (tapConns.length > 0) {
                 const groupedTaps = tapConns.reduce((acc, curr) => {
-                  if (!acc[curr.optic]) acc[curr.optic] = { links: 0, labels: new Set<string>() };
-                  acc[curr.optic].links += curr.linksCount;
-                  acc[curr.optic].labels.add(curr.label);
+                  const friendlyOptic = getOpticFriendlyDescription(curr.optic);
+                  if (!acc[friendlyOptic]) acc[friendlyOptic] = { links: 0, labels: new Set<string>() };
+                  acc[friendlyOptic].links += curr.linksCount;
+                  acc[friendlyOptic].labels.add(curr.label);
                   return acc;
                 }, {} as Record<string, { links: number, labels: Set<string> }>);
 
@@ -552,7 +554,7 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               }
 
               const opticsDesc = nodeBom.filter(r => r.type === 'Optic' || r.type === 'TAP' || r.type === 'Module')
-                .map(r => `${r.qty}x ${r.sku}`)
+                .map(r => `${r.qty}x ${r.type === 'Optic' ? getOpticFriendlyDescription(r.sku) : r.sku}`)
                 .join(', ');
 
               desc += `Configured: ${opticsDesc || 'No modules or optics configured.'}\n\n`;

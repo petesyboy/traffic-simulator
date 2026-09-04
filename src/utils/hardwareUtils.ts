@@ -5,6 +5,7 @@
 import type { CustomNode, HardwareNodeData, InstalledOptic, PortInfo } from '../store/types';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getSupportedBoards } from './opticValidation';
+import { skuService } from '../services/skuService';
 
 const sumPortCounts = (ports: (PortInfo | number)[]): { [portType: string]: number } => {
   const counts: { [portType: string]: number } = {};
@@ -336,6 +337,54 @@ export const formatOpticLabel = (opticName: string): string => {
   let label = type ? `${opticName} [${type}]` : opticName;
   if (isTAA) label += ' (TAA)';
   return label;
+};
+
+/**
+ * Formats an optic string with both its SKU and clean human-readable specification
+ * for canvas overlays and export diagram mode (e.g. "Q28-503T (100G QSFP28, Singlemode LR4)").
+ */
+export const getOpticFriendlyDescription = (opticName: string): string => {
+  if (!opticName) return '';
+  const trimmed = opticName.trim();
+  const rawSku = trimmed.split(' ')[0].replace(/[,\(\)\[\]]/g, '');
+  const sku = rawSku.toUpperCase();
+
+  // Try looking up SKU in catalogue
+  const skuItem = skuService.getSKUByPartNumber(sku);
+  let desc = '';
+
+  if (skuItem?.description) {
+    desc = skuItem.description
+      .replace(/\.?\s*(?:TAA Compliant|Not TAA Compliant)\.?/gi, '')
+      .replace(/[,\.]\s*$/, '')
+      .trim();
+  }
+
+  if (!desc) {
+    const parenthesizedMatch = trimmed.match(/\((.*?)\)/);
+    if (parenthesizedMatch) {
+      desc = parenthesizedMatch[1].trim();
+    }
+  }
+
+  if (!desc) {
+    const speed = getOpticSpeed(trimmed);
+    const fiber = getOpticFiberType(trimmed);
+    const fiberLabel = fiber === 'SM' ? 'Singlemode' : fiber === 'MM' ? 'Multimode' : fiber === 'Copper' ? 'Copper' : '';
+    if (speed && speed !== 'Unknown') {
+      desc = `${speed} ${fiberLabel}`.trim();
+    }
+  }
+
+  if (desc) {
+    // If the description starts with the SKU, strip it to avoid duplication
+    const descCleaned = desc.replace(new RegExp(`^${sku}\\s*[-:,]?\\s*`, 'i'), '').trim();
+    if (descCleaned) {
+      return `${sku} (${descCleaned})`;
+    }
+  }
+
+  return trimmed;
 };
 
 /**

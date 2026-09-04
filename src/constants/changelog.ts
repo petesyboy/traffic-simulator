@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.753",
+    date: "2026-09-04",
+    summary: "Update passive TAP and breakout panel faceplate graphics (v1.0.753)",
+  },
+  {
     version: "1.0.750",
     date: "2026-09-04",
     summary: "Restore single-click selection for canvas nodes and auto-select on drop (v1.0.750)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.731",
     date: "2026-09-02",
     summary: "Added left-to-right / right-to-left flow direction for nodes: any node's input and output handles can now be mirrored so a pipeline reads either way, via a Flow Direction control in the node configuration panel, a Mirror button on the canvas toolbar, and the M keyboard shortcut for the current selection. A hand-picked direction is locked so automatic layout leaves that choice alone.",
-  },
-  {
-    version: "1.0.730",
-    date: "2026-09-02",
-    summary: "Fixed GigaVUE-TA200E front panel optic overlay alignment: recalibrated the 64 QSFP28 port cage coordinates across 16 columns and 4 rows (2 tiers of stacked 2x2 cages), resolving the horizontal left-offset that caused port markers to render over the status LEDs and chassis bezel.",
   },
 ];
