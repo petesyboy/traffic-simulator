@@ -64,7 +64,8 @@ describe('BOM Engine', () => {
         board: 'Base Ports',
         optic: 'SFP-501T (1G SFP Copper)',
         qty: 6,
-        isAutoAdded: true
+        isAutoAdded: true,
+        autoPurpose: 'tap'
       });
     });
 
@@ -104,7 +105,8 @@ describe('BOM Engine', () => {
         board: 'HC1-X12G4 (Main board)',
         optic: 'SFP-532T (10G SFP+ SR)',
         qty: 4,
-        isAutoAdded: true
+        isAutoAdded: true,
+        autoPurpose: 'tap'
       });
     });
 

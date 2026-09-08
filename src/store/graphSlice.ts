@@ -15,6 +15,8 @@ import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
 import { getRequiredPortCount, isTapUnconfigured, getOpticCage } from '../utils/ports';
+import { getInputFeedSpeed, isPacketFeedInput, resolveInputFeedOptic } from '../utils/inputFeedOptics';
+import { getOpticSpeed } from '../utils/hardwareUtils';
 import { computeTidyLayout, autoSpaceNodesForExport, optimizeDwdmEdgeHandles } from '../utils/autoLayout';
 import { NODE_TYPES } from '../constants/nodeTypes';
 import { getDefaultIngestLimitMbps } from '../constants/toolIngestLimits';
@@ -267,6 +269,29 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
       } else if (tapFiber === 'Multimode' && mmCount < requiredOptics) msg = `Suggested and installed ${requiredOptics - mmCount} x ${selectedOpticVal} multi-mode optics in ${targetModel} to support the connection from ${srcData.label || 'TAP'}.`;
       else if (tapFiber === 'Singlemode' && smCount < requiredOptics) msg = `Suggested and installed ${requiredOptics - smCount} x ${selectedOpticVal} single-mode optics in ${targetModel} to support the connection from ${srcData.label || 'TAP'}.`;
       if (msg) set({ sidebarMessage: msg });
+    }
+
+    // A SPAN/ERSPAN/East-West/VMware feed lands on a chassis port and needs a
+    // transceiver at the speed and media set on the input node - say which one
+    // was fitted, and say so plainly when the chassis can't run that speed
+    // (e.g. a 400G SPAN into a TA400 licensed for 100G ports only).
+    const feedNode = isPacketFeedInput(nodeA) ? nodeA : (isPacketFeedInput(nodeB) ? nodeB : null);
+    const feedChassis = feedNode === nodeA ? nodeB : (feedNode === nodeB ? nodeA : null);
+    if (feedNode && feedChassis?.type === 'hardwareNode' && !String((feedChassis.data as HardwareNodeData)?.model || '').includes('TAP')) {
+      const chassisModel = String((feedChassis.data as HardwareNodeData)?.model || '');
+      const feedOptic = resolveInputFeedOptic(feedNode, chassisModel, (feedChassis.data as HardwareNodeData)?.portCapacity as string);
+      const feedSpeed = getInputFeedSpeed(feedNode);
+      const feedLabel = String(feedNode.data?.label || 'ingress feed');
+      if (feedOptic) {
+        const fittedSpeed = getOpticSpeed(feedOptic);
+        set({
+          sidebarMessage: fittedSpeed === feedSpeed
+            ? `Fitted 1 x ${feedOptic} in ${chassisModel} to terminate the ${feedSpeed} feed from ${feedLabel}.`
+            : `${chassisModel} cannot run this port at ${feedSpeed}, so the ${feedLabel} feed was terminated with a ${fittedSpeed} ${feedOptic} instead. Check the chassis port capacity if you need the full ${feedSpeed}.`,
+        });
+      } else {
+        set({ sidebarMessage: `${chassisModel} has no transceiver that can terminate a ${feedSpeed} feed from ${feedLabel}.` });
+      }
     }
 
     const isHardwareA = nodeA.type === 'hardwareNode' && !String((nodeA.data as HardwareNodeData)?.model || '').includes('TAP');

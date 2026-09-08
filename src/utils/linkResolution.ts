@@ -12,6 +12,7 @@ import type { CustomNode, HardwareNodeData, InstalledOptic, PortLink } from '../
 import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from './ports';
 import { getOpticSpeed, getOpticSpeedMbps, getOpticFiberType, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
+import { isPacketFeedInput, resolveInputFeedOptic } from './inputFeedOptics';
 import { syncPortAssignments } from './portSync';
 import { syncOpticsOnTapConnection } from './bomEngine';
 
@@ -101,7 +102,8 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
 
   const isSourceHw = sourceNode.type === 'hardwareNode' && !isBreakoutPanelModel(sourceModel) && !sourceModel.includes('TAP');
   const isTargetHw = targetNode.type === 'hardwareNode' && !isBreakoutPanelModel(targetModel) && !targetModel.includes('TAP');
-  const isSourceTap = sourceNode.type === 'inputNode' || sourceModel.includes('TAP');
+  const isSourceFeed = isPacketFeedInput(sourceNode);
+  const isSourceTap = (sourceNode.type === 'inputNode' && !isSourceFeed) || sourceModel.includes('TAP');
 
   const portLinks = (edge.data?.portLinks as PortLink[]) || [];
   const primaryLink = portLinks[0];
@@ -118,6 +120,11 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
     if (sourcePortId && opticMap.has(sourcePortId)) {
       sourceOptic = opticMap.get(sourcePortId)!;
     }
+  } else if (isSourceFeed) {
+    // A SPAN/ERSPAN/East-West/VMware feed carries no optic of its own - its
+    // chassis-side transceiver comes from the speed and media set on the input
+    // node, against what the receiving chassis actually supports.
+    sourceOptic = resolveInputFeedOptic(sourceNode, targetModel, (targetNode.data as HardwareNodeData)?.portCapacity as string);
   } else if (isSourceTap) {
     const hwData = sourceNode.data as HardwareNodeData;
     const allocs = resolveTapAllocations(hwData, 'SFP-532');
@@ -192,13 +199,14 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
     }
   }
 
-  // Case 2: TAP to Hardware
-  if (isSourceTap && isTargetHw) {
+  // Case 2: TAP or mirrored ingress feed to Hardware
+  if ((isSourceTap || isSourceFeed) && isTargetHw) {
+    const feedName = isSourceFeed ? `${sourceNode.data?.label || 'ingress'} feed` : 'TAP feed';
     if (!targetOptic) {
       return {
         hasProblem: true,
         problemType: 'missing_target_optic',
-        reason: `Appliance ${targetNode.data?.label || targetModel} has no transceivers fitted for TAP feed (${sourceOptic.split(' ')[0]}).`,
+        reason: `Appliance ${targetNode.data?.label || targetModel} has no transceivers fitted for ${feedName} (${sourceOptic.split(' ')[0]}).`,
         fixActionDescription: `Auto-fit required transceivers on ${targetNode.data?.label || targetModel}`,
       };
     }
@@ -206,7 +214,7 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
       return {
         hasProblem: true,
         problemType: 'speed_mismatch',
-        reason: `Speed mismatch between TAP feed (${sourceSpeed}) and appliance ingress port (${targetSpeed}).`,
+        reason: `Speed mismatch between ${feedName} (${sourceSpeed}) and appliance ingress port (${targetSpeed}).`,
         fixActionDescription: `Upgrade ingress transceivers to ${sourceSpeed} on ${targetNode.data?.label || targetModel}`,
       };
     }
@@ -255,6 +263,8 @@ export function resolveLinkConnectionProblem(
     if (sourcePortId && opticMap.has(sourcePortId)) {
       sourceOptic = opticMap.get(sourcePortId)!;
     }
+  } else if (isPacketFeedInput(sourceNode)) {
+    sourceOptic = resolveInputFeedOptic(sourceNode, targetModel, (targetNode.data as HardwareNodeData)?.portCapacity as string);
   } else if (sourceNode.type === 'inputNode' || sourceModel.includes('TAP')) {
     const hwData = sourceNode.data as HardwareNodeData;
     const allocs = resolveTapAllocations(hwData, 'SFP-532');
@@ -341,10 +351,17 @@ export function resolveLinkConnectionProblem(
   }
   // Scenario 2: Target is missing optic (or fibre mismatch)
   else if (sourceOptic && isTargetHw) {
-    const match = findBestMatchingOptic(targetModel, sourceOptic, targetNode.data?.portCapacity as string);
-    if (match) {
-      updateNodeOptics(targetNode.id, match, targetOptic, targetPortId);
-      message = `Resolved connection: Fitted 1x ${match.optic.split(' ')[0]} in ${targetNode.data?.label || targetModel} to match ${sourceNode.data?.label || sourceModel}.`;
+    if (isPacketFeedInput(sourceNode)) {
+      // A mirrored feed's ingress optic is re-derived from the graph by
+      // syncOpticsOnTapConnection at the end of this function, so fitting one
+      // here as well would leave the chassis carrying two of them.
+      message = `Resolved connection: Fitted 1x ${sourceOptic.split(' ')[0]} in ${targetNode.data?.label || targetModel} to terminate the feed from ${sourceNode.data?.label || sourceModel}.`;
+    } else {
+      const match = findBestMatchingOptic(targetModel, sourceOptic, targetNode.data?.portCapacity as string);
+      if (match) {
+        updateNodeOptics(targetNode.id, match, targetOptic, targetPortId);
+        message = `Resolved connection: Fitted 1x ${match.optic.split(' ')[0]} in ${targetNode.data?.label || targetModel} to match ${sourceNode.data?.label || sourceModel}.`;
+      }
     }
   }
   // Scenario 3: Source is missing optic

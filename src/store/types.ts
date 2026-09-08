@@ -55,6 +55,12 @@ export interface InstalledOptic {
   optic: string;
   qty: number;
   isAutoAdded?: boolean;
+  /** What an auto-added optic is there for. 'tap' (the default when absent, for
+   *  back-compatibility with saved projects) terminates a tapped link's
+   *  north/south pair and is halved by "Convert to SPAN Only"; 'ingress'
+   *  terminates a single unidirectional SPAN/ERSPAN/East-West/VMware feed and
+   *  must never be halved - there is only ever one of it per feed. */
+  autoPurpose?: 'tap' | 'ingress';
   /** When set, this optic occupies exactly this port id rather than being
    *  placed by getPortOpticMap's deterministic sequential fill. Always
    *  qty: 1 - pinning is a single-instance concept, unlike the aggregate

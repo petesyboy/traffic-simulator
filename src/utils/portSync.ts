@@ -19,6 +19,7 @@ import {
   isTapNode,
 } from './ports';
 import { isBreakoutPanelModel } from './hardwareUtils';
+import { getInputFeedCage, isPacketFeedInput } from './inputFeedOptics';
 
 /** A node only has allocatable catalogue ports if it's a non-TAP chassis. */
 function chassisPortsFor(node: CustomNode | undefined, cache: Map<string, ChassisPort[]>): ChassisPort[] {
@@ -40,6 +41,11 @@ function preferredCage(peer: CustomNode | undefined, edge?: Edge, nodes: CustomN
   // A breakout panel's MPO side always takes a parallel optic, which is
   // always QSFP-family regardless of speed tier (40G/100G/400G) or MM/SM.
   if (peer.type === 'hardwareNode' && isBreakoutPanelModel(String(peer.data?.model || ''))) return 'QSFP';
+
+  // A SPAN/ERSPAN/East-West/VMware feed carries no optic of its own, so its
+  // cage comes from the port speed configured on the input node - a 400G SPAN
+  // session belongs in a QSFP-DD cage, not whichever SFP happens to be free.
+  if (isPacketFeedInput(peer)) return getInputFeedCage(peer);
 
   // DWDM Optical Transport Network links take QSFP for 100G/400G and SFP for 25G/10G
   if (peer.type === 'dwdmNetworkNode' || peer.data?.configType === 'DWDM Network') {

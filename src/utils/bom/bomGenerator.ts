@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react';
-import { type CustomNode, type HardwareNodeData } from '../../store/types';
+import { type CustomNode, type HardwareNodeData, type InstalledOptic } from '../../store/types';
 import { NODE_TYPES, CONFIG_TYPES } from '../../constants/nodeTypes';
 import hardwareCatalogue from '../../constants/hardwareCatalogue.json';
 import opticRules from '../../constants/opticRules.json';
@@ -11,9 +11,20 @@ import { requiresUltTray, ULT_TRAY_SKU, isAutoTrayModel, getCanonicalTrayModel, 
 import { isBreakoutPanelModel } from '../hardwareUtils';
 import { getEdgeTapLinksCount } from '../clusterUtils';
 import { optimizeOpticPacks } from './opticPacks';
+import { deriveInputFeedOptics } from '../inputFeedOptics';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
+
+/**
+ * Whether an installed optic terminates a tapped link's north/south pair, and so
+ * is halved by a "Convert to SPAN Only" quote. Auto-added optics carry their
+ * purpose explicitly; ones saved before that field existed were all TAP
+ * terminations, so an absent purpose still means 'tap'.
+ */
+function isTapTerminationOptic(opt: InstalledOptic): boolean {
+  return !!opt.isAutoAdded && (opt.autoPurpose || 'tap') === 'tap';
+}
 
 /** Passive module TAPs record a descriptive label where an optic SKU would go. */
 function isPassiveSplitterLabel(optic: string): boolean {
@@ -81,6 +92,16 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     const tapOpticsNeeded: Record<string, number> = {};
     const processedMemberNodeIds = new Set<string>();
 
+    // SPAN/ERSPAN/East-West/VMware feeds land on a chassis port too, and need a
+    // transceiver at the speed and media configured on the input node - one per
+    // feed, since a mirrored session is unidirectional (unlike a tapped link's
+    // north/south pair). Kept separate from tapOpticsNeeded so these are never
+    // halved by "Convert to SPAN Only".
+    const feedOpticsNeeded: Record<string, number> = {};
+    deriveInputFeedOptics(node, nodes, edges, chassisModel, node.data?.portCapacity as string).forEach(req => {
+      feedOpticsNeeded[req.optic] = (feedOpticsNeeded[req.optic] || 0) + req.qty;
+    });
+
     connectedEdges.forEach(e => {
       const otherId = e.source === node.id ? e.target : e.source;
       const sourceNode = nodes.find(n => n.id === otherId);
@@ -145,7 +166,7 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
       }
     });
 
-    const currentOptics = (node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean, pinnedPortId?: string }[]) || [];
+    const currentOptics = (node.data?.optics as InstalledOptic[]) || [];
     const userOptics = currentOptics.filter(opt => !opt.isAutoAdded);
     const nextOptics = [...userOptics];
     let changed = currentOptics.length !== userOptics.length;
@@ -154,34 +175,47 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
     // (picker codes vs. legacy fallback labels). Resolve to the chassis target SKU first
     // so those variants are combined into a single requirement before topping up nextOptics -
     // otherwise each raw-key group is topped up independently and produces duplicate/undercounted lines.
-    const resolvedOpticsNeeded: Record<string, number> = {};
-    Object.entries(tapOpticsNeeded).forEach(([rawOptic, qty]) => {
-      const targetOptic = resolveOpticForChassis(rawOptic, chassisModel);
-      resolvedOpticsNeeded[targetOptic] = (resolvedOpticsNeeded[targetOptic] || 0) + qty;
+    const resolveNeeded = (needed: Record<string, number>): Record<string, number> => {
+      const out: Record<string, number> = {};
+      Object.entries(needed).forEach(([rawOptic, qty]) => {
+        const targetOptic = resolveOpticForChassis(rawOptic, chassisModel);
+        out[targetOptic] = (out[targetOptic] || 0) + qty;
+      });
+      return out;
+    };
+
+    // Only a *pinned* entry claims a specific, already-spoken-for port, so only
+    // pinned entries offset how many auto-added units are still needed. A plain
+    // aggregate (non-pinned) manual entry of the same optic type doesn't
+    // necessarily exist for this requirement at all - it might be there to cover
+    // a completely different link (an inter-chassis uplink, a GigaSMART
+    // appliance loop). Counting it here used to let it silently cannibalise the
+    // auto-added pool: adding one more unit to fix a "missing transceiver" on
+    // such a link left the net total unchanged, since the auto portion just
+    // shrank by the same amount on the next sync.
+    // The pool is consumed across both requirement kinds, so a single pinned
+    // optic can't be credited to a tapped link and a SPAN feed at once.
+    const pinnedPool: Record<string, number> = {};
+    nextOptics.filter(o => o.pinnedPortId).forEach(o => {
+      const sku = resolveOpticSku(o.optic, chassisModel);
+      pinnedPool[sku] = (pinnedPool[sku] || 0) + o.qty;
     });
 
-    Object.entries(resolvedOpticsNeeded).forEach(([targetOptic, qty]) => {
-      const targetSku = resolveOpticSku(targetOptic, chassisModel);
+    const topUp = (needed: Record<string, number>, autoPurpose: 'tap' | 'ingress') => {
+      Object.entries(needed).forEach(([targetOptic, qty]) => {
+        const targetSku = resolveOpticSku(targetOptic, chassisModel);
+        const credited = Math.min(pinnedPool[targetSku] || 0, qty);
+        pinnedPool[targetSku] = (pinnedPool[targetSku] || 0) - credited;
 
-      // Only a *pinned* entry claims a specific, already-spoken-for port, so
-      // only pinned entries offset how many auto-added units are still
-      // needed. A plain aggregate (non-pinned) manual entry of the same optic
-      // type doesn't necessarily exist for this TAP requirement at all - it
-      // might be there to cover a completely different link (a SPAN/ERSPAN/
-      // VMware feed, which this function never counts a requirement for in
-      // the first place). Counting it here used to let it silently cannibalise
-      // the auto-added pool: adding one more unit to fix a "missing
-      // transceiver" on such a link left the net total unchanged, since the
-      // auto portion just shrank by the same amount on the next sync.
-      const existingQty = nextOptics
-        .filter(o => o.pinnedPortId && (o.optic === targetOptic || resolveOpticSku(o.optic, chassisModel) === targetSku))
-        .reduce((sum, o) => sum + o.qty, 0);
+        if (credited < qty) {
+          nextOptics.push({ board: chassisMainBoard, optic: targetOptic, qty: qty - credited, isAutoAdded: true, autoPurpose });
+          changed = true;
+        }
+      });
+    };
 
-      if (existingQty < qty) {
-        nextOptics.push({ board: chassisMainBoard, optic: targetOptic, qty: qty - existingQty, isAutoAdded: true });
-        changed = true;
-      }
-    });
+    topUp(resolveNeeded(tapOpticsNeeded), 'tap');
+    topUp(resolveNeeded(feedOpticsNeeded), 'ingress');
 
     return changed ? { ...node, data: { ...node.data, optics: nextOptics } } : node;
   });
@@ -369,12 +403,14 @@ export function generateBom(
       if (licenseMode === 'HTL') { addRow(node.id, boardSku + '-HW', 1, 'Module'); addRow(node.id, boardSku + '-SW-TM', 1, 'License', termOverride); }
       else addRow(node.id, boardSku, 1, 'Module');
     });
-    ((node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || []).forEach(opt => {
+    ((node.data?.optics as InstalledOptic[]) || []).forEach(opt => {
       if (!opt.optic) return;
-      // Only optics auto-added by syncOpticsOnTapConnection actually terminate a TAP link
-      // (northbound+southbound pair) - manually configured board optics may serve uplinks,
-      // GigaSMART appliance links, or other non-TAP purposes and must not be halved with them.
-      addRow(node.id, resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, undefined, opt.isAutoAdded ? 'tap-termination' : undefined);
+      // Only optics auto-added by syncOpticsOnTapConnection to terminate a TAP link
+      // (northbound+southbound pair) may be halved. Manually configured board optics
+      // may serve uplinks, GigaSMART appliance links or other non-TAP purposes, and an
+      // auto-added 'ingress' optic terminates a single unidirectional SPAN/ERSPAN feed -
+      // there is only ever one of it, so halving it would under-quote the build.
+      addRow(node.id, resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, undefined, isTapTerminationOptic(opt) ? 'tap-termination' : undefined);
     });
 
     if (model.includes('HC')) {
@@ -859,7 +895,7 @@ export function generateSingleNodeBom(
   }
   if (resolved.advSku) addRow(resolved.advSku, 1, 'License', resolved.advSku.includes('-SW-TM') ? termOverride : undefined);
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
-  ((node.data?.optics as { board: string, optic: string, qty: number, isAutoAdded?: boolean }[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, opt.isAutoAdded ? 'tap-termination' : undefined); });
+  ((node.data?.optics as InstalledOptic[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, isTapTerminationOptic(opt) ? 'tap-termination' : undefined); });
   if (model.includes('HC')) {
     const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, nodes);
     resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {

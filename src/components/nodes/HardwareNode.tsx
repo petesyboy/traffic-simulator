@@ -24,7 +24,8 @@ import { ChassisSummaryModal } from './ChassisSummaryModal';
 import { ChassisFaceplate } from './ChassisFaceplate';
 import { ChassisFrontPanel } from './ChassisFrontPanel';
 import { getChassisPorts, getPortOccupancy, getPortOpticMap } from '../../utils/ports';
-import { getModuleSlotPositions, isBreakoutPanelModel, getOpticFriendlyDescription } from '../../utils/hardwareUtils';
+import { getModuleSlotPositions, isBreakoutPanelModel, getOpticFriendlyDescription, getOpticSpeed } from '../../utils/hardwareUtils';
+import { getInputFeedSpeed, resolveInputFeedOptic } from '../../utils/inputFeedOptics';
 
 const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
   const { inSide, outSide } = useHandleSides(id, data);
@@ -468,23 +469,14 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                   if (!processedSrcIds.has(src.id)) {
                     processedSrcIds.add(src.id);
                     const configType = (src.data?.configType as string) || CONFIG_TYPES.SPAN;
-                    const rawSpeed = (src.data?.portSpeed as string) || (src.data?.linkSpeed ? `${Number(src.data.linkSpeed) >= 1000 ? Number(src.data.linkSpeed) / 1000 : src.data.linkSpeed}G` : '10G');
-                    const isSM = String(src.data?.spanFiberMode || src.data?.fiberType || '').includes('Single');
+                    const feedSpeed = getInputFeedSpeed(src);
 
-                    // Resolve suitable optic SKU for this speed / media on this chassis
-                    let resolvedOptic = '';
-                    if (rawSpeed === '100G') {
-                      resolvedOptic = chassisOptics.find(s => s.startsWith('Q28')) || (isSM ? 'Q28-503T' : 'Q28-502T');
-                    } else if (rawSpeed === '40G') {
-                      resolvedOptic = chassisOptics.find(s => s.startsWith('QSF')) || (isSM ? 'QSF-504T' : 'QSF-502T');
-                    } else if (rawSpeed === '25G') {
-                      resolvedOptic = chassisOptics.find(s => s.startsWith('SFP-53')) || (isSM ? 'SFP-533T' : 'SFP-532T');
-                    } else if (rawSpeed === '400G') {
-                      resolvedOptic = chassisOptics.find(s => s.startsWith('QDD')) || (isSM ? 'QDD-502T' : 'QDD-501T');
-                    } else {
-                      // 10G / 1G
-                      resolvedOptic = chassisOptics.find(s => s.startsWith('SFP-50') || s.startsWith('SFP-53')) || (isSM ? 'SFP-502T' : 'SFP-501T');
-                    }
+                    // Prefer whichever transceiver of the feed's own speed is
+                    // actually fitted on this chassis, then fall back to the one
+                    // the feed's speed and media resolve to on this model.
+                    const resolvedOptic =
+                      chassisOptics.find(sku => getOpticSpeed(sku) === feedSpeed) ||
+                      resolveInputFeedOptic(src, model, hwData.portCapacity as string);
 
                     const typeName = configType.startsWith(CONFIG_TYPES.ERSPAN)
                       ? 'ERSPAN tunnel'

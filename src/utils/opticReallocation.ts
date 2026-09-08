@@ -30,12 +30,13 @@ import {
 import { getSupportedBoards } from './opticValidation';
 import { syncPortAssignments } from './portSync';
 import { resolveOpticSku } from './bom/skuUtils';
+import { deriveInputFeedOptics } from './inputFeedOptics';
 
 export interface RequiredOpticItem {
   optic: string;
   qty: number;
   cage: 'SFP' | 'QSFP' | 'RJ45' | 'MPO';
-  purpose: 'tap' | 'uplink' | 'tool' | 'breakout';
+  purpose: 'tap' | 'ingress' | 'uplink' | 'tool' | 'breakout';
   peerNodeId?: string;
 }
 
@@ -129,7 +130,18 @@ export function deriveChassisRequiredOptics(
     });
   });
 
-  // 2. Chassis-to-Chassis Uplinks / Crossover Links
+  // 2. Incoming mirrored feeds (SPAN / ERSPAN / East-West / VMware)
+  deriveInputFeedOptics(targetNode, nodes, edges, model, hwData.portCapacity as string).forEach((feed) => {
+    required.push({
+      optic: resolveOpticToChassisCatalogue(feed.optic, model, supportedBoards),
+      qty: feed.qty,
+      cage: feed.cage,
+      purpose: 'ingress',
+      peerNodeId: feed.peerNodeId,
+    });
+  });
+
+  // 3. Chassis-to-Chassis Uplinks / Crossover Links
   const peerChassisEdges = edges.filter((e) => {
     const isConnected = e.source === targetNode.id || e.target === targetNode.id;
     if (!isConnected) return false;
@@ -164,7 +176,7 @@ export function deriveChassisRequiredOptics(
     }
   });
 
-  // 3. Outgoing Tool Links
+  // 4. Outgoing Tool Links
   const toolEdges = edges.filter((e) => {
     const isConnected = e.source === targetNode.id || e.target === targetNode.id;
     if (!isConnected) return false;
@@ -198,7 +210,7 @@ export function deriveChassisRequiredOptics(
     }
   });
 
-  // 4. Breakout Panel Links
+  // 5. Breakout Panel Links
   const breakoutEdges = edges.filter((e) => {
     const isConnected = e.source === targetNode.id || e.target === targetNode.id;
     if (!isConnected) return false;
@@ -377,22 +389,31 @@ export function distributeOpticsAcrossBoards(
     }
   });
 
-  // Track allocations: Map<boardName, { autoMap: Map<opticLabel, number>, manualMap: Map<opticLabel, number> }>
-  const placedMap = new Map<string, { autoMap: Map<string, number>; manualMap: Map<string, number> }>();
+  // Track allocations per board, split by who owns the optic: 'manual' (uplink,
+  // tool and breakout optics, which the user edits directly) versus the two
+  // auto-added kinds, which syncOpticsOnTapConnection re-derives from the graph
+  // and must therefore stay tagged as auto - otherwise a reallocation turns them
+  // into manual entries and the next sync fits a second copy on top.
+  type OpticOwner = 'manual' | 'tap' | 'ingress';
+  const OWNERS: OpticOwner[] = ['manual', 'tap', 'ingress'];
+  const placedMap = new Map<string, Map<OpticOwner, Map<string, number>>>();
   boardSlots.forEach((b) =>
-    placedMap.set(b.boardName, { autoMap: new Map<string, number>(), manualMap: new Map<string, number>() }),
+    placedMap.set(b.boardName, new Map(OWNERS.map((o) => [o, new Map<string, number>()]))),
   );
 
-  // Consolidate required optics by key: `${optic}:::${isAuto ? '1' : '0'}`
-  const consolidated = new Map<string, { optic: string; isAuto: boolean; qty: number }>();
+  const ownerOf = (purpose: RequiredOpticItem['purpose']): OpticOwner =>
+    purpose === 'tap' ? 'tap' : purpose === 'ingress' ? 'ingress' : 'manual';
+
+  // Consolidate required optics by key: `${optic}:::${owner}`
+  const consolidated = new Map<string, { optic: string; owner: OpticOwner; qty: number }>();
   requiredOptics.forEach((item) => {
-    const isAuto = item.purpose === 'tap';
-    const key = `${item.optic}:::${isAuto ? '1' : '0'}`;
+    const owner = ownerOf(item.purpose);
+    const key = `${item.optic}:::${owner}`;
     const cur = consolidated.get(key);
     if (cur) {
       cur.qty += item.qty;
     } else {
-      consolidated.set(key, { optic: item.optic, isAuto, qty: item.qty });
+      consolidated.set(key, { optic: item.optic, owner, qty: item.qty });
     }
   });
 
@@ -428,8 +449,7 @@ export function distributeOpticsAcrossBoards(
       }
       unitsRemaining -= toPlace;
 
-      const boardMaps = placedMap.get(board.boardName)!;
-      const targetMap = item.isAuto ? boardMaps.autoMap : boardMaps.manualMap;
+      const targetMap = placedMap.get(board.boardName)!.get(item.owner)!;
       targetMap.set(item.optic, (targetMap.get(item.optic) || 0) + toPlace);
     }
 
@@ -437,9 +457,8 @@ export function distributeOpticsAcrossBoards(
     if (unitsRemaining > 0 && boardSlots.length > 0) {
       const fallbackBoard =
         boardSlots.find((b) => b.totalSfp > 0 || b.totalQsfp > 0)?.boardName || boardSlots[0].boardName;
-      const boardMaps = placedMap.get(fallbackBoard);
-      if (boardMaps) {
-        const targetMap = item.isAuto ? boardMaps.autoMap : boardMaps.manualMap;
+      const targetMap = placedMap.get(fallbackBoard)?.get(item.owner);
+      if (targetMap) {
         targetMap.set(item.optic, (targetMap.get(item.optic) || 0) + unitsRemaining);
       }
     }
@@ -454,7 +473,7 @@ export function distributeOpticsAcrossBoards(
     if (!boardMaps) return;
 
     // First push manual/tool/uplink optics
-    boardMaps.manualMap.forEach((qty, optic) => {
+    boardMaps.get('manual')!.forEach((qty, optic) => {
       if (qty > 0) {
         installedOptics.push({
           board: b.boardName,
@@ -465,17 +484,20 @@ export function distributeOpticsAcrossBoards(
       }
     });
 
-    // Then push auto-added TAP optics
-    boardMaps.autoMap.forEach((qty, optic) => {
-      if (qty > 0) {
-        installedOptics.push({
-          board: b.boardName,
-          optic,
-          qty,
-          isAutoAdded: true,
-        });
-        affectedBoards.add(b.boardName);
-      }
+    // Then push auto-added TAP termination and mirrored-feed ingress optics
+    (['tap', 'ingress'] as const).forEach((purpose) => {
+      boardMaps.get(purpose)!.forEach((qty, optic) => {
+        if (qty > 0) {
+          installedOptics.push({
+            board: b.boardName,
+            optic,
+            qty,
+            isAutoAdded: true,
+            autoPurpose: purpose,
+          });
+          affectedBoards.add(b.boardName);
+        }
+      });
     });
   });
 
