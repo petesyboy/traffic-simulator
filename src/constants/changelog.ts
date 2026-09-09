@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.761",
+    date: "2026-09-09",
+    summary: "Implement GigaSMART tunnel decapsulation and ERSPAN remote encapsulation source",
+  },
+  {
     version: "1.0.760",
     date: "2026-09-09",
     summary: "Integrate G-TAP M Series Unidirectional TAP Family (ULT) with faceplate icons (v1.0.760)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.738",
     date: "2026-09-03",
     summary: "The DWDM ring now shows you where a link can land. Its eight ports looked identical, so there was no way to tell an ingress from an egress before letting go. Dragging a link now lights up in green, and enlarges, only the ports that can accept it - the ingress ports when you drag from a chassis output, the egress ports when you drag from an input - and dims the rest, with a prompt on the ring itself. Hovering any port names what it takes and which direction it faces.",
-  },
-  {
-    version: "1.0.737",
-    date: "2026-09-03",
-    summary: "Redundant links into the DWDM optical ring are now accepted. A second link between the same chassis and the ring was treated as an accidental duplicate and silently dropped, which made a 1+1 protected ring impossible to draw - the working and protection paths run between exactly the same pair of endpoints. Parallel links to the transport ring are now allowed, so each site can take its own working and protection pair in both directions, drawn as separate fanned curves and labelled Link 1/2 and Link 2/2. There is no fixed limit on how many a ring can carry.",
   },
 ];

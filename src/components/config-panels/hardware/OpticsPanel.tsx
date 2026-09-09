@@ -294,7 +294,62 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
     }
   };
 
+  const handleDecrementOptic = (index: number) => {
+    setErrorMsg('');
+    const target = installedOptics[index];
+    if (!target) return;
+    if (target.qty <= 1) {
+      handleRemoveOptic(index);
+      return;
+    }
+    const newOptics = [...installedOptics];
+    newOptics[index] = { ...target, qty: target.qty - 1 };
+    updateNodeData(selectedNode.id, { optics: newOptics });
+  };
+
+  const handleIncrementOptic = (index: number) => {
+    setErrorMsg('');
+    const target = installedOptics[index];
+    if (!target) return;
+    if (target.pinnedPortId) {
+      setErrorMsg('A pinned optic occupies exactly one designated port and cannot have its quantity increased.');
+      return;
+    }
+
+    const capacity = getCageCapacityBreakdown(model, hwData);
+    const speed = getOpticSpeed(target.optic);
+    const isQsfp = speed === '100G' || speed === '40G' || speed === '400G';
+
+    if (isQsfp) {
+      if (capacity.remainingQsfpCages < 1) {
+        setErrorMsg(`Cannot add optic. No free QSFP cages available on this chassis.`);
+        return;
+      }
+    } else {
+      if (capacity.remainingSfpCages < 1) {
+        setErrorMsg(`Cannot add optic. No free SFP cages available on this chassis.`);
+        return;
+      }
+
+      const subCap = getBoardSpeedSubCap(model, target.board, speed);
+      if (subCap !== Infinity) {
+        const existingAtSpeed = installedOptics
+          .filter(opt => opt.board === target.board && getOpticSpeed(opt.optic) === speed)
+          .reduce((sum, opt) => sum + opt.qty, 0);
+        if (existingAtSpeed + 1 > subCap) {
+          setErrorMsg(`Cannot add optic. This board only supports ${speed} on ${subCap} of its cages on ${model}.`);
+          return;
+        }
+      }
+    }
+
+    const newOptics = [...installedOptics];
+    newOptics[index] = { ...target, qty: target.qty + 1 };
+    updateNodeData(selectedNode.id, { optics: newOptics });
+  };
+
   const handleRemoveOptic = (index: number) => {
+    setErrorMsg('');
     const newOptics = [...installedOptics];
     newOptics.splice(index, 1);
     updateNodeData(selectedNode.id, { optics: newOptics });
@@ -591,24 +646,121 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
             <div style={{ marginTop: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 6px 0' }}>
                 <h5 style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>Installed Optics:</h5>
-                <span style={{ fontSize: '10px', color: '#888' }}>Click 🔄 to bulk replace</span>
+                <span style={{ fontSize: '10px', color: '#888' }}>Adjust qty or click 🔄 to bulk replace</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 {installedOptics.map((opt, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '5px 8px', borderRadius: '4px', fontSize: '10px', border: '1px solid #333' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ color: '#fff', fontWeight: 600 }}>{opt.qty}x {formatOpticLabel(opt.optic)}</span>
-                      <span style={{ color: '#888' }}>
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#1a1a1a',
+                      padding: '6px 8px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      border: '1px solid #333',
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                      <span style={{ color: '#fff', fontWeight: 600, wordBreak: 'break-word' }}>
+                        {formatOpticLabel(opt.optic)}
+                      </span>
+                      <span style={{ color: '#888', fontSize: '9px', marginTop: '1px' }}>
                         {opt.board}
                         {opt.pinnedPortId && <span style={{ color: '#00e5ff' }}> · 📌 {opt.pinnedPortId}</span>}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      {/* Quantity Stepper (minus, count, plus) */}
+                      {!opt.pinnedPortId ? (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            background: '#111',
+                            border: '1px solid #444',
+                            borderRadius: '3px',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleDecrementOptic(i)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#ccc',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              lineHeight: 1,
+                            }}
+                            title={opt.qty > 1 ? `Remove 1 ${opt.optic.split(' ')[0]} (currently ${opt.qty})` : `Remove this optic`}
+                          >
+                            −
+                          </button>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              color: '#38bdf8',
+                              fontWeight: 700,
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              minWidth: '18px',
+                              textAlign: 'center',
+                              borderLeft: '1px solid #282828',
+                              borderRight: '1px solid #282828',
+                            }}
+                          >
+                            {opt.qty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleIncrementOptic(i)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#ccc',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              lineHeight: 1,
+                            }}
+                            title={`Add 1 more ${opt.optic.split(' ')[0]} (currently ${opt.qty})`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          style={{
+                            padding: '2px 6px',
+                            background: 'rgba(0, 229, 255, 0.1)',
+                            border: '1px solid rgba(0, 229, 255, 0.3)',
+                            color: '#00e5ff',
+                            borderRadius: '3px',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                          }}
+                          title="Pinned to single port"
+                        >
+                          1x
+                        </span>
+                      )}
+
+                      {/* Bulk Replace Button */}
                       <button
+                        type="button"
                         onClick={() => handleStartBulkReplace(opt.optic)}
                         style={{
-                          background: 'rgba(56, 189, 248, 0.15)',
-                          border: '1px solid #38bdf8',
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
                           color: '#38bdf8',
                           borderRadius: '3px',
                           cursor: 'pointer',
@@ -618,9 +770,27 @@ export const OpticsPanel: React.FC<OpticsPanelProps> = ({ selectedNode, updateNo
                         }}
                         title={`Bulk replace all ${opt.optic.split(' ')[0]} transceivers on this chassis or project-wide`}
                       >
-                        🔄 Replace
+                        🔄
                       </button>
-                      <button onClick={() => handleRemoveOptic(i)} style={{ background: 'none', border: 'none', color: '#ef5350', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }} title="Remove Optic">×</button>
+
+                      {/* Bin / Delete Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveOptic(i)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
+                          color: '#ef5350',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          lineHeight: 1,
+                        }}
+                        title={`Remove all ${opt.qty}x ${opt.optic.split(' ')[0]} optics`}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
                 ))}
