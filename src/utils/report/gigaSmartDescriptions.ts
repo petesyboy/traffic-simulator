@@ -143,6 +143,18 @@ export const GIGASMART_ACTION_DESCRIPTIONS: Record<string, string> = {
   [ACTION_TYPES.TUNNELING]:
     'Terminates and decapsulates incoming ERSPAN (Type II and Type III), L2GRE, and VXLAN tunnels at wire speed, stripping outer encapsulation headers to expose the genuine payload packets. This enables local monitoring and security tools to inspect remote or virtualised traffic feeds that were forwarded across Layer 3 network infrastructure.',
 
+  [ACTION_TYPES.TUNNEL_DECAP]:
+    'Terminates and decapsulates incoming ERSPAN (Type II and Type III), VXLAN, L2GRE, IP tunnel, and Custom tunnels at wire speed, stripping outer encapsulation headers to expose the genuine payload packets. This enables local monitoring and security tools to inspect remote or virtualised traffic feeds that were forwarded across Layer 3 network infrastructure.',
+
+  [ACTION_TYPES.IP_TUNNEL_DECAP]:
+    'Terminates an incoming GigaSMART IP tunnel (IP-in-IP), stripping the outer IP delivery header and exposing the inner traffic payload for inspection by downstream FlowMaps and monitoring tools.',
+
+  [ACTION_TYPES.IP_TUNNEL_ENCAP]:
+    'Encapsulates monitored packets within an outer IP tunnel header, allowing traffic to be routed across Layer 3 network infrastructure to a remote destination or collection tool.',
+
+  [ACTION_TYPES.CUSTOM_TUNNEL_DECAP]:
+    'Terminates custom or proprietary encapsulation tunnels based on user-configured header offsets and EtherTypes, restoring standard unencapsulated frames for downstream tools.',
+
   'Tunneling':
     'Terminates and decapsulates incoming ERSPAN (Type II and Type III), L2GRE, and VXLAN tunnels at wire speed, stripping outer encapsulation headers to expose the genuine payload packets. This enables local monitoring and security tools to inspect remote or virtualised traffic feeds that were forwarded across Layer 3 network infrastructure.',
 

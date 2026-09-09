@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.760",
+    date: "2026-09-09",
+    summary: "Integrate G-TAP M Series Unidirectional TAP Family (ULT) with faceplate icons (v1.0.760)",
+  },
+  {
+    version: "1.0.758",
+    date: "2026-09-08",
+    summary: "Fit SPAN feed optics at the configured port speed, not a 10G default (v1.0.758)",
+  },
+  {
     version: "1.0.757",
     date: "2026-09-04",
     summary: "Render TA25E SFP cages in 3 physical rows of 16",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.737",
     date: "2026-09-03",
     summary: "Redundant links into the DWDM optical ring are now accepted. A second link between the same chassis and the ring was treated as an accidental duplicate and silently dropped, which made a 1+1 protected ring impossible to draw - the working and protection paths run between exactly the same pair of endpoints. Parallel links to the transport ring are now allowed, so each site can take its own working and protection pair in both directions, drawn as separate fanned curves and labelled Link 1/2 and Link 2/2. There is no fixed limit on how many a ring can carry.",
-  },
-  {
-    version: "1.0.736",
-    date: "2026-09-03",
-    summary: "The data centre title bar is now a handle for the whole site. Drag it to carry every device in that data centre across the canvas together, or click it to select the site so the flow direction control turns all of its equipment round at once - no more dragging or picking equipment one piece at a time. A drag is a single undo step, and clicking to select never enters the history at all.",
-  },
-  {
-    version: "1.0.735",
-    date: "2026-09-03",
-    summary: "Restored smooth curved links in right-to-left layouts. A link that ran against its own flow was routed as a stepped path looping under the row, but that was decided purely on the source sitting to the right of the target - which in a mirrored layout is every link, so they all turned square and collided. It now reads the side the source's egress handle sits on, so a mirrored link flowing right-to-left keeps the curve it had before, and a genuine backhaul link still loops under whichever way round the layout reads.",
   },
 ];

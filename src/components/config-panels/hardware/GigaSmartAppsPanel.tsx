@@ -291,44 +291,107 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
               </div>
             )}
 
-            {/* Tunneling / ERSPAN Decapsulation config */}
+            {/* Tunneling / Decapsulation config */}
             {(actionType === 'Tunneling' ||
               actionType === 'Tunneling (ERSPAN Decap)' ||
+              actionType === 'Tunnel Decapsulation' ||
               actionType === 'ERSPAN Tunnel Decapsulation' ||
               actionType === 'L2GRE Tunnel Decapsulation' ||
               actionType === 'VXLAN Tunnel Decapsulation' ||
+              actionType === 'IP Tunnel Decapsulation' ||
+              actionType === 'Custom Tunnel Decapsulation' ||
               actionType === 'GRE-In-UDP Tunnel Decapsulation' ||
               actionType === 'L2GRE Tunnel Encapsulation' ||
-              actionType === 'VXLAN Tunnel Encapsulation') && (() => {
-              const currentMode = (app.tunnelMode as string) || (actionType === 'L2GRE Tunnel Encapsulation' ? 'L2GRE Encapsulation' : (actionType === 'VXLAN Tunnel Encapsulation' ? 'VXLAN Encapsulation' : (actionType === 'L2GRE Tunnel Decapsulation' ? 'L2GRE Decapsulation' : (actionType === 'VXLAN Tunnel Decapsulation' ? 'VXLAN Decapsulation' : 'ERSPAN Decapsulation'))));
+              actionType === 'VXLAN Tunnel Encapsulation' ||
+              actionType === 'IP Tunnel Encapsulation') && (() => {
+              const currentMode = (app.tunnelMode as string) || (actionType === 'L2GRE Tunnel Encapsulation'
+                ? 'L2GRE Encapsulation'
+                : (actionType === 'VXLAN Tunnel Encapsulation'
+                  ? 'VXLAN Encapsulation'
+                  : (actionType === 'IP Tunnel Encapsulation'
+                    ? 'IP Tunnel Encapsulation'
+                    : (actionType === 'L2GRE Tunnel Decapsulation'
+                      ? 'L2GRE Decapsulation'
+                      : (actionType === 'VXLAN Tunnel Decapsulation'
+                        ? 'VXLAN Decapsulation'
+                        : (actionType === 'IP Tunnel Decapsulation'
+                          ? 'IP Tunnel Decapsulation'
+                          : (actionType === 'Custom Tunnel Decapsulation'
+                            ? 'Custom Tunnel Decapsulation'
+                            : 'ERSPAN Decapsulation')))))));
+
+              const isHc1Plain = model.includes('hc1') && !model.includes('plus');
+              const isErspan = currentMode === 'ERSPAN Decapsulation';
+              const isEncap = currentMode.includes('Encapsulation');
+              const isBaseIncluded = !isHc1Plain && !isErspan && !isEncap;
+
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '11px', color: '#ccc' }}>Tunneling Protocol &amp; Operation</label>
+                  <label style={{ fontSize: '11px', color: '#ccc' }}>Tunnelling Protocol &amp; Operation</label>
                   <select
                     value={currentMode}
                     onChange={e => {
                       const newMode = e.target.value;
-                      const mappedAction = newMode === 'L2GRE Encapsulation'
-                        ? 'L2GRE Tunnel Encapsulation'
-                        : (newMode === 'VXLAN Encapsulation'
-                          ? 'VXLAN Tunnel Encapsulation'
-                          : (newMode === 'L2GRE Decapsulation'
-                            ? 'L2GRE Tunnel Decapsulation'
-                            : (newMode === 'VXLAN Decapsulation'
-                              ? 'VXLAN Tunnel Decapsulation'
-                              : 'ERSPAN Tunnel Decapsulation')));
+                      let mappedAction = 'ERSPAN Tunnel Decapsulation';
+                      if (newMode === 'ERSPAN Decapsulation') mappedAction = 'ERSPAN Tunnel Decapsulation';
+                      else if (newMode === 'VXLAN Decapsulation') mappedAction = 'VXLAN Tunnel Decapsulation';
+                      else if (newMode === 'L2GRE Decapsulation') mappedAction = 'L2GRE Tunnel Decapsulation';
+                      else if (newMode === 'IP Tunnel Decapsulation') mappedAction = 'IP Tunnel Decapsulation';
+                      else if (newMode === 'Custom Tunnel Decapsulation') mappedAction = 'Custom Tunnel Decapsulation';
+                      else if (newMode === 'VXLAN Encapsulation') mappedAction = 'VXLAN Tunnel Encapsulation';
+                      else if (newMode === 'L2GRE Encapsulation') mappedAction = 'L2GRE Tunnel Encapsulation';
+                      else if (newMode === 'IP Tunnel Encapsulation') mappedAction = 'IP Tunnel Encapsulation';
                       handleUpdateApp(idx, { tunnelMode: newMode, actionType: mappedAction });
                     }}
                     style={{ fontSize: '11px', padding: '4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
                   >
-                    <option value="ERSPAN Decapsulation">ERSPAN Decapsulation (Strip GRE / ERSPAN Type II/III)</option>
-                    <option value="VXLAN Decapsulation">VXLAN Decapsulation (Terminate &amp; Strip VXLAN Overlay)</option>
-                    <option value="L2GRE Decapsulation">L2GRE Decapsulation (Terminate &amp; Strip L2GRE Tunnel)</option>
-                    <option value="VXLAN Encapsulation">VXLAN Encapsulation (Encapsulate into VXLAN UDP Tunnel)</option>
-                    <option value="L2GRE Encapsulation">L2GRE Encapsulation (Encapsulate into L2GRE Tunnel)</option>
+                    <option value="ERSPAN Decapsulation">ERSPAN Decapsulation (Type II &amp; Type III)</option>
+                    <option value="VXLAN Decapsulation">VXLAN Decapsulation (Strip VXLAN Overlay)</option>
+                    <option value="L2GRE Decapsulation">L2GRE Decapsulation (Strip Layer 2 GRE)</option>
+                    <option value="IP Tunnel Decapsulation">GigaSMART IP Tunnel Decapsulation (IP-in-IP)</option>
+                    <option value="Custom Tunnel Decapsulation">Custom Tunnel Decapsulation</option>
+                    <option value="VXLAN Encapsulation">VXLAN Encapsulation (Encapsulate into UDP)</option>
+                    <option value="L2GRE Encapsulation">L2GRE Encapsulation (Encapsulate into L2GRE)</option>
+                    <option value="IP Tunnel Encapsulation">GigaSMART IP Tunnel Encapsulation</option>
                   </select>
-                  <div style={{ padding: '6px', background: 'rgba(0, 145, 234, 0.08)', border: '1px solid rgba(0, 145, 234, 0.25)', borderRadius: '4px', fontSize: '10px', color: '#00e5ff' }}>
-                    🛡️ Terminates tunnel encapsulation to extract inner packet payloads for downstream tool analysis. Generates GigaSMART Tunneling licence.
+
+                  {isErspan && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '10px', color: '#aaa' }}>ERSPAN Version</label>
+                        <select
+                          value={(app.erspanType as string) || 'Type II'}
+                          onChange={e => handleUpdateApp(idx, { erspanType: e.target.value as 'Type II' | 'Type III' })}
+                          style={{ fontSize: '11px', padding: '3px 4px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                        >
+                          <option value="Type II">Type II (RFC/Cisco 0x88BE)</option>
+                          <option value="Type III">Type III (Enhanced 0x22EB)</option>
+                        </select>
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '10px', color: '#aaa' }}>Session ID</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 10"
+                          value={app.tunnelId ?? 10}
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateApp(idx, { tunnelId: val === '' ? undefined : Number(val) });
+                          }}
+                          style={{ fontSize: '11px', padding: '3px 6px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '3px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ padding: '6px', background: isBaseIncluded ? 'rgba(76, 175, 80, 0.08)' : 'rgba(0, 145, 234, 0.08)', border: isBaseIncluded ? '1px solid rgba(76, 175, 80, 0.25)' : '1px solid rgba(0, 145, 234, 0.25)', borderRadius: '4px', fontSize: '10px', color: isBaseIncluded ? '#a5d6a7' : '#00e5ff' }}>
+                    {isBaseIncluded ? (
+                      <span>✅ <strong>Base Licence:</strong> {currentMode} is included in the base GigaVUE-OS / module licence on this chassis (no extra licence fee).</span>
+                    ) : isHc1Plain ? (
+                      <span>🛡️ <strong>Tunnelling Licence:</strong> Requires GigaSMART Tunnelling licence (SMT-HC1-TUN / SMT-HC1-GEN2-TUN-SW-TM).</span>
+                    ) : (
+                      <span>🛡️ <strong>Advanced Tunnelling:</strong> Requires Advanced Tunnelling licence ({model.includes('hc1-plus') || model.includes('hc1 plus') ? 'SMT-HC1P-GEN3-TUN-PL' : 'SMT-HC3-GEN3-TUN'}) for {isErspan ? 'ERSPAN Types II/III' : 'tunnel encapsulation'}.</span>
+                    )}
                   </div>
                 </div>
               );

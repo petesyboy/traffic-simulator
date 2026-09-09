@@ -64,6 +64,22 @@ export const GIGASMART_MATRIX: GigaSmartRule[] = [
     supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
   },
   {
+    actionType: 'IP Tunnel Decapsulation',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
+    actionType: 'IP Tunnel Encapsulation',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
+    actionType: 'Custom Tunnel Decapsulation',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
+    actionType: 'Tunnel Decapsulation',
+    supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
+  },
+  {
     actionType: 'Tunneling',
     supportedOn: { HC1_GEN2_ONBOARD: true, HC1_GEN3_SMT_HC1_S: true, HC3_GEN2_C05: true, HC3_GEN3_C08: true, HC1PLUS_REAR_GEN3_SMT_HC1A_R: true, HC1PLUS_FRONT_GEN3_SMT_HC1_S: true, HCT_GEN3_SMT_HC1_S: true }
   },
@@ -269,11 +285,15 @@ export function getCanonicalGsopName(actionType: string): string | null {
       return 'iSSL';
     case 'L2GRE Tunnel Encapsulation':
     case 'VXLAN Tunnel Encapsulation':
+    case 'IP Tunnel Encapsulation':
       return 'Tunnel Encap';
     case 'L2GRE Tunnel Decapsulation':
     case 'VXLAN Tunnel Decapsulation':
     case 'ERSPAN Tunnel Decapsulation':
     case 'GRE-In-UDP Tunnel Decapsulation':
+    case 'IP Tunnel Decapsulation':
+    case 'Custom Tunnel Decapsulation':
+    case 'Tunnel Decapsulation':
     case 'Tunneling':
     case 'Tunneling (ERSPAN Decap)':
       return 'Tunnel Decap';

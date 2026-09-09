@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore, type CustomNode } from '../../store/store';
-import { ACTION_TYPES, isMetadataAction, isDedupAction } from '../../constants/nodeTypes';
+import { ACTION_TYPES, isMetadataAction, isDedupAction, isTunnelingAction } from '../../constants/nodeTypes';
 import { FormGroup } from './LiveMetrics';
 import { MetadataEventViewer } from '../MetadataEventViewer';
 
@@ -73,6 +73,7 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
           <option value={ACTION_TYPES.PACKET_SLICING}>Packet Slicing (Fixed Truncation)</option>
           <option value={ACTION_TYPES.ADVANCED_FLOW_SLICING}>Advanced Flow Slicing (Dynamic Flow Slicing)</option>
           <option value={ACTION_TYPES.SSL_DECRYPT}>SSL Decrypt</option>
+          <option value={ACTION_TYPES.TUNNEL_DECAP}>Tunnel Decapsulation (ERSPAN/VXLAN/L2GRE)</option>
         </select>
       </FormGroup>
 
@@ -145,6 +146,99 @@ export const GigaSmartPanel: React.FC<GigaSmartPanelProps> = ({ node, onGenericC
 
               <div style={{ fontSize: '10px', color: '#80cbc4', marginTop: '10px', lineHeight: '1.4' }}>
                 💡 <strong>Tool Offload:</strong> Removes {activeInfo.bytes}B of overhead per packet ({activeInfo.desc}) and recalculates L3/L4 checksums. Downstream tools receive clean frames without decapsulation overhead.
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ─── Tunnel Decapsulation Configuration & Visualiser ─── */}
+      {isTunnelingAction(actionType) && (() => {
+        const tunnelMode = (node.data?.tunnelMode as string) || 'ERSPAN Decapsulation';
+        const erspanType = (node.data?.erspanType as string) || 'Type II';
+        const tunnelId = (node.data?.tunnelId as number) ?? 10;
+        const isErspan = tunnelMode.includes('ERSPAN');
+
+        return (
+          <>
+            <FormGroup label="Tunnelling Protocol &amp; Operation">
+              <select
+                value={tunnelMode}
+                onChange={(e) => {
+                  const newMode = e.target.value;
+                  onGenericChange('tunnelMode', newMode);
+                }}
+              >
+                <option value="ERSPAN Decapsulation">ERSPAN Decapsulation (Types II &amp; III)</option>
+                <option value="VXLAN Decapsulation">VXLAN Decapsulation (Strip VXLAN Overlay)</option>
+                <option value="L2GRE Decapsulation">L2GRE Decapsulation (Strip Layer 2 GRE)</option>
+                <option value="IP Tunnel Decapsulation">GigaSMART IP Tunnel Decapsulation (IP-in-IP)</option>
+                <option value="Custom Tunnel Decapsulation">Custom Tunnel Decapsulation</option>
+              </select>
+            </FormGroup>
+
+            {isErspan && (
+              <>
+                <FormGroup label="ERSPAN Version">
+                  <select
+                    value={erspanType}
+                    onChange={(e) => onGenericChange('erspanType', e.target.value)}
+                  >
+                    <option value="Type II">ERSPAN Type II (Standard GRE Protocol 0x88BE)</option>
+                    <option value="Type III">ERSPAN Type III (Enhanced Header Protocol 0x22EB)</option>
+                  </select>
+                </FormGroup>
+                <FormGroup label="Tunnel Session ID">
+                  <input
+                    type="number"
+                    placeholder="e.g. 10"
+                    value={tunnelId}
+                    onChange={(e) => onGenericChange('tunnelId', e.target.value)}
+                  />
+                </FormGroup>
+              </>
+            )}
+
+            {/* Visual Packet Anatomy Diagram */}
+            <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border-default)' }}>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#00e5ff', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>🛡️ Tunnel Termination &amp; Payload Recovery</span>
+                <span style={{ color: '#81c784' }}>~{isErspan ? 4.5 : 5}% Offload</span>
+              </div>
+
+              {/* Before Decapsulation */}
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px' }}>Ingress (Encapsulated Tunnel Frame):</div>
+              <div style={{ display: 'flex', gap: '2px', height: '22px', fontSize: '9px', marginBottom: '10px', textAlign: 'center', lineHeight: '22px' }}>
+                <div style={{ flex: 1.8, background: 'rgba(239, 83, 80, 0.25)', border: '1px dashed #ef5350', color: '#ef9a9a', borderRadius: '3px 0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  [{isErspan ? `ERSPAN ${erspanType}` : tunnelMode.split(' ')[0]}]
+                </div>
+                <div style={{ flex: 1.5, background: '#1e3a5f', border: '1px solid #007cff', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Inner IP
+                </div>
+                <div style={{ flex: 1.2, background: '#1e3a5f', border: '1px solid #007cff', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  L4 TCP/UDP
+                </div>
+                <div style={{ flex: 3.5, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Original Payload
+                </div>
+              </div>
+
+              {/* After Decapsulation */}
+              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px' }}>Egress to FlowMaps &amp; Tools (Decapsulated):</div>
+              <div style={{ display: 'flex', gap: '2px', height: '22px', fontSize: '9px', textAlign: 'center', lineHeight: '22px' }}>
+                <div style={{ flex: 1.5, background: '#1e3a5f', border: '1px solid #25b34b', color: '#a5d6a7', borderRadius: '3px 0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Standard IP
+                </div>
+                <div style={{ flex: 1.2, background: '#1e3a5f', border: '1px solid #25b34b', color: '#a5d6a7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  TCP/UDP
+                </div>
+                <div style={{ flex: 4.5, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '0 3px 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Original Application Payload
+                </div>
+              </div>
+
+              <div style={{ fontSize: '10px', color: '#80cbc4', marginTop: '10px', lineHeight: '1.4' }}>
+                💡 <strong>Payload Availability:</strong> Outer {isErspan ? `ERSPAN (${erspanType})` : tunnelMode} headers are stripped, exposing genuine client/server IP and port metadata. Downstream FlowMaps and sensor tools can now filter and analyse the inner packets.
               </div>
             </div>
           </>

@@ -421,7 +421,32 @@ const CanvasArea: React.FC = () => {
         if (bw > speedLimitMbps) bw = Math.floor(speedLimitMbps * 0.75);
         const sub = Math.floor(Math.random() * 254) + 1, vlan = String(Math.floor(Math.random() * 900) + 100);
         const gLabel = bw >= 1000 ? `${(bw / 1000).toFixed(1).replace('.0', '')} Gbps` : `${bw} Mbps`;
-        addTrafficStream({ id: `t-${uuidv4()}`, name: numStreamsToCreate > 1 ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${gLabel})` : `${labelToUse} - ${profile.name} (${gLabel})`, sourceNodeId: newNode.id, vlan, ipSrc: `192.168.${sub}.25`, ipDst: `10.10.${sub}.5`, portSrc: String(Math.floor(Math.random() * 50000) + 1024), portDst: profile.port, protocol: profile.proto, bandwidth: bw, active: true, drift: 1, lastDriftUpdate: 0 });
+        const isErspanSource = type === NODE_TYPES.INPUT && String(newNode.data?.configType || '') === CONFIG_TYPES.ERSPAN;
+        addTrafficStream({
+          id: `t-${uuidv4()}`,
+          name: numStreamsToCreate > 1 ? `${labelToUse} - Link ${i + 1} - ${profile.name} (${gLabel})` : `${labelToUse} - ${profile.name} (${gLabel})`,
+          sourceNodeId: newNode.id,
+          vlan,
+          ipSrc: isErspanSource ? (String(newNode.data?.erspanSrcIp || '192.168.10.5')) : `192.168.${sub}.25`,
+          ipDst: isErspanSource ? (String(newNode.data?.erspanDestIp || '192.168.10.100')) : `10.10.${sub}.5`,
+          portSrc: String(Math.floor(Math.random() * 50000) + 1024),
+          portDst: profile.port,
+          protocol: isErspanSource ? 'gre' : profile.proto,
+          bandwidth: bw,
+          active: true,
+          drift: 1,
+          lastDriftUpdate: 0,
+          isEncapsulated: isErspanSource,
+          encapsulationType: isErspanSource ? 'ERSPAN' : undefined,
+          erspanType: isErspanSource ? ((newNode.data?.erspanType as 'Type II' | 'Type III') || 'Type II') : undefined,
+          tunnelId: isErspanSource ? ((newNode.data?.erspanId as number) ?? 10) : undefined,
+          tunnelDestIp: isErspanSource ? (String(newNode.data?.erspanDestIp || '192.168.10.100')) : undefined,
+          innerIpSrc: isErspanSource ? `192.168.${sub}.25` : undefined,
+          innerIpDst: isErspanSource ? `10.10.${sub}.5` : undefined,
+          innerPortSrc: isErspanSource ? String(Math.floor(Math.random() * 50000) + 1024) : undefined,
+          innerPortDst: isErspanSource ? profile.port : undefined,
+          innerProtocol: isErspanSource ? profile.proto : undefined,
+        });
       }
     }
   }, [screenToFlowPosition, addNode, addTrafficStream, nodes, advancedMode, updateNodeData, edges, setEdges]);

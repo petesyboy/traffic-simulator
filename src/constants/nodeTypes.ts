@@ -87,6 +87,10 @@ export const ACTION_TYPES = {
   SECURE_TUNNELS:           'Secure Tunnels',
   GRE_IN_UDP_DECAP:         'GRE-In-UDP Tunnel Decapsulation',
   TUNNELING:                'Tunneling (ERSPAN Decap)',
+  TUNNEL_DECAP:             'Tunnel Decapsulation',
+  IP_TUNNEL_DECAP:          'IP Tunnel Decapsulation',
+  IP_TUNNEL_ENCAP:          'IP Tunnel Encapsulation',
+  CUSTOM_TUNNEL_DECAP:      'Custom Tunnel Decapsulation',
 } as const;
 
 /** Union of all valid GigaSMART action type strings. */

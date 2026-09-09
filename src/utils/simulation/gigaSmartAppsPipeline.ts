@@ -75,16 +75,36 @@ export function runGigaSmartApps(
     } else if (
       actionType === 'Tunneling' ||
       actionType === 'Tunneling (ERSPAN Decap)' ||
+      actionType === 'Tunnel Decapsulation' ||
       actionType === 'ERSPAN Tunnel Decapsulation' ||
       actionType === 'L2GRE Tunnel Decapsulation' ||
       actionType === 'VXLAN Tunnel Decapsulation' ||
+      actionType === 'IP Tunnel Decapsulation' ||
+      actionType === 'Custom Tunnel Decapsulation' ||
       actionType === 'GRE-In-UDP Tunnel Decapsulation'
     ) {
-      const scale = 0.955; // strips ~42B ERSPAN/GRE or ~50B VXLAN outer encapsulation overhead
+      const mode = (app.tunnelMode as string) || actionType;
+      let scale = 0.955; // default ~4.5% overhead (ERSPAN/GRE 42B)
+      if (mode.includes('VXLAN')) scale = 0.95; // ~50B overhead (5%)
+      else if (mode.includes('L2GRE')) scale = 0.965; // ~36B overhead (3.5%)
+      else if (mode.includes('IP')) scale = 0.98; // ~20B overhead (2%)
+      else if (mode.includes('Custom')) scale = 0.94; // custom ~6%
+
       const drop = stream.bandwidth * (1 - scale);
       nodeMetric.droppedPackets += drop * 250;
       nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + drop;
       stream.bandwidth *= scale;
+
+      // Restore inner payload if stream was encapsulated
+      if (stream.isEncapsulated) {
+        stream.isEncapsulated = false;
+        stream.isDecapsulated = true;
+        if (stream.innerIpSrc) stream.ipSrc = stream.innerIpSrc;
+        if (stream.innerIpDst) stream.ipDst = stream.innerIpDst;
+        if (stream.innerPortSrc) stream.portSrc = stream.innerPortSrc;
+        if (stream.innerPortDst) stream.portDst = stream.innerPortDst;
+        if (stream.innerProtocol) stream.protocol = stream.innerProtocol;
+      }
     } else {
       let scale = 1.0;
       if (actionType === 'SSL Decrypt' || actionType === 'Masking') scale = 0.95;

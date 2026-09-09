@@ -130,8 +130,10 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
               return `SPAN Port Session:\n• Speed: ${speedFormatted}\n• Fibre Type: ${fiber}\n• Mode: Switch Port Mirroring`;
             } else if (configType.startsWith(CONFIG_TYPES.ERSPAN)) {
               const srcIp = (data.erspanSrcIp as string) || '192.168.10.5';
+              const destIp = (data.erspanDestIp as string) || '192.168.10.100';
+              const erspanType = (data.erspanType as string) || 'Type II';
               const idVal = (data.erspanId as number) ?? 10;
-              return `ERSPAN Source Tunnel:\n• Speed: ${speedFormatted}\n• Session ID: ${idVal}\n• Source IP: ${srcIp}`;
+              return `ERSPAN Source Tunnel:\n• Speed: ${speedFormatted}\n• Version: ${erspanType}\n• Session ID: ${idVal}\n• Source IP: ${srcIp}\n• Target IP: ${destIp}`;
             } else if (configType.startsWith(CONFIG_TYPES.EAST_WEST)) {
               return `East/West Traffic Source:\n• Speed: ${speedFormatted}\n• Fibre Type: ${fiber}\n• Mode: Inter-Switch / Hypervisor`;
             } else if (configType.startsWith(CONFIG_TYPES.VMWARE)) {

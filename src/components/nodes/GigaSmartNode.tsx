@@ -107,7 +107,9 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
         {isTunnelingAction(actionType) && (
           <div style={{ marginTop: '4px' }}>
             <div style={{ padding: '2px 6px', background: 'rgba(0,0,0,0.4)', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '8.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ color: '#ef5350', textDecoration: 'line-through', opacity: 0.85 }}>[{String(data.tunnelMode || 'ERSPAN / GRE')}]</span>
+              <span style={{ color: '#ef5350', textDecoration: 'line-through', opacity: 0.85 }}>
+                [{String(data.tunnelMode || '').includes('ERSPAN') && data.erspanType ? `ERSPAN ${data.erspanType}` : String(data.tunnelMode || 'ERSPAN / GRE')}]
+              </span>
               <span style={{ color: '#888' }}>➔</span>
               <span style={{ color: '#81c784', fontWeight: 600 }}>[Inner Payload]</span>
             </div>

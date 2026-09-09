@@ -147,11 +147,18 @@ const appsList = [
     initial: { actionType: ACTION_TYPES.GTP_FLOW_SAMPLING, configType: ACTION_TYPES.GTP_FLOW_SAMPLING, gtpSamplePercent: 10 },
   },
   {
-    label: 'Tunneling (ERSPAN Decap)',
+    label: 'Tunnel Decapsulation',
     type: NODE_TYPES.GIGASMART,
-    tooltip: 'Terminate and decapsulate ERSPAN (Type II/III), L2GRE, and VXLAN tunnels to inspect inner payloads. Generates GigaSMART Tunneling licence (SMT-HC1-GEN2-TUN-SW-TM / SMT-HC1-TUN).',
+    tooltip: 'Terminate and decapsulate ERSPAN (Types II and III), VXLAN, L2GRE, IP tunnel, and Custom tunnels at wire speed to inspect inner payloads. Requires Advanced Tunnelling licence for ERSPAN or encapsulation.',
     skuBadge: 'TUN',
-    initial: { actionType: ACTION_TYPES.ERSPAN_DECAP, configType: 'Tunneling', tunnelMode: 'ERSPAN Decapsulation' },
+    initial: {
+      actionType: ACTION_TYPES.TUNNEL_DECAP,
+      configType: 'Tunneling',
+      tunnelMode: 'ERSPAN Decapsulation',
+      erspanType: 'Type II',
+      tunnelId: 10,
+      tunnelIp: '192.168.10.100',
+    },
   },
 ] as const;
 
@@ -410,7 +417,14 @@ const Sidebar: React.FC = () => {
                           desc: 'ERSPAN Tunnel 10',
                           type: NODE_TYPES.INPUT,
                           icon: ErspanIcon,
-                          initial: { configType: CONFIG_TYPES.ERSPAN, linkSpeed: 10000 },
+                          initial: {
+                            configType: CONFIG_TYPES.ERSPAN,
+                            linkSpeed: 10000,
+                            erspanType: 'Type II',
+                            erspanId: 10,
+                            erspanSrcIp: '192.168.10.5',
+                            erspanDestIp: '192.168.10.100',
+                          },
                         },
                         {
                           label: 'East/West Traffic',

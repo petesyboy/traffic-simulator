@@ -15,6 +15,18 @@ export interface TrafficStream {
   isEncrypted?: boolean;
   drift?: number;
   lastDriftUpdate?: number;
+  // Tunnel encapsulation properties
+  isEncapsulated?: boolean;
+  encapsulationType?: 'ERSPAN' | 'VXLAN' | 'L2GRE' | 'IP' | 'Custom';
+  erspanType?: 'Type II' | 'Type III';
+  tunnelId?: number;
+  tunnelDestIp?: string;
+  isDecapsulated?: boolean;
+  innerIpSrc?: string;
+  innerIpDst?: string;
+  innerPortSrc?: string;
+  innerPortDst?: string;
+  innerProtocol?: string;
 }
 
 export interface NodeMetrics {
@@ -252,6 +264,10 @@ export interface InputNodeData extends BaseNodeData {
   linkSpeed?: number;
   portSpeed?: string;
   encryptedTrafficPercentage?: number;
+  erspanType?: 'Type II' | 'Type III';
+  erspanId?: number;
+  erspanSrcIp?: string;
+  erspanDestIp?: string;
 }
 
 export interface MapNodeData extends BaseNodeData {
@@ -288,6 +304,14 @@ export interface GigaSmartNodeData extends BaseNodeData {
   // GSA-only: an AMI app can add the 5G mobile protocol decoding bundle
   // (SMT-GSA110-AMI-5G-100G-*) instead of the plain AMI license.
   gsa5gDecode?: boolean;
+  // Tunneling / Decapsulation configuration
+  tunnelMode?: string;
+  erspanType?: 'Type II' | 'Type III';
+  tunnelId?: number;
+  tunnelIp?: string;
+  tunnelVni?: number;
+  tunnelPort?: number;
+  tunnelKey?: string;
 }
 
 export interface GigaStreamNodeData extends BaseNodeData {

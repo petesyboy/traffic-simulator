@@ -196,6 +196,47 @@ export const processGigaSmartNode: NodeProcessor = (
     nodeMetric.txPackets += item.stream.bandwidth * 250 * passRate;
     forwardStream = { ...item.stream, bandwidth: whitelistBandwidth };
   }
+  else if (
+    actionType === 'Tunneling' ||
+    actionType === 'Tunneling (ERSPAN Decap)' ||
+    actionType === 'Tunnel Decapsulation' ||
+    actionType === 'ERSPAN Tunnel Decapsulation' ||
+    actionType === 'L2GRE Tunnel Decapsulation' ||
+    actionType === 'VXLAN Tunnel Decapsulation' ||
+    actionType === 'IP Tunnel Decapsulation' ||
+    actionType === 'Custom Tunnel Decapsulation' ||
+    actionType === 'GRE-In-UDP Tunnel Decapsulation'
+  ) {
+    const mode = (data.tunnelMode as string) || actionType;
+    let scale = 0.955; // default ~4.5% overhead (ERSPAN/GRE 42B)
+    if (mode.includes('VXLAN')) scale = 0.95; // ~50B overhead (5%)
+    else if (mode.includes('L2GRE')) scale = 0.965; // ~36B overhead (3.5%)
+    else if (mode.includes('IP')) scale = 0.98; // ~20B overhead (2%)
+    else if (mode.includes('Custom')) scale = 0.94; // custom ~6%
+
+    const decapsulatedBandwidth = item.stream.bandwidth * scale;
+    dropBandwidth = item.stream.bandwidth * (1 - scale);
+
+    nodeMetric.droppedPackets += dropBandwidth * 250;
+    nodeMetric.gigaSmartDroppedMbps = (nodeMetric.gigaSmartDroppedMbps || 0) + dropBandwidth;
+    nodeMetric.txMbps += decapsulatedBandwidth;
+    nodeMetric.txPackets += item.stream.bandwidth * 250;
+
+    const modifiedStream: TrajectoryStream = {
+      ...item.stream,
+      bandwidth: decapsulatedBandwidth,
+    };
+    if (modifiedStream.isEncapsulated) {
+      modifiedStream.isEncapsulated = false;
+      modifiedStream.isDecapsulated = true;
+      if (modifiedStream.innerIpSrc) modifiedStream.ipSrc = modifiedStream.innerIpSrc;
+      if (modifiedStream.innerIpDst) modifiedStream.ipDst = modifiedStream.innerIpDst;
+      if (modifiedStream.innerPortSrc) modifiedStream.portSrc = modifiedStream.innerPortSrc;
+      if (modifiedStream.innerPortDst) modifiedStream.portDst = modifiedStream.innerPortDst;
+      if (modifiedStream.innerProtocol) modifiedStream.protocol = modifiedStream.innerProtocol;
+    }
+    forwardStream = modifiedStream;
+  }
   else {
     let scale = 1.0;
     if (actionType === 'Masking') scale = 0.95;

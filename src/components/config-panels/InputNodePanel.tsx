@@ -188,6 +188,15 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
 
       {configType === CONFIG_TYPES.ERSPAN && (
         <>
+          <FormGroup label="ERSPAN Version">
+            <select
+              value={(node.data?.erspanType as string) || 'Type II'}
+              onChange={(e) => onGenericChange('erspanType', e.target.value)}
+            >
+              <option value="Type II">ERSPAN Type II (Standard GRE Protocol 0x88BE)</option>
+              <option value="Type III">ERSPAN Type III (Enhanced Header Protocol 0x22EB)</option>
+            </select>
+          </FormGroup>
           <FormGroup label="Tunnel ID (Session ID)">
             <input
               type="number"
@@ -205,6 +214,17 @@ export const InputNodePanel: React.FC<InputNodePanelProps> = ({ node, onGenericC
               onChange={(e) => onGenericChange('erspanSrcIp', e.target.value)}
             />
           </FormGroup>
+          <FormGroup label="Remote Encapsulation IP (Target)">
+            <input
+              type="text"
+              placeholder="e.g. 192.168.10.100"
+              value={(node.data?.erspanDestIp as string) || '192.168.10.100'}
+              onChange={(e) => onGenericChange('erspanDestIp', e.target.value)}
+            />
+          </FormGroup>
+          <div style={{ marginTop: '4px', padding: '8px', background: 'rgba(0, 145, 234, 0.08)', border: '1px solid rgba(0, 145, 234, 0.25)', borderRadius: '4px', fontSize: '10px', color: '#80cbc4', lineHeight: '1.4' }}>
+            🛰️ <strong>ERSPAN Remote Encapsulation:</strong> Transmits monitored switch/router packets wrapped in an outer IP + GRE {(node.data?.erspanType as string) || 'Type II'} header directed to target {(node.data?.erspanDestIp as string) || '192.168.10.100'}. Decapsulation terminates the tunnel to expose the inner payload.
+          </div>
         </>
       )}
     </>

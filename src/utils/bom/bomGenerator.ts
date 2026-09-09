@@ -655,20 +655,31 @@ function resolveGigaSmartSku(
       if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-GTPMAX-SW-TM' : 'SMT-HC1P-GEN3-GTPMAX-PL';
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-GTPMAX-SW-TM' : 'SMT-HC3-GEN3-GTPMAX';
       return '';
+    // Tunnelling applications:
+    // On HC1: All tunnelling (encapsulation and decapsulation) requires the Tunnelling Licence.
+    // On HC1-Plus, HC2, and HC3: Base licence includes standard decapsulation (IP, L2GRE, VXLAN, Custom tunnel).
+    // Advanced Tunnelling is required for ERSPAN decapsulation (Types II & III) and tunnel encapsulation.
     case 'Tunneling':
     case 'Tunneling (ERSPAN Decap)':
+    case 'Tunnel Decapsulation':
     case 'ERSPAN Tunnel Decapsulation':
-    case 'L2GRE Tunnel Decapsulation':
-    case 'VXLAN Tunnel Decapsulation':
-    case 'GRE-In-UDP Tunnel Decapsulation':
     case 'L2GRE Tunnel Encapsulation':
     case 'VXLAN Tunnel Encapsulation':
+    case 'IP Tunnel Encapsulation':
     case 'TCP Tunnel':
     case 'Secure Tunnels':
       if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-TUN-SW-TM' : 'SMT-HC1-TUN';
       if (isHc1Plus) return isHtl ? 'SMT-HC1P-GEN3-TUN-SW-TM' : 'SMT-HC1P-GEN3-TUN-PL';
       if (isHc3) return isHtl ? 'SMT-HC3-GEN3-TUN-SW-TM' : 'SMT-HC3-GEN3-TUN';
       return isHtl ? 'SMT-HC1-GEN2-TUN-SW-TM' : 'SMT-HC1-TUN';
+    case 'L2GRE Tunnel Decapsulation':
+    case 'VXLAN Tunnel Decapsulation':
+    case 'IP Tunnel Decapsulation':
+    case 'Custom Tunnel Decapsulation':
+    case 'GRE-In-UDP Tunnel Decapsulation':
+      if (isHc1Plain) return isHtl ? 'SMT-HC1-GEN2-TUN-SW-TM' : 'SMT-HC1-TUN';
+      // On HC1-Plus, HC2, and HC3, standard decapsulation is included in base chassis/module licence
+      return '';
     default:
       return '';
   }
