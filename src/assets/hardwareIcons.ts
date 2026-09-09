@@ -57,6 +57,7 @@ const TAP_MODEL_ALIASES: Record<string, string> = {
   'TAP-M473': 'TAP-M473T.png',
   'TAP-M473T': 'TAP-M473T.png',
   'TAP-M473LT': 'TAP-M473T.png',
+  'TAP-M471ULT': 'TAP-M471T.png',
   'TAP-M473ULT': 'TAP-M473T.png',
   'TAP-506': 'TAP-M506T.png',
   'TAP-M506': 'TAP-M506T.png',

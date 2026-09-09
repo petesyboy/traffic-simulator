@@ -5,6 +5,7 @@ import { resolveHardwareIcon } from '../assets/hardwareIcons';
 import { getDeviceRU, getModuleSlotPositions, getTrayBayCount, getTrayLayout, isRackableGigamonEquipment, isTapModule } from '../utils/hardwareUtils';
 import { autoDeployRack, clearRackDeploy } from '../utils/autoRack';
 import { isAutoTrayModel } from '../utils/traySync';
+import { requiresUltTray, getCanonicalTrayModel } from '../utils/trayModels';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getChassisPorts, getPortOpticMap } from '../utils/ports';
 import { ChassisFrontPanel } from './nodes/ChassisFrontPanel';
@@ -141,6 +142,19 @@ const RackElevationView: React.FC<RackElevationViewProps> = (props) => {
       alert(`Only tap modules (TAP-M251T, TAP-M253T, etc.) or breakout panels (PNL-M341T, PNL-M343T) can be fitted into a tray bay - "${model}" isn't one.`);
       return;
     }
+
+    const trayNode = nodes.find(n => n.id === trayNodeId);
+    const isUltTray = getCanonicalTrayModel(String(trayNode?.data?.model || ''), trayNode?.data?.sku as string | undefined) === 'TAP-M202ULT';
+    const needsUltTray = requiresUltTray(sku || '', model);
+    if (needsUltTray && !isUltTray) {
+      alert(`Multimode unidirectional TAP module "${model}" requires a TAP-M202ULT chassis.`);
+      return;
+    }
+    if (!needsUltTray && isUltTray) {
+      alert(`TAP-M202ULT chassis only accommodates multimode unidirectional TAP modules (TAP-Mxx1ULT). "${model}" should be placed in a standard TAP-M100T or TAP-M200T tray.`);
+      return;
+    }
+
     updateNodeData(nodeId, { trayId: trayNodeId, traySlot: bay, rackId: undefined, rackU: undefined });
   };
 

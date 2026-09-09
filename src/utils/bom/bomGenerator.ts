@@ -12,6 +12,7 @@ import { isBreakoutPanelModel } from '../hardwareUtils';
 import { getEdgeTapLinksCount } from '../clusterUtils';
 import { optimizeOpticPacks } from './opticPacks';
 import { deriveInputFeedOptics } from '../inputFeedOptics';
+import { getTapTerminationClass } from '../../constants/tapOpticRules';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
@@ -153,13 +154,38 @@ export function syncOpticsOnTapConnection(nodes: CustomNode[], edges: Edge[]): C
             ? (String(tapN.data?.sku || '').includes('253') || String(tapN.data?.sku || '').includes('273') || String(tapN.data?.sku || '').includes('453') || String(tapN.data?.model || '').toLowerCase().includes('single-mode') || String(tapN.data?.model || '').toLowerCase().includes('sm'))
             : (tapN.data?.tapFiberMode === 'Singlemode');
           
-          const isM506T = String(tapN.data?.model || '').includes('TAP-M506T') || String(tapN.data?.sku || '').includes('TAP-M506T');
-          const defaultOptic = isM506T ? 'QSB-523T' : (isSMTap ? 'SFP-533T' : 'SFP-532T');
+          const tapModel = String(tapN.data?.model || '');
+          const tapSku = String(tapN.data?.sku || '');
+          const tapCls = getTapTerminationClass(tapModel, tapSku);
+          const isM506T = tapCls === 'bidi' || tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
+          const isMpoMM = tapCls === 'multimode-mpo';
+          const isMpoSM = tapCls === 'singlemode-mpo';
+          const isQsfpOnly = chassisModel.includes('TA200') || chassisModel.includes('TA400');
+
+          let defaultOptic = 'SFP-532T';
+          if (isM506T) {
+            defaultOptic = 'QSB-523T';
+          } else if (isMpoMM) {
+            defaultOptic = 'Q28-502T';
+          } else if (isMpoSM) {
+            defaultOptic = 'Q28-506';
+          } else if (isSMTap) {
+            defaultOptic = isQsfpOnly ? 'Q28-503T' : 'SFP-533T';
+          } else if (isQsfpOnly) {
+            defaultOptic = 'Q28-508';
+          }
+
           const allocations = resolveTapAllocations(tapN.data as HardwareNodeData, defaultOptic);
 
           for (const alloc of allocations) {
             let selectedOpticVal = alloc.toolOptic || alloc.optic;
-            if (isPassiveSplitterLabel(selectedOpticVal) || (isM506T && selectedOpticVal.startsWith('SFP'))) selectedOpticVal = defaultOptic;
+            const needsUpgrade =
+              isPassiveSplitterLabel(selectedOpticVal) ||
+              (isM506T && selectedOpticVal.startsWith('SFP')) ||
+              (isMpoMM && selectedOpticVal.startsWith('SFP')) ||
+              (isMpoSM && selectedOpticVal.startsWith('SFP')) ||
+              (isQsfpOnly && selectedOpticVal.startsWith('SFP'));
+            if (needsUpgrade) selectedOpticVal = defaultOptic;
             tapOpticsNeeded[selectedOpticVal] = (tapOpticsNeeded[selectedOpticVal] || 0) + alloc.qty * 2;
           }
         });

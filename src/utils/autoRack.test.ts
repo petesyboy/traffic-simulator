@@ -146,6 +146,33 @@ describe('autoRack', () => {
       expect(probe2?.data?.rackId).toBeUndefined();
       expect(probe2?.data?.rackU).toBeUndefined();
     });
+
+    it('correctly segregates ULT and standard TAP modules into their respective trays', () => {
+      const nodes: CustomNode[] = [
+        makeHwNode('ta100-1', 'GigaVUE-TA100', 'TA-100', 'DC1'),
+        makeHwNode('std-tap', 'TAP-M251T', 'TAP-M251T', 'DC1'),
+        makeHwNode('ult-tap', 'TAP-M271ULT', 'TAP-M271ULT', 'DC1'),
+      ];
+
+      const deployed = autoDeployRack(nodes, 'DC1');
+
+      const m100Tray = deployed.find(n => n.data?.model === 'TAP-M100T');
+      const ultTray = deployed.find(n => n.data?.model === 'TAP-M202ULT');
+
+      expect(m100Tray).toBeDefined();
+      expect(ultTray).toBeDefined();
+
+      const stdTap = deployed.find(n => n.id === 'std-tap');
+      const ultTap = deployed.find(n => n.id === 'ult-tap');
+
+      // Standard tap must be slotted in M100T tray
+      expect(stdTap?.data?.trayId).toBe(m100Tray?.id);
+      expect(stdTap?.data?.traySlot).toBe(1);
+
+      // ULT tap must be slotted in TAP-M202ULT tray
+      expect(ultTap?.data?.trayId).toBe(ultTray?.id);
+      expect(ultTap?.data?.traySlot).toBe(1);
+    });
   });
 
   describe('clearRackDeploy', () => {

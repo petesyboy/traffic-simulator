@@ -27,11 +27,15 @@ describe('getTapTerminationClass', () => {
     // Split ratio changes the optical budget, not which optic fits.
     expect(getTapTerminationClass('TAP-M271T', 'TAP-M271T')).toBe('multimode-lc');
     expect(getTapTerminationClass('TAP-M273T', 'TAP-M273T')).toBe('singlemode-lc');
+    expect(getTapTerminationClass('TAP-M271ULT', 'TAP-M271ULT')).toBe('multimode-lc');
+    expect(getTapTerminationClass('TAP-M273ULT', 'TAP-M273ULT')).toBe('singlemode-lc');
   });
 
   it('classifies the MPO tap modules correctly', () => {
     expect(getTapTerminationClass('TAP-M451T', 'TAP-M451T')).toBe('multimode-mpo');
     expect(getTapTerminationClass('TAP-M471T', 'TAP-M471T')).toBe('multimode-mpo');
+    expect(getTapTerminationClass('TAP-M451ULT', 'TAP-M451ULT')).toBe('multimode-mpo');
+    expect(getTapTerminationClass('TAP-M471ULT', 'TAP-M471ULT')).toBe('multimode-mpo');
     expect(getTapTerminationClass('TAP-M453T', 'TAP-M453T')).toBe('singlemode-mpo');
     expect(getTapTerminationClass('TAP-M473T', 'TAP-M473T')).toBe('singlemode-mpo');
   });

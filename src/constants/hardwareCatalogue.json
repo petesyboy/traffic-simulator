@@ -92,6 +92,48 @@
       "image": "./hardware-icons/TAP-M253ULT.png"
     },
     {
+      "model": "TAP-M271ULT",
+      "sku": "TAP-M271ULT",
+      "type": "module",
+      "split_ratio": "70/30",
+      "fiber_type": "Multimode",
+      "ports": 4,
+      "max_links": 4,
+      "image": "./hardware-icons/TAP-M271ULT.png"
+    },
+    {
+      "model": "TAP-M273ULT",
+      "sku": "TAP-M273ULT",
+      "type": "module",
+      "split_ratio": "70/30",
+      "fiber_type": "Singlemode",
+      "ports": 2,
+      "max_links": 2,
+      "image": "./hardware-icons/TAP-M273ULT.png"
+    },
+    {
+      "model": "TAP-M451ULT",
+      "sku": "TAP-M451ULT",
+      "type": "module",
+      "split_ratio": "50/50",
+      "fiber_type": "Multimode",
+      "ports": 1,
+      "max_links": 1,
+      "connector": "MPO",
+      "image": "./hardware-icons/TAP-M451ULT.png"
+    },
+    {
+      "model": "TAP-M471ULT",
+      "sku": "TAP-M471ULT",
+      "type": "module",
+      "split_ratio": "70/30",
+      "fiber_type": "Multimode",
+      "ports": 1,
+      "max_links": 1,
+      "connector": "MPO",
+      "image": "./hardware-icons/TAP-M471ULT.png"
+    },
+    {
       "model": "TAP-M251T",
       "sku": "TAP-M251T",
       "type": "module",

@@ -118,7 +118,7 @@ function extractSpeeds(desc) {
 
 /** Extracts port density/count from description if present. */
 function extractPortDensity(desc) {
-  const match = desc.match(/(\d+)\s*(?:x\s*)?(?:10G|25G|40G|100G|400G|1G|SFP\+|SFP28|QSFP\+|QSFP28|QSFP-DD|cages|ports|pairs|links)/i);
+  const match = desc.match(/(\d+)\s*(?:x\s*)?(?:10G|25G|40G|100G|400G|1G|SFP\+|SFP28|QSFP\+|QSFP28|QSFP-DD|cages|ports|pairs|links?)/i);
   if (match) {
     const count = parseInt(match[1], 10);
     if (count > 0 && count <= 128) return count;
@@ -134,10 +134,10 @@ function extractFormFactor(sku, desc) {
   if (/SFP28/i.test(desc)) return 'SFP28';
   if (/SFP\+/i.test(desc)) return 'SFP+';
   if (/SFP/i.test(desc)) return 'SFP';
-  if (/14U/i.test(desc)) return '14U';
-  if (/4U/i.test(desc)) return '4U';
-  if (/2U/i.test(desc)) return '2U';
-  if (/1U/i.test(desc)) return '1U';
+  if (/\b14\s*R?U\b/i.test(desc)) return '14U';
+  if (/\b4\s*R?U\b/i.test(desc)) return '4U';
+  if (/\b2\s*R?U\b/i.test(desc)) return '2U';
+  if (/\b1\s*R?U\b/i.test(desc)) return '1U';
   return undefined;
 }
 

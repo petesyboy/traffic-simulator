@@ -110,6 +110,37 @@ describe('BOM Engine', () => {
       });
     });
 
+    it('should auto-add MPO QSFP optic Q28-502T when TAP-M451ULT is connected to TA100', () => {
+      const nodes: CustomNode[] = [
+        {
+          id: 'tap-1',
+          type: 'hardwareNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: 'TAP-M451ULT',
+            configType: 'Hardware',
+            model: 'TAP-M451ULT',
+            sku: 'TAP-M451ULT',
+            tappedLinksCount: 1,
+            tappedLinkAllocations: [{ qty: 1, optic: 'Passive Optical Splitter (Multimode)' }]
+          }
+        },
+        {
+          id: 'ta100-1',
+          type: 'hardwareNode',
+          position: { x: 200, y: 0 },
+          data: { label: 'TA100', configType: 'TA', model: 'GigaVUE-TA100', optics: [] }
+        }
+      ];
+      const edges = [{ id: 'e1', source: 'tap-1', target: 'ta100-1' }];
+      const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
+      const taNode = syncedNodes.find(n => n.id === 'ta100-1');
+      expect(taNode?.data.optics?.some((o: InstalledOptic) => o.optic.includes('Q28-502') && o.isAutoAdded)).toBe(true);
+      const opt = taNode?.data.optics?.find((o: InstalledOptic) => o.optic.includes('Q28-502'));
+      // 1 tapped link produces 2 monitor feeds = 2 transceivers
+      expect(opt?.qty).toBe(2);
+    });
+
     it('should merge multiple TAP-M251T modules feeding the same chassis into a single optic line, not split/undercounted lines', () => {
       const nodes: CustomNode[] = [
         {

@@ -21,7 +21,7 @@
 import type { CustomNode } from '../store/types';
 import { getDeviceRU, getTrayBayCount, isTapModule, isBreakoutPanelModel, isRackableGigamonEquipment } from './hardwareUtils';
 import { syncTapTrays, isAutoTrayModel } from './traySync';
-import type { TrayAllocationPreference } from './trayModels';
+import { requiresUltTray, getCanonicalTrayModel, type TrayAllocationPreference } from './trayModels';
 
 /** Weight / Hierarchy ranking: lower number = placed lower in the rack (bottom tier). */
 export const getDeviceHierarchyRank = (model: string, sku?: string): number => {
@@ -104,29 +104,45 @@ export function autoDeployRack(
     trayAssignments.set(tray.id, new Map());
   });
 
-  // Collect already slotted modules
-  const unslottedModules: CustomNode[] = [];
+  // Collect already slotted modules, segregated by tray family
+  const unslottedUltModules: CustomNode[] = [];
+  const unslottedStdModules: CustomNode[] = [];
   siteModules.forEach(mod => {
     const trayId = mod.data?.trayId as string | undefined;
     const traySlot = mod.data?.traySlot as number | undefined;
     if (trayId && typeof traySlot === 'number' && trayAssignments.has(trayId)) {
       trayAssignments.get(trayId)!.set(traySlot, mod.id);
     } else {
-      unslottedModules.push(mod);
+      const model = String(mod.data?.model || '');
+      const sku = mod.data?.sku as string | undefined;
+      if (requiresUltTray(sku || '', model)) {
+        unslottedUltModules.push(mod);
+      } else {
+        unslottedStdModules.push(mod);
+      }
     }
   });
 
-  // Slot remaining modules into empty bays
+  // Slot remaining modules into empty bays respecting tray compatibility:
+  // TAP-M202ULT trays receive multimode ULT modules; standard M-series trays receive standard and SM ULT modules.
   const updatedModuleMap = new Map<string, { trayId: string; traySlot: number }>();
-  let moduleIdx = 0;
+  let ultIdx = 0;
+  let stdIdx = 0;
   for (const tray of siteTrays) {
+    const isUlt = getCanonicalTrayModel(String(tray.data?.model || ''), tray.data?.sku as string | undefined) === 'TAP-M202ULT';
     const totalBays = getTrayBayCount(String(tray.data?.model || ''), tray.data?.sku as string | undefined);
     const assignedBays = trayAssignments.get(tray.id)!;
     for (let bay = 1; bay <= totalBays; bay++) {
-      if (!assignedBays.has(bay) && moduleIdx < unslottedModules.length) {
-        const modToSlot = unslottedModules[moduleIdx++];
-        assignedBays.set(bay, modToSlot.id);
-        updatedModuleMap.set(modToSlot.id, { trayId: tray.id, traySlot: bay });
+      if (!assignedBays.has(bay)) {
+        if (isUlt && ultIdx < unslottedUltModules.length) {
+          const modToSlot = unslottedUltModules[ultIdx++];
+          assignedBays.set(bay, modToSlot.id);
+          updatedModuleMap.set(modToSlot.id, { trayId: tray.id, traySlot: bay });
+        } else if (!isUlt && stdIdx < unslottedStdModules.length) {
+          const modToSlot = unslottedStdModules[stdIdx++];
+          assignedBays.set(bay, modToSlot.id);
+          updatedModuleMap.set(modToSlot.id, { trayId: tray.id, traySlot: bay });
+        }
       }
     }
   }

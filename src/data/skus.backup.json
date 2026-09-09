@@ -8682,6 +8682,7 @@
     "partNumber": "TAP-M100T",
     "description": "G-TAP M Series 1/2 RU chassis. Supports up to 3 M Series TAP modules. TAA compliant",
     "category": "TAP",
+    "formFactor": "2U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",
@@ -8694,6 +8695,7 @@
     "partNumber": "TAP-M200T",
     "description": "G-TAP M Series 1 RU chassis. Supports up to 6 M Series TAP modules. TAA Compliant.",
     "category": "TAP",
+    "formFactor": "1U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",
@@ -8755,7 +8757,6 @@
     "speedsSupported": [
       "100G"
     ],
-    "formFactor": "2U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",
@@ -8916,7 +8917,6 @@
     "speedsSupported": [
       "100G"
     ],
-    "formFactor": "2U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",
@@ -9024,10 +9024,10 @@
     "partNumber": "TAP-M451ULT",
     "description": "G-TAP M Series 40/100/400Gb 50/50 unidirectional tap module, 830-870nm MM 50/125µm OM5, taps 1 link, MPO, requires TAP-M202ULT chassis. TAA Compliant.",
     "category": "TAP",
+    "portDensity": 1,
     "speedsSupported": [
       "400G"
     ],
-    "formFactor": "2U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",
@@ -9102,10 +9102,10 @@
     "partNumber": "TAP-M471ULT",
     "description": "G-TAP M Series 40/100/400Gb 70/30 unidirectional tap module, 830-870nm MM 50/125µm OM5, taps 1 link, MPO, requires TAP-M202ULT chassis. TAA Compliant.",
     "category": "TAP",
+    "portDensity": 1,
     "speedsSupported": [
       "400G"
     ],
-    "formFactor": "2U",
     "isTaaCompliant": true,
     "productFamily": "Taps and Aggregators",
     "productSubFamily": "GTAP-M",

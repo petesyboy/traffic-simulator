@@ -13,10 +13,14 @@ const trayQty = (bom: ReturnType<typeof generateBom>, sku: string) => bom.find(r
 
 describe('requiresUltTray', () => {
   it('matches only the multimode unidirectional modules', () => {
-    // TAP-Mxx1ULT is multimode unidirectional and needs the dedicated chassis.
+    // Multimode unidirectional modules need the dedicated TAP-M202ULT chassis.
     expect(requiresUltTray('TAP-M251ULT')).toBe(true);
-    // TAP-Mxx3ULT is singlemode and shares the ordinary M-series trays.
+    expect(requiresUltTray('TAP-M271ULT')).toBe(true);
+    expect(requiresUltTray('TAP-M451ULT')).toBe(true);
+    expect(requiresUltTray('TAP-M471ULT')).toBe(true);
+    // Singlemode unidirectional modules share the ordinary M-series trays.
     expect(requiresUltTray('TAP-M253ULT')).toBe(false);
+    expect(requiresUltTray('TAP-M273ULT')).toBe(false);
     // Non-ULT modules are unaffected.
     expect(requiresUltTray('TAP-M251T')).toBe(false);
     expect(requiresUltTray('TAP-M253T')).toBe(false);
@@ -46,10 +50,24 @@ describe('TAP tray allocation', () => {
   });
 
   it('keeps the singlemode ULT module in the ordinary M-series tray', () => {
-    const bom = generateBom([tapModule('t1', 'TAP-M253ULT')], [], 'HTL', '12');
+    const bom253 = generateBom([tapModule('t1', 'TAP-M253ULT')], [], 'HTL', '12');
+    expect(trayQty(bom253, 'TAP-M100T')).toBe(1);
+    expect(trayQty(bom253, 'TAP-M202ULT')).toBeUndefined();
 
-    expect(trayQty(bom, 'TAP-M100T')).toBe(1);
-    expect(trayQty(bom, 'TAP-M202ULT')).toBeUndefined();
+    const bom273 = generateBom([tapModule('t2', 'TAP-M273ULT')], [], 'HTL', '12');
+    expect(trayQty(bom273, 'TAP-M100T')).toBe(1);
+    expect(trayQty(bom273, 'TAP-M202ULT')).toBeUndefined();
+  });
+
+  it('allocates TAP-M202ULT for 70/30 and MPO multimode ULT modules', () => {
+    const bom271 = generateBom([tapModule('t1', 'TAP-M271ULT')], [], 'HTL', '12');
+    expect(trayQty(bom271, 'TAP-M202ULT')).toBe(1);
+
+    const bom451 = generateBom([tapModule('t2', 'TAP-M451ULT')], [], 'HTL', '12');
+    expect(trayQty(bom451, 'TAP-M202ULT')).toBe(1);
+
+    const bom471 = generateBom([tapModule('t3', 'TAP-M471ULT')], [], 'HTL', '12');
+    expect(trayQty(bom471, 'TAP-M202ULT')).toBe(1);
   });
 
   it('pools the two tray families independently rather than mixing slot counts', () => {
