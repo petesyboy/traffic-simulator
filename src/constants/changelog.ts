@@ -16,6 +16,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.773",
+    date: "2026-09-10",
+    summary: "Separate co-branded partner logo from Gigamon wordmark on report cover (v1.0.773)",
+  },
+  {
+    version: "1.0.772",
+    date: "2026-09-10",
+    summary: "Show a confirmation modal with the saved filename after report generation (v1.0.772)",
+  },
+  {
+    version: "1.0.771",
+    date: "2026-09-10",
+    summary: "Add partner-brandable report templates, deprecate Patch Sheet/Crossover formats (v1.0.771)",
+  },
+  {
     version: "1.0.770",
     date: "2026-09-10",
     summary: "Add multi-select batch property editing and cluster group configuration for TAPs, Tools, and datacentre locations",
@@ -99,20 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.750",
     date: "2026-09-04",
     summary: "Restore single-click selection for canvas nodes and auto-select on drop (v1.0.750)",
-  },
-  {
-    version: "1.0.749",
-    date: "2026-09-04",
-    summary: "Preserve Swedish and international letters in export file names (v1.0.749)",
-  },
-  {
-    version: "1.0.748",
-    date: "2026-09-04",
-    summary: "Distinguish DWDM in and out handles with I/O labels, distinct colours, and legend",
-  },
-  {
-    version: "1.0.747",
-    date: "2026-09-04",
-    summary: "Anchor DWDM connector handles strictly to outer perimeter",
   },
 ];

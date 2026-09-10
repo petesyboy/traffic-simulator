@@ -543,6 +543,25 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(allText).toContain('IN PARTNERSHIP WITH ACME CYBER SOLUTIONS');
   });
 
+  it('renders styled typography fallback when co-branded with partner name only', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      logoDataUrl: 'data:image/png;base64,GIGAMON_LOGO',
+      coBrandingMode: 'co-branded',
+      partnerName: 'Acme Cyber Solutions',
+    });
+
+    const images = collectImages(doc.content);
+    expect(images).toContain('data:image/png;base64,GIGAMON_LOGO');
+    expect(images).not.toContain('data:image/png;base64,PARTNER_LOGO');
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('ACME CYBER SOLUTIONS');
+    expect(allText).toContain('IN PARTNERSHIP WITH ACME CYBER SOLUTIONS');
+  });
+
   it('interpolates {{tokens}} in the executive summary markdown', () => {
     const doc = buildReportDocDefinition({
       ...baseInput,

@@ -10,7 +10,7 @@
  * • High-contrast equipment-panel table headers (#16213D) and zebra rows
  * • Clean running headers, footers, and orphan prevention
  */
-import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Content, Column, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { Edge } from '@xyflow/react';
 import type {
   CustomNode,
@@ -280,7 +280,7 @@ export function buildNoticePlate(options: NoticePlateOptions): Content {
 }
 
 /** Cover background full-bleed SVG (Dark Navy + Signal Path fan-in vector lines) */
-function generateCoverSvg(): string {
+function generateCoverSvg(accentColor: string = '#E1592A'): string {
   return `
   <svg width="595.28" height="841.89" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">
     <!-- Dark Navy Equipment-Panel Surface -->
@@ -301,16 +301,16 @@ function generateCoverSvg(): string {
       <path d="M 40 100 Q 220 200 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
       <path d="M 40 160 Q 220 230 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
       <path d="M 40 220 Q 220 260 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 40 280 Q 220 290 460 300" stroke="#E1592A" stroke-width="2.5" stroke-opacity="0.95" fill="none" />
+      <path d="M 40 280 Q 220 290 460 300" stroke="${accentColor}" stroke-width="2.5" stroke-opacity="0.95" fill="none" />
       <path d="M 40 340 Q 220 320 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
       <path d="M 40 400 Q 220 350 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
 
       <!-- Convergence Focus Node -->
-      <circle cx="460" cy="300" r="5" fill="#E1592A" />
-      <circle cx="460" cy="300" r="10" stroke="#E1592A" stroke-width="1" stroke-opacity="0.5" fill="none" />
+      <circle cx="460" cy="300" r="5" fill="${accentColor}" />
+      <circle cx="460" cy="300" r="10" stroke="${accentColor}" stroke-width="1" stroke-opacity="0.5" fill="none" />
 
       <!-- Fan-out to Monitoring Tools -->
-      <path d="M 460 300 Q 505 300 550 260" stroke="#E1592A" stroke-width="2.0" stroke-opacity="0.9" fill="none" />
+      <path d="M 460 300 Q 505 300 550 260" stroke="${accentColor}" stroke-width="2.0" stroke-opacity="0.9" fill="none" />
       <path d="M 460 300 Q 505 310 550 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
       <path d="M 460 300 Q 505 320 550 340" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
     </g>
@@ -533,23 +533,74 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   // ═══════════════════════════════════════════════════════════════
   const coverStack: Content[] = [];
   const gigamonBrandmark: Content = logoDataUrl
-    ? { image: logoDataUrl, width: 140 }
-    : { text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5 };
+    ? { image: logoDataUrl, width: 130 }
+    : { text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5, margin: [0, 4, 0, 0] };
 
-  if (coBrandingMode === 'co-branded' && partnerLogoDataUrl) {
+  if (coBrandingMode === 'co-branded' && (partnerLogoDataUrl || partnerName)) {
+    // Executive Co-Branding Lockup: [Gigamon] │ [Partner Logo / Name]
+    const lockupColumns: Column[] = [
+      { width: 'auto', stack: [gigamonBrandmark] },
+      {
+        width: 1,
+        canvas: [
+          {
+            type: 'line',
+            x1: 0,
+            y1: 2,
+            x2: 0,
+            y2: 24,
+            lineWidth: 1,
+            lineColor: '#3A5385',
+          },
+        ],
+        margin: [16, 0, 16, 0],
+      },
+    ];
+
+    if (partnerLogoDataUrl) {
+      lockupColumns.push({
+        width: 'auto',
+        stack: [{ image: partnerLogoDataUrl, width: 85 }],
+      });
+    } else if (partnerName) {
+      lockupColumns.push({
+        width: 'auto',
+        stack: [
+          {
+            text: partnerName.toUpperCase(),
+            fontSize: 11,
+            bold: true,
+            color: '#F1F5F9',
+            characterSpacing: 0.8,
+            margin: [0, 6, 0, 0],
+          },
+        ],
+      });
+    }
+
     coverStack.push({
-      columns: [
-        gigamonBrandmark,
-        // Explicit '*' width stretches this column to the far right edge of the page,
-        // so the partner logo lands well clear of the Gigamon wordmark instead of
-        // sitting flush against it (both columns default to auto-width otherwise).
-        { width: '*', stack: [{ image: partnerLogoDataUrl, width: 80, alignment: 'right' }] },
-      ],
-      columnGap: 24,
-      margin: [0, 0, 0, 10],
+      columns: lockupColumns,
+      margin: [0, 0, 0, 8],
     });
+
     if (partnerName) {
-      coverStack.push({ text: `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}`, fontSize: 8, color: '#94A3B8', characterSpacing: 0.8, margin: [0, 0, 0, 20] });
+      coverStack.push({
+        text: `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}`,
+        fontSize: 8,
+        bold: true,
+        color: '#94A3B8',
+        characterSpacing: 0.8,
+        margin: [0, 0, 0, 24],
+      });
+    } else {
+      coverStack.push({
+        text: 'CO-BRANDED SOLUTION SPECIFICATION',
+        fontSize: 8,
+        bold: true,
+        color: '#94A3B8',
+        characterSpacing: 0.8,
+        margin: [0, 0, 0, 24],
+      });
     }
   } else {
     coverStack.push({ ...gigamonBrandmark, margin: [0, 0, 0, 30] } as Content);
@@ -1696,7 +1747,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     styles: reportStyleDictionary,
     background: (currentPage) => {
       if (currentPage === 1) {
-        return { svg: generateCoverSvg(), width: 595.28, height: 841.89 };
+        return { svg: generateCoverSvg(primaryColour || REPORT_COLOURS.accent), width: 595.28, height: 841.89 };
       }
       return {
         canvas: [
