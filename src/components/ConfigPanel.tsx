@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useStore, type MapCondition } from '../store/store';
 import type { ClusterNodeData } from '../store/types';
-import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from '../constants/nodeTypes';
+import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES, SUPPORTED_TAP_OPTICS } from '../constants/nodeTypes';
+import { isTapNode, isToolNode } from '../utils/clusterUtils';
+import { TOOL_INGEST_PROFILES } from '../constants/toolIngestLimits';
 
 // Import sub-panels
 import { FormGroup, LiveMetrics } from './config-panels/LiveMetrics';
@@ -23,6 +25,8 @@ const ConfigPanel: React.FC = () => {
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const updateMultipleNodesData = useStore((state) => state.updateMultipleNodesData);
+  const createCluster  = useStore((state) => state.createCluster);
   const toggleClusterCollapse = useStore((state) => state.toggleClusterCollapse);
   const dissolveCluster = useStore((state) => state.dissolveCluster);
   const setNodeFlowDirection = useStore((state) => state.setNodeFlowDirection);
@@ -215,6 +219,58 @@ const ConfigPanel: React.FC = () => {
     // but the settings that are meaningful across a mixed selection belong here
     // rather than only on the canvas toolbar.
     if (multiSelectedNodes.length > 1) {
+      const allSelectedTaps = multiSelectedNodes.every(isTapNode);
+      const allSelectedTools = multiSelectedNodes.every(isToolNode);
+      const someSelectedTaps = multiSelectedNodes.some(isTapNode);
+      const someSelectedTools = multiSelectedNodes.some(isToolNode);
+      const uniqueSites = Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && (s as string).trim() !== ''))) as string[];
+      const sharedSite = Array.from(new Set(multiSelectedNodes.map(n => (n.data?.site as string) || ''))).length === 1
+        ? (multiSelectedNodes[0].data?.site as string) || ''
+        : '';
+
+      const handleBatchSiteChange = (newSite: string) => {
+        updateMultipleNodesData(multiSelectedNodes.map(n => n.id), { site: newSite });
+      };
+
+      const handleBatchTapOptic = (opticVal: string) => {
+        const tapNodes = multiSelectedNodes.filter(isTapNode);
+        if (tapNodes.length === 0) return;
+        updateMultipleNodesData(tapNodes.map(n => n.id), {
+          tappedLinkOptic: opticVal,
+          tappedLinkAllocations: [{ qty: (tapNodes[0].data?.tappedLinksCount as number) || 1, optic: opticVal, toolOptic: opticVal }],
+        });
+      };
+
+      const handleBatchTapLinks = (linksCount: number) => {
+        const tapNodes = multiSelectedNodes.filter(isTapNode);
+        if (tapNodes.length === 0) return;
+        tapNodes.forEach((tn) => {
+          const currentOptic = (tn.data?.tappedLinkOptic as string) || 'SFP-532';
+          updateNodeData(tn.id, {
+            tappedLinksCount: linksCount,
+            tappedLinkAllocations: [{ qty: linksCount, optic: currentOptic, toolOptic: currentOptic }],
+          });
+        });
+      };
+
+      const handleBatchToolName = (name: string) => {
+        const toolNodes = multiSelectedNodes.filter(isToolNode);
+        if (toolNodes.length === 0) return;
+        const defaultLimit = TOOL_INGEST_PROFILES[name]?.ingestLimitMbps || 10000;
+        updateMultipleNodesData(toolNodes.map(n => n.id), {
+          toolName: name,
+          ingestLimitMbps: defaultLimit,
+        });
+      };
+
+      const handleBatchToolIngestLimit = (limitMbps: number) => {
+        const toolNodes = multiSelectedNodes.filter(isToolNode);
+        if (toolNodes.length === 0) return;
+        updateMultipleNodesData(toolNodes.map(n => n.id), {
+          ingestLimitMbps: limitMbps,
+        });
+      };
+
       return (
         <aside
           className={`config-panel ${isCollapsed ? 'collapsed' : ''}`}
@@ -233,7 +289,119 @@ const ConfigPanel: React.FC = () => {
           {resizeHandle}
           {!isCollapsed && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', height: '100%', padding: '16px', overflowY: 'auto', boxSizing: 'border-box' }}>
-              <h2>{multiSelectedNodes.length} Nodes Selected</h2>
+              <div>
+                <h2 style={{ margin: '0 0 4px 0' }}>{multiSelectedNodes.length} Nodes Selected</h2>
+                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Batch modify common properties across all selected items.
+                </p>
+              </div>
+
+              {/* Site / Data Centre Assignment */}
+              <div className="config-card">
+                <h3>🏢 Location / Data Centre</h3>
+                <p style={{ margin: '2px 0 8px 0', fontSize: '10px', color: 'var(--text-secondary)' }}>
+                  Assign all {multiSelectedNodes.length} selected nodes to a datacentre location.
+                </p>
+                <datalist id="existing-sites-multiselect-list">
+                  {uniqueSites.map(s => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
+                <input
+                  type="text"
+                  list="existing-sites-multiselect-list"
+                  placeholder="e.g. DC1 / Site A / Main Hall"
+                  value={sharedSite}
+                  onChange={(e) => handleBatchSiteChange(e.target.value)}
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* TAP Batch Controls */}
+              {(allSelectedTaps || someSelectedTaps) && (
+                <div className="config-card">
+                  <h3>⚡ TAP Settings ({multiSelectedNodes.filter(isTapNode).length} TAPs)</h3>
+                  <p style={{ margin: '2px 0 8px 0', fontSize: '10px', color: 'var(--text-secondary)' }}>
+                    Apply transceiver speed and link allocation to all selected TAP modules.
+                  </p>
+                  <FormGroup label="Tapped Link Speed / Optic">
+                    <select
+                      value={((multiSelectedNodes.find(isTapNode)?.data?.tappedLinkOptic as string) || 'SFP-532').split(' ')[0]}
+                      onChange={(e) => handleBatchTapOptic(e.target.value)}
+                    >
+                      {SUPPORTED_TAP_OPTICS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </FormGroup>
+                  <FormGroup label="Tapped Links Count">
+                    <select
+                      value={String((multiSelectedNodes.find(isTapNode)?.data?.tappedLinksCount as number) || 1)}
+                      onChange={(e) => handleBatchTapLinks(parseInt(e.target.value, 10))}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(num => (
+                        <option key={num} value={num}>{num} Link{num > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </FormGroup>
+                  {allSelectedTaps && (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ width: '100%', fontSize: '11px', padding: '6px 10px', marginTop: '6px' }}
+                      onClick={() => createCluster(multiSelectedNodes.map(n => n.id), 'tap')}
+                    >
+                      📦 Group into TAP Stack
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Tool Batch Controls */}
+              {(allSelectedTools || someSelectedTools) && (
+                <div className="config-card">
+                  <h3>🛠️ Tool Settings ({multiSelectedNodes.filter(isToolNode).length} Tools)</h3>
+                  <p style={{ margin: '2px 0 8px 0', fontSize: '10px', color: 'var(--text-secondary)' }}>
+                    Batch configure tool identity and ingest capacity across selected tools.
+                  </p>
+                  <FormGroup label="Tool Type">
+                    <select
+                      value={(multiSelectedNodes.find(isToolNode)?.data?.toolName as string) || 'Ericsson Probe'}
+                      onChange={(e) => handleBatchToolName(e.target.value)}
+                    >
+                      {Object.keys(TOOL_INGEST_PROFILES).map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                      <option value="Packet Tool">Generic Packet Tool</option>
+                    </select>
+                  </FormGroup>
+                  <FormGroup label="Ingest Capacity (Gbps)">
+                    <select
+                      value={String(Math.round(((multiSelectedNodes.find(isToolNode)?.data?.ingestLimitMbps as number) || 10000) / 1000))}
+                      onChange={(e) => handleBatchToolIngestLimit(parseInt(e.target.value, 10) * 1000)}
+                    >
+                      <option value="1">1 Gbps</option>
+                      <option value="2">2 Gbps</option>
+                      <option value="10">10 Gbps</option>
+                      <option value="20">20 Gbps</option>
+                      <option value="25">25 Gbps</option>
+                      <option value="40">40 Gbps</option>
+                      <option value="50">50 Gbps</option>
+                      <option value="100">100 Gbps</option>
+                      <option value="400">400 Gbps</option>
+                    </select>
+                  </FormGroup>
+                  {allSelectedTools && (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ width: '100%', fontSize: '11px', padding: '6px 10px', marginTop: '6px' }}
+                      onClick={() => createCluster(multiSelectedNodes.map(n => n.id), 'tool')}
+                    >
+                      📦 Group into Tool Stack
+                    </button>
+                  )}
+                </div>
+              )}
 
               <FormGroup label="Flow Direction">
                 <FlowDirectionControl
@@ -249,7 +417,7 @@ const ConfigPanel: React.FC = () => {
               </FormGroup>
 
               <div className="config-card">
-                <h3>📋 Selection</h3>
+                <h3>📋 Selected Nodes</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {multiSelectedNodes.slice(0, 12).map((n) => (
                     <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
@@ -257,7 +425,7 @@ const ConfigPanel: React.FC = () => {
                         {(n.data?.label as string) || n.id}
                       </span>
                       <span style={{ color: n.data?.flowDirectionLocked ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary)', flexShrink: 0 }}>
-                        {n.data?.flowDirectionLocked ? ((n.data?.flowDirection as string) === 'rtl' ? '← RTL' : '→ LTR') : 'Auto'}
+                        {n.data?.site ? `[${n.data.site}] ` : ''}{n.data?.flowDirectionLocked ? ((n.data?.flowDirection as string) === 'rtl' ? '← RTL' : '→ LTR') : 'Auto'}
                       </span>
                     </div>
                   ))}
@@ -266,10 +434,6 @@ const ConfigPanel: React.FC = () => {
                   )}
                 </div>
               </div>
-
-              <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                Select a single node to edit its own configuration.
-              </p>
             </div>
           )}
         </aside>
@@ -356,47 +520,146 @@ const ConfigPanel: React.FC = () => {
             </div>
           )}
 
-          {selectedNode.type === NODE_TYPES.CLUSTER && (
-            <div className="config-card">
-              <h3>{((selectedNode.data as unknown as ClusterNodeData)?.clusterType === 'tool') ? '🛠️ Tool Cluster Group' : '⚡ TAP Module Cluster'}</h3>
-              <p style={{ margin: '4px 0 12px 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                {((selectedNode.data as unknown as ClusterNodeData)?.summary?.count || (selectedNode.data as unknown as ClusterNodeData)?.memberNodeIds?.length || 0)} stacked modules grouped together.
-              </p>
+          {selectedNode.type === NODE_TYPES.CLUSTER && (() => {
+            const cData = selectedNode.data as unknown as ClusterNodeData;
+            const isToolCluster = cData?.clusterType === 'tool';
+            const memberIds = cData?.memberNodeIds || [];
+            const memberNodes = nodes.filter((n) => memberIds.includes(n.id));
 
-              <FormGroup label="Site Assignment (Optional)">
-                <datalist id="existing-sites-cluster-list">
-                  {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && (s as string).trim() !== ''))).map(s => (
-                    <option key={s as string} value={s as string} />
-                  ))}
-                </datalist>
-                <input 
-                  type="text" 
-                  list="existing-sites-cluster-list"
-                  placeholder="e.g. DC1 / Site A / Main Hall"
-                  value={(selectedNode.data?.site as string) || ''}
-                  onChange={(e) => updateNodeData(selectedNode.id, { site: e.target.value })}
-                  className="form-input"
-                />
-              </FormGroup>
+            const handleClusterTapOptic = (opticVal: string) => {
+              if (memberIds.length === 0) return;
+              updateMultipleNodesData(memberIds, {
+                tappedLinkOptic: opticVal,
+                tappedLinkAllocations: [{ qty: (memberNodes[0]?.data?.tappedLinksCount as number) || 1, optic: opticVal, toolOptic: opticVal }],
+              });
+            };
 
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <button
-                  className="btn btn-secondary"
-                  style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
-                  onClick={() => toggleClusterCollapse(selectedNode.id)}
-                >
-                  {(selectedNode.data as unknown as ClusterNodeData)?.isCollapsed !== false ? '⤢ Expand Stack' : '⤡ Collapse Stack'}
-                </button>
-                <button
-                  className="btn btn-danger"
-                  style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
-                  onClick={() => dissolveCluster(selectedNode.id)}
-                >
-                  Ungroup Stack
-                </button>
+            const handleClusterTapLinks = (linksCount: number) => {
+              if (memberIds.length === 0) return;
+              memberNodes.forEach((tn) => {
+                const currentOptic = (tn.data?.tappedLinkOptic as string) || 'SFP-532';
+                updateNodeData(tn.id, {
+                  tappedLinksCount: linksCount,
+                  tappedLinkAllocations: [{ qty: linksCount, optic: currentOptic, toolOptic: currentOptic }],
+                });
+              });
+            };
+
+            const handleClusterToolName = (name: string) => {
+              if (memberIds.length === 0) return;
+              const defaultLimit = TOOL_INGEST_PROFILES[name]?.ingestLimitMbps || 10000;
+              updateMultipleNodesData(memberIds, {
+                toolName: name,
+                ingestLimitMbps: defaultLimit,
+              });
+            };
+
+            const handleClusterToolIngestLimit = (limitMbps: number) => {
+              if (memberIds.length === 0) return;
+              updateMultipleNodesData(memberIds, {
+                ingestLimitMbps: limitMbps,
+              });
+            };
+
+            return (
+              <div className="config-card">
+                <h3>{isToolCluster ? '🛠️ Tool Cluster Group' : '⚡ TAP Module Cluster'}</h3>
+                <p style={{ margin: '4px 0 12px 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                  {(cData?.summary?.count || memberIds.length || 0)} stacked modules grouped together.
+                </p>
+
+                <FormGroup label="Site Assignment (Optional)">
+                  <datalist id="existing-sites-cluster-list">
+                    {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && (s as string).trim() !== ''))).map(s => (
+                      <option key={s as string} value={s as string} />
+                    ))}
+                  </datalist>
+                  <input 
+                    type="text" 
+                    list="existing-sites-cluster-list"
+                    placeholder="e.g. DC1 / Site A / Main Hall"
+                    value={(selectedNode.data?.site as string) || ''}
+                    onChange={(e) => updateNodeData(selectedNode.id, { site: e.target.value })}
+                    className="form-input"
+                  />
+                </FormGroup>
+
+                {!isToolCluster && (
+                  <>
+                    <FormGroup label="Member Link Speed / Optic">
+                      <select
+                        value={((memberNodes[0]?.data?.tappedLinkOptic as string) || 'SFP-532').split(' ')[0]}
+                        onChange={(e) => handleClusterTapOptic(e.target.value)}
+                      >
+                        {SUPPORTED_TAP_OPTICS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </FormGroup>
+                    <FormGroup label="Tapped Links per Module">
+                      <select
+                        value={String((memberNodes[0]?.data?.tappedLinksCount as number) || 1)}
+                        onChange={(e) => handleClusterTapLinks(parseInt(e.target.value, 10))}
+                      >
+                        {[1, 2, 3, 4, 5, 6].map(num => (
+                          <option key={num} value={num}>{num} Link{num > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </FormGroup>
+                  </>
+                )}
+
+                {isToolCluster && (
+                  <>
+                    <FormGroup label="Member Tool Type">
+                      <select
+                        value={(memberNodes[0]?.data?.toolName as string) || 'Ericsson Probe'}
+                        onChange={(e) => handleClusterToolName(e.target.value)}
+                      >
+                        {Object.keys(TOOL_INGEST_PROFILES).map(name => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                        <option value="Packet Tool">Generic Packet Tool</option>
+                      </select>
+                    </FormGroup>
+                    <FormGroup label="Ingest Capacity per Tool (Gbps)">
+                      <select
+                        value={String(Math.round(((memberNodes[0]?.data?.ingestLimitMbps as number) || 10000) / 1000))}
+                        onChange={(e) => handleClusterToolIngestLimit(parseInt(e.target.value, 10) * 1000)}
+                      >
+                        <option value="1">1 Gbps</option>
+                        <option value="2">2 Gbps</option>
+                        <option value="10">10 Gbps</option>
+                        <option value="20">20 Gbps</option>
+                        <option value="25">25 Gbps</option>
+                        <option value="40">40 Gbps</option>
+                        <option value="50">50 Gbps</option>
+                        <option value="100">100 Gbps</option>
+                        <option value="400">400 Gbps</option>
+                      </select>
+                    </FormGroup>
+                  </>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
+                    onClick={() => toggleClusterCollapse(selectedNode.id)}
+                  >
+                    {cData?.isCollapsed !== false ? '⤢ Expand Stack' : '⤡ Collapse Stack'}
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
+                    onClick={() => dissolveCluster(selectedNode.id)}
+                  >
+                    Ungroup Stack
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {selectedNode.type === NODE_TYPES.HARDWARE && (
             <HardwareNodePanel

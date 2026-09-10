@@ -651,3 +651,37 @@ export function formatEdgeLinkPrefix(
   return '';
 }
 
+/**
+ * Recomputes cluster summaries and labels for all cluster nodes in the list.
+ */
+export function refreshClusterSummaries(nodes: CustomNode[]): CustomNode[] {
+  const nodeMap = new Map<string, CustomNode>(nodes.map((n) => [n.id, n]));
+  return nodes.map((node) => {
+    if (node.type !== NODE_TYPES.CLUSTER && node.type !== 'clusterNode') {
+      return node;
+    }
+    const cData = node.data as ClusterNodeData;
+    const memberIds = cData?.memberNodeIds || [];
+    if (memberIds.length === 0) return node;
+
+    const members = memberIds.map((id) => nodeMap.get(id)).filter(Boolean) as CustomNode[];
+    if (members.length === 0) return node;
+
+    const clusterType = cData.clusterType || (members.every(isTapNode) ? 'tap' : 'tool');
+    const summary = buildClusterSummary(members, clusterType);
+    const primaryModel = summary.breakdown[0]?.model || (clusterType === 'tap' ? 'TAP Module' : 'Tool');
+    const label = summary.isMixed
+      ? (clusterType === 'tap' ? `${summary.count}x TAP Modules (Mixed)` : `${summary.count}x Tools (Mixed)`)
+      : `${summary.count}x ${primaryModel}`;
+
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        label,
+        summary,
+      },
+    };
+  });
+}
+

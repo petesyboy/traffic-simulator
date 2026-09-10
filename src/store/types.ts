@@ -485,6 +485,7 @@ export interface RFState {
   setGlowingNodeId: (nodeId: string | null) => void;
   setFlashPorts: (flash: { nodeId: string; portIds: string[] } | null) => void;
   updateNodeData: (nodeId: string, data: Partial<BaseNodeData>) => void;
+  updateMultipleNodesData: (nodeIds: string[], data: Partial<BaseNodeData>) => void;
   restoreState: (
     nodes: CustomNode[],
     edges: Edge[],

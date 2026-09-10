@@ -95,6 +95,11 @@ export const TOOL_INGEST_PROFILES: Record<string, ToolIngestProfile> = {
     ingestLimitMbps: 2000, // 2 Gbps typical sustained SPAN/TAP sensor ingest ceiling
     connectivity: ['1x/2x 10GbE/1GbE SFP+ (Monitoring)', '1x 1GbE RJ45 (Management)'],
   },
+  'Ericsson Probe': {
+    applianceModel: 'Ericsson Virtual/Physical Probe',
+    ingestLimitMbps: 10000, // 10 Gbps typical probe ingest capacity
+    connectivity: ['10GbE SFP+ / 25GbE SFP28 / 40GbE QSFP+'],
+  },
   'GigaSMART Appliance': {
     applianceModel: 'GigaSMART Appliance (GSA)',
     // Both 400GbE data ports can be used for packet ingress - up to 800 Gbps

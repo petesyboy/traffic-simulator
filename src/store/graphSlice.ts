@@ -26,6 +26,7 @@ import {
   expandClusterNode,
   collapseClusterNode,
   dissolveClusterNode,
+  refreshClusterSummaries,
   isTapNode,
   isToolNode,
 } from '../utils/clusterUtils';
@@ -56,6 +57,7 @@ export interface GraphSlice {
   setGlowingNodeId: (nodeId: string | null) => void;
   setFlashPorts: (flash: { nodeId: string; portIds: string[] } | null) => void;
   updateNodeData: (nodeId: string, data: Partial<AnyNodeData>) => void;
+  updateMultipleNodesData: (nodeIds: string[], data: Partial<AnyNodeData>) => void;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
   setExportDiagramMode: (val: boolean) => void;
@@ -347,32 +349,51 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
   setFlashPorts: (flash) => set({ flashPorts: flash }),
   updateNodeData: (nodeId, data) => {
-    const targetNode = get().nodes.find((n) => n.id === nodeId);
-    const updatedNodes = get().nodes.map((node) => {
-      if (node.id === nodeId) {
+    get().updateMultipleNodesData([nodeId], data);
+  },
+  updateMultipleNodesData: (nodeIds, data) => {
+    if (!nodeIds || nodeIds.length === 0) return;
+    const targetSet = new Set(nodeIds);
+    const nodes = get().nodes;
+
+    // Expand targetSet to include member nodes if any cluster nodes were selected
+    nodes.forEach((n) => {
+      if (targetSet.has(n.id) && (n.type === NODE_TYPES.CLUSTER || n.type === 'clusterNode')) {
+        const memberIds = (n.data?.memberNodeIds as string[]) || [];
+        memberIds.forEach((mId) => targetSet.add(mId));
+      }
+    });
+
+    // Also if member nodes are in targetSet and site changed, sync with their parent cluster nodes
+    const clusterNodesToSyncSite = new Set<string>();
+    if (data.site !== undefined) {
+      nodes.forEach((n) => {
+        if (n.type === NODE_TYPES.CLUSTER || n.type === 'clusterNode') {
+          const memberIds = (n.data?.memberNodeIds as string[]) || [];
+          if (memberIds.some((mId) => targetSet.has(mId))) {
+            clusterNodesToSyncSite.add(n.id);
+          }
+        }
+      });
+    }
+
+    const updatedNodes = nodes.map((node) => {
+      if (targetSet.has(node.id)) {
         return { ...node, data: { ...node.data, ...data } };
       }
-      // If updating a cluster node and site was modified, propagate to all member nodes
-      if (targetNode && (targetNode.type === NODE_TYPES.CLUSTER || targetNode.type === 'clusterNode') && data.site !== undefined) {
-        const memberIds = new Set((targetNode.data?.memberNodeIds as string[]) || []);
-        if (memberIds.has(node.id)) {
-          return { ...node, data: { ...node.data, site: data.site } };
-        }
-      }
-      // If updating a member node and site was modified, sync with parent cluster node
-      if (node.type === NODE_TYPES.CLUSTER || node.type === 'clusterNode') {
-        const memberIds = new Set((node.data?.memberNodeIds as string[]) || []);
-        if (memberIds.has(nodeId) && data.site !== undefined) {
-          return { ...node, data: { ...node.data, site: data.site } };
-        }
+      if (clusterNodesToSyncSite.has(node.id)) {
+        return { ...node, data: { ...node.data, site: data.site } };
       }
       return node;
     });
+
     let syncedNodes = syncSplunkLabels(updatedNodes, get().edges);
     if (data.optics === undefined) syncedNodes = syncOpticsOnTapConnection(syncedNodes, get().edges);
     // A tap module's site (or its own existence) can change here too, so the
     // set of auto-generated trays it needs is re-derived alongside everything else.
     syncedNodes = syncTapTrays(syncedNodes, get().trayAllocationPreference);
+    // Ensure any cluster summaries and labels are up to date with new member properties
+    syncedNodes = refreshClusterSummaries(syncedNodes);
     // Editing optics, modules or the licence tier changes what ports exist and
     // what's fitted in them, so assignments are re-derived here too.
     set({ nodes: syncedNodes, edges: syncPortAssignments(syncedNodes, get().edges) });

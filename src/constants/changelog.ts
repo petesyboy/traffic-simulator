@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.770",
+    date: "2026-09-10",
+    summary: "Add multi-select batch property editing and cluster group configuration for TAPs, Tools, and datacentre locations",
+  },
+  {
     version: "1.0.769",
     date: "2026-09-10",
     summary: "Ensure location tag and data centre enclosure encompass collapsed and expanded tap clusters",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.747",
     date: "2026-09-04",
     summary: "Anchor DWDM connector handles strictly to outer perimeter",
-  },
-  {
-    version: "1.0.746",
-    date: "2026-09-04",
-    summary: "Enforce min site enclosure width to prevent obscuring single TAPs & add instant DWDM ring wizard (v1.0.746)",
   },
 ];

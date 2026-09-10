@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.770",
+    "date": "2026-09-10",
+    "summary": "Add multi-select batch property editing and cluster group configuration for TAPs, Tools, and datacentre locations"
+  },
+  {
     "version": "1.0.769",
     "date": "2026-09-10",
     "summary": "Ensure location tag and data centre enclosure encompass collapsed and expanded tap clusters"
