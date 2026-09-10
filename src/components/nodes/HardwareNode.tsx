@@ -193,9 +193,32 @@ const HardwareNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
                 📋
               </button>
             )}
-            <div className="node-value-tooltip-container">
+            <div className="node-value-tooltip-container" title="">
               <span className="node-info-icon">ⓘ</span>
-              <div className="node-value-tooltip">{getNodeValueProposition('hardwareNode')}</div>
+              <div className="node-value-tooltip" style={{ width: '270px' }}>
+                <div style={{ fontWeight: 'bold', color: '#ff9800', marginBottom: '4px', fontSize: '11px' }}>
+                  {model} {resolved.hwSku && resolved.hwSku !== model ? `(${resolved.hwSku})` : ''}
+                </div>
+                <div style={{ color: '#e0e0e0', lineHeight: 1.45, marginBottom: tapInfo ? '6px' : '0' }}>
+                  {getNodeValueProposition(
+                    'hardwareNode',
+                    undefined,
+                    undefined,
+                    undefined,
+                    model,
+                    resolved.hwSku,
+                    nodeBom[0]?.description,
+                  )}
+                </div>
+                {tapInfo && (
+                  <div style={{ fontSize: '9px', color: '#9ca3af', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {tapInfo.media && <span>• {tapInfo.media}</span>}
+                    {tapInfo.splitRatio && <span>• Split: {tapInfo.splitRatio}</span>}
+                    {tapInfo.wavelength && <span>• λ: {tapInfo.wavelength}</span>}
+                    {tapInfo.isULT && <span style={{ color: '#38bdf8' }}>• Unidirectional (ULT)</span>}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

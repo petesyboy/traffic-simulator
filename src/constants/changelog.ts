@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.768",
+    date: "2026-09-10",
+    summary: "Eliminate dual mouseovers on info icons and provide rich, accurate hardware specifications in node descriptions",
+  },
+  {
     version: "1.0.767",
     date: "2026-09-10",
     summary: "Fix changelog history persistence across shallow CI and deployment builds",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.744",
     date: "2026-09-03",
     summary: "Add 1-click conversion from central DWDM hub to per-site gateways with optical ring (v1.0.744)",
-  },
-  {
-    version: "1.0.743",
-    date: "2026-09-03",
-    summary: "Support per-site DWDM gateways, 2D triangular multi-site layout, and inter-DWDM transport spans (v1.0.743)",
   },
 ];

@@ -152,7 +152,7 @@ const ToolNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div className="node-value-tooltip-container">
+            <div className="node-value-tooltip-container" title="">
               <span className="node-info-icon">ⓘ</span>
               <div className="node-value-tooltip">{getNodeValueProposition('toolNode', configType, undefined, toolName)}</div>
             </div>

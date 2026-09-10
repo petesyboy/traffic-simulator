@@ -32,7 +32,7 @@ const FilterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             <SmartIcon size={20} />
             <span className="node-title">{data.label as string}</span>
           </div>
-          <div className="node-value-tooltip-container">
+          <div className="node-value-tooltip-container" title="">
             <span className="node-info-icon">ⓘ</span>
             <div className="node-value-tooltip">{getNodeValueProposition('filterNode', data.configType as string)}</div>
           </div>

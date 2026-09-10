@@ -1653,7 +1653,8 @@
   font-family: var(--font-family);
   font-weight: 500;
   line-height: 1.4;
-  width: 210px;
+  width: 270px;
+  max-width: 320px;
   z-index: 10000;
   pointer-events: none;
   opacity: 0;

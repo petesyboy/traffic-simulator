@@ -65,7 +65,7 @@ const GigaSmartNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => 
             <span className="node-title">{data.label as string}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div className="node-value-tooltip-container">
+            <div className="node-value-tooltip-container" title="">
               <span className="node-info-icon">ⓘ</span>
               <div className="node-value-tooltip">{getNodeValueProposition('gigaSmartNode', undefined, actionType)}</div>
             </div>

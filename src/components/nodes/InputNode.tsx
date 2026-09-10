@@ -67,9 +67,9 @@ const InputNodeComponent: React.FC<NodeProps> = ({ id, data, selected }) => {
             {renderIcon()}
             <span className="node-title">{data.label as string}</span>
           </div>
-          <div className="node-value-tooltip-container">
+          <div className="node-value-tooltip-container" title="">
             <span className="node-info-icon">ⓘ</span>
-            <div className="node-value-tooltip">{getNodeValueProposition('inputNode', configType)}</div>
+            <div className="node-value-tooltip">{getNodeValueProposition('inputNode', configType, undefined, undefined, data.model as string | undefined, data.sku as string | undefined)}</div>
           </div>
         </div>
         <div className="node-type-label" style={{ display: 'block' }}>{nodeTypeLabel}</div>
