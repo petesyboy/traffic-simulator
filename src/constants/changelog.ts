@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.767",
+    date: "2026-09-10",
+    summary: "Fix changelog history persistence across shallow CI and deployment builds",
+  },
+  {
+    version: "1.0.766",
+    date: "2026-09-10",
+    summary: "Standardise hardware graphic widths and align names in advanced mode menu",
+  },
+  {
     version: "1.0.764",
     date: "2026-09-10",
     summary: "Configure partner edition as default repository and GitHub Pages distribution (v1.0.764)",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.743",
     date: "2026-09-03",
     summary: "Support per-site DWDM gateways, 2D triangular multi-site layout, and inter-DWDM transport spans (v1.0.743)",
-  },
-  {
-    version: "1.0.742",
-    date: "2026-09-03",
-    summary: "Arrange TA200 QSFP cages into two stacked rows of 32 for realistic narrow chassis profile (v1.0.742)",
-  },
-  {
-    version: "1.0.741",
-    date: "2026-09-03",
-    summary: "Resolve chassis collision into SPAN ports and refine multi-site column spacing (v1.0.741)",
   },
 ];

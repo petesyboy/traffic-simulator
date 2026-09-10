@@ -1,5 +1,120 @@
 [
   {
+    "version": "1.0.767",
+    "date": "2026-09-10",
+    "summary": "Fix changelog history persistence across shallow CI and deployment builds"
+  },
+  {
+    "version": "1.0.766",
+    "date": "2026-09-10",
+    "summary": "Standardise hardware graphic widths and align names in advanced mode menu"
+  },
+  {
+    "version": "1.0.764",
+    "date": "2026-09-10",
+    "summary": "Configure partner edition as default repository and GitHub Pages distribution (v1.0.764)"
+  },
+  {
+    "version": "1.0.763",
+    "date": "2026-09-10",
+    "summary": "Add focus mode to quickly hide sidebars and traffic drawer for demonstrations (v1.0.763)"
+  },
+  {
+    "version": "1.0.762",
+    "date": "2026-09-09",
+    "summary": "Add quantity stepper and bin removal controls for installed optics"
+  },
+  {
+    "version": "1.0.761",
+    "date": "2026-09-09",
+    "summary": "Implement GigaSMART tunnel decapsulation and ERSPAN remote encapsulation source"
+  },
+  {
+    "version": "1.0.760",
+    "date": "2026-09-09",
+    "summary": "Integrate G-TAP M Series Unidirectional TAP Family (ULT) with faceplate icons (v1.0.760)"
+  },
+  {
+    "version": "1.0.758",
+    "date": "2026-09-08",
+    "summary": "Fit SPAN feed optics at the configured port speed, not a 10G default (v1.0.758)"
+  },
+  {
+    "version": "1.0.757",
+    "date": "2026-09-04",
+    "summary": "Render TA25E SFP cages in 3 physical rows of 16"
+  },
+  {
+    "version": "1.0.756",
+    "date": "2026-09-04",
+    "summary": "Calibrate 3-row SFP28 and QSFP28 front panel port cage coordinates"
+  },
+  {
+    "version": "1.0.755",
+    "date": "2026-09-04",
+    "summary": "Preserve active project name and prevent reversion to stale saved slots"
+  },
+  {
+    "version": "1.0.754",
+    "date": "2026-09-04",
+    "summary": "Add human-readable specification to optic labels in export diagram mode (v1.0.754)"
+  },
+  {
+    "version": "1.0.753",
+    "date": "2026-09-04",
+    "summary": "Update passive TAP and breakout panel faceplate graphics (v1.0.753)"
+  },
+  {
+    "version": "1.0.750",
+    "date": "2026-09-04",
+    "summary": "Restore single-click selection for canvas nodes and auto-select on drop (v1.0.750)"
+  },
+  {
+    "version": "1.0.749",
+    "date": "2026-09-04",
+    "summary": "Preserve Swedish and international letters in export file names (v1.0.749)"
+  },
+  {
+    "version": "1.0.748",
+    "date": "2026-09-04",
+    "summary": "Distinguish DWDM in and out handles with I/O labels, distinct colours, and legend"
+  },
+  {
+    "version": "1.0.747",
+    "date": "2026-09-04",
+    "summary": "Anchor DWDM connector handles strictly to outer perimeter"
+  },
+  {
+    "version": "1.0.746",
+    "date": "2026-09-04",
+    "summary": "Enforce min site enclosure width to prevent obscuring single TAPs & add instant DWDM ring wizard (v1.0.746)"
+  },
+  {
+    "version": "1.0.744",
+    "date": "2026-09-03",
+    "summary": "Add 1-click conversion from central DWDM hub to per-site gateways with optical ring (v1.0.744)"
+  },
+  {
+    "version": "1.0.743",
+    "date": "2026-09-03",
+    "summary": "Support per-site DWDM gateways, 2D triangular multi-site layout, and inter-DWDM transport spans (v1.0.743)"
+  },
+  {
+    "version": "1.0.742",
+    "date": "2026-09-03",
+    "summary": "Arrange TA200 QSFP cages into two stacked rows of 32 for realistic narrow chassis profile (v1.0.742)"
+  },
+  {
+    "version": "1.0.741",
+    "date": "2026-09-03",
+    "summary": "Resolve chassis collision into SPAN ports and refine multi-site column spacing (v1.0.741)"
+  },
+  {
+    "version": "1.0.740",
+    "date": "2026-09-03",
+    "summary": "2D site-aware multi-site tidy layout with central transport hub placement and site-bounded flow direction (v1.0.740)"
+  },
+  {
     "version": "1.0.739",
     "date": "2026-09-03",
     "summary": "Added a Colour Vision setting for red-green colour vision deficiency. Project Settings now offers a red-green friendly palette that moves the status greens to blue, so they read against the reds they are paired with across the canvas, the node panels, the BOM and the quote. Reds are left as they are, since red stays visible - it is the red-against-green pairing that carries no information. The choice is saved for you rather than with the project, so it follows you into someone else's topology; PDF exports still use the standard palette."
@@ -268,6 +383,101 @@
     "version": "1.0.680",
     "date": "2026-08-28",
     "summary": "Resolved optic and port allocation misalignment and orphan fitted optics on modular chassis."
+  },
+  {
+    "version": "1.0.679",
+    "date": "2026-08-28",
+    "summary": "Map GFM-FM000-SW-TM to perpetual GFM-FM000 in license mode conversions and quotes (v1.0.679)"
+  },
+  {
+    "version": "1.0.678",
+    "date": "2026-08-28",
+    "summary": "Replace HTL AHR with Traditional Support SKUs (GSS-FYS-*, GSS-RNL-*) in Perpetual deals (v1.0.678)"
+  },
+  {
+    "version": "1.0.677",
+    "date": "2026-08-28",
+    "summary": "Display % (A) for auto-generated discounts in quote line items and reports (v1.0.677)"
+  },
+  {
+    "version": "1.0.676",
+    "date": "2026-08-28",
+    "summary": "Allow combining FlowVUE and GTP-Max correlation/filtering on a single HC3 GigaSMART card (v1.0.676)"
+  },
+  {
+    "version": "1.0.675",
+    "date": "2026-08-28",
+    "summary": "Introduce dedicated .gvp project file format with full quote state persistence (v1.0.675)"
+  },
+  {
+    "version": "1.0.674",
+    "date": "2026-08-28",
+    "summary": "Prevent phantom high-speed uplink optics when interconnecting chassis (v1.0.674)"
+  },
+  {
+    "version": "1.0.673",
+    "date": "2026-08-28",
+    "summary": "Add sticky totals footer for Cost Before/After Discount in quote table (v1.0.673)"
+  },
+  {
+    "version": "1.0.672",
+    "date": "2026-08-28",
+    "summary": "Add Cost Before/After Discount columns to quote & reset CPQ metadata defaults (v1.0.672)"
+  },
+  {
+    "version": "1.0.671",
+    "date": "2026-08-28",
+    "summary": "Add GigaSMART Tunneling & ERSPAN Decapsulation app and licensing (v1.0.671)"
+  },
+  {
+    "version": "1.0.670",
+    "date": "2026-08-28",
+    "summary": "Add New Project menu action, quotation workspace reset, and project naming prompt before generation"
+  },
+  {
+    "version": "1.0.668",
+    "date": "2026-08-27",
+    "summary": "Refine executive blue PDF quote styling and add AHR badge (v1.0.668)"
+  },
+  {
+    "version": "1.0.667",
+    "date": "2026-08-27",
+    "summary": "Add 20-pack vs discrete optics toggle in QuoteModal (v1.0.667)"
+  },
+  {
+    "version": "1.0.666",
+    "date": "2026-08-27",
+    "summary": "Add AHR qualification badge to eligible hardware in QuoteModal (v1.0.666)"
+  },
+  {
+    "version": "1.0.665",
+    "date": "2026-08-27",
+    "summary": "Restore dark landscape executive quote PDF styling (v1.0.665)"
+  },
+  {
+    "version": "1.0.664",
+    "date": "2026-08-27",
+    "summary": "Align commercial quote and PDF generator with Salesforce CPQ format (v1.0.664)"
+  },
+  {
+    "version": "1.0.663",
+    "date": "2026-08-27",
+    "summary": "Standardize solution deliverable package to 6 canonical files and streamline export notifications (v1.0.663)"
+  },
+  {
+    "version": "1.0.662",
+    "date": "2026-08-27",
+    "summary": "Conditionally omit commercial quotes from package dump unless project discounting is configured (v1.0.662)"
+  },
+  {
+    "version": "1.0.660",
+    "date": "2026-08-27",
+    "summary": "Add native directory chooser & solution package dump for all deliverables (v1.0.660)"
+  },
+  {
+    "version": "1.0.659",
+    "date": "2026-08-27",
+    "summary": "Ensure architecture PDF filename strictly defaults to Gigamon_Architecture_<solution>.pdf (v1.0.659)"
   },
   {
     "version": "1.0.598",

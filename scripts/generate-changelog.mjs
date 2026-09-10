@@ -85,6 +85,22 @@ function collectFromGit() {
   return entries;
 }
 
+function readExistingGeneratedEntries() {
+  if (!existsSync(OUT_FILE)) return [];
+  try {
+    const content = readFileSync(OUT_FILE, 'utf8');
+    const entries = [];
+    const re = /version:\s*"([^"]+)",\s*date:\s*"([^"]+)",\s*summary:\s*"([^"]+)"/g;
+    let match;
+    while ((match = re.exec(content)) !== null) {
+      entries.push({ version: match[1], date: match[2], summary: match[3] });
+    }
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
 function readManualEntries() {
   if (!existsSync(MANUAL_FILE)) return [];
   try {
@@ -141,18 +157,42 @@ ${body}
 }
 
 function main() {
-  let gitEntries;
+  let gitEntries = [];
   try {
     gitEntries = collectFromGit();
   } catch (err) {
-    console.warn(`[changelog] Skipping regeneration - git unavailable. ${err.message}`);
-    return;
+    console.warn(`[changelog] Skipping git collection - git unavailable. ${err.message}`);
   }
 
-  // Manual entries override generated ones for the same version.
-  const byVersion = new Map(gitEntries.map((e) => [e.version, e]));
-  for (const entry of readManualEntries()) {
+  // 1. Seed with existing generated entries so shallow clones don't lose past releases
+  const byVersion = new Map(readExistingGeneratedEntries().map((e) => [e.version, e]));
+
+  // 2. Overlay git entries
+  for (const entry of gitEntries) {
     if (entry?.version && entry?.date && entry?.summary) byVersion.set(entry.version, entry);
+  }
+
+  // 3. Manual entries take precedence for their version
+  const manualEntries = readManualEntries();
+  for (const entry of manualEntries) {
+    if (entry?.version && entry?.date && entry?.summary) byVersion.set(entry.version, entry);
+  }
+
+  // 4. Sync newly discovered git entries into changelog.manual.json so future shallow
+  // clones (e.g. Cloudflare Pages / CI depth=1) always retain the full release history.
+  if (gitEntries.length > 0) {
+    const manualMap = new Map(manualEntries.map((e) => [e.version, e]));
+    let addedAny = false;
+    for (const ge of gitEntries) {
+      if (!manualMap.has(ge.version)) {
+        manualMap.set(ge.version, ge);
+        addedAny = true;
+      }
+    }
+    if (addedAny) {
+      const updatedManual = [...manualMap.values()].sort(compareVersionsDesc);
+      writeFileSync(MANUAL_FILE, JSON.stringify(updatedManual, null, 2) + '\n');
+    }
   }
 
   const entries = [...byVersion.values()].sort(compareVersionsDesc).slice(0, KEEP_ENTRIES);
