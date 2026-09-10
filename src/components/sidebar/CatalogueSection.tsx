@@ -128,17 +128,53 @@ const CatalogueSection: React.FC<CatalogueSectionProps> = ({
               onDragStart(e, nodeType, item.model, getInitialData(item))
             }
             title={skus[item.sku] || ''}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '5px 8px',
+            }}
           >
-            {resolveHardwareIcon(item.image) ? (
-              <img
-                src={resolveHardwareIcon(item.image)}
-                style={{ height: '16px', objectFit: 'contain' }}
-                alt={item.model}
-              />
-            ) : (
-              <FallbackIcon size={18} />
-            )}
-            <span>
+            <div
+              style={{
+                width: '48px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                background: 'rgba(0, 0, 0, 0.25)',
+                borderRadius: '3px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                overflow: 'hidden',
+                padding: '1px 2px',
+                boxSizing: 'border-box',
+              }}
+            >
+              {resolveHardwareIcon(item.image) ? (
+                <img
+                  src={resolveHardwareIcon(item.image)}
+                  style={{
+                    width: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  alt={item.model}
+                />
+              ) : (
+                <FallbackIcon size={14} />
+              )}
+            </div>
+            <span
+              title={item.model}
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
               {renderLabel
                 ? renderLabel(item)
                 : item.model}
