@@ -540,8 +540,12 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     coverStack.push({
       columns: [
         gigamonBrandmark,
-        { image: partnerLogoDataUrl, width: 100, alignment: 'right' },
+        // Explicit '*' width stretches this column to the far right edge of the page,
+        // so the partner logo lands well clear of the Gigamon wordmark instead of
+        // sitting flush against it (both columns default to auto-width otherwise).
+        { width: '*', stack: [{ image: partnerLogoDataUrl, width: 80, alignment: 'right' }] },
       ],
+      columnGap: 24,
       margin: [0, 0, 0, 10],
     });
     if (partnerName) {
