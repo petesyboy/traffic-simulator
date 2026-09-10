@@ -101,6 +101,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [reportFormat, setReportFormat] = useState<ReportFormatType>('signal-path');
   const [showNamePrompt, setShowNamePrompt] = useState<boolean>(false);
   const [pendingNameAction, setPendingNameAction] = useState<((confirmedName: string) => void) | null>(null);
+  const [savedReportFilename, setSavedReportFilename] = useState<string | null>(null);
 
   // Report Template: branding, section toggles, and markdown executive summary.
   const [templates, setTemplates] = useState<ReportTemplate[]>(() => getAllTemplates());
@@ -207,6 +208,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
   const handleGenerate = () => {
     setError(null);
+    setSavedReportFilename(null);
 
     ensureProjectNamed(async (resolvedScenarioName) => {
       let exportDocType: ExportDocumentType = 'architecture-pdf';
@@ -378,6 +380,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
         if (saveRes.saved) {
           setStep('done');
+          setSavedReportFilename(saveRes.filename);
         } else {
           setStep('idle');
         }
@@ -713,7 +716,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
         {error && <div style={{ fontSize: '11px', color: '#ff5252', lineHeight: 1.4 }}>{error}</div>}
         {exportAllStatus && <div style={{ fontSize: '11px', color: '#4caf50', lineHeight: 1.4 }}>{exportAllStatus}</div>}
-        {step === 'done' && !error && !exportAllStatus && <div style={{ fontSize: '11px', color: '#4caf50' }}>Report downloaded.</div>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
           <button className="btn btn-ghost" onClick={onClose}>
@@ -731,6 +733,39 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
             setPendingNameAction(null);
           }}
         />
+      )}
+
+      {savedReportFilename && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ width: '360px' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#4caf50' }}>✓ Report Generated</h3>
+            <p style={{ fontSize: '12px', lineHeight: 1.5, margin: '0 0 6px 0' }}>
+              Report generated and written to:
+            </p>
+            <p
+              style={{
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '4px',
+                padding: '8px',
+                wordBreak: 'break-all',
+                margin: '0 0 12px 0',
+              }}
+            >
+              {savedReportFilename}
+            </p>
+            <p className="text-muted" style={{ fontSize: '10px', lineHeight: 1.4, margin: '0 0 16px 0' }}>
+              Saved to the folder you chose in the save dialog — browsers don't expose the full disk path to the page.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-primary" onClick={() => setSavedReportFilename(null)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
