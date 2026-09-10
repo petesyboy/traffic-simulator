@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.769",
+    "date": "2026-09-10",
+    "summary": "Ensure location tag and data centre enclosure encompass collapsed and expanded tap clusters"
+  },
+  {
     "version": "1.0.768",
     "date": "2026-09-10",
     "summary": "Eliminate dual mouseovers on info icons and provide rich, accurate hardware specifications in node descriptions"

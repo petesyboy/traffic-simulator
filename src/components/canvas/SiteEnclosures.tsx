@@ -96,7 +96,20 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
       if (n.hidden || (n.type === 'hardwareNode' && isAutoTrayModel(String(n.data?.model || '')))) {
         return;
       }
-      const s = ((n.data?.site as string) || '').trim();
+      let s = ((n.data?.site as string) || '').trim();
+      // If a cluster node doesn't have an explicit site, infer from its member nodes:
+      if (!s && (n.type === NODE_TYPES.CLUSTER || n.type === 'clusterNode')) {
+        const memberIds = new Set((n.data?.memberNodeIds as string[]) || []);
+        for (const mn of nodes) {
+          if (memberIds.has(mn.id)) {
+            const ms = ((mn.data?.site as string) || '').trim();
+            if (ms) {
+              s = ms;
+              break;
+            }
+          }
+        }
+      }
       if (s) {
         if (!map.has(s)) map.set(s, []);
         map.get(s)!.push(n);
@@ -146,6 +159,17 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
         const dwdmProt = connectedDwdm ? (connectedDwdm.data?.protectionMode as string) || 'Protected Ring (1+1)' : '';
         const dwdmShortProt = dwdmProt.includes('1+1') ? 'Protected' : dwdmProt.includes('Mesh') ? 'Mesh' : 'Unprotected';
 
+        const deviceCount = siteNodes.reduce((acc, n) => {
+          if (n.type === NODE_TYPES.CLUSTER || n.type === 'clusterNode') {
+            if (n.data?.isCollapsed !== false) {
+              return acc + ((n.data?.memberNodeIds as string[])?.length || 1);
+            }
+            // When expanded, the member nodes themselves are in siteNodes, so don't double-count the container header
+            return acc;
+          }
+          return acc + 1;
+        }, 0);
+
         return (
           <div
             key={`site-enclosure-${site}`}
@@ -184,7 +208,7 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
                   flexShrink: 0,
                 }}
               >
-                {siteNodes.length} {siteNodes.length === 1 ? 'device' : 'devices'}
+                {deviceCount} {deviceCount === 1 ? 'device' : 'devices'}
               </span>
               {connectedDwdm && (
                 <span

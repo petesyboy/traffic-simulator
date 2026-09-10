@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.769",
+    date: "2026-09-10",
+    summary: "Ensure location tag and data centre enclosure encompass collapsed and expanded tap clusters",
+  },
+  {
     version: "1.0.768",
     date: "2026-09-10",
     summary: "Eliminate dual mouseovers on info icons and provide rich, accurate hardware specifications in node descriptions",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.746",
     date: "2026-09-04",
     summary: "Enforce min site enclosure width to prevent obscuring single TAPs & add instant DWDM ring wizard (v1.0.746)",
-  },
-  {
-    version: "1.0.744",
-    date: "2026-09-03",
-    summary: "Add 1-click conversion from central DWDM hub to per-site gateways with optical ring (v1.0.744)",
   },
 ];

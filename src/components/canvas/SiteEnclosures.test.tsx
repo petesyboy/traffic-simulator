@@ -113,4 +113,39 @@ describe('SiteEnclosures', () => {
     expect(html).toMatch(/width:\s*290px/);
     expect(html).toContain('white-space:nowrap');
   });
+
+  it('encloses collapsed cluster node and counts its member devices accurately', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'cluster-1',
+        type: 'clusterNode',
+        position: { x: 50, y: 100 },
+        data: {
+          label: '8x TAP-M273T',
+          configType: 'Cluster Group',
+          clusterType: 'tap',
+          isCollapsed: true,
+          site: 'Site A',
+          memberNodeIds: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'],
+        },
+      } as unknown as CustomNode,
+      {
+        id: 'ta25-1',
+        type: 'hardwareNode',
+        position: { x: 400, y: 100 },
+        data: { label: 'TA25E', site: 'Site A' },
+      } as CustomNode,
+    ];
+
+    const html = renderToStaticMarkup(
+      <ReactFlowProvider>
+        <SiteEnclosures nodes={nodes} enabled={true} />
+      </ReactFlowProvider>
+    );
+
+    expect(html).toContain('Data Centre: Site A');
+    // 8 member TAPs + 1 TA25E = 9 devices
+    expect(html).toContain('9 devices');
+    expect(html).toContain('site-enclosure');
+  });
 });

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore, type MapCondition } from '../store/store';
+import type { ClusterNodeData } from '../store/types';
 import { NODE_TYPES, CONFIG_TYPES, ACTION_TYPES } from '../constants/nodeTypes';
 
 // Import sub-panels
@@ -22,6 +23,8 @@ const ConfigPanel: React.FC = () => {
   const nodes          = useStore((state) => state.nodes);
   const edges          = useStore((state) => state.edges);
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const toggleClusterCollapse = useStore((state) => state.toggleClusterCollapse);
+  const dissolveCluster = useStore((state) => state.dissolveCluster);
   const setNodeFlowDirection = useStore((state) => state.setNodeFlowDirection);
   const setSelectionFlowDirection = useStore((state) => state.setSelectionFlowDirection);
   const nodeMetrics    = useStore((state) => state.nodeMetrics);
@@ -350,6 +353,48 @@ const ConfigPanel: React.FC = () => {
               <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                 This group represents a Port Group, bundling multiple input ports together. Connecting the output handle of this group to a Traffic Map automatically maps all nested input ports to that map.
               </p>
+            </div>
+          )}
+
+          {selectedNode.type === NODE_TYPES.CLUSTER && (
+            <div className="config-card">
+              <h3>{((selectedNode.data as unknown as ClusterNodeData)?.clusterType === 'tool') ? '🛠️ Tool Cluster Group' : '⚡ TAP Module Cluster'}</h3>
+              <p style={{ margin: '4px 0 12px 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                {((selectedNode.data as unknown as ClusterNodeData)?.summary?.count || (selectedNode.data as unknown as ClusterNodeData)?.memberNodeIds?.length || 0)} stacked modules grouped together.
+              </p>
+
+              <FormGroup label="Site Assignment (Optional)">
+                <datalist id="existing-sites-cluster-list">
+                  {Array.from(new Set(nodes.map(n => n.data?.site).filter(s => typeof s === 'string' && (s as string).trim() !== ''))).map(s => (
+                    <option key={s as string} value={s as string} />
+                  ))}
+                </datalist>
+                <input 
+                  type="text" 
+                  list="existing-sites-cluster-list"
+                  placeholder="e.g. DC1 / Site A / Main Hall"
+                  value={(selectedNode.data?.site as string) || ''}
+                  onChange={(e) => updateNodeData(selectedNode.id, { site: e.target.value })}
+                  className="form-input"
+                />
+              </FormGroup>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
+                  onClick={() => toggleClusterCollapse(selectedNode.id)}
+                >
+                  {(selectedNode.data as unknown as ClusterNodeData)?.isCollapsed !== false ? '⤢ Expand Stack' : '⤡ Collapse Stack'}
+                </button>
+                <button
+                  className="btn btn-danger"
+                  style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
+                  onClick={() => dissolveCluster(selectedNode.id)}
+                >
+                  Ungroup Stack
+                </button>
+              </div>
             </div>
           )}
 

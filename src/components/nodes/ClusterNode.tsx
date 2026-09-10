@@ -54,6 +54,20 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
 
   const avgRxMbps = summary.count > 0 ? totalRxMbps / summary.count : 0;
 
+  const site = useMemo(() => {
+    const explicit = ((cData.site as string) || '').trim();
+    if (explicit) return explicit;
+    // Fallback for existing or legacy cluster nodes: inspect member nodes
+    const memberIds = new Set(cData.memberNodeIds || []);
+    for (const n of nodes) {
+      if (memberIds.has(n.id)) {
+        const s = ((n.data?.site as string) || '').trim();
+        if (s) return s;
+      }
+    }
+    return undefined;
+  }, [cData.site, cData.memberNodeIds, nodes]);
+
   const isTap = clusterType === 'tap';
   const themeColor = isTap ? '#00e5ff' : '#a855f7';
   const themeBg = isTap ? 'rgba(0, 229, 255, 0.08)' : 'rgba(168, 85, 247, 0.08)';
@@ -211,6 +225,25 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
             position: 'relative',
           }}
         >
+          {Boolean(site) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '8px',
+                background: '#3b82f6',
+                color: '#fff',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                zIndex: 10,
+                border: '1px solid #60a5fa',
+              }}
+            >
+              Site: {site}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '13px' }}>{isTap ? '⚡' : '🛠️'}</span>
@@ -308,6 +341,27 @@ export const ClusterNodeComponent: React.FC<NodeProps> = ({ id, data, selected }
           fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
+        {/* Site Location Tag */}
+        {Boolean(site) && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              left: '8px',
+              background: '#3b82f6',
+              color: '#fff',
+              fontSize: '9px',
+              fontWeight: 'bold',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              zIndex: 10,
+              border: '1px solid #60a5fa',
+            }}
+          >
+            Site: {site}
+          </div>
+        )}
+
         {/* Handles */}
         <Handle
           type="target"

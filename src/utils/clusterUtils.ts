@@ -23,6 +23,26 @@ export function isToolNode(node: CustomNode): boolean {
   return node.type === NODE_TYPES.TOOL;
 }
 
+export function getClusterCommonSite(memberNodes: CustomNode[]): string | undefined {
+  const siteCounts = new Map<string, number>();
+  memberNodes.forEach((n) => {
+    const s = ((n.data?.site as string) || '').trim();
+    if (s) {
+      siteCounts.set(s, (siteCounts.get(s) || 0) + 1);
+    }
+  });
+  if (siteCounts.size === 0) return undefined;
+  let bestSite: string | undefined;
+  let maxCount = -1;
+  siteCounts.forEach((count, site) => {
+    if (count > maxCount) {
+      maxCount = count;
+      bestSite = site;
+    }
+  });
+  return bestSite;
+}
+
 export function extractTapFiberAndSplit(node: CustomNode): { fiberType: string; splitRatio: string; links: number } {
   const skus = getSkus();
   const model = String(node.data?.model || '');
@@ -198,6 +218,8 @@ export function buildClusterNode(
   const centerY = isFinite(minY) && isFinite(maxY) ? (minY + maxY) / 2 - 70 : minY;
   const posX = isFinite(minX) ? minX : 0;
 
+  const commonSite = getClusterCommonSite(memberNodes);
+
   const clusterNode: CustomNode = {
     id: clusterId,
     type: NODE_TYPES.CLUSTER,
@@ -207,6 +229,7 @@ export function buildClusterNode(
       configType: 'Cluster Group',
       clusterType,
       isCollapsed: true,
+      site: commonSite,
       memberNodeIds: memberNodes.map((n) => n.id),
       expandedLayout,
       summary,
@@ -216,13 +239,14 @@ export function buildClusterNode(
   const memberIdList = memberNodes.map((n) => n.id);
   const memberIds = new Set(memberIdList);
 
-  // Hide member nodes and assign clusterId
+  // Hide member nodes and assign clusterId (syncing site from cluster if member lacked it)
   const updatedNodes = memberNodes.map((node) => ({
     ...node,
     hidden: true,
     data: {
       ...node.data,
       clusterId,
+      ...(commonSite && !node.data?.site ? { site: commonSite } : {}),
     },
   }));
 
@@ -291,6 +315,10 @@ export function expandClusterNode(
     ? { x: minSavedX, y: Math.max(0, minSavedY - 50) }
     : { x: basePos.x, y: Math.max(0, basePos.y - 50) };
 
+  const members = allNodes.filter((n) => memberIds.has(n.id));
+  const memberSite = getClusterCommonSite(members);
+  const clusterSite = ((clusterNode.data?.site as string) || '').trim() || memberSite;
+
   let idx = 0;
   const updatedNodes = allNodes.map((node) => {
     if (node.id === clusterNode.id) {
@@ -300,6 +328,7 @@ export function expandClusterNode(
         data: {
           ...node.data,
           isCollapsed: false,
+          ...(clusterSite ? { site: clusterSite } : {}),
         },
       };
     }
@@ -313,6 +342,10 @@ export function expandClusterNode(
         ...node,
         hidden: false,
         position: targetPos,
+        data: {
+          ...node.data,
+          ...(clusterSite && !node.data?.site ? { site: clusterSite } : {}),
+        },
       };
     }
     return node;
@@ -388,6 +421,8 @@ export function collapseClusterNode(
   // Recompute summary in case member node configs changed while expanded
   const members = allNodes.filter((n) => memberIds.has(n.id));
   const summary = buildClusterSummary(members, data.clusterType || 'tap');
+  const memberSite = getClusterCommonSite(members);
+  const clusterSite = ((clusterNode.data?.site as string) || '').trim() || memberSite;
 
   const centerY = isFinite(minY) && isFinite(maxY) ? (minY + maxY) / 2 - 70 : clusterNode.position.y;
   const posX = isFinite(minX) ? minX : clusterNode.position.x;
@@ -400,6 +435,7 @@ export function collapseClusterNode(
         data: {
           ...node.data,
           isCollapsed: true,
+          ...(clusterSite ? { site: clusterSite } : {}),
           expandedLayout: currentExpandedLayout,
           summary,
         },
@@ -409,6 +445,10 @@ export function collapseClusterNode(
       return {
         ...node,
         hidden: true,
+        data: {
+          ...node.data,
+          ...(clusterSite && !node.data?.site ? { site: clusterSite } : {}),
+        },
       };
     }
     return node;
@@ -457,6 +497,7 @@ export function dissolveClusterNode(
   const data = clusterNode.data as ClusterNodeData;
   const memberIdList = data.memberNodeIds || [];
   const memberIds = new Set(memberIdList);
+  const clusterSite = ((clusterNode.data?.site as string) || '').trim() || undefined;
   const basePos = clusterNode.position;
 
   let idx = 0;
@@ -477,6 +518,7 @@ export function dissolveClusterNode(
           data: {
             ...node.data,
             clusterId: undefined,
+            ...(clusterSite && !node.data?.site ? { site: clusterSite } : {}),
           },
         };
       }

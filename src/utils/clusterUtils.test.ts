@@ -11,6 +11,7 @@ import {
   isToolNode,
   formatEdgeLinkPrefix,
   getEdgeTapLinksCount,
+  getClusterCommonSite,
 } from './clusterUtils';
 import { generateBom } from './bom/bomGenerator';
 import { calculateSimulationStep } from './simulation';
@@ -626,6 +627,34 @@ describe('clusterUtils', () => {
       // Total received across all 10 probes equals the 475.8 Mbps total egress from HC3
       const totalProbeRx = probes.reduce((sum, p) => sum + simResult.metrics[p.id].rxMbps, 0);
       expect(totalProbeRx).toBeCloseTo(475.8, 1);
+    });
+
+    it('inherits site location tag from member nodes and preserves it across collapse/expand cycles', () => {
+      const taps = [
+        { id: 'tap-1', type: 'hardwareNode', position: { x: 100, y: 100 }, data: { label: 'TAP-M273T', model: 'TAP-M273T', sku: 'TAP-M273T' } } as CustomNode,
+        { id: 'tap-2', type: 'hardwareNode', position: { x: 100, y: 200 }, data: { label: 'TAP-M273T #2', model: 'TAP-M273T', sku: 'TAP-M273T', site: 'DC1' } } as CustomNode,
+        { id: 'tap-3', type: 'hardwareNode', position: { x: 100, y: 300 }, data: { label: 'TAP-M273T #3', model: 'TAP-M273T', sku: 'TAP-M273T', site: 'DC1' } } as CustomNode,
+      ];
+
+      expect(getClusterCommonSite(taps)).toBe('DC1');
+
+      const { clusterNode, updatedNodes, updatedEdges } = buildClusterNode(taps, []);
+      expect(clusterNode.data?.site).toBe('DC1');
+      // Verify unassigned member node (tap-1) was synced with DC1
+      const updatedTap1 = updatedNodes.find((n) => n.id === 'tap-1');
+      expect(updatedTap1?.data?.site).toBe('DC1');
+
+      // Expand
+      const expanded = expandClusterNode(clusterNode, [clusterNode, ...updatedNodes], updatedEdges);
+      const expCluster = expanded.nodes.find((n) => n.id === clusterNode.id);
+      expect(expCluster?.data?.site).toBe('DC1');
+      const expTap1 = expanded.nodes.find((n) => n.id === 'tap-1');
+      expect(expTap1?.data?.site).toBe('DC1');
+
+      // Collapse back
+      const collapsed = collapseClusterNode(expCluster!, expanded.nodes, expanded.edges);
+      const colCluster = collapsed.nodes.find((n) => n.id === clusterNode.id);
+      expect(colCluster?.data?.site).toBe('DC1');
     });
   });
 });

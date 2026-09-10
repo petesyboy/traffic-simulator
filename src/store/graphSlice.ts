@@ -347,7 +347,27 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
   setGlowingNodeId: (nodeId) => set({ glowingNodeId: nodeId }),
   setFlashPorts: (flash) => set({ flashPorts: flash }),
   updateNodeData: (nodeId, data) => {
-    const updatedNodes = get().nodes.map((node) => node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node);
+    const targetNode = get().nodes.find((n) => n.id === nodeId);
+    const updatedNodes = get().nodes.map((node) => {
+      if (node.id === nodeId) {
+        return { ...node, data: { ...node.data, ...data } };
+      }
+      // If updating a cluster node and site was modified, propagate to all member nodes
+      if (targetNode && (targetNode.type === NODE_TYPES.CLUSTER || targetNode.type === 'clusterNode') && data.site !== undefined) {
+        const memberIds = new Set((targetNode.data?.memberNodeIds as string[]) || []);
+        if (memberIds.has(node.id)) {
+          return { ...node, data: { ...node.data, site: data.site } };
+        }
+      }
+      // If updating a member node and site was modified, sync with parent cluster node
+      if (node.type === NODE_TYPES.CLUSTER || node.type === 'clusterNode') {
+        const memberIds = new Set((node.data?.memberNodeIds as string[]) || []);
+        if (memberIds.has(nodeId) && data.site !== undefined) {
+          return { ...node, data: { ...node.data, site: data.site } };
+        }
+      }
+      return node;
+    });
     let syncedNodes = syncSplunkLabels(updatedNodes, get().edges);
     if (data.optics === undefined) syncedNodes = syncOpticsOnTapConnection(syncedNodes, get().edges);
     // A tap module's site (or its own existence) can change here too, so the
@@ -575,7 +595,27 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
     set({
       nodes: get().nodes.map((node) => {
         const position = byId.get(node.id);
-        return position ? { ...node, position } : node;
+        if (!position) return node;
+        if ((node.type === NODE_TYPES.CLUSTER || node.type === 'clusterNode') && node.data?.expandedLayout) {
+          const dx = position.x - node.position.x;
+          const dy = position.y - node.position.y;
+          if (dx !== 0 || dy !== 0) {
+            const currentLayout = node.data.expandedLayout as Record<string, { x: number; y: number }>;
+            const newLayout: Record<string, { x: number; y: number }> = {};
+            Object.entries(currentLayout).forEach(([mId, pos]) => {
+              newLayout[mId] = { x: pos.x + dx, y: pos.y + dy };
+            });
+            return {
+              ...node,
+              position,
+              data: {
+                ...node.data,
+                expandedLayout: newLayout,
+              },
+            };
+          }
+        }
+        return { ...node, position };
       }),
     });
   },
@@ -783,7 +823,7 @@ export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set,
         id: loadBalancerId,
         type: NODE_TYPES.GIGASTREAM,
         position: { x: toolNode.position.x - 220, y: toolNode.position.y },
-        data: { label: 'Load Balancer', configType: 'GigaStream', algorithm: 'Round Robin', linkCount: requiredCount },
+        data: { label: 'Load Balancer', configType: 'GigaStream', algorithm: 'Round Robin', linkCount: requiredCount, ...(toolNode.data?.site ? { site: toolNode.data.site } : {}) },
       } as CustomNode);
       removedEdgeIds.push(upstreamEdge.id);
       addedEdges.push({ id: `e-${uuidv4()}`, source: upstreamEdge.source, sourceHandle: upstreamEdge.sourceHandle, target: loadBalancerId, targetHandle: 'in' } as Edge);
