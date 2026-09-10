@@ -16,6 +16,7 @@ import { getStandardExportFilename } from '../utils/exportNaming';
 import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
 import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
 import { clearAllProjectQuoteWorkspaces } from '../utils/projectQuoteStorage';
+import { isInternalEdition } from '../constants/edition';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
@@ -671,7 +672,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         handleNewProjectClick();
                       }}
                       style={{ color: '#38bdf8', fontWeight: 600 }}
-                      title="Clear canvas, reset all quotations, and start a fresh project"
+                      title={isInternalEdition() ? "Clear canvas, reset all quotations, and start a fresh project" : "Clear canvas and start a fresh project"}
                     >
                       <FilePlusIcon size={14} />
                       <span>✨ New Project...</span>
@@ -685,7 +686,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         handleDumpAllToDirectory();
                       }}
                       style={{ color: '#E1592A', fontWeight: 600 }}
-                      title="Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram"
+                      title={isInternalEdition() ? "Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram" : "Select a directory on your computer to save all reports, BOM CSVs, JSON, and PNG diagram"}
                     >
                       <FolderOpenIcon size={14} />
                       <span>{isExportingPackage ? 'Dumping All Files...' : '📁 Dump All to Folder (Directory Chooser)...'}</span>
@@ -700,7 +701,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         });
                       }}
                       style={{ color: '#38bdf8', fontWeight: 600 }}
-                      title="Save complete project file (.gvp) with canvas, optics, BOM, and commercial quotes"
+                      title={isInternalEdition() ? "Save complete project file (.gvp) with canvas, optics, BOM, and commercial quotes" : "Save complete project file (.gvp) with canvas, optics, and BOM"}
                     >
                       <SaveIcon size={14} />
                       <span>💾 Save Project File (.gvp)...</span>
@@ -762,7 +763,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
             {/* ── Group 4: System / Danger ── */}
             <div className="control-group" style={{ flexShrink: 0 }}>
-              {advancedMode && (
+              {advancedMode && isInternalEdition() && (
                 <button
                   className="header-btn icon-only"
                   onClick={() => setShowSkuUpdate(true)}

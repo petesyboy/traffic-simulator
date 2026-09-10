@@ -3,3 +3,5 @@ coverage/
 *.csv
 .obsidian/
 .DS_Store
+dist/internal/
+*.backup.json

@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 
-const targetEdition = (process.argv[2] || process.env.VITE_APP_EDITION || 'internal').toLowerCase();
+const targetEdition = (process.argv[2] || process.env.VITE_APP_EDITION || 'partner').toLowerCase();
 
 console.log(`\n======================================================`);
 console.log(`🚀 Building Edition: [${targetEdition.toUpperCase()}]`);
@@ -45,21 +45,15 @@ if (fs.existsSync(srcHtml)) {
   execSync(`node scripts/generate-checksums.mjs dist/${editionDirName}/traffic-reduction-simulator.html`, { cwd: ROOT_DIR, stdio: 'inherit' });
 }
 
-// 5. If building partner, restore internal skus.json and restore internal index.html at root
+// 5. Ensure root dist/index.html is always the public partner edition (sanitised, zero pricing)
 if (targetEdition === 'partner') {
-  console.log(`\n🔄 Restoring internal SKU dataset for active workspace development...`);
-  execSync('node scripts/parse-skus.js --edition=internal', { cwd: ROOT_DIR, stdio: 'inherit' });
-  const internalHtml = path.join(DIST_DIR, 'internal', 'traffic-reduction-simulator.html');
-  if (fs.existsSync(internalHtml)) {
-    try {
-      fs.copyFileSync(internalHtml, path.join(DIST_DIR, 'index.html'));
-    } catch {
-      try {
-        fs.writeFileSync(path.join(DIST_DIR, 'index.html'), fs.readFileSync(internalHtml));
-      } catch (err) {
-        console.warn(`[warning] Could not update root dist/index.html: ${err.message}`);
-      }
-    }
+  execSync('node scripts/generate-checksums.mjs dist/index.html', { cwd: ROOT_DIR, stdio: 'inherit' });
+} else if (targetEdition === 'internal') {
+  // If an internal build was produced, ensure dist/index.html remains the partner edition
+  const partnerHtml = path.join(DIST_DIR, 'partner-edition', 'traffic-reduction-simulator.html');
+  if (fs.existsSync(partnerHtml)) {
+    fs.copyFileSync(partnerHtml, path.join(DIST_DIR, 'index.html'));
+    execSync('node scripts/generate-checksums.mjs dist/index.html', { cwd: ROOT_DIR, stdio: 'inherit' });
   }
 }
 
