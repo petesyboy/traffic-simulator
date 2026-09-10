@@ -61,8 +61,12 @@ export interface UISlice {
   /** Bumped whenever the uploaded SKU price list override changes, so mounted
    *  components re-read getSkus()/getSkusMetadata() without a page reload. */
   skuCatalogueVersion: number;
+  /** Clean canvas mode that hides left sidebar, right config panel, and bottom traffic generator */
+  focusMode: boolean;
 
   setActiveView: (view: 'canvas' | 'rack') => void;
+  setFocusMode: (active: boolean) => void;
+  toggleFocusMode: () => void;
   setTheme: (theme: 'dark' | 'light') => void;
   setColourVisionMode: (mode: ColourVisionMode) => void;
   toggleTheme: () => void;
@@ -95,8 +99,11 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
     missionDemoStatus: '',
     trafficGenCollapseTrigger: 0,
     skuCatalogueVersion: 0,
+    focusMode: false,
 
     setActiveView: (view) => set({ activeView: view }),
+    setFocusMode: (active) => set({ focusMode: active }),
+    toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
     setTheme: (theme) => {
       if (typeof localStorage !== 'undefined') {
         try {

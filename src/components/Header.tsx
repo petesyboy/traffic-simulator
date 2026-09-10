@@ -51,6 +51,7 @@ import {
   MoonIcon,
   ChevronDownIcon,
   FilePlusIcon,
+  FocusIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -106,6 +107,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const theme = useStore((state) => state.theme);
   const toggleTheme = useStore((state) => state.toggleTheme);
   const bumpSkuCatalogueVersion = useStore((state) => state.bumpSkuCatalogueVersion);
+  const focusMode = useStore((state) => state.focusMode);
+  const toggleFocusMode = useStore((state) => state.toggleFocusMode);
 
   // Local UI state for modals & dropdowns
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -541,6 +544,18 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   )}
                 </button>
               )}
+
+              <button
+                className={`header-btn ${focusMode ? 'header-btn--active-view' : ''}`}
+                onClick={toggleFocusMode}
+                title={
+                  focusMode
+                    ? 'Exit Focus Mode (show sidebars and traffic generator) [Esc]'
+                    : 'Focus Mode (hide sidebars and traffic generator for clean demonstrations)'
+                }
+              >
+                <FocusIcon /> <span className="header-btn-text-optional">{focusMode ? 'Exit Focus' : 'Focus'}</span>
+              </button>
 
               {/* Demo Modes: Active state stop button OR compact dropdown */}
               {isTradeShowDemoActive ? (

@@ -62,7 +62,8 @@ const CanvasArea: React.FC = () => {
     setExportDiagramMode, onNodesChange, onEdgesChange, onConnect,
     addNode, addTrafficStream, setSelectedNodeId, fitViewTrigger, fitViewNodeIds,
     zoomToNodeId, zoomToNodeTrigger, theme,
-    advancedMode, updateNodeData, setEdges, pushHistory
+    advancedMode, updateNodeData, setEdges, pushHistory,
+    focusMode, setFocusMode, toggleSimulation
   } = useStore();
 
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -549,57 +550,129 @@ const CanvasArea: React.FC = () => {
           >
             <span>🔍</span> Fit View ({Math.round(zoom * 100)}%)
           </button>
-          <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
-          <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
-          {selectionCount > 0 && (
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))' }}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary, #ccc)', whiteSpace: 'nowrap' }}>
-                ↔ {selectionCount} selected
-              </span>
-              {FLOW_DIRECTION_OPTIONS.map((opt) => {
-                const active = selectionDirection === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setSelectionFlowDirection(opt.value)}
-                    title={`${opt.title} - applies to all ${selectionCount} selected node${selectionCount === 1 ? '' : 's'}`}
-                    style={{ padding: '3px 8px', fontSize: '10px', fontWeight: active ? 700 : 500, background: active ? 'rgba(0, 229, 255, 0.15)' : 'transparent', border: `1px solid ${active ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`, borderRadius: '3px', color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
+          {!focusMode ? (
+            <>
+              <button onClick={snapAllNodesToGrid} title="Align all nodes to the nearest grid points" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>🧲</span> Snap All to Grid</button>
+              <button onClick={tidyLayout} title="Re-arrange the topology into clean, organised columns by pipeline stage and data centre" style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', color: 'var(--accent-cyan, #00e5ff)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', transition: 'all 0.2s ease' }}><span>📐</span> Tidy Layout</button>
+              {selectionCount > 0 && (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))' }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary, #ccc)', whiteSpace: 'nowrap' }}>
+                    ↔ {selectionCount} selected
+                  </span>
+                  {FLOW_DIRECTION_OPTIONS.map((opt) => {
+                    const active = selectionDirection === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSelectionFlowDirection(opt.value)}
+                        title={`${opt.title} - applies to all ${selectionCount} selected node${selectionCount === 1 ? '' : 's'}`}
+                        style={{ padding: '3px 8px', fontSize: '10px', fontWeight: active ? 700 : 500, background: active ? 'rgba(0, 229, 255, 0.15)' : 'transparent', border: `1px solid ${active ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`, borderRadius: '3px', color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {hasTaggedSites && (
+                <button
+                  onClick={() => setShowSiteEnclosures((prev) => !prev)}
+                  title={showSiteEnclosures ? 'Hide data centre boundary enclosures' : 'Show data centre boundary enclosures'}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: showSiteEnclosures ? 'rgba(0, 229, 255, 0.12)' : 'var(--bg-tertiary, #1e1e1e)',
+                    border: `1px solid ${showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
+                    borderRadius: '4px',
+                    color: showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <span>🏢</span> Data Centres {showSiteEnclosures ? 'On' : 'Off'}
+                </button>
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '6px 12px', fontSize: '11px', fontWeight: 600, color: exportDiagramMode ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', userSelect: 'none', transition: 'all 0.2s ease' }}>
+                <input type="checkbox" checked={exportDiagramMode} onChange={(e) => setExportDiagramMode(e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan, #00e5ff)' }} /> Export Diagram Ready Mode
+              </label>
+            </>
+          ) : (
+            <>
+              {hasTaggedSites && (
+                <button
+                  onClick={() => setShowSiteEnclosures((prev) => !prev)}
+                  title={showSiteEnclosures ? 'Hide data centre boundary enclosures' : 'Show data centre boundary enclosures'}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: showSiteEnclosures ? 'rgba(0, 229, 255, 0.12)' : 'var(--bg-tertiary, #1e1e1e)',
+                    border: `1px solid ${showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
+                    borderRadius: '4px',
+                    color: showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <span>🏢</span> Data Centres {showSiteEnclosures ? 'On' : 'Off'}
+                </button>
+              )}
+              <button
+                onClick={toggleSimulation}
+                title={isRunning ? 'Pause live traffic simulation (Space)' : 'Run live traffic simulation (Space)'}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: isRunning ? 'var(--accent-green, #4caf50)' : 'var(--bg-tertiary, #1e1e1e)',
+                  border: `1px solid ${isRunning ? '#388e3c' : 'var(--accent-green, #4caf50)'}`,
+                  borderRadius: '4px',
+                  color: isRunning ? '#fff' : 'var(--accent-green, #4caf50)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: isRunning ? '0 0 10px rgba(76, 175, 80, 0.4)' : 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span>{isRunning ? '⏸ Pause Simulation' : '▶ Run Simulation'}</span>
+              </button>
+              <button
+                onClick={() => setFocusMode(false)}
+                title="Exit Focus Mode and restore side panels and traffic generator [Esc]"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  background: 'var(--bg-tertiary, #1e1e1e)',
+                  border: '1px solid var(--border-color, #333)',
+                  borderRadius: '4px',
+                  color: 'var(--text-secondary, #ccc)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span>✕</span> Exit Focus
+              </button>
+            </>
           )}
-          {hasTaggedSites && (
-            <button
-              onClick={() => setShowSiteEnclosures((prev) => !prev)}
-              title={showSiteEnclosures ? 'Hide data centre boundary enclosures' : 'Show data centre boundary enclosures'}
-              style={{
-                padding: '6px 12px',
-                fontSize: '11px',
-                fontWeight: 600,
-                background: showSiteEnclosures ? 'rgba(0, 229, 255, 0.12)' : 'var(--bg-tertiary, #1e1e1e)',
-                border: `1px solid ${showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--border-color, #333)'}`,
-                borderRadius: '4px',
-                color: showSiteEnclosures ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span>🏢</span> Data Centres {showSiteEnclosures ? 'On' : 'Off'}
-            </button>
-          )}
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-tertiary, #1e1e1e)', border: '1px solid var(--border-color, #333)', borderRadius: '4px', padding: '6px 12px', fontSize: '11px', fontWeight: 600, color: exportDiagramMode ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-secondary, #ccc)', cursor: 'pointer', boxShadow: 'var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.5))', userSelect: 'none', transition: 'all 0.2s ease' }}>
-            <input type="checkbox" checked={exportDiagramMode} onChange={(e) => setExportDiagramMode(e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan, #00e5ff)' }} /> Export Diagram Ready Mode
-          </label>
         </Panel>
       </ReactFlow>
 

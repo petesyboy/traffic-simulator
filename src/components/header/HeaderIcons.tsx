@@ -323,3 +323,17 @@ export const FilePlusIcon: React.FC<IconProps> = ({ size = 14 }) => (
   </svg>
 );
 
+export const FocusIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M4 8.5V5a1 1 0 011-1h3.5M15.5 4H19a1 1 0 011 1v3.5M20 15.5V19a1 1 0 01-1 1h-3.5M8.5 20H5a1 1 0 01-1-1v-3.5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.3" opacity="0.8" />
+  </svg>
+);
+
+

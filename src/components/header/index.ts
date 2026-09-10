@@ -41,6 +41,7 @@ export {
   MoonIcon,
   ChevronDownIcon,
   FilePlusIcon,
+  FocusIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';

@@ -458,9 +458,12 @@ export interface RFState {
    *  regardless of its own locally-held open/closed state. */
   trafficGenCollapseTrigger: number;
   skuCatalogueVersion: number;
+  focusMode: boolean;
 
   // Actions
   setActiveView: (view: 'canvas' | 'rack') => void;
+  setFocusMode: (active: boolean) => void;
+  toggleFocusMode: () => void;
   setSidebarMessage: (msg: string | null) => void;
   setCurrentScenarioName: (name: string | null) => void;
   setTradeShowDemoActive: (active: boolean) => void;

@@ -75,4 +75,20 @@ describe('uiSlice theme management', () => {
     expect(useStore.getState().currentScenarioName).toBeNull();
     expect(localStorage.getItem('fm-simulator-last-slot')).toBeNull();
   });
+
+  it('manages focusMode state correctly via setFocusMode and toggleFocusMode', () => {
+    expect(useStore.getState().focusMode).toBe(false);
+
+    useStore.getState().setFocusMode(true);
+    expect(useStore.getState().focusMode).toBe(true);
+
+    useStore.getState().toggleFocusMode();
+    expect(useStore.getState().focusMode).toBe(false);
+
+    useStore.getState().toggleFocusMode();
+    expect(useStore.getState().focusMode).toBe(true);
+
+    useStore.getState().setFocusMode(false);
+    expect(useStore.getState().focusMode).toBe(false);
+  });
 });

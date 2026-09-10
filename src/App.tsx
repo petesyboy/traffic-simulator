@@ -71,6 +71,8 @@ function App() {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const activeView          = useStore((s) => s.activeView);
   const theme               = useStore((s) => s.theme);
+  const focusMode           = useStore((s) => s.focusMode);
+  const setFocusMode        = useStore((s) => s.setFocusMode);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -288,6 +290,12 @@ function App() {
         redo();
       }
 
+      if (e.key === 'Escape' && !isCtrl && focusMode) {
+        // Escape → exit focus mode
+        e.preventDefault();
+        setFocusMode(false);
+      }
+
       if (e.key === ' ' && !isCtrl) {
         // Space → toggle simulation run/pause
         e.preventDefault();
@@ -300,7 +308,7 @@ function App() {
         mirrorSelectedNodes();
       }
     },
-    [toggleSimulation, undo, redo, mirrorSelectedNodes]
+    [toggleSimulation, undo, redo, mirrorSelectedNodes, focusMode, setFocusMode]
   );
 
   useEffect(() => {
@@ -347,7 +355,9 @@ function App() {
         <ReactFlowProvider>
           <TradeShowDemo />
           <MissionDemo />
-          <Sidebar />
+          <div style={{ display: focusMode ? 'none' : 'contents' }}>
+            <Sidebar />
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             {activeView === 'rack' ? (
               <RackElevationView />
@@ -356,11 +366,15 @@ function App() {
                 <CanvasArea />
               </ErrorBoundary>
             )}
-            <TrafficGenerator />
+            <div style={{ display: focusMode ? 'none' : 'contents' }}>
+              <TrafficGenerator />
+            </div>
           </div>
-          <ErrorBoundary name="Configuration Panel">
-            <ConfigPanel />
-          </ErrorBoundary>
+          <div style={{ display: focusMode ? 'none' : 'contents' }}>
+            <ErrorBoundary name="Configuration Panel">
+              <ConfigPanel />
+            </ErrorBoundary>
+          </div>
           <SimulationEngine />
         </ReactFlowProvider>
       </div>
