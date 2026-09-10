@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.764",
+    date: "2026-09-10",
+    summary: "Configure partner edition as default repository and GitHub Pages distribution (v1.0.764)",
+  },
+  {
     version: "1.0.763",
     date: "2026-09-10",
     summary: "Add focus mode to quickly hide sidebars and traffic drawer for demonstrations (v1.0.763)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.741",
     date: "2026-09-03",
     summary: "Resolve chassis collision into SPAN ports and refine multi-site column spacing (v1.0.741)",
-  },
-  {
-    version: "1.0.740",
-    date: "2026-09-03",
-    summary: "2D site-aware multi-site tidy layout with central transport hub placement and site-bounded flow direction (v1.0.740)",
   },
 ];
