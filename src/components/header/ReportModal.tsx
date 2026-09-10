@@ -32,6 +32,16 @@ import { ProjectNamePromptModal, isUntitledProject } from './index';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../../assets/gigamon-logo.png';
+import {
+  getAllTemplates,
+  saveTemplate,
+  deleteTemplate,
+  exportTemplateToJson,
+  importTemplateFromFile,
+  ALL_SECTIONS_ENABLED,
+  type ReportTemplate,
+  type ReportSectionToggles,
+} from '../../utils/reportTemplates';
 
 export interface ReportModalProps {
   onClose: () => void;
@@ -89,9 +99,88 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'capturing' | 'building' | 'done'>('idle');
   const [reportFormat, setReportFormat] = useState<ReportFormatType>('signal-path');
-  const [execSummaryText, setExecSummaryText] = useState('');
   const [showNamePrompt, setShowNamePrompt] = useState<boolean>(false);
   const [pendingNameAction, setPendingNameAction] = useState<((confirmedName: string) => void) | null>(null);
+
+  // Report Template: branding, section toggles, and markdown executive summary.
+  const [templates, setTemplates] = useState<ReportTemplate[]>(() => getAllTemplates());
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('default-signal-path');
+  const [execSummaryText, setExecSummaryText] = useState(
+    templates.find((t) => t.id === 'default-signal-path')?.execSummaryTemplateMarkdown || '',
+  );
+  const [sectionToggles, setSectionToggles] = useState<ReportSectionToggles>(ALL_SECTIONS_ENABLED);
+  const [coBrandingMode, setCoBrandingMode] = useState<'gigamon-only' | 'co-branded'>('gigamon-only');
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerLogoDataUrl, setPartnerLogoDataUrl] = useState<string | undefined>(undefined);
+
+  const applyTemplate = (template: ReportTemplate) => {
+    setSelectedTemplateId(template.id);
+    setExecSummaryText(template.execSummaryTemplateMarkdown);
+    setSectionToggles(template.sections);
+    setCoBrandingMode(template.coBrandingMode);
+    setPartnerName(template.partnerName || '');
+    setPartnerLogoDataUrl(template.partnerLogoDataUrl);
+  };
+
+  const handleSaveAsNewTemplate = () => {
+    const name = window.prompt('Name this template:');
+    if (!name || !name.trim()) return;
+    const saved = saveTemplate({
+      id: `custom-${Date.now()}`,
+      name: name.trim(),
+      partnerName: partnerName || undefined,
+      partnerLogoDataUrl,
+      coBrandingMode,
+      execSummaryTemplateMarkdown: execSummaryText,
+      sections: sectionToggles,
+    });
+    setTemplates(getAllTemplates());
+    setSelectedTemplateId(saved.id);
+  };
+
+  const handleDeleteTemplate = () => {
+    const current = templates.find((t) => t.id === selectedTemplateId);
+    if (!current || current.isBuiltIn) return;
+    if (!window.confirm(`Delete template "${current.name}"?`)) return;
+    deleteTemplate(current.id);
+    setTemplates(getAllTemplates());
+    applyTemplate(templates.find((t) => t.id === 'default-signal-path')!);
+  };
+
+  const handleExportTemplate = async () => {
+    const current = templates.find((t) => t.id === selectedTemplateId);
+    if (!current) return;
+    const toExport: ReportTemplate = {
+      ...current,
+      partnerName: partnerName || undefined,
+      partnerLogoDataUrl,
+      coBrandingMode,
+      execSummaryTemplateMarkdown: execSummaryText,
+      sections: sectionToggles,
+    };
+    await saveWithFilePickerOrPrompt(exportTemplateToJson(toExport), `${toExport.name}.json`, {
+      description: 'Report Template',
+      mimeType: 'application/json',
+      extension: '.json',
+    });
+  };
+
+  const handleImportTemplate = async (file: File) => {
+    try {
+      const imported = await importTemplateFromFile(file);
+      const saved = saveTemplate({ ...imported, id: `custom-${Date.now()}` });
+      setTemplates(getAllTemplates());
+      applyTemplate(saved);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import that template file.');
+    }
+  };
+
+  const handlePartnerLogoFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => setPartnerLogoDataUrl(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const storeSetNodes = useStore((s) => s.setNodes);
 
@@ -223,6 +312,10 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               siteRackImages,
               siteDiagrams,
               execSummaryText: execSummaryText.trim() || undefined,
+              sections: sectionToggles,
+              coBrandingMode,
+              partnerName: partnerName.trim() || undefined,
+              partnerLogoDataUrl,
             };
 
             let docDefinition: TDocumentDefinitions;
@@ -346,6 +439,9 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     done: 'Generate Report',
   }[step];
 
+  // Patch Sheet & Crossover formats are deprecated from the UI (kept in code, see
+  // patchSheetReport.ts / crossoverReport.ts) in favour of a single, customisable
+  // Signal Path & Architecture report.
   const formatOptions: { id: ReportFormatType; title: string; subtitle: string; tag: string; color: string }[] = [
     {
       id: 'signal-path',
@@ -353,20 +449,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       subtitle: 'Complete engineering spec, network topology, Bill of Materials, and rack elevations.',
       tag: 'Technical Spec',
       color: '#16213D',
-    },
-    {
-      id: 'patch-sheet',
-      title: 'Patch Sheet & Cabling',
-      subtitle: 'Physical cabling and port-by-port wiring schedule for datacentre technicians.',
-      tag: 'Cabling Schedule',
-      color: '#0F2E33',
-    },
-    {
-      id: 'crossover',
-      title: 'Crossover & Flow Tables',
-      subtitle: 'Traffic mapping rules, flow filtering, and tool delivery matrices.',
-      tag: 'Flow Mapping',
-      color: '#281B38',
     },
   ];
 
@@ -434,14 +516,157 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           </div>
         </div>
 
+        {/* Report Template Picker */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Report Template</label>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <select
+              value={selectedTemplateId}
+              disabled={busy}
+              onChange={(e) => {
+                const t = templates.find((tpl) => tpl.id === e.target.value);
+                if (t) applyTemplate(t);
+              }}
+              style={{ flex: 1, fontSize: '11px', padding: '6px' }}
+            >
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                  {t.isBuiltIn ? '' : ' (Custom)'}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleSaveAsNewTemplate} disabled={busy}>
+              Save As New
+            </button>
+            <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleExportTemplate} disabled={busy}>
+              Export
+            </button>
+            <label className="btn btn-secondary" style={{ fontSize: '10px', margin: 0, cursor: busy ? 'not-allowed' : 'pointer' }}>
+              Import
+              <input
+                type="file"
+                accept="application/json"
+                hidden
+                disabled={busy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportTemplate(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            {!templates.find((t) => t.id === selectedTemplateId)?.isBuiltIn && (
+              <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleDeleteTemplate} disabled={busy}>
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Branding */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Branding</label>
+          <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
+            The Gigamon badge always appears on every report. Co-branding adds a partner logo alongside it — it never replaces it.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', fontSize: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="radio"
+                checked={coBrandingMode === 'gigamon-only'}
+                onChange={() => setCoBrandingMode('gigamon-only')}
+                disabled={busy}
+              />
+              Gigamon Only
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="radio"
+                checked={coBrandingMode === 'co-branded'}
+                onChange={() => setCoBrandingMode('co-branded')}
+                disabled={busy}
+              />
+              Co-Branded with Partner
+            </label>
+          </div>
+          {coBrandingMode === 'co-branded' && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Partner company name"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+                disabled={busy}
+                style={{ flex: 1, fontSize: '11px', padding: '6px' }}
+              />
+              <label className="btn btn-secondary" style={{ fontSize: '10px', margin: 0, cursor: busy ? 'not-allowed' : 'pointer' }}>
+                {partnerLogoDataUrl ? 'Change Logo' : 'Upload Logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={busy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handlePartnerLogoFile(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Section Toggles */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Include / Exclude Sections</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px' }}>
+            {(
+              [
+                ['executiveSummary', 'Executive Summary & Key Metrics'],
+                ['topologyDiagram', 'Topology Diagram'],
+                ['componentNarrative', 'Component Narrative'],
+                ['billOfMaterials', 'Bill of Materials'],
+                ['rackElevation', 'Physical Rack & Deployment'],
+              ] as [keyof ReportSectionToggles, string][]
+            ).map(([key, label]) => (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="checkbox"
+                  checked={sectionToggles[key]}
+                  disabled={busy}
+                  onChange={(e) => setSectionToggles({ ...sectionToggles, [key]: e.target.checked })}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Executive Summary Markdown Box */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
           <label style={{ fontSize: '11px', fontWeight: 'bold' }} htmlFor="report-exec-summary">
             Executive Summary / Notes (optional)
           </label>
           <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
-            Customer context and notes. Supports Markdown (<strong>**bold**</strong>, <em>*italic*</em>, <code>-</code> lists).
+            Customer context and notes. Supports Markdown (<strong>**bold**</strong>, <em>*italic*</em>, <code>-</code> lists) and tokens like{' '}
+            <code>{'{{projectName}}'}</code>.
           </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {['projectName', 'partnerName', 'siteCount', 'totalLinks', 'hardwareCount', 'licenseModel', 'date'].map((token) => (
+              <button
+                key={token}
+                type="button"
+                className="btn btn-secondary"
+                style={{ fontSize: '9px', padding: '2px 6px' }}
+                disabled={busy}
+                onClick={() => setExecSummaryText((prev) => `${prev}{{${token}}}`)}
+              >
+                {`{{${token}}}`}
+              </button>
+            ))}
+          </div>
           <textarea
             id="report-exec-summary"
             value={execSummaryText}

@@ -46,6 +46,8 @@ import { formatBandwidth } from '../format';
 import { isAutoTrayModel } from '../trayModels';
 import { reportStyleDictionary, REPORT_COLOURS, REPORT_PAGE_MARGINS } from './reportStyles';
 import { markdownToPdfmakeContent } from './markdownToPdfmake';
+import { ALL_SECTIONS_ENABLED, type ReportSectionToggles } from '../reportTemplates';
+import { interpolateTokens } from './reportTokens';
 
 export interface ReportInput {
   nodes: CustomNode[];
@@ -70,6 +72,14 @@ export interface ReportInput {
   siteDiagrams?: Record<string, string>;
   /** User-authored executive summary. */
   execSummaryText?: string;
+  /** Which report sections to include; defaults to all sections enabled. */
+  sections?: ReportSectionToggles;
+  /** When 'co-branded', a partner logo/name is shown alongside (never instead of) the Gigamon badge. */
+  coBrandingMode?: 'gigamon-only' | 'co-branded';
+  partnerName?: string;
+  partnerLogoDataUrl?: string;
+  /** Overrides accent colour on stat tiles / section kickers; defaults to Gigamon orange. */
+  primaryColour?: string;
 }
 
 /** Cleans trailing punctuation and stray brackets from generated bullets. */
@@ -423,6 +433,11 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     chassisFrontPanelImages,
     siteDiagrams,
     execSummaryText,
+    sections = ALL_SECTIONS_ENABLED,
+    coBrandingMode = 'gigamon-only',
+    partnerName,
+    partnerLogoDataUrl,
+    primaryColour = REPORT_COLOURS.accent,
   } = input;
 
   const liveMetrics = isRunning ? nodeMetrics : undefined;
@@ -463,13 +478,77 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const content: Content[] = [];
 
   // ═══════════════════════════════════════════════════════════════
+  // SECTION REGISTRY — single source of truth for which numbered
+  // sections appear and what §-number each gets. Each section's body
+  // pushes into its own array (s01..s04) instead of `content` directly
+  // so it can be conditionally included below without re-scoping any
+  // of its local variables. §05 stays a plain `if` block further down
+  // since nothing after it references variables declared inside it.
+  // ═══════════════════════════════════════════════════════════════
+  const sectionDefs: { key: keyof ReportSectionToggles; title: string; desc: string; enabled: boolean }[] = [
+    {
+      key: 'executiveSummary',
+      title: 'Executive Summary & Key Metrics',
+      desc: 'Solution strategy, fabric inventory metrics, and platform summary.',
+      enabled: sections.executiveSummary,
+    },
+    {
+      key: 'topologyDiagram',
+      title: 'Fabric Topology & Architecture Diagram',
+      desc: 'Visual network diagram, multi-site signal flow, and connection topology.',
+      enabled: sections.topologyDiagram,
+    },
+    {
+      key: 'componentNarrative',
+      title: 'Solution Overview & Component Narrative',
+      desc: 'Detailed breakdown of traffic sources, maps, filters, GigaSMART engines, and tools.',
+      enabled: sections.componentNarrative,
+    },
+    {
+      key: 'billOfMaterials',
+      title: 'Appendix A: Bill of Materials (BOM)',
+      desc: 'Itemised SKUs, quantities, optic multipacks, and licence requirements.',
+      enabled: sections.billOfMaterials,
+    },
+    {
+      key: 'rackElevation',
+      title: 'Appendix B: Physical Rack & Deployment Specifications',
+      desc: 'Rack space (RU), dimensions, power draw, heat dissipation, and rack elevation views.',
+      enabled: sections.rackElevation && physicalItems.length > 0,
+    },
+  ];
+  const enabledSectionDefs = sectionDefs.filter((s) => s.enabled);
+  const sectionNumber = new Map<keyof ReportSectionToggles, string>(
+    enabledSectionDefs.map((s, i) => [s.key, `§${String(i + 1).padStart(2, '0')}`]),
+  );
+  const numFor = (key: keyof ReportSectionToggles): string => sectionNumber.get(key) || '';
+
+  const s01: Content[] = [];
+  const s02: Content[] = [];
+  const s03: Content[] = [];
+  const s04: Content[] = [];
+
+  // ═══════════════════════════════════════════════════════════════
   // COVER PAGE (Full Bleed Dark Navy Panel + Vector Fan-in Graphic)
   // ═══════════════════════════════════════════════════════════════
   const coverStack: Content[] = [];
-  if (logoDataUrl) {
-    coverStack.push({ image: logoDataUrl, width: 140, margin: [0, 0, 0, 30] });
+  const gigamonBrandmark: Content = logoDataUrl
+    ? { image: logoDataUrl, width: 140 }
+    : { text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5 };
+
+  if (coBrandingMode === 'co-branded' && partnerLogoDataUrl) {
+    coverStack.push({
+      columns: [
+        gigamonBrandmark,
+        { image: partnerLogoDataUrl, width: 100, alignment: 'right' },
+      ],
+      margin: [0, 0, 0, 10],
+    });
+    if (partnerName) {
+      coverStack.push({ text: `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}`, fontSize: 8, color: '#94A3B8', characterSpacing: 0.8, margin: [0, 0, 0, 20] });
+    }
   } else {
-    coverStack.push({ text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5, margin: [0, 0, 0, 30] });
+    coverStack.push({ ...gigamonBrandmark, margin: [0, 0, 0, 30] } as Content);
   }
 
   coverStack.push({ text: '§00 · VISIBILITY FABRIC SPECIFICATION', style: 'coverKicker' });
@@ -532,29 +611,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     margin: [0, 0, 0, 16],
   });
 
-  const tocItems: { num: string; title: string; desc: string }[] = [
-    { num: '§01', title: 'Executive Summary & Key Metrics', desc: 'Solution strategy, fabric inventory metrics, and platform summary.' },
-    { num: '§02', title: 'Fabric Topology & Architecture Diagram', desc: 'Visual network diagram, multi-site signal flow, and connection topology.' },
-    { num: '§03', title: 'Solution Overview & Component Narrative', desc: 'Detailed breakdown of traffic sources, maps, filters, GigaSMART engines, and tools.' },
-    { num: '§04', title: 'Appendix A: Bill of Materials (BOM)', desc: 'Itemised SKUs, quantities, optic multipacks, and licence requirements.' },
-  ];
-
-  if (physicalItems.length > 0) {
-    tocItems.push({
-      num: '§05',
-      title: 'Appendix B: Physical Rack & Deployment Specifications',
-      desc: 'Rack space (RU), dimensions, power draw, heat dissipation, and rack elevation views.',
-    });
-  }
-
   content.push({
     table: {
       widths: [40, 180, '*'],
       dontBreakRows: true,
-      body: tocItems.map((item) => [
-        { text: item.num, style: 'mono', color: REPORT_COLOURS.accent },
-        { text: item.title, style: 'body', bold: true },
-        { text: item.desc, style: 'bodySecondary' },
+      body: enabledSectionDefs.map((s) => [
+        { text: numFor(s.key), style: 'mono', color: primaryColour },
+        { text: s.title, style: 'body', bold: true },
+        { text: s.desc, style: 'bodySecondary' },
       ]),
     },
     layout: {
@@ -570,8 +634,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   // ═══════════════════════════════════════════════════════════════
   // §01 EXECUTIVE SUMMARY & STAT TILES GRID
   // ═══════════════════════════════════════════════════════════════
-  content.push({ text: '§01 · STRATEGY & METRICS', style: 'sectionKicker' });
-  content.push({ text: 'Executive Summary', style: 'sectionHeading' });
+  s01.push({ text: `${numFor('executiveSummary')} · STRATEGY & METRICS`, style: 'sectionKicker' });
+  s01.push({ text: 'Executive Summary', style: 'sectionHeading' });
 
   /** Helper to render executive summary markdown with automatic Scope Considerations notice plate conversion. */
   function renderExecSummaryContent(text: string): Content[] {
@@ -613,9 +677,18 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   }
 
   if (execSummaryText) {
-    content.push(...renderExecSummaryContent(execSummaryText));
+    const interpolatedExecSummary = interpolateTokens(execSummaryText, {
+      projectName,
+      partnerName: partnerName || 'Gigamon',
+      siteCount: String(siteCountDisplay),
+      totalLinks: String(stats.monitoredLinkCount),
+      hardwareCount: String(hardwareUnitCount),
+      licenseModel: `${projectLicenseMode} (${defaultTermDuration} Mo)`,
+      date: generatedDate,
+    });
+    s01.push(...renderExecSummaryContent(interpolatedExecSummary));
   } else {
-    content.push({
+    s01.push({
       text:
         'This report describes the Gigamon visibility pipeline configured for this project: the traffic sources feeding it, ' +
         'how traffic is filtered and processed, the tools and destinations receiving it, and the hardware required to deliver it.',
@@ -627,7 +700,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const totalGigaSmartOps = Object.values(stats.gigaSmartActionCounts).reduce((a, b) => a + b, 0);
 
   // Hairline Stat Tile Grid (2 rows x 4 columns)
-  content.push({
+  s01.push({
     table: {
       widths: ['25%', '25%', '25%', '25%'],
       dontBreakRows: true,
@@ -693,28 +766,30 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   });
 
   if (Object.keys(stats.chassisCounts).length > 0) {
-    content.push({
+    s01.push({
       text: 'Active Hardware Platform Summary',
       style: 'subHeading',
       margin: [0, 6, 0, 4],
     });
-    content.push({
+    s01.push({
       ul: Object.entries(stats.chassisCounts).map(([model, count]) => `${model} × ${count}`),
       style: 'body',
       margin: [0, 0, 0, 10],
     });
   }
 
+  if (sections.executiveSummary) content.push(...s01);
+
   // ═══════════════════════════════════════════════════════════════
   // §02 TOPOLOGY DIAGRAM
   // ═══════════════════════════════════════════════════════════════
-  content.push({ text: '§02 · NETWORK VISIBILITY FABRIC', style: 'sectionKicker', pageBreak: 'before' });
-  content.push({ text: 'Topology Diagram', style: 'sectionHeading' });
+  s02.push({ text: `${numFor('topologyDiagram')} · NETWORK VISIBILITY FABRIC`, style: 'sectionKicker', pageBreak: 'before' });
+  s02.push({ text: 'Topology Diagram', style: 'sectionHeading' });
 
   const hasMultipleSites = !!(siteDiagrams && Object.keys(siteDiagrams).length > 1);
 
   if (hasMultipleSites) {
-    content.push({
+    s02.push({
       text: 'End-to-End Multi-Site Architecture Overview',
       style: 'subHeading',
       margin: [0, 0, 0, 6],
@@ -737,14 +812,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           ? 'network SPAN sources'
           : 'traffic acquisition sources';
 
-  content.push({
+  s02.push({
     text: `High-level signal flow across ${signalSourceDesc}, aggregation switches, transformation engines, and monitoring tools.`,
     style: 'bodySecondary',
     margin: [0, 0, 0, 8],
   });
 
   if (diagramDataUrl) {
-    content.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
+    s02.push({ image: diagramDataUrl, width: 515, margin: [0, 0, 0, 12] });
   }
 
   // Helper to calculate schematic metrics for any site subset
@@ -825,7 +900,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     if (allSitesIdentical) {
       // Single representative schematic under the overview diagram
       const siteNamesJoined = siteMetricsList.map((s) => s.siteName).join(' · ');
-      content.push({
+      s02.push({
         svg: buildSiteSchematicSvg(
           firstMetrics.tapUnitCount,
           firstMetrics.totalLinkCount,
@@ -855,17 +930,17 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
               ? 'local SPAN allocations'
               : 'local traffic sources';
 
-      content.push({
+      s02.push({
         text: `Site Architecture Breakdown — ${siteName}`,
         style: 'subHeading',
         margin: [0, 14, 0, 4],
       } as Content);
-      content.push({
+      s02.push({
         text: `Focused topology diagram for ${siteName}, illustrating ${sourceAllocationDesc}, aggregation chassis ports, and tool feeds.`,
         style: 'bodySecondary',
         margin: [0, 0, 0, 6],
       } as Content);
-      content.push({
+      s02.push({
         image: siteDiagramUrl,
         width: 515,
         margin: [0, 0, 0, 6],
@@ -873,7 +948,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
       // Only push per-site schematics if the sites actually differ in architecture
       if (!allSitesIdentical) {
-        content.push({
+        s02.push({
           svg: buildSiteSchematicSvg(
             m.tapUnitCount,
             m.totalLinkCount,
@@ -896,7 +971,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     const singleSiteNodes = nodes.filter((n) => (n.data?.site as string || '').trim() === singleSiteName.trim());
     const m = getSiteSchematicMetrics(singleSiteName, singleSiteNodes.length > 0 ? singleSiteNodes : nodes);
 
-    content.push({
+    s02.push({
       svg: buildSiteSchematicSvg(
         m.tapUnitCount,
         m.totalLinkCount,
@@ -915,7 +990,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
 
   // Configuration Attention Notice Plate (if validation errors exist)
   if (validationErrors.length > 0) {
-    content.push(
+    s02.push(
       buildNoticePlate({
         severity: 'warning',
         title: 'Configuration Scope Considerations & Unresolved Items',
@@ -925,37 +1000,39 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     );
   }
 
+  if (sections.topologyDiagram) content.push(...s02);
+
   // ═══════════════════════════════════════════════════════════════
   // §03 FABRIC NARRATIVE & COMPONENT BREAKDOWN
   // ═══════════════════════════════════════════════════════════════
-  content.push({ text: '§03 · COMPONENT SPECIFICATIONS', style: 'sectionKicker', pageBreak: 'before' });
-  content.push({ text: 'Solution Overview & Workflow Specifications', style: 'sectionHeading' });
+  s03.push({ text: `${numFor('componentNarrative')} · COMPONENT SPECIFICATIONS`, style: 'sectionKicker', pageBreak: 'before' });
+  s03.push({ text: 'Solution Overview & Workflow Specifications', style: 'sectionHeading' });
 
   const inputNodes = nodes.filter((n) => n.type === NODE_TYPES.INPUT);
   if (inputNodes.length > 0) {
-    content.push({ text: 'Traffic Sources', style: 'subHeading' });
+    s03.push({ text: 'Traffic Sources', style: 'subHeading' });
     inputNodes.forEach((n) => {
       const data = n.data as InputNodeData;
       const detail = describeInputNodeDetail(n, nodes, edges, trafficStreams, liveMetrics);
-      content.push(detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.INPUT, data.configType)));
+      s03.push(detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.INPUT, data.configType)));
     });
   }
 
   const mapNodes = nodes.filter((n) => n.type === NODE_TYPES.MAP);
   if (mapNodes.length > 0) {
-    content.push({ text: 'Traffic Maps', style: 'subHeading' });
+    s03.push({ text: 'Traffic Maps', style: 'subHeading' });
     mapNodes.forEach((n) => {
       const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
-      content.push(detailStack(n.data.label || n.id, detail));
+      s03.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
   const filterNodes = nodes.filter((n) => n.type === NODE_TYPES.FILTER);
   if (filterNodes.length > 0) {
-    content.push({ text: 'Filters', style: 'subHeading' });
+    s03.push({ text: 'Filters', style: 'subHeading' });
     filterNodes.forEach((n) => {
       const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
-      content.push(detailStack(n.data.label || n.id, detail));
+      s03.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
@@ -1030,7 +1107,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   });
 
   if (gigaSmartEntries.length > 0) {
-    content.push({ text: 'GigaSMART Processing', style: 'subHeading' });
+    s03.push({ text: 'GigaSMART Processing', style: 'subHeading' });
 
     const gigaSmartGroups = new Map<string, GigaSmartEntry[]>();
     gigaSmartEntries.forEach((entry) => {
@@ -1045,7 +1122,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
         if (entry.isStandaloneNode) {
           const detail = describeProcessingNodeDetail(entry.hostNode, nodes, edges, liveMetrics);
           const headline = entry.label || entry.actionType;
-          content.push(
+          s03.push(
             detailStack(headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, entry.actionType)),
           );
         } else {
@@ -1053,7 +1130,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             entry.appData || ({ actionType: entry.actionType } as GigaSmartNodeData),
             entry.hostLabel,
           );
-          content.push(
+          s03.push(
             detailStack(detail.headline, detail, getNodeValueProposition(NODE_TYPES.GIGASMART, undefined, entry.actionType)),
           );
         }
@@ -1085,7 +1162,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           `Running on: ${uniqueHosts}`,
         ];
 
-        content.push(
+        s03.push(
           detailStack(
             headline,
             { headline, bullets },
@@ -1099,16 +1176,16 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   if (gigaStreamNodes.length > 0) {
     gigaStreamNodes.forEach((n) => {
       const detail = describeProcessingNodeDetail(n, nodes, edges, liveMetrics);
-      content.push(detailStack(n.data.label || n.id, detail));
+      s03.push(detailStack(n.data.label || n.id, detail));
     });
   }
 
   const toolNodes = nodes.filter((n) => n.type === NODE_TYPES.TOOL);
   if (toolNodes.length > 0) {
-    content.push({ text: 'Destinations & Tools', style: 'subHeading' });
+    s03.push({ text: 'Destinations & Tools', style: 'subHeading' });
     
     // Vendor Verification Advisory Notice Plate (Info severity)
-    content.push(
+    s03.push(
       buildNoticePlate({
         severity: 'info',
         title: 'Important Notice: Tool Ingest Capacities & Vendor Verification',
@@ -1132,7 +1209,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       if (group.length === 1) {
         const n = group[0];
         const detail = describeToolNodeDetail(n, nodes, edges, liveMetrics);
-        content.push(detailStack(detail.headline, detail));
+        s03.push(detailStack(detail.headline, detail));
       } else {
         const first = group[0];
         const data = first.data as ToolNodeData;
@@ -1193,14 +1270,14 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           }
         }
 
-        content.push(detailStack(headline, { headline, bullets }));
+        s03.push(detailStack(headline, { headline, bullets }));
       }
     });
   }
 
   const hardwareNodes = nodes.filter((n) => n.type === NODE_TYPES.HARDWARE);
   if (hardwareNodes.length > 0) {
-    content.push({ text: 'Hardware Platforms & Physical Inventory', style: 'subHeading' });
+    s03.push({ text: 'Hardware Platforms & Physical Inventory', style: 'subHeading' });
     const plainLines: string[] = [];
 
     // 1. Group & Deduplicate Optical TAP Modules
@@ -1223,10 +1300,10 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       const bullets = describeAggregatedTapPhysicalLink(group, nodes, edges);
       if (group.length === 1) {
         const headline = `${data.label} — ${model}${data.sku ? ` (${data.sku})` : ''}`;
-        content.push(detailStack(headline, { headline, bullets }));
+        s03.push(detailStack(headline, { headline, bullets }));
       } else {
         const headline = `${model}${data.sku ? ` (${data.sku})` : ''} (${group.length} modules deployed)`;
-        content.push(detailStack(headline, { headline, bullets }));
+        s03.push(detailStack(headline, { headline, bullets }));
       }
     });
 
@@ -1263,7 +1340,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           : `${data.model}${data.sku ? ` (${data.sku})` : ''} (${group.length} units deployed: ${labelsWithSites})`;
 
       if (purpose) {
-        content.push(detailStack(headline, { headline, bullets: [purpose] }));
+        s03.push(detailStack(headline, { headline, bullets: [purpose] }));
 
         // Single representative front panel image for the chassis model group
         const representativeImage = group
@@ -1271,7 +1348,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           .find((img): img is string => Boolean(img));
 
         if (representativeImage) {
-          content.push({
+          s03.push({
             image: representativeImage,
             width: 380,
             alignment: 'left',
@@ -1317,7 +1394,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           ? `deployed at ${Array.from(allSites)[0]}`
           : 'deployed';
 
-      content.push(
+      s03.push(
         detailStack('G-TAP Modular Mounting Trays', {
           headline: 'G-TAP Modular Mounting Trays',
           bullets: [
@@ -1327,19 +1404,21 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
       );
     }
 
-    if (plainLines.length > 0) content.push({ ul: plainLines, style: 'body' });
+    if (plainLines.length > 0) s03.push({ ul: plainLines, style: 'body' });
   }
+
+  if (sections.componentNarrative) content.push(...s03);
 
   // ═══════════════════════════════════════════════════════════════
   // §04 BILL OF MATERIALS APPENDIX
   // ═══════════════════════════════════════════════════════════════
-  content.push({ text: '§04 · PROCUREMENT & LICENSING', style: 'sectionKicker', pageBreak: 'before' });
-  content.push({ text: 'Appendix A: Bill of Materials', style: 'sectionHeading' });
+  s04.push({ text: `${numFor('billOfMaterials')} · PROCUREMENT & LICENSING`, style: 'sectionKicker', pageBreak: 'before' });
+  s04.push({ text: 'Appendix A: Bill of Materials', style: 'sectionHeading' });
 
   if (reportBomRows.length === 0) {
-    content.push({ text: 'No hardware nodes tracked in the current layout.', style: 'muted' });
+    s04.push({ text: 'No hardware nodes tracked in the current layout.', style: 'muted' });
   } else {
-    content.push({
+    s04.push({
       table: {
         headerRows: 1,
         dontBreakRows: true,
@@ -1383,13 +1462,15 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     });
 
     if (reportBomRows.some((row) => row.note)) {
-      content.push({
+      s04.push({
         text: 'Rows marked 💡 include a small surplus of pre-fitted optics because a full multipack works out cheaper and simpler to order than buying the exact number of loose singles.',
         style: 'muted',
         margin: [0, 0, 0, 10],
       });
     }
   }
+
+  if (sections.billOfMaterials) content.push(...s04);
 
   // ═══════════════════════════════════════════════════════════════
   // §05 PHYSICAL RACK & DEPLOYMENT REPORT
@@ -1485,8 +1566,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     };
   }
 
-  if (physicalItems.length > 0) {
-    content.push({ text: '§05 · DATACENTRE DEPLOYMENT', style: 'sectionKicker', pageBreak: 'before' });
+  if (sections.rackElevation && physicalItems.length > 0) {
+    content.push({ text: `${numFor('rackElevation')} · DATACENTRE DEPLOYMENT`, style: 'sectionKicker', pageBreak: 'before' });
     content.push({ text: 'Appendix B: Physical Rack & Deployment Report', style: 'sectionHeading' });
     content.push({
       text: 'Detailed physical and environmental specifications for the hardware deployment, including rack space (RU), physical dimensions (metric and imperial), estimated equipment weights, maximum electrical power draws, heat dissipation, and airflow requirements.',

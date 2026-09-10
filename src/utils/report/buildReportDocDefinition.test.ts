@@ -473,5 +473,87 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     expect(stringified).toContain('SPAN');
     expect(stringified).not.toContain('0 TAPs');
   });
+
+  it('renumbers the TOC and section kickers sequentially when a middle section is disabled', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      sections: {
+        executiveSummary: true,
+        topologyDiagram: false,
+        componentNarrative: true,
+        billOfMaterials: true,
+        rackElevation: true,
+      },
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+
+    // Topology diagram is omitted entirely
+    expect(allText).not.toContain('NETWORK VISIBILITY FABRIC');
+    expect(allText).not.toContain('Fabric Topology & Architecture Diagram');
+
+    // Remaining sections renumber to close the gap, in both the TOC and body kickers
+    expect(allText).toContain('§01 Executive Summary & Key Metrics');
+    expect(allText).toContain('§02 Solution Overview & Component Narrative');
+    expect(allText).toContain('§03 Appendix A: Bill of Materials (BOM)');
+
+    expect(allText).toContain('§01 · STRATEGY & METRICS');
+    expect(allText).toContain('§02 · COMPONENT SPECIFICATIONS');
+    expect(allText).toContain('§03 · PROCUREMENT & LICENSING');
+  });
+
+  it('omits a section from the TOC and body when its toggle is off, even if enabled elsewhere', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      sections: {
+        executiveSummary: false,
+        topologyDiagram: true,
+        componentNarrative: true,
+        billOfMaterials: true,
+        rackElevation: true,
+      },
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).not.toContain('STRATEGY & METRICS');
+    expect(allText).not.toContain('Executive Summary & Key Metrics');
+    expect(allText).toContain('§01 · NETWORK VISIBILITY FABRIC');
+  });
+
+  it('adds a partner logo alongside (not instead of) the Gigamon badge in co-branded mode', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      logoDataUrl: 'data:image/png;base64,GIGAMON_LOGO',
+      coBrandingMode: 'co-branded',
+      partnerName: 'Acme Cyber Solutions',
+      partnerLogoDataUrl: 'data:image/png;base64,PARTNER_LOGO',
+    });
+
+    const images = collectImages(doc.content);
+    expect(images).toContain('data:image/png;base64,GIGAMON_LOGO');
+    expect(images).toContain('data:image/png;base64,PARTNER_LOGO');
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('IN PARTNERSHIP WITH ACME CYBER SOLUTIONS');
+  });
+
+  it('interpolates {{tokens}} in the executive summary markdown', () => {
+    const doc = buildReportDocDefinition({
+      ...baseInput,
+      nodes: [],
+      edges: [],
+      projectName: 'Datacentre Consolidation',
+      execSummaryText: 'Prepared for {{projectName}} covering {{siteCount}} site(s).',
+    });
+
+    const allText = collectTexts(doc.content).join(' ');
+    expect(allText).toContain('Prepared for Datacentre Consolidation covering 1 site(s).');
+  });
 });
 
