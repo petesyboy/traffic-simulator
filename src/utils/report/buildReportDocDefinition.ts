@@ -279,7 +279,7 @@ export function buildNoticePlate(options: NoticePlateOptions): Content {
   };
 }
 
-/** Cover background full-bleed SVG (Dark Navy + Signal Path fan-in vector lines) */
+/** Cover background full-bleed SVG (Dark Navy + Deconflicted Ambient Signal Path) */
 function generateCoverSvg(accentColor: string = '#E1592A'): string {
   return `
   <svg width="595.28" height="841.89" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">
@@ -296,23 +296,22 @@ function generateCoverSvg(accentColor: string = '#E1592A'): string {
     </defs>
     <rect width="595.28" height="841.89" fill="url(#navGlow)" />
 
-    <!-- Signal Path Fan-in Graphic (Converging to GigaSMART Hero Hub) -->
+    <!-- Ambient Signal Path Vector Graphic (Deconflicted Upper-Right Field) -->
     <g stroke-linecap="round">
-      <path d="M 40 100 Q 220 200 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 40 160 Q 220 230 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 40 220 Q 220 260 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 40 280 Q 220 290 460 300" stroke="${accentColor}" stroke-width="2.5" stroke-opacity="0.95" fill="none" />
-      <path d="M 40 340 Q 220 320 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 40 400 Q 220 350 460 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 260 120 Q 380 150 480 180" stroke="#2B3D66" stroke-width="1.0" stroke-opacity="0.25" fill="none" />
+      <path d="M 230 150 Q 360 165 480 180" stroke="#2B3D66" stroke-width="1.0" stroke-opacity="0.30" fill="none" />
+      <path d="M 210 180 Q 350 180 480 180" stroke="${accentColor}" stroke-width="1.2" stroke-opacity="0.45" fill="none" />
+      <path d="M 240 210 Q 370 195 480 180" stroke="#2B3D66" stroke-width="1.0" stroke-opacity="0.30" fill="none" />
+      <path d="M 270 230 Q 390 210 480 180" stroke="#2B3D66" stroke-width="1.0" stroke-opacity="0.22" fill="none" />
 
-      <!-- Convergence Focus Node -->
-      <circle cx="460" cy="300" r="5" fill="${accentColor}" />
-      <circle cx="460" cy="300" r="10" stroke="${accentColor}" stroke-width="1" stroke-opacity="0.5" fill="none" />
+      <!-- Convergence Focus Node (Micro-Beacon) -->
+      <circle cx="480" cy="180" r="3.5" fill="${accentColor}" fill-opacity="0.85" />
+      <circle cx="480" cy="180" r="7.5" stroke="${accentColor}" stroke-width="0.75" stroke-opacity="0.35" fill="none" />
 
       <!-- Fan-out to Monitoring Tools -->
-      <path d="M 460 300 Q 505 300 550 260" stroke="${accentColor}" stroke-width="2.0" stroke-opacity="0.9" fill="none" />
-      <path d="M 460 300 Q 505 310 550 300" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
-      <path d="M 460 300 Q 505 320 550 340" stroke="#3A5385" stroke-width="1.2" stroke-opacity="0.4" fill="none" />
+      <path d="M 480 180 Q 515 175 550 160" stroke="${accentColor}" stroke-width="1.0" stroke-opacity="0.45" fill="none" />
+      <path d="M 480 180 Q 515 180 550 180" stroke="#2B3D66" stroke-width="0.8" stroke-opacity="0.30" fill="none" />
+      <path d="M 480 180 Q 515 190 550 205" stroke="#2B3D66" stroke-width="0.8" stroke-opacity="0.25" fill="none" />
     </g>
 
     <!-- Bottom metadata divider hairline -->
@@ -529,130 +528,136 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
   const s04: Content[] = [];
 
   // ═══════════════════════════════════════════════════════════════
-  // COVER PAGE (Full Bleed Dark Navy Panel + Vector Fan-in Graphic)
+  // COVER PAGE (Layout A: Top Executive Header Bar + Ambient Hero)
   // ═══════════════════════════════════════════════════════════════
-  const coverStack: Content[] = [];
   const gigamonBrandmark: Content = logoDataUrl
-    ? { image: logoDataUrl, width: 130 }
-    : { text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5, margin: [0, 4, 0, 0] };
+    ? { image: logoDataUrl, width: 120 }
+    : { text: 'GIGAMON', fontSize: 16, bold: true, color: '#CBD5E1', characterSpacing: 1.5 };
 
-  if (coBrandingMode === 'co-branded' && (partnerLogoDataUrl || partnerName)) {
-    // Executive Co-Branding Lockup: [Gigamon] │ [Partner Logo / Name]
-    const lockupColumns: Column[] = [
-      { width: 'auto', stack: [gigamonBrandmark] },
-      {
-        width: 1,
-        canvas: [
-          {
-            type: 'line',
-            x1: 0,
-            y1: 2,
-            x2: 0,
-            y2: 24,
-            lineWidth: 1,
-            lineColor: '#3A5385',
-          },
+  const partnerHeaderColumn: Column = (coBrandingMode === 'co-branded' && (partnerLogoDataUrl || partnerName))
+    ? {
+        width: '*',
+        stack: [
+          ...(partnerLogoDataUrl
+            ? [{ image: partnerLogoDataUrl, width: 85, alignment: 'right' as const }]
+            : []),
+          ...(partnerName
+            ? [
+                {
+                  text: partnerLogoDataUrl ? `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}` : partnerName.toUpperCase(),
+                  fontSize: partnerLogoDataUrl ? 7.5 : 11,
+                  bold: true,
+                  color: partnerLogoDataUrl ? '#94A3B8' : '#F1F5F9',
+                  characterSpacing: 0.8,
+                  alignment: 'right' as const,
+                  margin: [0, partnerLogoDataUrl ? 5 : 0, 0, 0] as [number, number, number, number],
+                },
+                ...(!partnerLogoDataUrl
+                  ? [
+                      {
+                        text: `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}`,
+                        fontSize: 7.5,
+                        bold: true,
+                        color: '#94A3B8',
+                        characterSpacing: 0.8,
+                        alignment: 'right' as const,
+                        margin: [0, 3, 0, 0] as [number, number, number, number],
+                      },
+                    ]
+                  : []),
+              ]
+            : []),
         ],
-        margin: [16, 0, 16, 0],
-      },
-    ];
-
-    if (partnerLogoDataUrl) {
-      lockupColumns.push({
-        width: 'auto',
-        stack: [{ image: partnerLogoDataUrl, width: 85 }],
-      });
-    } else if (partnerName) {
-      lockupColumns.push({
-        width: 'auto',
+      }
+    : {
+        width: '*',
         stack: [
           {
-            text: partnerName.toUpperCase(),
-            fontSize: 11,
+            text: 'VISIBILITY FABRIC SPECIFICATION',
+            fontSize: 8,
             bold: true,
-            color: '#F1F5F9',
-            characterSpacing: 0.8,
-            margin: [0, 6, 0, 0],
+            color: '#64748B',
+            characterSpacing: 1.0,
+            alignment: 'right' as const,
+            margin: [0, 6, 0, 0] as [number, number, number, number],
           },
         ],
-      });
-    }
+      };
 
-    coverStack.push({
-      columns: lockupColumns,
-      margin: [0, 0, 0, 8],
-    });
-
-    if (partnerName) {
-      coverStack.push({
-        text: `IN PARTNERSHIP WITH ${partnerName.toUpperCase()}`,
-        fontSize: 8,
-        bold: true,
-        color: '#94A3B8',
-        characterSpacing: 0.8,
-        margin: [0, 0, 0, 24],
-      });
-    } else {
-      coverStack.push({
-        text: 'CO-BRANDED SOLUTION SPECIFICATION',
-        fontSize: 8,
-        bold: true,
-        color: '#94A3B8',
-        characterSpacing: 0.8,
-        margin: [0, 0, 0, 24],
-      });
-    }
-  } else {
-    coverStack.push({ ...gigamonBrandmark, margin: [0, 0, 0, 30] } as Content);
-  }
-
-  coverStack.push({ text: '§00 · VISIBILITY FABRIC SPECIFICATION', style: 'coverKicker' });
-  coverStack.push({ text: projectName, style: 'coverTitle' });
-  coverStack.push({ text: 'Next-Generation Network Visibility & Traffic Optimisation Report', style: 'coverSubtitle' });
-  coverStack.push({
-    text: `Generated ${generatedDate}  ·  Region: ${projectRegion}  ·  Licensing Model: ${projectLicenseMode} (${defaultTermDuration} Mo)`,
-    style: 'coverMeta',
-    margin: [0, 0, 0, 60],
-  });
-
-  // Hairline Teaser Stat Row on Cover
-  coverStack.push({
+  const coverHeader: Content = {
     columns: [
+      { width: 'auto', stack: [gigamonBrandmark] },
+      partnerHeaderColumn,
+    ],
+    columnGap: 24,
+    margin: [0, 0, 0, 0],
+  };
+
+  const headerDivider: Content = {
+    canvas: [
       {
-        stack: [
-          { text: 'DEPLOYMENT SITES', style: 'coverStatLabel' },
-          { text: `${siteCountDisplay} ${siteCountDisplay === 1 ? 'Site' : 'Sites'}`, style: 'coverStatValue' },
-        ],
-      },
-      {
-        stack: [
-          { text: 'MONITORED LINKS', style: 'coverStatLabel' },
-          { text: monitoredLinkText, style: 'coverStatValue' },
-        ],
-      },
-      {
-        stack: [
-          { text: 'HARDWARE PLATFORMS', style: 'coverStatLabel' },
-          { text: `${hardwareUnitCount} Units`, style: 'coverStatValue' },
-        ],
-      },
-      {
-        stack: [
-          { text: 'TRAFFIC PROCESSED', style: 'coverStatLabel' },
-          {
-            text: isRunning && Object.values(nodeMetrics).length > 0
-              ? formatBandwidth(Object.values(nodeMetrics).reduce((s, m) => s + (m.rxMbps || 0), 0))
-              : 'Multi-Tbps Ready',
-            style: 'coverStatValue',
-          },
-        ],
+        type: 'line',
+        x1: 0,
+        y1: 0,
+        x2: 515.28,
+        y2: 0,
+        lineWidth: 0.75,
+        lineColor: '#2B3859',
       },
     ],
-    columnGap: 16,
-    margin: [0, 10, 0, 0],
-  });
+    margin: [0, 14, 0, 0],
+  };
 
-  content.push({ stack: coverStack, margin: [0, 220, 0, 0] });
+  const coverHeroStack: Content[] = [
+    { text: '§00 · VISIBILITY FABRIC SPECIFICATION', style: 'coverKicker' },
+    { text: projectName, style: 'coverTitle' },
+    { text: 'Next-Generation Network Visibility & Traffic Optimisation Report', style: 'coverSubtitle' },
+    {
+      text: `Generated ${generatedDate}  ·  Region: ${projectRegion}  ·  Licensing Model: ${projectLicenseMode} (${defaultTermDuration} Mo)`,
+      style: 'coverMeta',
+      margin: [0, 0, 0, 50],
+    },
+    // Hairline Teaser Stat Row on Cover
+    {
+      columns: [
+        {
+          stack: [
+            { text: 'DEPLOYMENT SITES', style: 'coverStatLabel' },
+            { text: `${siteCountDisplay} ${siteCountDisplay === 1 ? 'Site' : 'Sites'}`, style: 'coverStatValue' },
+          ],
+        },
+        {
+          stack: [
+            { text: 'MONITORED LINKS', style: 'coverStatLabel' },
+            { text: monitoredLinkText, style: 'coverStatValue' },
+          ],
+        },
+        {
+          stack: [
+            { text: 'HARDWARE PLATFORMS', style: 'coverStatLabel' },
+            { text: `${hardwareUnitCount} Units`, style: 'coverStatValue' },
+          ],
+        },
+        {
+          stack: [
+            { text: 'TRAFFIC PROCESSED', style: 'coverStatLabel' },
+            {
+              text: isRunning && Object.values(nodeMetrics).length > 0
+                ? formatBandwidth(Object.values(nodeMetrics).reduce((s, m) => s + (m.rxMbps || 0), 0))
+                : 'Multi-Tbps Ready',
+              style: 'coverStatValue',
+            },
+          ],
+        },
+      ],
+      columnGap: 16,
+      margin: [0, 10, 0, 0],
+    },
+  ];
+
+  content.push(coverHeader);
+  content.push(headerDivider);
+  content.push({ stack: coverHeroStack, margin: [0, 150, 0, 0] });
   content.push({ text: '', pageBreak: 'after' });
 
   // ═══════════════════════════════════════════════════════════════

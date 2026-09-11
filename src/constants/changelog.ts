@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.775",
+    date: "2026-09-11",
+    summary: "Make the default packet tool partner-configurable (v1.0.775)",
+  },
+  {
     version: "1.0.774",
     date: "2026-09-10",
     summary: "Redesign cover page co-branding lockup and eliminate vector interference (v1.0.774)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.754",
     date: "2026-09-04",
     summary: "Add human-readable specification to optic labels in export diagram mode (v1.0.754)",
-  },
-  {
-    version: "1.0.753",
-    date: "2026-09-04",
-    summary: "Update passive TAP and breakout panel faceplate graphics (v1.0.753)",
   },
 ];
