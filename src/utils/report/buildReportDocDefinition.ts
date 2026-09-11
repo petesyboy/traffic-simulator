@@ -642,9 +642,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
           stack: [
             { text: 'TRAFFIC PROCESSED', style: 'coverStatLabel' },
             {
-              text: isRunning && Object.values(nodeMetrics).length > 0
-                ? formatBandwidth(Object.values(nodeMetrics).reduce((s, m) => s + (m.rxMbps || 0), 0))
-                : 'Multi-Tbps Ready',
+              text: 'Multi-Tbps Ready',
               style: 'coverStatValue',
             },
           ],
@@ -804,9 +802,9 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
             zeroCaption: 'virtual deployment',
           }),
           buildStatTile({
-            label: 'Traffic Streams',
-            value: stats.trafficStreamCount,
-            zeroCaption: 'static architecture',
+            label: 'Traffic Maps',
+            value: stats.mapNodeCount,
+            zeroCaption: 'unfiltered pass-through',
           }),
         ],
       ],

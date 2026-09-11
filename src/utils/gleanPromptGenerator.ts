@@ -22,7 +22,6 @@ import { buildTopologyStats, type TopologyStats } from './report/describeTopolog
 import { describeGigaSmartFunction } from './report/gigaSmartDescriptions';
 import { describeToolPurpose } from './report/toolDescriptions';
 import { sanitizeSolutionName } from './exportNaming';
-import { formatBandwidth } from './format';
 import { NODE_TYPES } from '../constants/nodeTypes';
 
 export interface GleanPromptOptions {
@@ -176,31 +175,9 @@ export async function generateGleanExecutiveSummaryPrompt(
         ].join('\n')
       : '_No rack-mountable equipment required._\n';
 
-  // 10. Traffic Streams Summary (Token budgeted if > 30 streams)
-  let trafficSummaryText = '';
-  if (trafficStreams.length === 0) {
-    trafficSummaryText = 'No specific traffic streams configured; baseline throughput relies on monitored port bandwidth.';
-  } else if (trafficStreams.length <= 30) {
-    trafficSummaryText = trafficStreams
-      .map(
-        (s) =>
-          `- **${s.name || 'Stream'}**: ${formatBandwidth(s.bandwidth || 0)} (${s.protocol || 'TCP/UDP'})`,
-      )
-      .join('\n');
-  } else {
-    const sorted = [...trafficStreams].sort((a, b) => (b.bandwidth || 0) - (a.bandwidth || 0));
-    const top10 = sorted.slice(0, 10);
-    const totalStreamBandwidth = trafficStreams.reduce((acc, s) => acc + (s.bandwidth || 0), 0);
-    trafficSummaryText = [
-      `Total of ${trafficStreams.length} traffic streams generating an aggregate of ${formatBandwidth(totalStreamBandwidth)}.`,
-      'Top 10 highest-volume streams:',
-      ...top10.map(
-        (s) =>
-          `- **${s.name || 'Stream'}**: ${formatBandwidth(s.bandwidth || 0)} (${s.protocol || 'TCP/UDP'})`,
-      ),
-      `_...plus ${trafficStreams.length - 10} additional streams._`,
-    ].join('\n');
-  }
+  // 10. Traffic Streams & Profiling Specification
+  const trafficSummaryText =
+    'Traffic profiles, stream volumes, and specific protocol distributions will be established during customer technical scoping and site onboarding. The Gigamon architecture provides non-blocking, line-rate capture across all monitored segments regardless of protocol or packet distribution.';
 
   // 11. Signal Flow Text / Mermaid Representation
   let signalFlowDiagram = '';
@@ -289,7 +266,7 @@ It must articulate:
 ### 2. Network Ingress & Visibility Telemetry
 - **Monitored Network Links**: ${stats.monitoredLinkCount} link${stats.monitoredLinkCount !== 1 ? 's' : ''}
 - **Total Ingress Traffic Feeds**: ${stats.totalFeedCount} optical feeds (${stats.inputCounts.tap} TAP modules, ${stats.inputCounts.span + stats.inputCounts.erspan + stats.inputCounts.other} SPAN/virtual feeds)
-- **Ingress Link Speed & Bandwidth**: ${stats.totalBandwidthLabel}
+- **Ingress Fabric Delivery**: Non-blocking, multi-terabit line-rate ready architecture
 - **Tapping Infrastructure**: Passive optical TAPs deployed in high-density M100T / M200T rack trays, delivering zero packet loss and zero latency overhead.
 
 ### 3. Visibility Fabric Appliances & Chassis

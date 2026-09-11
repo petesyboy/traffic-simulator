@@ -81,8 +81,7 @@ describe('gleanPromptGenerator', () => {
     expect(prompt).toContain('Stockholm DC1');
     expect(prompt).toContain('GigaVUE-HC3');
     expect(prompt).toContain('Splunk');
-    expect(prompt).toContain('Web Traffic');
-    expect(prompt).toContain('4.50 Gbps');
+    expect(prompt).toContain('Traffic profiles, stream volumes, and specific protocol distributions will be established');
     expect(prompt).toContain('Northbound and Southbound duplex split');
   });
 
@@ -100,7 +99,7 @@ describe('gleanPromptGenerator', () => {
     expect(prompt).toContain('_No rack-mountable equipment required._');
   });
 
-  it('consolidates traffic streams when there are more than 30 streams', async () => {
+  it('indicates that traffic profiles are defined during technical scoping without guessing bandwidth or protocols', async () => {
     const mockNodes: CustomNode[] = [
       {
         id: 'chassis-1',
@@ -136,8 +135,7 @@ describe('gleanPromptGenerator', () => {
       scenarioName: 'Heavy Traffic Test',
     });
 
-    expect(prompt).toContain('Total of 40 traffic streams generating an aggregate of');
-    expect(prompt).toContain('Top 10 highest-volume streams:');
-    expect(prompt).toContain('plus 30 additional streams');
+    expect(prompt).toContain('Traffic profiles, stream volumes, and specific protocol distributions will be established during customer technical scoping');
+    expect(prompt).toContain('The Gigamon architecture provides non-blocking, line-rate capture');
   });
 });

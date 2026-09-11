@@ -166,6 +166,81 @@ describe('detectDiagramSplitting', () => {
     expect(dc2Partition?.nodeIds).toContain('dwdm-ring');
     expect(dc2Partition?.nodeIds).not.toContain('dc1-ta');
   });
+
+  it('isolates per-site DWDM gateways and does not leak the whole DWDM ring across sites', () => {
+    const nodes: CustomNode[] = [
+      {
+        id: 'dc1-ta',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: { label: 'DC1 TA200', site: 'DC1', model: 'GigaVUE-TA200' },
+      } as CustomNode,
+      {
+        id: 'dc1-dwdm',
+        type: 'dwdmNetworkNode',
+        position: { x: 200, y: 0 },
+        data: { label: 'DWDM - DC1', site: 'DC1', configType: 'DWDM Network' },
+      } as CustomNode,
+      {
+        id: 'dc2-ta',
+        type: 'hardwareNode',
+        position: { x: 0, y: 300 },
+        data: { label: 'DC2 TA200', site: 'DC2', model: 'GigaVUE-TA200' },
+      } as CustomNode,
+      {
+        id: 'dc2-dwdm',
+        type: 'dwdmNetworkNode',
+        position: { x: 200, y: 300 },
+        data: { label: 'DWDM - DC2', site: 'DC2', configType: 'DWDM Network' },
+      } as CustomNode,
+      {
+        id: 'dc3-ta',
+        type: 'hardwareNode',
+        position: { x: 0, y: 600 },
+        data: { label: 'DC3 TA200', site: 'DC3', model: 'GigaVUE-TA200' },
+      } as CustomNode,
+      {
+        id: 'dc3-dwdm',
+        type: 'dwdmNetworkNode',
+        position: { x: 200, y: 600 },
+        data: { label: 'DWDM - DC3', site: 'DC3', configType: 'DWDM Network' },
+      } as CustomNode,
+    ];
+
+    const edges: Edge[] = [
+      // Site equipment to local DWDM gateways
+      { id: 'e-dc1', source: 'dc1-ta', target: 'dc1-dwdm' },
+      { id: 'e-dc2', source: 'dc2-ta', target: 'dc2-dwdm' },
+      { id: 'e-dc3', source: 'dc3-ta', target: 'dc3-dwdm' },
+      // Inter-site DWDM ring links
+      { id: 'e-ring-1-2', source: 'dc1-dwdm', target: 'dc2-dwdm' },
+      { id: 'e-ring-2-3', source: 'dc2-dwdm', target: 'dc3-dwdm' },
+      { id: 'e-ring-3-1', source: 'dc3-dwdm', target: 'dc1-dwdm' },
+    ];
+
+    const result = detectDiagramSplitting(nodes, edges);
+    expect(result.shouldSplit).toBe(true);
+    expect(result.partitions).toHaveLength(3);
+
+    const dc1Partition = result.partitions.find((p) => p.siteName === 'DC1');
+    expect(dc1Partition?.nodeIds).toContain('dc1-ta');
+    expect(dc1Partition?.nodeIds).toContain('dc1-dwdm');
+    expect(dc1Partition?.nodeIds).not.toContain('dc2-dwdm');
+    expect(dc1Partition?.nodeIds).not.toContain('dc3-dwdm');
+    expect(dc1Partition?.nodeIds).not.toContain('dc2-ta');
+
+    const dc2Partition = result.partitions.find((p) => p.siteName === 'DC2');
+    expect(dc2Partition?.nodeIds).toContain('dc2-ta');
+    expect(dc2Partition?.nodeIds).toContain('dc2-dwdm');
+    expect(dc2Partition?.nodeIds).not.toContain('dc1-dwdm');
+    expect(dc2Partition?.nodeIds).not.toContain('dc3-dwdm');
+
+    const dc3Partition = result.partitions.find((p) => p.siteName === 'DC3');
+    expect(dc3Partition?.nodeIds).toContain('dc3-ta');
+    expect(dc3Partition?.nodeIds).toContain('dc3-dwdm');
+    expect(dc3Partition?.nodeIds).not.toContain('dc1-dwdm');
+    expect(dc3Partition?.nodeIds).not.toContain('dc2-dwdm');
+  });
 });
 
 describe('prepareTopologyForDiagramCapture', () => {

@@ -169,9 +169,9 @@ export function buildUplinkReportDocDefinition(input: ReportInput): TDocumentDef
                   },
                   {
                     stack: [
-                      { text: stats.totalBandwidthLabel, style: 'metricValue' },
-                      { text: 'Total Visibility Capacity', style: 'metricLabel', margin: [0, 2, 0, 2] },
-                      { text: 'Scalable multi-terabit processing fabric ready for line-rate expansion.', style: 'metricDesc' },
+                      { text: 'Line-Rate Ready', style: 'metricValue' },
+                      { text: 'Fabric Switching Capacity', style: 'metricLabel', margin: [0, 2, 0, 2] },
+                      { text: 'Non-blocking, multi-terabit visibility architecture engineered for lossless line-rate delivery.', style: 'metricDesc' },
                     ],
                   },
                 ],

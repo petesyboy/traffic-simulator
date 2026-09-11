@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.783",
+    "date": "2026-09-11",
+    "summary": "Add internal glean ai executive summary prompt generator and deliverables export"
+  },
+  {
     "version": "1.0.782",
     "date": "2026-09-11",
     "summary": "Add adversarial planning protocol to agents.md and bump version to 1.0.782"

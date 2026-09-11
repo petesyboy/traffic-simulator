@@ -363,7 +363,7 @@ describe('buildReportDocDefinition - Appendix A optic pack notes', () => {
     // Zero value handling on stats
     expect(allText).toContain('pure optical TAP design');
     expect(allText).toContain('not required · pure aggregation');
-    expect(allText).toContain('static architecture');
+    expect(allText).toContain('unfiltered pass-through');
   });
 
   it('converts Scope considerations in executive summary into a styled warning notice plate', () => {

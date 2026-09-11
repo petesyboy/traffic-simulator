@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.783",
+    date: "2026-09-11",
+    summary: "Add internal glean ai executive summary prompt generator and deliverables export",
+  },
+  {
     version: "1.0.782",
     date: "2026-09-11",
     summary: "Add adversarial planning protocol to agents.md and bump version to 1.0.782",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.761",
     date: "2026-09-09",
     summary: "Implement GigaSMART tunnel decapsulation and ERSPAN remote encapsulation source",
-  },
-  {
-    version: "1.0.760",
-    date: "2026-09-09",
-    summary: "Integrate G-TAP M Series Unidirectional TAP Family (ULT) with faceplate icons (v1.0.760)",
   },
 ];

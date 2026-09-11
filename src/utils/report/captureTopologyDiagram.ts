@@ -115,17 +115,28 @@ export function detectDiagramSplitting(
       }
 
       // 4. For sites connected to a central DWDM transport network / optical ring, include the DWDM hub
-      // node so the per-site diagram shows the WAN ring connectivity without leaking other data centres.
+      // or local DWDM gateway node so the per-site diagram shows the WAN ring connectivity without
+      // leaking other data centres' DWDM nodes across inter-site ring links.
       edges.forEach((e) => {
-        if (siteNodeIds.has(e.source)) {
-          const tgtNode = visibleNodes.find((n) => n.id === e.target);
-          if (tgtNode && (tgtNode.type === NODE_TYPES.DWDM_NETWORK || tgtNode.type === 'dwdmNetworkNode')) {
+        const srcNode = visibleNodes.find((n) => n.id === e.source);
+        const tgtNode = visibleNodes.find((n) => n.id === e.target);
+        if (!srcNode || !tgtNode) return;
+
+        const isSrcDwdm = srcNode.type === NODE_TYPES.DWDM_NETWORK || srcNode.type === 'dwdmNetworkNode';
+        const isTgtDwdm = tgtNode.type === NODE_TYPES.DWDM_NETWORK || tgtNode.type === 'dwdmNetworkNode';
+
+        // Do not traverse across DWDM-to-DWDM inter-site ring links
+        if (isSrcDwdm && isTgtDwdm) return;
+
+        if (siteNodeIds.has(e.source) && isTgtDwdm) {
+          const tgtSite = ((tgtNode.data?.site as string) || '').trim();
+          if (!tgtSite || tgtSite === siteName) {
             siteNodeIds.add(tgtNode.id);
           }
         }
-        if (siteNodeIds.has(e.target)) {
-          const srcNode = visibleNodes.find((n) => n.id === e.source);
-          if (srcNode && (srcNode.type === NODE_TYPES.DWDM_NETWORK || srcNode.type === 'dwdmNetworkNode')) {
+        if (siteNodeIds.has(e.target) && isSrcDwdm) {
+          const srcSite = ((srcNode.data?.site as string) || '').trim();
+          if (!srcSite || srcSite === siteName) {
             siteNodeIds.add(srcNode.id);
           }
         }

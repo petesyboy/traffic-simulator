@@ -674,10 +674,11 @@ const CanvasArea: React.FC = () => {
             </>
           )}
         </Panel>
+
+        <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
+        <SiteEnclosures nodes={canvasNodes} edges={edges} enabled={showSiteEnclosures} />
       </ReactFlow>
 
-      <FederatedEnclosures nodes={nodes} edges={edges} onShowDashboard={() => setShowDashboard(true)} />
-      <SiteEnclosures nodes={canvasNodes} edges={edges} enabled={showSiteEnclosures} />
       <GroupingBanner
         selectedInputCount={selectedInputCount}
         selectedGroupCount={selectedGroupCount}
