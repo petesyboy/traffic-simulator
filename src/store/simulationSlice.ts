@@ -1,6 +1,6 @@
 import { type StateCreator } from 'zustand';
 import { type RFState, type NodeMetrics, type TrafficStream } from './types';
-import { syncSplunkLabels, initialNodes, initialEdges, initialTraffic } from './storeHelpers';
+import { syncSplunkLabels, buildInitialNodes, initialEdges, initialTraffic } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { NODE_TYPES } from '../constants/nodeTypes';
@@ -170,7 +170,7 @@ export const createSimulationSlice: StateCreator<RFState, [], [], SimulationSlic
   },
 
   loadDemo: () => {
-    let syncedNodes = syncSplunkLabels(initialNodes, initialEdges);
+    let syncedNodes = syncSplunkLabels(buildInitialNodes(get().defaultPacketTool), initialEdges);
     syncedNodes = syncOpticsOnTapConnection(syncedNodes, initialEdges);
     set({
       nodes: syncedNodes,

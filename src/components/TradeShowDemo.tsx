@@ -203,13 +203,14 @@ export const TradeShowDemo: React.FC = () => {
           timerRef.current = setTimeout(() => runStep(8), 3000);
           break;
 
-        case 8:
-          setDemoStatus('Step 8: Deploying packet and storage tools (ExtraHop, S3 Object Storage, & Splunk)...');
+        case 8: {
+          const defaultTool = useStore.getState().defaultPacketTool;
+          setDemoStatus(`Step 8: Deploying packet and storage tools (${defaultTool}, S3 Object Storage, & Splunk)...`);
           addNode({
             id: 'demo-tool-extrahop',
             type: 'toolNode',
             position: { x: 1520, y: 100 },
-            data: { label: 'ExtraHop Tool', toolName: 'ExtraHop', configType: 'Packet Tool' }
+            data: { label: `${defaultTool} Tool`, toolName: defaultTool, configType: 'Packet Tool' }
           });
           addNode({
             id: 'demo-tool-s3',
@@ -225,6 +226,7 @@ export const TradeShowDemo: React.FC = () => {
           });
           timerRef.current = setTimeout(() => runStep(9), 3500);
           break;
+        }
 
         case 9:
           setDemoStatus('Step 9: Archiving AMI to S3 Storage and establishing Splunk Federated Search...');

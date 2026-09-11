@@ -414,6 +414,8 @@ export interface RFState {
   setTheme: (theme: 'dark' | 'light') => void;
   colourVisionMode: 'off' | 'red-green';
   setColourVisionMode: (mode: 'off' | 'red-green') => void;
+  defaultPacketTool: string;
+  setDefaultPacketTool: (toolName: string) => void;
   toggleTheme: () => void;
   fitViewTrigger: number;
   fitViewNodeIds: string[] | null;

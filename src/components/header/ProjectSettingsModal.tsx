@@ -6,6 +6,9 @@
 
 import React from 'react';
 import { useStore } from '../../store/store';
+import { TOOL_INGEST_PROFILES } from '../../constants/toolIngestLimits';
+
+const DEFAULT_TOOL_OPTIONS = Object.keys(TOOL_INGEST_PROFILES).filter((name) => name !== 'GigaSMART Appliance');
 
 export interface ProjectSettingsModalProps {
   onClose: () => void;
@@ -28,6 +31,8 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
   const setSnapToGrid = useStore((s) => s.setSnapToGrid);
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
   const setTrayAllocationPreference = useStore((s) => s.setTrayAllocationPreference);
+  const defaultPacketTool = useStore((s) => s.defaultPacketTool);
+  const setDefaultPacketTool = useStore((s) => s.setDefaultPacketTool);
 
   const handleTermBlur = () => {
     let parsed = parseInt(defaultTermDuration, 10);
@@ -90,6 +95,29 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
               <option value="TAP-M200T">Force TAP-M200T (1RU 6-Slot Full-Width)</option>
               <option value="TAP-M100T">Force TAP-M100T (0.5RU 3-Slot Half-Width)</option>
             </select>
+          </div>
+
+          {/* Default Packet Tool */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>
+              Default Packet Tool
+            </label>
+            <select
+              className="form-select"
+              value={defaultPacketTool}
+              onChange={(e) => setDefaultPacketTool(e.target.value)}
+            >
+              {DEFAULT_TOOL_OPTIONS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <span className="text-muted" style={{ fontSize: '10px', lineHeight: 1.4 }}>
+              The tool pre-wired into a fresh canvas, "Load Demo", and the guided Trade Show Demo. Set this to
+              whichever NDR/NPM tool your business sells instead of the ExtraHop default. Saved for you rather
+              than with the project.
+            </span>
           </div>
 
           {/* Term Duration */}

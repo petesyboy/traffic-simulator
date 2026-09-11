@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.774",
+    "date": "2026-09-10",
+    "summary": "Redesign cover page co-branding lockup and eliminate vector interference (v1.0.774)"
+  },
+  {
     "version": "1.0.773",
     "date": "2026-09-10",
     "summary": "Separate co-branded partner logo from Gigamon wordmark on report cover (v1.0.773)"

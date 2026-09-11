@@ -4,8 +4,14 @@ import { type CustomNode, type TrafficStream } from './types';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { CONFIG_TYPES } from '../constants/nodeTypes';
+import { DEFAULT_PACKET_TOOL } from '../utils/defaultToolPreference';
 
-export const initialNodes: CustomNode[] = [
+/**
+ * Builds the default canvas / "Load Demo" node set with the packet-consuming
+ * tool node (node-tool-1) set to the partner's preferred default tool instead
+ * of always hardcoding ExtraHop - see settingsSlice's defaultPacketTool.
+ */
+export const buildInitialNodes = (defaultTool: string = DEFAULT_PACKET_TOOL): CustomNode[] => [
   {
     id: "node-input-1",
     type: "inputNode",
@@ -84,15 +90,17 @@ export const initialNodes: CustomNode[] = [
     type: "toolNode",
     position: { x: 758, y: 145.5 },
     data: {
-      label: "ExtraHop Tool",
+      label: `${defaultTool} Tool`,
       configType: CONFIG_TYPES.PACKET_TOOL,
-      toolName: "ExtraHop",
+      toolName: defaultTool,
       totalIngestedBytes: 81632270614.26353,
       statusMessage: "",
       receivedFormat: ""
     }
   }
 ];
+
+export const initialNodes: CustomNode[] = buildInitialNodes();
 
 export const initialEdges: Edge[] = [
   { id: "e1", source: "node-input-1", target: "node-map-1", sourceHandle: "out", targetHandle: "in" },

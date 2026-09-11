@@ -1,5 +1,6 @@
 import { type StateCreator } from 'zustand';
 import { type RFState } from './types';
+import { getStoredDefaultPacketTool, setStoredDefaultPacketTool } from '../utils/defaultToolPreference';
 
 const getInitialTheme = (): 'dark' | 'light' => {
   if (typeof localStorage !== 'undefined') {
@@ -47,6 +48,10 @@ export interface UISlice {
   activeView: 'canvas' | 'rack';
   theme: 'dark' | 'light';
   colourVisionMode: ColourVisionMode;
+  /** Which packet-consuming tool pre-populates a fresh canvas, "Load Demo",
+   *  and the guided Trade Show Demo - a partner-configurable default instead
+   *  of always hardcoding ExtraHop. Stored per installation, not per project. */
+  defaultPacketTool: string;
   sidebarMessage: string | null;
   currentScenarioName: string | null;
   isTradeShowDemoActive: boolean;
@@ -69,6 +74,7 @@ export interface UISlice {
   toggleFocusMode: () => void;
   setTheme: (theme: 'dark' | 'light') => void;
   setColourVisionMode: (mode: ColourVisionMode) => void;
+  setDefaultPacketTool: (toolName: string) => void;
   toggleTheme: () => void;
   setSidebarMessage: (msg: string | null) => void;
   setCurrentScenarioName: (name: string | null) => void;
@@ -89,6 +95,7 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
     activeView: 'canvas',
     theme: initialTheme,
     colourVisionMode: getInitialColourVision(),
+    defaultPacketTool: getStoredDefaultPacketTool(),
     sidebarMessage: null,
     currentScenarioName: null,
     isTradeShowDemoActive: false,
@@ -129,6 +136,10 @@ export const createUISlice: StateCreator<RFState, [], [], UISlice> = (set, get) 
         document.documentElement.setAttribute('data-colour-vision', mode);
       }
       set({ colourVisionMode: mode });
+    },
+    setDefaultPacketTool: (toolName) => {
+      setStoredDefaultPacketTool(toolName);
+      set({ defaultPacketTool: toolName });
     },
     toggleTheme: () => {
       const next = get().theme === 'dark' ? 'light' : 'dark';

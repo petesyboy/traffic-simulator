@@ -10,7 +10,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { type StateCreator } from 'zustand';
 import { type RFState, type CustomNode, type AnyNodeData, type HardwareNodeData, type InputNodeData } from './types';
-import { syncSplunkLabels, performDuplicateSolution, initialNodes, initialEdges } from './storeHelpers';
+import { syncSplunkLabels, performDuplicateSolution, buildInitialNodes, initialEdges } from './storeHelpers';
+import { getStoredDefaultPacketTool } from '../utils/defaultToolPreference';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
@@ -99,7 +100,7 @@ function applyFlowDirection(node: CustomNode, direction: 'ltr' | 'rtl' | 'auto')
 }
 
 export const createGraphSlice: StateCreator<RFState, [], [], GraphSlice> = (set, get) => ({
-  nodes: initialNodes,
+  nodes: buildInitialNodes(getStoredDefaultPacketTool()),
   edges: initialEdges,
   selectedNodeId: null,
   glowingNodeId: null,

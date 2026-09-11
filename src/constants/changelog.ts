@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.774",
+    date: "2026-09-10",
+    summary: "Redesign cover page co-branding lockup and eliminate vector interference (v1.0.774)",
+  },
+  {
     version: "1.0.773",
     date: "2026-09-10",
     summary: "Separate co-branded partner logo from Gigamon wordmark on report cover (v1.0.773)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.753",
     date: "2026-09-04",
     summary: "Update passive TAP and breakout panel faceplate graphics (v1.0.753)",
-  },
-  {
-    version: "1.0.750",
-    date: "2026-09-04",
-    summary: "Restore single-click selection for canvas nodes and auto-select on drop (v1.0.750)",
   },
 ];
