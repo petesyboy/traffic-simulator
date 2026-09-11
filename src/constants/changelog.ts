@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.776",
+    date: "2026-09-11",
+    summary: "Implement top executive header bar layout and deconflict cover background graphic (v1.0.776)",
+  },
+  {
     version: "1.0.775",
     date: "2026-09-11",
     summary: "Make the default packet tool partner-configurable (v1.0.775)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.755",
     date: "2026-09-04",
     summary: "Preserve active project name and prevent reversion to stale saved slots",
-  },
-  {
-    version: "1.0.754",
-    date: "2026-09-04",
-    summary: "Add human-readable specification to optic labels in export diagram mode (v1.0.754)",
   },
 ];
