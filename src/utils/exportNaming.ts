@@ -54,7 +54,8 @@ export type ExportDocumentType =
   | 'quote-pdf'
   | 'quote-csv'
   | 'quote-json'
-  | 'diagram-png';
+  | 'diagram-png'
+  | 'glean-prompt-markdown';
 
 /**
  * Generates the canonical standardized export filename for any simulator document.
@@ -93,6 +94,8 @@ export function getStandardExportFilename(
       return `Commercial_Quote_${cleanName}.json`;
     case 'diagram-png':
       return `Gigamon_Architecture_Diagram_${cleanName}.png`;
+    case 'glean-prompt-markdown':
+      return `Glean_Executive_Summary_Prompt_${cleanName}.md`;
     default:
       return `Solution_Overview_${cleanName}.json`;
   }

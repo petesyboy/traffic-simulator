@@ -29,6 +29,8 @@ import { getStandardExportFilename, type ExportDocumentType } from '../../utils/
 import { exportSolutionToDirectoryOrZip } from '../../utils/solutionPackage';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
 import { ProjectNamePromptModal, isUntitledProject } from './index';
+import { isInternalEdition } from '../../constants/edition';
+import { generateGleanExecutiveSummaryPrompt } from '../../utils/gleanPromptGenerator';
 import type { HardwareNodeData } from '../../store/types';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../../assets/gigamon-logo.png';
@@ -113,6 +115,95 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const [coBrandingMode, setCoBrandingMode] = useState<'gigamon-only' | 'co-branded'>('gigamon-only');
   const [partnerName, setPartnerName] = useState('');
   const [partnerLogoDataUrl, setPartnerLogoDataUrl] = useState<string | undefined>(undefined);
+  const [gleanCopyStatus, setGleanCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [isGeneratingGleanPrompt, setIsGeneratingGleanPrompt] = useState<boolean>(false);
+
+  const handleExportGleanPrompt = async (precomputedPrompt?: string) => {
+    setIsGeneratingGleanPrompt(true);
+    try {
+      const prompt =
+        precomputedPrompt ||
+        (await generateGleanExecutiveSummaryPrompt({
+          nodes,
+          edges,
+          trafficStreams,
+          scenarioName: currentScenarioName,
+          projectRegion,
+          projectLicenseMode,
+          defaultTermDuration,
+          peakNodeRxMbps,
+          advancedMode,
+        }));
+      const filename = getStandardExportFilename('glean-prompt-markdown', currentScenarioName);
+      await saveWithFilePickerOrPrompt(prompt, filename, {
+        description: 'Glean AI Executive Summary Prompt',
+        mimeType: 'text/markdown',
+        extension: '.md',
+      });
+    } catch (err) {
+      console.error('Failed to export Glean prompt:', err);
+    } finally {
+      setIsGeneratingGleanPrompt(false);
+    }
+  };
+
+  const handleCopyGleanPrompt = async () => {
+    setIsGeneratingGleanPrompt(true);
+    try {
+      const prompt = await generateGleanExecutiveSummaryPrompt({
+        nodes,
+        edges,
+        trafficStreams,
+        scenarioName: currentScenarioName,
+        projectRegion,
+        projectLicenseMode,
+        defaultTermDuration,
+        peakNodeRxMbps,
+        advancedMode,
+      });
+
+      let copied = false;
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(prompt);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (!copied && typeof document !== 'undefined') {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = prompt;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          textarea.style.top = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          if (ok) copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (copied) {
+        setGleanCopyStatus('copied');
+        setTimeout(() => setGleanCopyStatus('idle'), 2500);
+      } else {
+        setGleanCopyStatus('error');
+        await handleExportGleanPrompt(prompt);
+      }
+    } catch (err) {
+      console.error('Failed to generate Glean prompt:', err);
+      setGleanCopyStatus('error');
+    } finally {
+      setIsGeneratingGleanPrompt(false);
+    }
+  };
 
   const applyTemplate = (template: ReportTemplate) => {
     setSelectedTemplateId(template.id);
@@ -670,6 +761,64 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               </button>
             ))}
           </div>
+
+          {isInternalEdition() && (
+            <div
+              style={{
+                background: 'rgba(225, 89, 42, 0.06)',
+                border: '1px solid rgba(225, 89, 42, 0.28)',
+                borderRadius: '4px',
+                padding: '6px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                marginTop: '2px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>✨</span> Glean AI Assistant <span style={{ fontSize: '9px', opacity: 0.75, fontWeight: 'normal' }}>(Internal Gigamon SE)</span>
+                </span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{
+                      fontSize: '9.5px',
+                      padding: '2px 8px',
+                      fontWeight: 600,
+                      color: gleanCopyStatus === 'copied' ? '#4caf50' : 'inherit',
+                    }}
+                    disabled={busy || isGeneratingGleanPrompt}
+                    onClick={handleCopyGleanPrompt}
+                    title="Copies full context, BOM, and prompt for Glean to generate an Executive Summary"
+                  >
+                    {isGeneratingGleanPrompt
+                      ? 'Generating...'
+                      : gleanCopyStatus === 'copied'
+                        ? '✓ Copied to Clipboard!'
+                        : gleanCopyStatus === 'error'
+                          ? '⚠️ Copy Failed (Downloading .md)'
+                          : '📋 Copy Glean Prompt'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '9.5px', padding: '2px 8px', fontWeight: 600 }}
+                    disabled={busy || isGeneratingGleanPrompt}
+                    onClick={() => handleExportGleanPrompt()}
+                    title="Export prompt as a .md file to upload into Glean"
+                  >
+                    📄 Export Prompt (.md)
+                  </button>
+                </div>
+              </div>
+              <p className="text-muted" style={{ fontSize: '9.5px', margin: 0, lineHeight: 1.3 }}>
+                Author a consultative summary with Glean: Copy or export this prompt, paste into Glean AI (attach the diagram PNG), and paste the Markdown response into the box below.
+              </p>
+            </div>
+          )}
+
           <textarea
             id="report-exec-summary"
             value={execSummaryText}

@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.782",
+    date: "2026-09-11",
+    summary: "Add adversarial planning protocol to agents.md and bump version to 1.0.782",
+  },
+  {
     version: "1.0.780",
     date: "2026-09-11",
     summary: "Reset project name on Clear Canvas, not just New Project (v1.0.780)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.760",
     date: "2026-09-09",
     summary: "Integrate G-TAP M Series Unidirectional TAP Family (ULT) with faceplate icons (v1.0.760)",
-  },
-  {
-    version: "1.0.758",
-    date: "2026-09-08",
-    summary: "Fit SPAN feed optics at the configured port speed, not a 10G default (v1.0.758)",
   },
 ];

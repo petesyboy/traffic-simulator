@@ -35,6 +35,7 @@ import { captureRackElevationPng } from './report/captureRackElevation';
 import { autoDeployRack } from './autoRack';
 import { isRackableGigamonEquipment, getModuleSlotPositions, getChassisImagePath } from './hardwareUtils';
 import { isInternalEdition } from '../constants/edition';
+import { generateGleanExecutiveSummaryPrompt } from './gleanPromptGenerator';
 import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
@@ -384,6 +385,32 @@ export async function generateAllSolutionAssets(
     });
   } catch (err) {
     console.warn('PDF generation in solution package encountered an error:', err);
+  }
+
+  // ── 6. Glean AI Executive Summary Prompt (Internal Edition Only) ──
+  if (isInternalEdition()) {
+    onProgress?.('Generating Glean AI Executive Summary Prompt...');
+    try {
+      const gleanPrompt = await generateGleanExecutiveSummaryPrompt({
+        nodes,
+        edges,
+        trafficStreams,
+        scenarioName,
+        projectRegion,
+        projectLicenseMode,
+        defaultTermDuration,
+        peakNodeRxMbps,
+        advancedMode,
+      });
+      files.push({
+        filename: getStandardExportFilename('glean-prompt-markdown', scenarioName),
+        content: gleanPrompt,
+        mimeType: 'text/markdown',
+        category: 'json',
+      });
+    } catch (err) {
+      console.warn('Glean prompt generation encountered an error, continuing:', err);
+    }
   }
 
   return files;

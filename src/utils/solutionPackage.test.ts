@@ -56,12 +56,12 @@ describe('solutionPackage', () => {
 
     const filenames = assets.map((a) => a.filename);
 
-    expect(filenames).toHaveLength(5);
     expect(filenames).toContain('Solution_Overview_City_of_Goteborg.json');
     expect(filenames).toContain('Bill_of_Materials_City_of_Goteborg.csv');
     expect(filenames).toContain('Bill_of_Materials_Deployment_Report_City_of_Goteborg.csv');
     expect(filenames).toContain('Gigamon_Architecture_Diagram_City_of_Goteborg.png');
     expect(filenames).toContain('Gigamon_Architecture_City_of_Goteborg.pdf');
+    expect(filenames).toContain('Glean_Executive_Summary_Prompt_City_of_Goteborg.md');
 
     // No commercial quotes or uplink reports in deliverables dump
     expect(filenames).not.toContain('Gigamon_Architecture_Uplink_City_of_Goteborg.pdf');
