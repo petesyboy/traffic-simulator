@@ -242,7 +242,16 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const handleClearRequest = () => setShowClearConfirm(true);
   const handleClearConfirm = () => {
     clearCanvas();
+    setCurrentScenarioName(null);
+    clearAllProjectQuoteWorkspaces();
+    setActiveView('canvas');
     setShowClearConfirm(false);
+    try {
+      localStorage.removeItem('fm-simulator-autosave');
+      localStorage.removeItem('fm-simulator-last-slot');
+    } catch {
+      // ignore
+    }
   };
   const handleClearCancel = () => setShowClearConfirm(false);
 
@@ -269,7 +278,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           description: 'PNG Topology Diagram',
           mimeType: 'image/png',
           extension: '.png',
-        }
+        },
       ).catch((err) => {
         console.error('oops, something went wrong!', err);
       });
@@ -303,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           setExportPackageStatus(
             res.directoryName
               ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
-              : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`
+              : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`,
           );
           setTimeout(() => setExportPackageStatus(null), 5000);
         } else {
@@ -323,7 +332,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
     <>
       {showClearConfirm && (
         <ConfirmModal
-          message="Are you sure you want to clear the canvas? All nodes, edges, and traffic streams will be removed."
+          message="Are you sure you want to clear the canvas? All nodes, edges, and traffic streams will be removed, all quotations will be reset, and the project name will return to Untitled Project."
           onConfirm={handleClearConfirm}
           onCancel={handleClearCancel}
         />
@@ -349,26 +358,27 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
         />
       )}
 
-      {showMixedSiteConfirm && (() => {
-        const siteCheck = detectMixedSiteAssignment(nodes);
-        return (
-          <MixedSiteConfirmModal
-            targetType={pendingSiteAction}
-            taggedSites={siteCheck.taggedSites}
-            taggedNodes={siteCheck.taggedNodes}
-            untaggedNodes={siteCheck.untaggedNodes}
-            onConfirm={() => {
-              setShowMixedSiteConfirm(false);
-              if (pendingSiteAction === 'bom') {
-                setShowBom(true);
-              } else {
-                setShowReport(true);
-              }
-            }}
-            onCancel={() => setShowMixedSiteConfirm(false)}
-          />
-        );
-      })()}
+      {showMixedSiteConfirm &&
+        (() => {
+          const siteCheck = detectMixedSiteAssignment(nodes);
+          return (
+            <MixedSiteConfirmModal
+              targetType={pendingSiteAction}
+              taggedSites={siteCheck.taggedSites}
+              taggedNodes={siteCheck.taggedNodes}
+              untaggedNodes={siteCheck.untaggedNodes}
+              onConfirm={() => {
+                setShowMixedSiteConfirm(false);
+                if (pendingSiteAction === 'bom') {
+                  setShowBom(true);
+                } else {
+                  setShowReport(true);
+                }
+              }}
+              onCancel={() => setShowMixedSiteConfirm(false)}
+            />
+          );
+        })()}
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
@@ -462,7 +472,10 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
               </span>
             </div>
 
-            <div className="tab monitoring-session active" style={{ color: advancedMode ? '#ff9800' : '#fff', flexShrink: 0 }}>
+            <div
+              className="tab monitoring-session active"
+              style={{ color: advancedMode ? '#ff9800' : '#fff', flexShrink: 0 }}
+            >
               {advancedMode ? 'Expert Designer' : 'Standard View'}
             </div>
           </div>
@@ -513,7 +526,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 </button>
               )}
 
-              {(advancedMode || nodes.some((n) => n.type === 'hardwareNode')) && !isMissionDemoActive &&
+              {(advancedMode || nodes.some((n) => n.type === 'hardwareNode')) &&
+                !isMissionDemoActive &&
                 (() => {
                   const validationErrors = validateConfiguration(nodes, edges);
                   const hasErrors = validationErrors.length > 0;
@@ -672,7 +686,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         handleNewProjectClick();
                       }}
                       style={{ color: '#38bdf8', fontWeight: 600 }}
-                      title={isInternalEdition() ? "Clear canvas, reset all quotations, and start a fresh project" : "Clear canvas and start a fresh project"}
+                      title={
+                        isInternalEdition()
+                          ? 'Clear canvas, reset all quotations, and start a fresh project'
+                          : 'Clear canvas and start a fresh project'
+                      }
                     >
                       <FilePlusIcon size={14} />
                       <span>✨ New Project...</span>
@@ -686,10 +704,16 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         handleDumpAllToDirectory();
                       }}
                       style={{ color: '#E1592A', fontWeight: 600 }}
-                      title={isInternalEdition() ? "Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram" : "Select a directory on your computer to save all reports, BOM CSVs, JSON, and PNG diagram"}
+                      title={
+                        isInternalEdition()
+                          ? 'Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram'
+                          : 'Select a directory on your computer to save all reports, BOM CSVs, JSON, and PNG diagram'
+                      }
                     >
                       <FolderOpenIcon size={14} />
-                      <span>{isExportingPackage ? 'Dumping All Files...' : '📁 Dump All to Folder (Directory Chooser)...'}</span>
+                      <span>
+                        {isExportingPackage ? 'Dumping All Files...' : '📁 Dump All to Folder (Directory Chooser)...'}
+                      </span>
                     </button>
                     <div className="header-dropdown-divider" />
                     <button
@@ -701,7 +725,11 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         });
                       }}
                       style={{ color: '#38bdf8', fontWeight: 600 }}
-                      title={isInternalEdition() ? "Save complete project file (.gvp) with canvas, optics, BOM, and commercial quotes" : "Save complete project file (.gvp) with canvas, optics, and BOM"}
+                      title={
+                        isInternalEdition()
+                          ? 'Save complete project file (.gvp) with canvas, optics, BOM, and commercial quotes'
+                          : 'Save complete project file (.gvp) with canvas, optics, and BOM'
+                      }
                     >
                       <SaveIcon size={14} />
                       <span>💾 Save Project File (.gvp)...</span>
