@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.0.780",
+    "date": "2026-09-11",
+    "summary": "Reset project name on Clear Canvas, not just New Project (v1.0.780)"
+  },
+  {
+    "version": "1.0.779",
+    "date": "2026-09-11",
+    "summary": "Drop cosmetic cloud platform selector from Cloud Suite quick-add (v1.0.779)"
+  },
+  {
+    "version": "1.0.778",
+    "date": "2026-09-11",
+    "summary": "Add GigaVUE Cloud Suite (VBL) quick-add to Commercial Quote (v1.0.778)"
+  },
+  {
     "version": "1.0.776",
     "date": "2026-09-11",
     "summary": "Implement top executive header bar layout and deconflict cover background graphic (v1.0.776)"

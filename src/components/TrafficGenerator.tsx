@@ -14,11 +14,12 @@
  * • CSS classes used instead of some repeated inline style objects.
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useStore, type TrafficStream } from '../store/store';
-import type { TappedLinkAllocation } from '../store/types';
+import type { CustomNode, TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from '../utils/hardwareUtils';
 import { isAutoTrayModel } from '../utils/trayModels';
+import { resolveNodeSite } from '../utils/report/describeTopology';
 import {
   generateStreamsForTopology,
   getTopologyIngressSummary,
@@ -36,8 +37,33 @@ const ADVANCED_BANDWIDTH_PRESETS = [100, 250, 500, ...STANDARD_BANDWIDTH_PRESETS
 const formatBandwidthOption = (mbps: number): string =>
   mbps >= 1000 ? `${(mbps / 1000).toFixed(1).replace('.0', '')} Gbps` : `${mbps} Mbps`;
 
+const getSiteBadgeStyle = (siteName: string) => {
+  if (!siteName || siteName === 'Unassigned') {
+    return {
+      bg: 'rgba(255, 255, 255, 0.04)',
+      border: 'rgba(255, 255, 255, 0.12)',
+      text: 'var(--text-muted)',
+    };
+  }
+  let hash = 0;
+  for (let i = 0; i < siteName.length; i++) {
+    hash = (hash << 5) - hash + siteName.charCodeAt(i);
+    hash |= 0;
+  }
+  const palettes = [
+    { bg: 'rgba(0, 229, 255, 0.12)', border: 'rgba(0, 229, 255, 0.35)', text: '#00e5ff' },
+    { bg: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.35)', text: '#c084fc' },
+    { bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.35)', text: '#34d399' },
+    { bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.35)', text: '#fbbf24' },
+    { bg: 'rgba(244, 63, 94, 0.12)', border: 'rgba(244, 63, 94, 0.35)', text: '#fb7185' },
+    { bg: 'rgba(56, 189, 248, 0.12)', border: 'rgba(56, 189, 248, 0.35)', text: '#38bdf8' },
+  ];
+  return palettes[Math.abs(hash) % palettes.length];
+};
+
 const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
-  name: 360,
+  dataCentre: 110,
+  name: 340,
   ingress: 180,
   vlan: 60,
   proto: 70,
@@ -52,6 +78,7 @@ const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
 };
 
 const MIN_COLUMN_WIDTHS: Record<string, number> = {
+  dataCentre: 75,
   name: 140,
   ingress: 100,
   vlan: 45,
@@ -69,6 +96,7 @@ const MIN_COLUMN_WIDTHS: Record<string, number> = {
 const TrafficGenerator: React.FC = () => {
   const trafficStreams        = useStore((state) => state.trafficStreams);
   const nodes                 = useStore((state) => state.nodes);
+  const edges                 = useStore((state) => state.edges);
   const addTrafficStream      = useStore((state) => state.addTrafficStream);
   const setTrafficStreams     = useStore((state) => state.setTrafficStreams);
   const clearTrafficStreams   = useStore((state) => state.clearTrafficStreams);
@@ -179,6 +207,101 @@ const TrafficGenerator: React.FC = () => {
   );
   const ingressSummary = getTopologyIngressSummary(nodes);
 
+  const getPortSite = useCallback((port: CustomNode): string => {
+    const direct = ((port.data?.site as string) || '').trim();
+    if (direct) return direct;
+    return resolveNodeSite(port, nodes, edges) || '';
+  }, [nodes, edges]);
+
+  const getStreamSite = useCallback((stream: TrafficStream): string => {
+    if (stream.site && stream.site.trim()) return stream.site.trim();
+    const sourceNode = nodes.find((n) => n.id === stream.sourceNodeId);
+    if (sourceNode) {
+      const site = getPortSite(sourceNode);
+      if (site) return site;
+    }
+    const match = stream.name.match(/^\[(.*?)\]/);
+    if (match && match[1]) return match[1].trim();
+    return '';
+  }, [nodes, getPortSite]);
+
+  const groupedInputPorts = useMemo(() => {
+    const map = new Map<string, CustomNode[]>();
+    inputPorts.forEach((port) => {
+      const site = getPortSite(port);
+      if (!map.has(site)) {
+        map.set(site, []);
+      }
+      map.get(site)!.push(port);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b);
+    });
+  }, [inputPorts, getPortSite]);
+
+  // Data Centre filtering & grouping state
+  const [selectedDcFilter, setSelectedDcFilter] = useState<string>('all');
+  const [groupByDc, setGroupByDc] = useState<boolean>(true);
+  const [collapsedDcs, setCollapsedDcs] = useState<Record<string, boolean>>({});
+
+  const toggleDcCollapsed = useCallback((site: string) => {
+    setCollapsedDcs((prev) => ({ ...prev, [site]: !prev[site] }));
+  }, []);
+
+  const toggleAllInDc = useCallback((site: string, makeActive: boolean) => {
+    const targetStreams = trafficStreams.filter((s) => (getStreamSite(s) || 'Unassigned') === site);
+    targetStreams.forEach((s) => {
+      updateTrafficStream(s.id, { active: makeActive });
+    });
+  }, [trafficStreams, getStreamSite, updateTrafficStream]);
+
+  const siteStreamStats = useMemo(() => {
+    const stats = new Map<string, { count: number; bandwidth: number }>();
+    trafficStreams.forEach((s) => {
+      const site = getStreamSite(s) || 'Unassigned';
+      const current = stats.get(site) || { count: 0, bandwidth: 0 };
+      stats.set(site, {
+        count: current.count + 1,
+        bandwidth: current.bandwidth + (s.active ? s.bandwidth : 0),
+      });
+    });
+    return stats;
+  }, [trafficStreams, getStreamSite]);
+
+  const availableSites = useMemo(() => {
+    return Array.from(siteStreamStats.keys()).sort((a, b) => {
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
+      return a.localeCompare(b);
+    });
+  }, [siteStreamStats]);
+
+  const filteredStreams = useMemo(() => {
+    if (selectedDcFilter === 'all') return trafficStreams;
+    return trafficStreams.filter((s) => {
+      const site = getStreamSite(s) || 'Unassigned';
+      return site === selectedDcFilter;
+    });
+  }, [trafficStreams, selectedDcFilter, getStreamSite]);
+
+  const groupedStreams = useMemo(() => {
+    const groups = new Map<string, TrafficStream[]>();
+    filteredStreams.forEach((stream) => {
+      const site = getStreamSite(stream) || 'Unassigned';
+      if (!groups.has(site)) {
+        groups.set(site, []);
+      }
+      groups.get(site)!.push(stream);
+    });
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
+      return a.localeCompare(b);
+    });
+  }, [filteredStreams, getStreamSite]);
+
   const [noPortError, setNoPortError] = useState(false);
   const [streamLimitError, setStreamLimitError] = useState(false);
   const [autoGenNotice, setAutoGenNotice] = useState<string | null>(null);
@@ -194,6 +317,7 @@ const TrafficGenerator: React.FC = () => {
     const generated = generateStreamsForTopology(nodes, {
       profileBias: trafficProfileBias,
       utilisationLevel: trafficUtilisationLevel,
+      edges,
     });
 
     if (generated.length > 0) {
@@ -260,10 +384,14 @@ const TrafficGenerator: React.FC = () => {
       }
     }
 
+    const sourceSite = getPortSite(sourceNode);
+    const sitePrefix = sourceSite ? `[${sourceSite}] ` : '';
+
     const newStream: TrafficStream = {
       id: `t-${Date.now()}`,
-      name: `Traffic Stream ${trafficStreams.length + 1} (${defaultBandwidth >= 1000 ? defaultBandwidth/1000 + ' Gbps' : defaultBandwidth + ' Mbps'})`,
+      name: `${sitePrefix}Traffic Stream ${trafficStreams.length + 1} (${defaultBandwidth >= 1000 ? defaultBandwidth/1000 + ' Gbps' : defaultBandwidth + ' Mbps'})`,
       sourceNodeId: sourceNode.id,
+      site: sourceSite || undefined,
       vlan: String(100 + trafficStreams.length * 100),
       ipSrc: `192.168.1.${50 + trafficStreams.length}`,
       ipDst: '10.0.0.100',
@@ -279,6 +407,15 @@ const TrafficGenerator: React.FC = () => {
 
   const handleFieldChange = (id: string, field: keyof TrafficStream, value: string | number | boolean) => {
     updateTrafficStream(id, { [field]: value });
+  };
+
+  const handleSourceNodeChange = (streamId: string, newSourceNodeId: string) => {
+    const newPort = nodes.find((n) => n.id === newSourceNodeId);
+    const newSite = newPort ? getPortSite(newPort) : undefined;
+    updateTrafficStream(streamId, {
+      sourceNodeId: newSourceNodeId,
+      site: newSite || undefined,
+    });
   };
 
   const panelTextScale = useStore((state) => state.panelTextScale || 1.0);
@@ -354,6 +491,204 @@ const TrafficGenerator: React.FC = () => {
     );
   };
 
+  const renderStreamRow = (stream: TrafficStream) => {
+    const site = getStreamSite(stream);
+    const palette = getSiteBadgeStyle(site);
+
+    return (
+      <tr key={stream.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+        <td style={{ padding: '4px 6px', width: `${colWidths.dataCentre}px`, minWidth: `${colWidths.dataCentre}px`, maxWidth: `${colWidths.dataCentre}px`, boxSizing: 'border-box' }}>
+          {site ? (
+            <span
+              title={`Data Centre: ${site}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: palette.bg,
+                border: `1px solid ${palette.border}`,
+                color: palette.text,
+                borderRadius: '3px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                padding: '2px 6px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              🏢 {site}
+            </span>
+          ) : (
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', paddingLeft: '4px' }}>—</span>
+          )}
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.name}px`, minWidth: `${colWidths.name}px`, maxWidth: `${colWidths.name}px`, boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            value={stream.name}
+            onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
+            title={stream.name}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-primary)',
+              fontSize: '12px',
+              width: '100%',
+              boxSizing: 'border-box',
+              borderBottom: '1px solid transparent',
+              textOverflow: 'ellipsis',
+            }}
+            onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
+            onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.ingress}px`, minWidth: `${colWidths.ingress}px`, maxWidth: `${colWidths.ingress}px`, boxSizing: 'border-box' }}>
+          <select
+            value={stream.sourceNodeId}
+            onChange={(e) => handleSourceNodeChange(stream.id, e.target.value)}
+            style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              fontSize: '11px',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              width: '100%',
+              boxSizing: 'border-box',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {groupedInputPorts.map(([grpSite, ports]) => (
+              <optgroup key={grpSite || 'unassigned'} label={grpSite ? `Data Centre: ${grpSite}` : 'Unassigned Data Centre'}>
+                {ports.map((port) => (
+                  <option key={port.id} value={port.id}>
+                    {port.data.label as string}{grpSite ? ` [${grpSite}]` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.vlan}px`, minWidth: `${colWidths.vlan}px`, maxWidth: `${colWidths.vlan}px`, boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            value={stream.vlan}
+            onChange={(e) => handleFieldChange(stream.id, 'vlan', e.target.value)}
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.proto}px`, minWidth: `${colWidths.proto}px`, maxWidth: `${colWidths.proto}px`, boxSizing: 'border-box' }}>
+          <select
+            value={stream.protocol}
+            onChange={(e) => handleFieldChange(stream.id, 'protocol', e.target.value)}
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+          >
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
+            <option value="icmp">ICMP</option>
+          </select>
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.ipSrc}px`, minWidth: `${colWidths.ipSrc}px`, maxWidth: `${colWidths.ipSrc}px`, boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            value={stream.ipSrc}
+            onChange={(e) => handleFieldChange(stream.id, 'ipSrc', e.target.value)}
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.ipDst}px`, minWidth: `${colWidths.ipDst}px`, maxWidth: `${colWidths.ipDst}px`, boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            value={stream.ipDst}
+            onChange={(e) => handleFieldChange(stream.id, 'ipDst', e.target.value)}
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.portDst}px`, minWidth: `${colWidths.portDst}px`, maxWidth: `${colWidths.portDst}px`, boxSizing: 'border-box' }}>
+          <input
+            type="text"
+            value={stream.portDst}
+            onChange={(e) => handleFieldChange(stream.id, 'portDst', e.target.value)}
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.rate}px`, minWidth: `${colWidths.rate}px`, maxWidth: `${colWidths.rate}px`, boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <select
+               value={stream.bandwidth}
+               onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
+               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
+            >
+               {(() => {
+                 const presets = advancedMode ? ADVANCED_BANDWIDTH_PRESETS : STANDARD_BANDWIDTH_PRESETS;
+                 return (
+                   <>
+                     {!presets.includes(stream.bandwidth) && (
+                       <option value={stream.bandwidth}>{formatBandwidthOption(stream.bandwidth)}</option>
+                     )}
+                     {presets.map((mbps) => (
+                       <option key={mbps} value={mbps}>{formatBandwidthOption(mbps)}</option>
+                     ))}
+                   </>
+                 );
+               })()}
+            </select>
+            {/* Live drifted rate (shown while simulation is running) */}
+            {isRunning && stream.active && (
+              <span style={{ fontSize: '10px', color: '#4caf50', fontWeight: 'bold', display: 'block', paddingLeft: '2px' }}>
+                ~{((stream.bandwidth * (stream.drift || 1.0)) / 1000).toFixed(2)} Gbps
+              </span>
+            )}
+          </div>
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.status}px`, minWidth: `${colWidths.status}px`, maxWidth: `${colWidths.status}px`, boxSizing: 'border-box' }}>
+          {/* Status badge: Idle / Inactive / ✓ Passed / ❌ Filtered */}
+          {!isRunning ? (
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', fontSize: '10px', color: '#888', display: 'inline-block' }}>
+              Idle
+            </span>
+          ) : !stream.active ? (
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', fontSize: '10px', color: '#666', display: 'inline-block' }}>
+              Inactive
+            </span>
+          ) : deliveredStreams.some((id) => id === stream.id || id.startsWith(`${stream.id}-`)) ? (
+            <span style={{ padding: '2px 6px', background: 'rgba(76, 175, 80, 0.12)', border: '1px solid rgba(76, 175, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#4caf50', display: 'inline-block', whiteSpace: 'nowrap' }}>
+              ✓ Passed
+            </span>
+          ) : (
+            <span style={{ padding: '2px 6px', background: 'rgba(239, 83, 80, 0.12)', border: '1px solid rgba(239, 83, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#ef5350', display: 'inline-block', whiteSpace: 'nowrap' }}>
+              ❌ Filtered
+            </span>
+          )}
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.encrypted}px`, minWidth: `${colWidths.encrypted}px`, maxWidth: `${colWidths.encrypted}px`, textAlign: 'center', boxSizing: 'border-box' }}>
+          <input
+            type="checkbox"
+            checked={stream.isEncrypted || false}
+            onChange={(e) => handleFieldChange(stream.id, 'isEncrypted', e.target.checked)}
+            style={{ cursor: 'pointer' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.active}px`, minWidth: `${colWidths.active}px`, maxWidth: `${colWidths.active}px`, textAlign: 'center', boxSizing: 'border-box' }}>
+          <input
+            type="checkbox"
+            checked={stream.active}
+            onChange={(e) => handleFieldChange(stream.id, 'active', e.target.checked)}
+            style={{ cursor: 'pointer' }}
+          />
+        </td>
+        <td style={{ padding: '4px 6px', width: `${colWidths.action}px`, minWidth: `${colWidths.action}px`, maxWidth: `${colWidths.action}px`, textAlign: 'center', boxSizing: 'border-box' }}>
+          <button className="danger" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => deleteTrafficStream(stream.id)}>
+            Delete
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div style={{ position: 'relative', flexShrink: 0, zoom: panelTextScale }}>
       {/* ── Drag handle ──────────────────────────────────────────────────────── */}
@@ -423,6 +758,11 @@ const TrafficGenerator: React.FC = () => {
                 {trafficStreams.length} stream{trafficStreams.length !== 1 ? 's' : ''} · {totalBandwidthLabel}
               </span>
             )}
+            {!isCollapsed && selectedDcFilter !== 'all' && (
+              <span style={{ fontSize: '11px', background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.35)', color: '#c084fc', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                Filtering: {filteredStreams.length} in {selectedDcFilter}
+              </span>
+            )}
             {!isCollapsed && ingressSummary.totalMonitoredLinks > 0 && (
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 ({ingressSummary.totalMonitoredLinks} tapped link{ingressSummary.totalMonitoredLinks !== 1 ? 's' : ''} detected)
@@ -446,6 +786,59 @@ const TrafficGenerator: React.FC = () => {
               <span style={{ fontSize: '11px', color: '#ef5350', background: 'rgba(239,83,80,0.1)', border: '1px solid rgba(239,83,80,0.3)', borderRadius: '4px', padding: '4px 8px' }}>
                 ⚠️ Maximum limit of 500 active traffic streams reached
               </span>
+            )}
+
+            {/* Data Centre Filter dropdown */}
+            {availableSites.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <select
+                  value={selectedDcFilter}
+                  onChange={(e) => setSelectedDcFilter(e.target.value)}
+                  title="Filter traffic streams by Data Centre"
+                  style={{
+                    background: 'var(--bg-tertiary)',
+                    border: selectedDcFilter !== 'all' ? '1px solid rgba(0, 229, 255, 0.5)' : '1px solid var(--border-color)',
+                    color: selectedDcFilter !== 'all' ? '#00e5ff' : 'var(--text-primary)',
+                    fontSize: '11px',
+                    padding: '5px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">🏢 All Data Centres ({trafficStreams.length})</option>
+                  {availableSites.map((site) => {
+                    const stats = siteStreamStats.get(site) || { count: 0, bandwidth: 0 };
+                    const bw = stats.bandwidth >= 1000 ? `${(stats.bandwidth / 1000).toFixed(1).replace('.0', '')} Gbps` : `${stats.bandwidth} Mbps`;
+                    return (
+                      <option key={site} value={site}>
+                        🏢 {site} ({stats.count} stream{stats.count !== 1 ? 's' : ''} · {bw})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            {/* Group by Data Centre toggle */}
+            {availableSites.length > 0 && (
+              <button
+                onClick={() => setGroupByDc(!groupByDc)}
+                title={groupByDc ? 'Disable Data Centre grouping (show flat list)' : 'Group traffic streams by Data Centre'}
+                style={{
+                  background: groupByDc ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                  border: groupByDc ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid var(--border-color)',
+                  color: groupByDc ? '#00e5ff' : 'var(--text-secondary)',
+                  fontSize: '11px',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                📁 Group by DC {groupByDc ? '✓' : ''}
+              </button>
             )}
 
             {/* Profile bias dropdown */}
@@ -607,6 +1000,7 @@ const TrafficGenerator: React.FC = () => {
             <table style={{ width: '100%', minWidth: `${totalTableWidth}px`, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: 'var(--text-secondary)' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                  <ResizableHeader colKey="dataCentre" label="Data Centre" />
                   <ResizableHeader colKey="name" label="Name" />
                   <ResizableHeader colKey="ingress" label="Ingress Port" />
                   <ResizableHeader colKey="vlan" label="VLAN" />
@@ -622,166 +1016,98 @@ const TrafficGenerator: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {trafficStreams.map((stream) => (
-                  <tr key={stream.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.name}px`, minWidth: `${colWidths.name}px`, maxWidth: `${colWidths.name}px`, boxSizing: 'border-box' }}>
-                      <input
-                        type="text"
-                        value={stream.name}
-                        onChange={(e) => handleFieldChange(stream.id, 'name', e.target.value)}
-                        title={stream.name}
+                {filteredStreams.length === 0 ? (
+                  <tr>
+                    <td colSpan={13} style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)' }}>
+                      No traffic streams found for Data Centre &quot;{selectedDcFilter}&quot;.
+                      <button
+                        onClick={() => setSelectedDcFilter('all')}
                         style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-primary)',
-                          fontSize: '12px',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          borderBottom: '1px solid transparent',
-                          textOverflow: 'ellipsis',
-                        }}
-                        onFocus={(e) => e.target.style.borderBottom = '1px solid var(--text-muted)'}
-                        onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.ingress}px`, minWidth: `${colWidths.ingress}px`, maxWidth: `${colWidths.ingress}px`, boxSizing: 'border-box' }}>
-                      <select
-                        value={stream.sourceNodeId}
-                        onChange={(e) => handleFieldChange(stream.id, 'sourceNodeId', e.target.value)}
-                        style={{
-                          background: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-color)',
-                          color: 'var(--text-primary)',
-                          fontSize: '11px',
-                          padding: '2px 4px',
+                          marginLeft: '12px',
+                          background: 'rgba(0, 229, 255, 0.15)',
+                          border: '1px solid rgba(0, 229, 255, 0.4)',
+                          color: '#00e5ff',
+                          padding: '3px 10px',
                           borderRadius: '4px',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          textOverflow: 'ellipsis',
+                          fontSize: '11px',
+                          cursor: 'pointer',
                         }}
                       >
-                        {inputPorts.map((port) => (
-                          <option key={port.id} value={port.id}>
-                            {port.data.label as string}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.vlan}px`, minWidth: `${colWidths.vlan}px`, maxWidth: `${colWidths.vlan}px`, boxSizing: 'border-box' }}>
-                      <input
-                        type="text"
-                        value={stream.vlan}
-                        onChange={(e) => handleFieldChange(stream.id, 'vlan', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.proto}px`, minWidth: `${colWidths.proto}px`, maxWidth: `${colWidths.proto}px`, boxSizing: 'border-box' }}>
-                      <select
-                        value={stream.protocol}
-                        onChange={(e) => handleFieldChange(stream.id, 'protocol', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                      >
-                        <option value="tcp">TCP</option>
-                        <option value="udp">UDP</option>
-                        <option value="icmp">ICMP</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.ipSrc}px`, minWidth: `${colWidths.ipSrc}px`, maxWidth: `${colWidths.ipSrc}px`, boxSizing: 'border-box' }}>
-                      <input
-                        type="text"
-                        value={stream.ipSrc}
-                        onChange={(e) => handleFieldChange(stream.id, 'ipSrc', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.ipDst}px`, minWidth: `${colWidths.ipDst}px`, maxWidth: `${colWidths.ipDst}px`, boxSizing: 'border-box' }}>
-                      <input
-                        type="text"
-                        value={stream.ipDst}
-                        onChange={(e) => handleFieldChange(stream.id, 'ipDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.portDst}px`, minWidth: `${colWidths.portDst}px`, maxWidth: `${colWidths.portDst}px`, boxSizing: 'border-box' }}>
-                      <input
-                        type="text"
-                        value={stream.portDst}
-                        onChange={(e) => handleFieldChange(stream.id, 'portDst', e.target.value)}
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.rate}px`, minWidth: `${colWidths.rate}px`, maxWidth: `${colWidths.rate}px`, boxSizing: 'border-box' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <select
-                           value={stream.bandwidth}
-                           onChange={(e) => handleFieldChange(stream.id, 'bandwidth', Number(e.target.value))}
-                           style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '11px', padding: '2px 4px', borderRadius: '4px', width: '100%', boxSizing: 'border-box' }}
-                        >
-                           {(() => {
-                             const presets = advancedMode ? ADVANCED_BANDWIDTH_PRESETS : STANDARD_BANDWIDTH_PRESETS;
-                             return (
-                               <>
-                                 {!presets.includes(stream.bandwidth) && (
-                                   <option value={stream.bandwidth}>{formatBandwidthOption(stream.bandwidth)}</option>
-                                 )}
-                                 {presets.map((mbps) => (
-                                   <option key={mbps} value={mbps}>{formatBandwidthOption(mbps)}</option>
-                                 ))}
-                               </>
-                             );
-                           })()}
-                        </select>
-                        {/* Live drifted rate (shown while simulation is running) */}
-                        {isRunning && stream.active && (
-                          <span style={{ fontSize: '10px', color: '#4caf50', fontWeight: 'bold', display: 'block', paddingLeft: '2px' }}>
-                            ~{((stream.bandwidth * (stream.drift || 1.0)) / 1000).toFixed(2)} Gbps
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.status}px`, minWidth: `${colWidths.status}px`, maxWidth: `${colWidths.status}px`, boxSizing: 'border-box' }}>
-                      {/* Status badge: Idle / Inactive / ✓ Passed / ❌ Filtered */}
-                      {!isRunning ? (
-                        <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', fontSize: '10px', color: '#888', display: 'inline-block' }}>
-                          Idle
-                        </span>
-                      ) : !stream.active ? (
-                        <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', fontSize: '10px', color: '#666', display: 'inline-block' }}>
-                          Inactive
-                        </span>
-                      ) : deliveredStreams.some(id => id === stream.id || id.startsWith(`${stream.id}-`)) ? (
-                        <span style={{ padding: '2px 6px', background: 'rgba(76, 175, 80, 0.12)', border: '1px solid rgba(76, 175, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#4caf50', display: 'inline-block', whiteSpace: 'nowrap' }}>
-                          ✓ Passed
-                        </span>
-                      ) : (
-                        <span style={{ padding: '2px 6px', background: 'rgba(239, 83, 80, 0.12)', border: '1px solid rgba(239, 83, 80, 0.25)', borderRadius: '3px', fontSize: '10px', fontWeight: 'bold', color: '#ef5350', display: 'inline-block', whiteSpace: 'nowrap' }}>
-                          ❌ Filtered
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.encrypted}px`, minWidth: `${colWidths.encrypted}px`, maxWidth: `${colWidths.encrypted}px`, textAlign: 'center', boxSizing: 'border-box' }}>
-                      <input
-                        type="checkbox"
-                        checked={stream.isEncrypted || false}
-                        onChange={(e) => handleFieldChange(stream.id, 'isEncrypted', e.target.checked)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.active}px`, minWidth: `${colWidths.active}px`, maxWidth: `${colWidths.active}px`, textAlign: 'center', boxSizing: 'border-box' }}>
-                      <input
-                        type="checkbox"
-                        checked={stream.active}
-                        onChange={(e) => handleFieldChange(stream.id, 'active', e.target.checked)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px 6px', width: `${colWidths.action}px`, minWidth: `${colWidths.action}px`, maxWidth: `${colWidths.action}px`, textAlign: 'center', boxSizing: 'border-box' }}>
-                      <button className="danger" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => deleteTrafficStream(stream.id)}>
-                        Delete
+                        Show All Data Centres
                       </button>
                     </td>
                   </tr>
-                ))}
+                ) : groupByDc && availableSites.length > 0 ? (
+                  groupedStreams.map(([site, siteStreams]) => {
+                    const isDcCollapsed = collapsedDcs[site] || false;
+                    const palette = getSiteBadgeStyle(site === 'Unassigned' ? '' : site);
+                    const activeCount = siteStreams.filter((s) => s.active).length;
+                    const activeBandwidth = siteStreams.filter((s) => s.active).reduce((sum, s) => sum + s.bandwidth, 0);
+                    const activeBwLabel = activeBandwidth >= 1000
+                      ? `${(activeBandwidth / 1000).toFixed(1).replace('.0', '')} Gbps`
+                      : `${activeBandwidth} Mbps`;
+
+                    return (
+                      <React.Fragment key={`dc-grp-${site}`}>
+                        <tr style={{ background: 'rgba(255,255,255,0.03)', borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          <td colSpan={13} style={{ padding: '6px 8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => toggleDcCollapsed(site)}
+                              >
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', width: '12px', display: 'inline-block' }}>
+                                  {isDcCollapsed ? '▸' : '▾'}
+                                </span>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  background: palette.bg,
+                                  border: `1px solid ${palette.border}`,
+                                  color: palette.text,
+                                }}>
+                                  🏢 Data Centre: {site}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {siteStreams.length} stream{siteStreams.length !== 1 ? 's' : ''} ({activeCount} active · {activeBwLabel})
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const allActive = siteStreams.every((s) => s.active);
+                                    toggleAllInDc(site, !allActive);
+                                  }}
+                                  title={`Toggle active state for all streams in ${site}`}
+                                  style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '10px',
+                                    padding: '2px 8px',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {siteStreams.every((s) => s.active) ? 'Disable All' : 'Enable All'}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                        {!isDcCollapsed && siteStreams.map((stream) => renderStreamRow(stream))}
+                      </React.Fragment>
+                    );
+                  })
+                ) : (
+                  filteredStreams.map((stream) => renderStreamRow(stream))
+                )}
               </tbody>
             </table>
           </div>

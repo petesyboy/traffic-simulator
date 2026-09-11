@@ -195,4 +195,84 @@ describe('trafficStreamUtils', () => {
     const links = getMonitoredLinksForNode(trayNode);
     expect(links).toHaveLength(0);
   });
+
+  it('includes Data Centre site prefix in generated stream names and populates stream.site', () => {
+    const dc1Node: CustomNode = {
+      id: 'span-dc1',
+      type: 'inputNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'SPAN Port 1 - WAN',
+        configType: 'SPAN Port',
+        portSpeed: '10G',
+        site: 'DC1',
+      } as InputNodeData,
+    };
+
+    const dc2Node: CustomNode = {
+      id: 'span-dc2',
+      type: 'inputNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'SPAN Port 1 - WAN',
+        configType: 'SPAN Port',
+        portSpeed: '10G',
+        site: 'DC2',
+      } as InputNodeData,
+    };
+
+    const streams = generateStreamsForTopology([dc1Node, dc2Node], {
+      profileBias: 'enterprise',
+    });
+
+    expect(streams).toHaveLength(2);
+    expect(streams[0].site).toBe('DC1');
+    expect(streams[0].name).toMatch(/^\[DC1\] SPAN Port 1 - WAN - Link 1 - /);
+    expect(streams[1].site).toBe('DC2');
+    expect(streams[1].name).toMatch(/^\[DC2\] SPAN Port 1 - WAN - Link 1 - /);
+  });
+
+  it('resolves Data Centre site from connected neighbour edges when node has no direct site', () => {
+    const inputNode: CustomNode = {
+      id: 'span-unassigned',
+      type: 'inputNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'SPAN Port 1 - WAN',
+        configType: 'SPAN Port',
+        portSpeed: '10G',
+      } as InputNodeData,
+    };
+
+    const chassisNode: CustomNode = {
+      id: 'chassis-dc3',
+      type: 'hardwareNode',
+      position: { x: 200, y: 0 },
+      data: {
+        label: 'GigaVUE-TA100',
+        model: 'GigaVUE-TA100',
+        site: 'DC3',
+      } as HardwareNodeData,
+    };
+
+    const edge = {
+      id: 'e1',
+      source: 'span-unassigned',
+      target: 'chassis-dc3',
+    };
+
+    const links = getMonitoredLinksForNode(inputNode, [inputNode, chassisNode], [edge]);
+    expect(links).toHaveLength(1);
+    expect(links[0].site).toBe('DC3');
+
+    const streams = generateStreamsForTopology([inputNode, chassisNode], {
+      edges: [edge],
+      targetNodeIds: ['span-unassigned'],
+    });
+
+    expect(streams).toHaveLength(1);
+    expect(streams[0].site).toBe('DC3');
+    expect(streams[0].name).toMatch(/^\[DC3\] SPAN Port 1 - WAN/);
+  });
 });
+

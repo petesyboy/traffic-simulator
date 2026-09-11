@@ -16,6 +16,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.780",
+    date: "2026-09-11",
+    summary: "Reset project name on Clear Canvas, not just New Project (v1.0.780)",
+  },
+  {
+    version: "1.0.779",
+    date: "2026-09-11",
+    summary: "Drop cosmetic cloud platform selector from Cloud Suite quick-add (v1.0.779)",
+  },
+  {
+    version: "1.0.778",
+    date: "2026-09-11",
+    summary: "Add GigaVUE Cloud Suite (VBL) quick-add to Commercial Quote (v1.0.778)",
+  },
+  {
     version: "1.0.776",
     date: "2026-09-11",
     summary: "Implement top executive header bar layout and deconflict cover background graphic (v1.0.776)",
@@ -99,20 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.758",
     date: "2026-09-08",
     summary: "Fit SPAN feed optics at the configured port speed, not a 10G default (v1.0.758)",
-  },
-  {
-    version: "1.0.757",
-    date: "2026-09-04",
-    summary: "Render TA25E SFP cages in 3 physical rows of 16",
-  },
-  {
-    version: "1.0.756",
-    date: "2026-09-04",
-    summary: "Calibrate 3-row SFP28 and QSFP28 front panel port cage coordinates",
-  },
-  {
-    version: "1.0.755",
-    date: "2026-09-04",
-    summary: "Preserve active project name and prevent reversion to stale saved slots",
   },
 ];

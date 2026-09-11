@@ -142,6 +142,12 @@ export function resolveNodeSite(
   const direct = (node.data?.site as string || '').trim();
   if (direct) return direct;
 
+  if (node.parentId) {
+    const parent = nodes.find((n) => n.id === node.parentId);
+    const parentSite = (parent?.data?.site as string || '').trim();
+    if (parentSite) return parentSite;
+  }
+
   // Search connected neighbours for a site tag
   const visited = new Set<string>([node.id]);
   const queue = [node.id];

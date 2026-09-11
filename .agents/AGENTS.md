@@ -25,3 +25,17 @@
 
 ## Communication Style
 - **CRITICAL RULE**: When responding to the user, DO NOT output details of the internal tools used to search for text or read files (like `grep`, `cat`, or codebase searching). Focus the response strictly on the logic applied, the actual software changes made, and what the final outcome is.
+
+## Adversarial Planning Protocol
+When tasked with generating non-trivial architectures, refactoring plans, schema designs, or major implementation steps (not for small changes, modifying an isolated code block, or general questions, but anything that constitutes a reasonable code change, a large implementation plan, or requires substantial technical reasoning):
+
+1. **Round 1 (Initial Proposal):** Draft your technical proposal (`Plan A`). Immediately invoke the `adversarial_review` tool with `iteration: 1`, passing the full plan and relevant project context.
+2. **Round 2 (Evaluation & Defence):** 
+   - Parse Claude's critique.
+   - Accept valid objections, defend key decisions where necessary, and produce a revised `Plan B`.
+   - Call `adversarial_review` with `iteration: 2` to challenge the revised proposal.
+3. **Round 3 (Settlement & Commit):** 
+   - Evaluate the final response.
+   - If Claude issues `STATUS: APPROVED` (or once iteration 2 completes), halt automated tool calls.
+   - Present the converged plan to the user, explicitly highlighting any accepted changes, rejected objections, and residual trade-offs for final sign-off before writing or modifying code.
+4. **Hard Limit:** Do not exceed 2 critique rounds per plan under any circumstances.

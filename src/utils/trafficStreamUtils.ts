@@ -6,9 +6,10 @@
  * Diameter, FlowVUE), Enterprise & Cloud, or a balanced Mixed profile.
  */
 
+import type { Edge } from '@xyflow/react';
 import { type CustomNode, type TrafficStream, type HardwareNodeData, type InputNodeData, type TappedLinkAllocation } from '../store/types';
 import { getOpticSpeedMbps } from './hardwareUtils';
-import { getTapNodeLinks } from './report/describeTopology';
+import { getTapNodeLinks, resolveNodeSite } from './report/describeTopology';
 import { isAutoTrayModel } from './trayModels';
 
 export type TrafficProfileBias = 'mixed' | 'telco' | 'enterprise';
@@ -57,12 +58,17 @@ export interface LinkSpecification {
   nodeLabel: string;
   linkIndex: number;
   speedMbps: number;
+  site?: string;
 }
 
 /**
  * Discovers all monitored links for a specific ingress or TAP node.
  */
-export function getMonitoredLinksForNode(node: CustomNode): LinkSpecification[] {
+export function getMonitoredLinksForNode(
+  node: CustomNode,
+  allNodes?: CustomNode[],
+  edges?: Edge[]
+): LinkSpecification[] {
   const isHardware = node.type === 'hardwareNode';
   const model = String(node.data?.model || '');
   const sku = String(node.data?.sku || '');
@@ -82,6 +88,12 @@ export function getMonitoredLinksForNode(node: CustomNode): LinkSpecification[] 
 
   const nodeLabel = String(node.data?.label || model || sku || 'Ingress Port');
   const links: LinkSpecification[] = [];
+
+  const directSite = ((node.data?.site as string) || '').trim();
+  const resolvedSite = directSite ||
+    (allNodes && edges ? resolveNodeSite(node, allNodes, edges) : undefined) ||
+    (allNodes && node.parentId ? ((allNodes.find(n => n.id === node.parentId)?.data?.site as string) || '').trim() : undefined) ||
+    undefined;
 
   const hwData = node.data as HardwareNodeData;
   const inputData = node.data as InputNodeData;
@@ -103,6 +115,7 @@ export function getMonitoredLinksForNode(node: CustomNode): LinkSpecification[] 
           nodeLabel,
           linkIndex: currentIdx++,
           speedMbps,
+          site: resolvedSite,
         });
       }
     });
@@ -150,6 +163,7 @@ export function getMonitoredLinksForNode(node: CustomNode): LinkSpecification[] 
       nodeLabel,
       linkIndex: i,
       speedMbps: defaultSpeedMbps,
+      site: resolvedSite,
     });
   }
 
@@ -170,6 +184,7 @@ export interface GenerateStreamsOptions {
   targetNodeIds?: string[];
   utilizationMin?: number; // e.g. 0.42 (42%)
   utilizationMax?: number; // e.g. 0.58 (58%)
+  edges?: Edge[];
 }
 
 /**
@@ -185,6 +200,7 @@ export function generateStreamsForTopology(
     profileBias = 'mixed',
     utilisationLevel = 'medium',
     targetNodeIds,
+    edges,
   } = options;
 
   let uMin = options.utilizationMin;
@@ -239,7 +255,7 @@ export function generateStreamsForTopology(
   // Gather all monitored link specifications
   const allLinks: LinkSpecification[] = [];
   candidateNodes.forEach((node) => {
-    const nodeLinks = getMonitoredLinksForNode(node);
+    const nodeLinks = getMonitoredLinksForNode(node, nodes, edges);
     allLinks.push(...nodeLinks);
   });
 
@@ -280,12 +296,14 @@ export function generateStreamsForTopology(
     const randomHost = 10 + ((idx * 7) % 240);
     const vlanId = String(100 + ((idx * 10) % 900));
 
-    const streamName = `${link.nodeLabel} - Link ${link.linkIndex} - ${profile.name} (${bandwidthLabel})`;
+    const sitePrefix = link.site ? `[${link.site}] ` : '';
+    const streamName = `${sitePrefix}${link.nodeLabel} - Link ${link.linkIndex} - ${profile.name} (${bandwidthLabel})`;
 
     const stream: TrafficStream = {
       id: `t-auto-${now}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
       name: streamName,
       sourceNodeId: link.nodeId,
+      site: link.site,
       vlan: vlanId,
       ipSrc: `10.${randomSubnet}.${1 + ((idx * 3) % 250)}.${randomHost}`,
       ipDst: `172.16.${1 + ((idx * 5) % 250)}.${100 + (idx % 100)}`,

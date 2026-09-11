@@ -12,6 +12,7 @@ export interface TrafficStream {
   protocol: string;
   bandwidth: number; // in Mbps
   active: boolean;
+  site?: string;
   isEncrypted?: boolean;
   drift?: number;
   lastDriftUpdate?: number;
