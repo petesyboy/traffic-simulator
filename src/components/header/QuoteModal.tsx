@@ -277,7 +277,6 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   // GigaVUE Cloud Suite (VBL) quick-add state
-  const [cloudPlatform, setCloudPlatform] = useState<string>('Multi-Cloud');
   const [cloudTier, setCloudTier] = useState<string>(CLOUD_SUITE_TIERS[0].code);
   const [cloudBundle, setCloudBundle] = useState<CloudSuiteBundle>('CORE');
   const [cloudLicenseType, setCloudLicenseType] = useState<'monthly' | 'perpetual'>('monthly');
@@ -372,10 +371,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     const term = parseInt(globalTermDuration || '12', 10) || 12;
     const isPerpetual = effectiveCloudLicenseType === 'perpetual';
     const sku = buildCloudSuiteSku(cloudTier, cloudBundle, isPerpetual);
-    const platformNote = cloudPlatform !== 'Multi-Cloud' ? `Deployed on ${cloudPlatform}` : undefined;
 
-    const licenseItem: QuoteLineItem = { ...createAdHocQuoteItem(sku, 1, term), note: platformNote };
-    const newItems: QuoteLineItem[] = [licenseItem];
+    const newItems: QuoteLineItem[] = [createAdHocQuoteItem(sku, 1, term)];
 
     if (isPerpetual) {
       const supportSku = CLOUD_SUITE_SUPPORT_SKUS[cloudSupportLevel];
@@ -2013,18 +2010,6 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', minWidth: '130px' }}>
                 ☁️ Add Cloud Suite:
               </div>
-
-              <select
-                value={cloudPlatform}
-                onChange={(e) => setCloudPlatform(e.target.value)}
-                style={selectStyle}
-                title="Cosmetic label only — GigaVUE Cloud Suite licensing is volume-pooled across all platforms, pricing is identical"
-              >
-                <option value="Multi-Cloud">Multi-Cloud</option>
-                <option value="AWS">AWS</option>
-                <option value="Azure">Azure</option>
-                <option value="GCP">Google Cloud</option>
-              </select>
 
               <select value={cloudTier} onChange={(e) => handleCloudTierChange(e.target.value)} style={selectStyle}>
                 {CLOUD_SUITE_TIERS.map((t) => (
