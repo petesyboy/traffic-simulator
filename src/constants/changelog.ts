@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.787",
+    date: "2026-09-11",
+    summary: "V1.0.787: add offline HTML application download for partners in project menu and about dialog; overhaul ReportModal usability and Glean workflow",
+  },
+  {
     version: "1.0.785",
     date: "2026-09-11",
     summary: "Instruct Glean AI to output directly copy-and-pasteable markdown without wrapping code blocks or conversational preambles (v1.0.785)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.764",
     date: "2026-09-10",
     summary: "Configure partner edition as default repository and GitHub Pages distribution (v1.0.764)",
-  },
-  {
-    version: "1.0.763",
-    date: "2026-09-10",
-    summary: "Add focus mode to quickly hide sidebars and traffic drawer for demonstrations (v1.0.763)",
   },
 ];

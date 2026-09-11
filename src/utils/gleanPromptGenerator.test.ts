@@ -84,6 +84,22 @@ describe('gleanPromptGenerator', () => {
     expect(prompt).toContain('Traffic profiles, stream volumes, and specific protocol distributions will be established');
     expect(prompt).toContain('Northbound and Southbound duplex split');
     expect(prompt).toContain('copy-and-pasteable Markdown file');
+    expect(prompt).toContain('CRITICAL LICENSING INSTRUCTIONS (HONOUR LICENSING MODEL)');
+    expect(prompt).toContain('Hybrid Term Licensing (HTL)');
+    expect(prompt).toContain('Do NOT claim that the customer is receiving a perpetual license for packet processing or software');
+  });
+
+  it('generates perpetual licensing instructions when configured for Perpetual mode', async () => {
+    const prompt = await generateGleanExecutiveSummaryPrompt({
+      nodes: [],
+      edges: [],
+      scenarioName: 'Perpetual Solution',
+      projectLicenseMode: 'Perpetual',
+    });
+
+    expect(prompt).toContain('CRITICAL LICENSING INSTRUCTIONS (HONOUR LICENSING MODEL)');
+    expect(prompt).toContain('Perpetual Licensing');
+    expect(prompt).toContain('Do NOT claim that features are term-licensed subscriptions or expire after a fixed term');
   });
 
   it('handles empty topologies gracefully without crashing', async () => {

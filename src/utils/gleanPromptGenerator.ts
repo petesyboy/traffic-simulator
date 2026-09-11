@@ -255,16 +255,38 @@ It must articulate:
   - \`### Scope Considerations & Key Assumptions\`
 - **CRITICAL PDF RENDERING HOOK**: Under the heading \`### Scope Considerations & Key Assumptions\`, format all items as a clean Markdown bullet list (\`- ...\`). The simulator's PDF generation engine automatically parses this exact heading and bullet format into an official highlighted callout box in the customer's PDF report.
 - **Hardware Architecture Rules**: Remember that in Gigamon architectures, every optical TAP produces two distinct output feeds (Northbound and Southbound duplex split), requiring two dedicated transceivers/ports on the fabric for 100% full-duplex coverage without packet loss.
+- **CRITICAL LICENSING INSTRUCTIONS (HONOUR LICENSING MODEL)**:
+  - You MUST strictly honour the specified **Licensing Model** (${projectLicenseMode === 'HTL' ? `Hybrid Term Licensing / Basic Term Licensing - HTL, ${termDuration}-month term` : 'Perpetual Licensing'}).
+  - **DO NOT hallucinate or mix licensing models**:
+    ${
+      projectLicenseMode === 'HTL'
+        ? `* This project is explicitly configured for **Hybrid Term Licensing (HTL)** (term: ${termDuration} months).
+    * Under HTL / Basic Term Licensing:
+      - All software operating system licenses and advanced features (indicated by \`-SW-TM\` in the BOM SKUs) are **term-based licenses** with a fixed ${termDuration}-month subscription period.
+      - Hardware appliances are purchased with perpetual hardware ownership (\`-HW\` SKUs), while the operational software licenses, GigaSMART packet processing applications, and port capacity upgrades run under the ${termDuration}-month term license.
+      - **CRITICAL**: Do NOT claim that the customer is receiving a perpetual license for packet processing or software while other components are on a term license. The entire software stack (base OS, port capacity, and GigaSMART features) is uniformly licensed under the ${termDuration}-month Hybrid Term License.`
+        : `* This project is explicitly configured for **Perpetual Licensing**.
+    * Under Perpetual Licensing:
+      - The customer purchases perpetual right-to-use licenses for the base system, port capacity upgrades, and advanced GigaSMART features.
+      - Ongoing support and software updates are maintained via renewable software support agreements.
+      - **CRITICAL**: Do NOT claim that features are term-licensed subscriptions or expire after a fixed term.`
+    }
+  - Ensure any narrative discussions around commercial structure, procurement, or OPEX/CAPEX accurately reflect this exact model.
 
 ---
 
 ## SOLUTION ARCHITECTURE & TECHNICAL SPECIFICATION
 
-### 1. Project Metadata
+### 1. Project Metadata & Commercial Licensing Structure
 - **Customer / Project Name**: ${displayName}
 - **Date**: ${currentDate}
 - **Region**: ${projectRegion}
-- **Licensing Model**: ${projectLicenseMode} (${termDuration}-month term)
+- **Licensing Model**: ${
+    projectLicenseMode === 'HTL'
+      ? `Hybrid Term Licensing (HTL) / Basic Term Licensing (${termDuration}-month term) — All software, port upgrades, and GigaSMART intelligence are term-licensed (\`-SW-TM\`)`
+      : 'Perpetual Licensing — Perpetual right-to-use software and feature licenses'
+  }
+- **Subscription / Term Duration**: ${projectLicenseMode === 'HTL' ? `${termDuration} Months` : 'N/A (Perpetual)'}
 - **Deployment Sites**: ${sitesList.join(', ')}
 
 ### 2. Network Ingress & Visibility Telemetry
