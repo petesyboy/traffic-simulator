@@ -37,6 +37,16 @@ import {
 } from '../../utils/pricingEngine';
 import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
+import {
+  CLOUD_SUITE_TIERS,
+  CLOUD_SUITE_BUNDLES,
+  CLOUD_SUITE_FEATURES,
+  CLOUD_SUITE_SUPPORT_SKUS,
+  CLOUD_SUITE_SUPPORT_LEVEL_LABELS,
+  buildCloudSuiteSku,
+  type CloudSuiteBundle,
+  type CloudSuiteSupportLevel,
+} from '../../constants/cloudSuite';
 import { buildQuotePdfDocDefinition } from '../../utils/report/quotePdfReport';
 import {
   getProjectQuoteWorkspace,
@@ -62,6 +72,15 @@ async function loadPdfMake(): Promise<PdfMakeStatic> {
   return pdfMake;
 }
 
+const selectStyle: React.CSSProperties = {
+  padding: '6px 8px',
+  borderRadius: '4px',
+  background: '#111827',
+  border: '1px solid #4b5563',
+  color: '#fff',
+  fontSize: '12px',
+};
+
 const CATEGORY_COLORS: Record<QuoteCategory, string> = {
   Software: '#a855f7',
   Chassis: '#38bdf8',
@@ -86,24 +105,15 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
 
   // Project-specific quote workspace restoration
-  const initialWorkspace = useMemo(
-    () => getProjectQuoteWorkspace(currentScenarioName),
-    [currentScenarioName],
-  );
+  const initialWorkspace = useMemo(() => getProjectQuoteWorkspace(currentScenarioName), [currentScenarioName]);
 
   // CPQ Automated Service & Promo Toggles
-  const [includeAhr, setIncludeAhr] = useState<boolean>(
-    initialWorkspace?.includeAhr ?? (globalLicenseMode === 'HTL'),
-  );
+  const [includeAhr, setIncludeAhr] = useState<boolean>(initialWorkspace?.includeAhr ?? globalLicenseMode === 'HTL');
   const [includeFmPrime, setIncludeFmPrime] = useState<boolean>(
-    initialWorkspace?.includeFmPrime ?? (globalLicenseMode === 'HTL'),
+    initialWorkspace?.includeFmPrime ?? globalLicenseMode === 'HTL',
   );
-  const [includeELearning, setIncludeELearning] = useState<boolean>(
-    initialWorkspace?.includeELearning ?? true,
-  );
-  const [useOpticPacks, setUseOpticPacks] = useState<boolean>(
-    initialWorkspace?.useOpticPacks ?? true,
-  );
+  const [includeELearning, setIncludeELearning] = useState<boolean>(initialWorkspace?.includeELearning ?? true);
+  const [useOpticPacks, setUseOpticPacks] = useState<boolean>(initialWorkspace?.useOpticPacks ?? true);
 
   // CPQ Metadata State (Collapsible drawer for customer/partner headers)
   const [isCpqDetailsOpen, setIsCpqDetailsOpen] = useState<boolean>(false);
@@ -128,13 +138,22 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   // Initialize quote items from project-wide consolidated Master BOM rows
   const [items, setItems] = useState<QuoteLineItem[]>(() => {
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
+      generateBom(
+        nodes,
+        edges,
+        globalLicenseMode,
+        globalTermDuration,
+        globalRegion,
+        true,
+        peakNodeRxMbps,
+        trayAllocationPreference,
+      ),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), initialWorkspace?.useOpticPacks ?? true);
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
     return createQuoteItemsFromBom(masterBom, defaultTerm, {
-      includeAhr: initialWorkspace?.includeAhr ?? (globalLicenseMode === 'HTL'),
-      includeFmPrime: initialWorkspace?.includeFmPrime ?? (globalLicenseMode === 'HTL'),
+      includeAhr: initialWorkspace?.includeAhr ?? globalLicenseMode === 'HTL',
+      includeFmPrime: initialWorkspace?.includeFmPrime ?? globalLicenseMode === 'HTL',
       includeELearning: initialWorkspace?.includeELearning ?? true,
       chassisCount: nodes.filter(isRackableGigamonEquipment).length,
     });
@@ -146,7 +165,16 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     if (prevLicenseModeRef.current !== globalLicenseMode) {
       prevLicenseModeRef.current = globalLicenseMode;
       const rawBom = consolidateSimpleDeviceRows(
-        generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
+        generateBom(
+          nodes,
+          edges,
+          globalLicenseMode,
+          globalTermDuration,
+          globalRegion,
+          true,
+          peakNodeRxMbps,
+          trayAllocationPreference,
+        ),
       );
       const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), useOpticPacks);
       const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -157,13 +185,23 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         chassisCount: nodes.filter(isRackableGigamonEquipment).length,
       });
 
-      setItems((prevItems) =>
-        convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm),
-      );
+      setItems((prevItems) => convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm));
       // Clear out stale buffered inputs
       setRawRowInputs({});
     }
-  }, [globalLicenseMode, globalTermDuration, globalRegion, nodes, edges, peakNodeRxMbps, includeAhr, includeFmPrime, includeELearning, useOpticPacks, trayAllocationPreference]);
+  }, [
+    globalLicenseMode,
+    globalTermDuration,
+    globalRegion,
+    nodes,
+    edges,
+    peakNodeRxMbps,
+    includeAhr,
+    includeFmPrime,
+    includeELearning,
+    useOpticPacks,
+    trayAllocationPreference,
+  ]);
 
   // Track term duration changes: update term for all monthly subscription items
   const prevTermDurationRef = useRef(globalTermDuration);
@@ -171,11 +209,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     if (prevTermDurationRef.current !== globalTermDuration) {
       prevTermDurationRef.current = globalTermDuration;
       const parsedTerm = parseInt(globalTermDuration || '12', 10) || 12;
-      setItems((prevItems) =>
-        prevItems.map((it) =>
-          it.isMonthlyPrice ? { ...it, termMonths: parsedTerm } : it,
-        ),
-      );
+      setItems((prevItems) => prevItems.map((it) => (it.isMonthlyPrice ? { ...it, termMonths: parsedTerm } : it)));
     }
   }, [globalTermDuration]);
 
@@ -198,17 +232,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   );
 
   // Exclude all optics toggle
-  const [excludeOptics, setExcludeOptics] = useState<boolean>(
-    initialWorkspace?.excludeOptics ?? false,
-  );
+  const [excludeOptics, setExcludeOptics] = useState<boolean>(initialWorkspace?.excludeOptics ?? false);
   // Free power cords (100% discount) toggle
-  const [freePowerCords, setFreePowerCords] = useState<boolean>(
-    initialWorkspace?.freePowerCords ?? false,
-  );
+  const [freePowerCords, setFreePowerCords] = useState<boolean>(initialWorkspace?.freePowerCords ?? false);
   // SPAN-only mode toggle (removes TAPs & trays, halves TAP termination optics)
-  const [spanOnlyMode, setSpanOnlyMode] = useState<boolean>(
-    initialWorkspace?.spanOnlyMode ?? false,
-  );
+  const [spanOnlyMode, setSpanOnlyMode] = useState<boolean>(initialWorkspace?.spanOnlyMode ?? false);
 
   // Auto-persist discount configuration per project scenario
   useEffect(() => {
@@ -247,6 +275,34 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const [adHocQty, setAdHocQty] = useState<string>('1');
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // GigaVUE Cloud Suite (VBL) quick-add state
+  const [cloudPlatform, setCloudPlatform] = useState<string>('Multi-Cloud');
+  const [cloudTier, setCloudTier] = useState<string>(CLOUD_SUITE_TIERS[0].code);
+  const [cloudBundle, setCloudBundle] = useState<CloudSuiteBundle>('CORE');
+  const [cloudLicenseType, setCloudLicenseType] = useState<'monthly' | 'perpetual'>('monthly');
+  const [cloudSupportLevel, setCloudSupportLevel] = useState<CloudSuiteSupportLevel>('eliteInitial');
+
+  const selectedCloudTier = useMemo(
+    () => CLOUD_SUITE_TIERS.find((t) => t.code === cloudTier) || CLOUD_SUITE_TIERS[0],
+    [cloudTier],
+  );
+  // -PL perpetual licensing is only orderable at some tiers — fall back to Monthly Term at other tiers
+  const effectiveCloudLicenseType = selectedCloudTier.perpetualAvailable ? cloudLicenseType : 'monthly';
+
+  const handleCloudTierChange = (tierCode: string) => {
+    setCloudTier(tierCode);
+    const tier = CLOUD_SUITE_TIERS.find((t) => t.code === tierCode);
+    if (!tier?.perpetualAvailable) {
+      setCloudLicenseType('monthly');
+    }
+  };
+
+  const cloudSkuPreview = useMemo(
+    () => buildCloudSuiteSku(cloudTier, cloudBundle, effectiveCloudLicenseType === 'perpetual'),
+    [cloudTier, cloudBundle, effectiveCloudLicenseType],
+  );
+  const cloudSkuPreviewRecord = useMemo(() => skuService.getSKUByPartNumber(cloudSkuPreview), [cloudSkuPreview]);
 
   // All available catalogue SKUs for ad-hoc insertion
   const allCatalogueSkus = useMemo(() => skuService.getAllSKUs(), []);
@@ -308,6 +364,25 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setSelectedAdHocSku('');
     setSkuSearchQuery('');
     setAdHocQty('1');
+  };
+
+  // Add a GigaVUE Cloud Suite (VBL) bundle license to the quote — and, for Perpetual licenses (which
+  // don't bundle support the way Monthly Term does), the separately-purchased software support line.
+  const handleAddCloudSuite = () => {
+    const term = parseInt(globalTermDuration || '12', 10) || 12;
+    const isPerpetual = effectiveCloudLicenseType === 'perpetual';
+    const sku = buildCloudSuiteSku(cloudTier, cloudBundle, isPerpetual);
+    const platformNote = cloudPlatform !== 'Multi-Cloud' ? `Deployed on ${cloudPlatform}` : undefined;
+
+    const licenseItem: QuoteLineItem = { ...createAdHocQuoteItem(sku, 1, term), note: platformNote };
+    const newItems: QuoteLineItem[] = [licenseItem];
+
+    if (isPerpetual) {
+      const supportSku = CLOUD_SUITE_SUPPORT_SKUS[cloudSupportLevel];
+      newItems.push(createAdHocQuoteItem(supportSku, 1, term));
+    }
+
+    setItems((prev) => [...newItems, ...prev]);
   };
 
   // Raw string state for table row inputs to prevent React cursor jumping / resetting on Backspace
@@ -451,7 +526,16 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
   const handleResetToBom = () => {
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
+      generateBom(
+        nodes,
+        edges,
+        globalLicenseMode,
+        globalTermDuration,
+        globalRegion,
+        true,
+        peakNodeRxMbps,
+        trayAllocationPreference,
+      ),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus());
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -476,7 +560,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
 
   // Quote Save/Load JSON Notification and File Input Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [quoteNotification, setQuoteNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [quoteNotification, setQuoteNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(
+    null,
+  );
 
   // Save customized commercial quote as JSON
   const handleSaveQuoteJson = async () => {
@@ -700,9 +786,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     setIncludeELearning(checked);
     if (checked) {
       if (!items.some((i) => i.sku === 'GES-LMS-ACD')) {
-        const chassisCount = items
-          .filter((i) => i.category === 'Chassis')
-          .reduce((sum, c) => sum + (c.qty || 1), 0);
+        const chassisCount = items.filter((i) => i.category === 'Chassis').reduce((sum, c) => sum + (c.qty || 1), 0);
         const voucherQty = Math.max(1, chassisCount);
         const skuRecord = skuService.getSKUByPartNumber('GES-LMS-ACD');
         setItems((prev) => [
@@ -731,7 +815,16 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const handleToggleOpticPacks = (checked: boolean) => {
     setUseOpticPacks(checked);
     const rawBom = consolidateSimpleDeviceRows(
-      generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
+      generateBom(
+        nodes,
+        edges,
+        globalLicenseMode,
+        globalTermDuration,
+        globalRegion,
+        true,
+        peakNodeRxMbps,
+        trayAllocationPreference,
+      ),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), checked);
     const defaultTerm = parseInt(globalTermDuration || '12', 10) || 12;
@@ -741,9 +834,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       includeELearning,
       chassisCount: nodes.filter(isRackableGigamonEquipment).length,
     });
-    setItems((prevItems) =>
-      convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm),
-    );
+    setItems((prevItems) => convertQuoteItemsLicenseMode(prevItems, newBomItems, globalLicenseMode, defaultTerm));
     setRawRowInputs({});
   };
 
@@ -757,13 +848,20 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
       const res = await saveWithFilePickerOrPrompt(
         async () => {
           const pdfMake = await loadPdfMake();
-          const docDef = buildQuotePdfDocDefinition(items, discountConfig, excludeOptics, freePowerCords, spanOnlyMode, {
-            scenarioName: currentScenarioName || 'Gigamon_Solution',
-            projectLicenseMode: globalLicenseMode,
-            defaultTermDuration: globalTermDuration,
-            projectRegion: globalRegion,
-            customerName: quoteMetadata?.endCustomer || currentScenarioName || 'Gigamon Customer',
-          });
+          const docDef = buildQuotePdfDocDefinition(
+            items,
+            discountConfig,
+            excludeOptics,
+            freePowerCords,
+            spanOnlyMode,
+            {
+              scenarioName: currentScenarioName || 'Gigamon_Solution',
+              projectLicenseMode: globalLicenseMode,
+              defaultTermDuration: globalTermDuration,
+              projectRegion: globalRegion,
+              customerName: quoteMetadata?.endCustomer || currentScenarioName || 'Gigamon Customer',
+            },
+          );
 
           return await new Promise<Blob>((resolve, reject) => {
             try {
@@ -803,7 +901,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           description: 'PDF Quotation Document',
           mimeType: 'application/pdf',
           extension: '.pdf',
-        }
+        },
       );
 
       if (res.saved) {
@@ -870,10 +968,28 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#38bdf8' }}>
                 Commercial Quotation & Pricing Engine
               </h3>
-              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: '#9ca3af',
+                  marginTop: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <span>{currentScenarioName || 'Layout'}</span>
                 <span>•</span>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#d1d5db', cursor: 'pointer' }}>
+                <label
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#d1d5db',
+                    cursor: 'pointer',
+                  }}
+                >
                   <span style={{ fontSize: '11px' }}>Licence Mode:</span>
                   <select
                     value={globalLicenseMode}
@@ -897,7 +1013,15 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 {globalLicenseMode === 'HTL' && (
                   <>
                     <span>•</span>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#d1d5db', cursor: 'pointer' }}>
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#d1d5db',
+                        cursor: 'pointer',
+                      }}
+                    >
                       <span style={{ fontSize: '11px' }}>Term:</span>
                       <select
                         value={globalTermDuration || '12'}
@@ -1350,83 +1474,163 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 }}
               >
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Quote #</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Quote #
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.quoteNumber}
                     placeholder="e.g. Q-100201-1"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, quoteNumber: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>POSID</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    POSID
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.posId}
                     placeholder="e.g. POS0258100"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, posId: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>End Customer (Ship To)</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    End Customer (Ship To)
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.endCustomer}
                     placeholder="e.g. Customer Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, endCustomer: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Reseller Partner</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Reseller Partner
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.reseller}
                     placeholder="e.g. Reseller Partner Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, reseller: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Distributor (Bill To)</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Distributor (Bill To)
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.distributor}
                     placeholder="e.g. Distributor Name"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, distributor: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Sales Rep</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Sales Rep
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.salesRep}
                     placeholder="e.g. Gigamon Sales Rep"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, salesRep: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Payment Terms</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Payment Terms
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.paymentTerms}
                     placeholder="e.g. Net 30"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, paymentTerms: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>Billing Frequency</label>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>
+                    Billing Frequency
+                  </label>
                   <input
                     type="text"
                     value={quoteMetadata.billingFrequency}
                     placeholder="e.g. All in Advance"
                     onChange={(e) => setQuoteMetadata((m) => ({ ...m, billingFrequency: e.target.value }))}
-                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '4px', padding: '4px 8px', color: '#fff', fontSize: '11px' }}
+                    style={{
+                      width: '100%',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
                   />
                 </div>
               </div>
@@ -1453,7 +1657,15 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               onClick={() => setIsDiscountsCollapsed((prev) => !prev)}
               title="Click to expand or collapse category discount schedule"
             >
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color: '#9ca3af',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
                 🎯 Discount Schedule (%) — Category & Blanket Rules
               </div>
               <button
@@ -1469,168 +1681,193 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               </button>
             </div>
             {!isDiscountsCollapsed && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#9ca3af', marginBottom: '3px' }}>Global Default %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.global}
-                  onChange={(e) => handleDiscountInputChange('global', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #4b5563',
-                    color: '#fff',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+              <div
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '10px' }}
+              >
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9ca3af', marginBottom: '3px' }}>
+                    Global Default %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.global}
+                    onChange={(e) => handleDiscountInputChange('global', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #4b5563',
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#c084fc', marginBottom: '3px' }}>All Software %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.software}
-                  onChange={(e) => handleDiscountInputChange('software', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #7e22ce',
-                    color: '#c084fc',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#c084fc', marginBottom: '3px' }}>
+                    All Software %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.software}
+                    onChange={(e) => handleDiscountInputChange('software', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #7e22ce',
+                      color: '#c084fc',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#38bdf8', marginBottom: '3px' }}>Chassis / Switches %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.chassis}
-                  onChange={(e) => handleDiscountInputChange('chassis', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #0284c7',
-                    color: '#38bdf8',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#38bdf8', marginBottom: '3px' }}>
+                    Chassis / Switches %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.chassis}
+                    onChange={(e) => handleDiscountInputChange('chassis', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #0284c7',
+                      color: '#38bdf8',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#22d3ee', marginBottom: '3px' }}>Modules %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.modules}
-                  onChange={(e) => handleDiscountInputChange('modules', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #0891b2',
-                    color: '#22d3ee',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#22d3ee', marginBottom: '3px' }}>
+                    Modules %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.modules}
+                    onChange={(e) => handleDiscountInputChange('modules', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #0891b2',
+                      color: '#22d3ee',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#fbbf24', marginBottom: '3px' }}>Optics / Cables %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.optics}
-                  onChange={(e) => handleDiscountInputChange('optics', e.target.value)}
-                  disabled={excludeOptics}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: excludeOptics ? '#374151' : '#111827',
-                    border: '1px solid #d97706',
-                    color: excludeOptics ? '#6b7280' : '#fbbf24',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#fbbf24', marginBottom: '3px' }}>
+                    Optics / Cables %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.optics}
+                    onChange={(e) => handleDiscountInputChange('optics', e.target.value)}
+                    disabled={excludeOptics}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: excludeOptics ? '#374151' : '#111827',
+                      border: '1px solid #d97706',
+                      color: excludeOptics ? '#6b7280' : '#fbbf24',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: 'var(--status-green-soft, #34d399)', marginBottom: '3px' }}>TAPs & Trays %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.taps}
-                  onChange={(e) => handleDiscountInputChange('taps', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #059669',
-                    color: 'var(--status-green-soft, #34d399)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '10px',
+                      color: 'var(--status-green-soft, #34d399)',
+                      marginBottom: '3px',
+                    }}
+                  >
+                    TAPs & Trays %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.taps}
+                    onChange={(e) => handleDiscountInputChange('taps', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #059669',
+                      color: 'var(--status-green-soft, #34d399)',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#f472b6', marginBottom: '3px' }}>Support %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.support}
-                  onChange={(e) => handleDiscountInputChange('support', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #db2777',
-                    color: '#f472b6',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#f472b6', marginBottom: '3px' }}>
+                    Support %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.support}
+                    onChange={(e) => handleDiscountInputChange('support', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #db2777',
+                      color: '#f472b6',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: '#a78bfa', marginBottom: '3px' }}>Accessories %</label>
-                <input
-                  type="text"
-                  value={rawDiscountInputs.accessories}
-                  onChange={(e) => handleDiscountInputChange('accessories', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    background: '#111827',
-                    border: '1px solid #7c3aed',
-                    color: '#a78bfa',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}
-                  placeholder="0"
-                />
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#a78bfa', marginBottom: '3px' }}>
+                    Accessories %
+                  </label>
+                  <input
+                    type="text"
+                    value={rawDiscountInputs.accessories}
+                    onChange={(e) => handleDiscountInputChange('accessories', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      background: '#111827',
+                      border: '1px solid #7c3aed',
+                      color: '#a78bfa',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
               </div>
-            </div>
             )}
           </div>
 
@@ -1712,7 +1949,11 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                         <span style={{ color: '#94a3b8', marginLeft: '8px' }}>{s.description}</span>
                       </div>
                       <span style={{ color: '#fbbf24', fontFamily: 'monospace' }}>
-                        {s.listPrice ? formatCurrency(s.listPrice) : s.listPriceMonthly ? `${formatCurrency(s.listPriceMonthly)}/mo` : 'Unpriced'}
+                        {s.listPrice
+                          ? formatCurrency(s.listPrice)
+                          : s.listPriceMonthly
+                            ? `${formatCurrency(s.listPriceMonthly)}/mo`
+                            : 'Unpriced'}
                       </span>
                     </div>
                   ))}
@@ -1756,6 +1997,159 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
             </button>
           </div>
 
+          {/* ── Section 2b: GigaVUE Cloud Suite (VBL) Quick-Add ── */}
+          <div
+            style={{
+              background: '#1f2937',
+              border: '1px solid #374151',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', minWidth: '130px' }}>
+                ☁️ Add Cloud Suite:
+              </div>
+
+              <select
+                value={cloudPlatform}
+                onChange={(e) => setCloudPlatform(e.target.value)}
+                style={selectStyle}
+                title="Cosmetic label only — GigaVUE Cloud Suite licensing is volume-pooled across all platforms, pricing is identical"
+              >
+                <option value="Multi-Cloud">Multi-Cloud</option>
+                <option value="AWS">AWS</option>
+                <option value="Azure">Azure</option>
+                <option value="GCP">Google Cloud</option>
+              </select>
+
+              <select value={cloudTier} onChange={(e) => handleCloudTierChange(e.target.value)} style={selectStyle}>
+                {CLOUD_SUITE_TIERS.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={cloudBundle}
+                onChange={(e) => setCloudBundle(e.target.value as CloudSuiteBundle)}
+                style={selectStyle}
+              >
+                {CLOUD_SUITE_BUNDLES.map((b) => (
+                  <option key={b.code} value={b.code}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={effectiveCloudLicenseType}
+                onChange={(e) => setCloudLicenseType(e.target.value as 'monthly' | 'perpetual')}
+                style={selectStyle}
+              >
+                <option value="monthly">Monthly Term (bundled support)</option>
+                <option value="perpetual" disabled={!selectedCloudTier.perpetualAvailable}>
+                  Perpetual (Telco only) — support separate
+                </option>
+              </select>
+
+              {effectiveCloudLicenseType === 'perpetual' && (
+                <select
+                  value={cloudSupportLevel}
+                  onChange={(e) => setCloudSupportLevel(e.target.value as CloudSuiteSupportLevel)}
+                  style={selectStyle}
+                >
+                  {(Object.keys(CLOUD_SUITE_SUPPORT_SKUS) as CloudSuiteSupportLevel[]).map((level) => (
+                    <option key={level} value={level}>
+                      {CLOUD_SUITE_SUPPORT_LEVEL_LABELS[level]}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <div style={{ fontSize: '11px', color: '#fbbf24', fontFamily: 'monospace', minWidth: '110px' }}>
+                {cloudSkuPreviewRecord?.listPrice
+                  ? formatCurrency(cloudSkuPreviewRecord.listPrice)
+                  : cloudSkuPreviewRecord?.listPriceMonthly
+                    ? `${formatCurrency(cloudSkuPreviewRecord.listPriceMonthly)}/mo`
+                    : 'Unpriced SKU'}
+              </div>
+
+              <button
+                onClick={handleAddCloudSuite}
+                disabled={!cloudSkuPreviewRecord}
+                className="btn btn-primary"
+                style={{
+                  fontSize: '12px',
+                  padding: '6px 14px',
+                  background: cloudSkuPreviewRecord ? '#0284c7' : '#374151',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: cloudSkuPreviewRecord ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Add to Quote
+              </button>
+            </div>
+
+            <div style={{ fontSize: '10px', color: '#6b7280' }}>
+              SKU: <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{cloudSkuPreview}</span>
+              {effectiveCloudLicenseType === 'perpetual' &&
+                ' — Perpetual VBL bundles are For Telecommunications Service Providers Only per the WWPL.'}
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '4px 6px', color: '#6b7280', fontWeight: 'normal' }}>
+                      Feature
+                    </th>
+                    {CLOUD_SUITE_BUNDLES.map((b) => (
+                      <th
+                        key={b.code}
+                        style={{
+                          padding: '4px 6px',
+                          color: b.code === cloudBundle ? '#38bdf8' : '#6b7280',
+                          fontWeight: b.code === cloudBundle ? 'bold' : 'normal',
+                        }}
+                      >
+                        {b.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CLOUD_SUITE_FEATURES.map((f) => (
+                    <tr key={f.name} style={{ borderTop: '1px solid #374151' }}>
+                      <td style={{ padding: '3px 6px', color: '#9ca3af' }}>{f.name}</td>
+                      {CLOUD_SUITE_BUNDLES.map((b) => (
+                        <td
+                          key={b.code}
+                          style={{
+                            textAlign: 'center',
+                            padding: '3px 6px',
+                            background: b.code === cloudBundle ? '#111827' : 'transparent',
+                          }}
+                        >
+                          {f[b.code] ? (
+                            <span style={{ color: 'var(--status-green-mid, #10b981)' }}>✓</span>
+                          ) : (
+                            <span style={{ color: '#4b5563' }}>—</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* ── Section 3: Financial Summary Strip ── */}
           <div
             style={{
@@ -1791,8 +2185,17 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '10px', color: 'var(--status-green-soft, #34d399)', textTransform: 'uppercase' }}>Commercial Discount Savings</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--status-green-soft, #34d399)', marginTop: '2px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--status-green-soft, #34d399)', textTransform: 'uppercase' }}>
+                Commercial Discount Savings
+              </div>
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: 'var(--status-green-soft, #34d399)',
+                  marginTop: '2px',
+                }}
+              >
                 {formatCurrency(summary.totalDiscountAmount)}
               </div>
               <div style={{ fontSize: '10px', color: 'var(--status-green-mid, #10b981)', marginTop: '2px' }}>
@@ -1809,20 +2212,28 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '10px', color: '#38bdf8', textTransform: 'uppercase' }}>Net Commercial Investment</div>
+              <div style={{ fontSize: '10px', color: '#38bdf8', textTransform: 'uppercase' }}>
+                Net Commercial Investment
+              </div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#38bdf8', marginTop: '2px' }}>
                 {formatCurrency(summary.totalNetPrice)}
               </div>
-              <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px' }}>
-                Excluding VAT / Local Taxes
-              </div>
+              <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px' }}>Excluding VAT / Local Taxes</div>
             </div>
           </div>
 
           {/* ── Section 4: Line Items Table ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color: '#9ca3af',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
                 📋 Line Items Schedule
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1846,10 +2257,20 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
                 >
                   <span>🛡️ {globalLicenseMode === 'Perpetual' ? 'SUPPORT' : 'AHR'}</span>
                   <span style={{ color: '#d1d5db' }}>
-                    = Covered {globalLicenseMode === 'Perpetual' ? 'HW & SW' : 'Hardware'} ({summary.items.filter((i) => i.inclInSupport).length} SKUs)
+                    = Covered {globalLicenseMode === 'Perpetual' ? 'HW & SW' : 'Hardware'} (
+                    {summary.items.filter((i) => i.inclInSupport).length} SKUs)
                   </span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: '#38bdf8',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(56, 189, 248, 0.2)',
+                  }}
+                >
                   Showing all <strong>{summary.activeLineCount}</strong> items ({summary.totalQty} total units)
                 </div>
               </div>
@@ -1870,359 +2291,509 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#111827' }}>
                   <tr style={{ background: '#111827', borderBottom: '2px solid #374151' }}>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Cat</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>SKU</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px' }}>Description</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Term</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Qty</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right' }}>Unit List ($)</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>Cost Before Discount</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Apply Disc?</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Disc %</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>Cost After Discount</th>
-                    <th style={{ position: 'sticky', top: 0, background: '#111827', padding: '10px 12px', color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>Actions</th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                      }}
+                    >
+                      Cat
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                      }}
+                    >
+                      SKU
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                      }}
+                    >
+                      Description
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Term
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Qty
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'right',
+                      }}
+                    >
+                      Unit List ($)
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'right',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Cost Before Discount
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Apply Disc?
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Disc %
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'right',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Cost After Discount
+                    </th>
+                    <th
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#111827',
+                        padding: '10px 12px',
+                        color: '#9ca3af',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-              <tbody>
-                {summary.items.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} style={{ padding: '28px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
-                      No items currently present in quote.
-                    </td>
-                  </tr>
-                ) : (
-                  summary.items.map((item, idx) => {
-                    const catColor = CATEGORY_COLORS[item.category] || '#94a3b8';
-                    const isEven = idx % 2 === 0;
-                    const isAhrEligible = Boolean(item.inclInSupport);
-
-                    return (
-                      <tr
-                        key={item.id}
-                        style={{
-                          background: isEven ? '#1f2937' : '#111827',
-                          borderBottom: '1px solid #374151',
-                        }}
+                <tbody>
+                  {summary.items.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={11}
+                        style={{ padding: '28px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}
                       >
-                        {/* Category */}
-                        <td style={{ padding: '10px 12px' }}>
-                          <span
+                        No items currently present in quote.
+                      </td>
+                    </tr>
+                  ) : (
+                    summary.items.map((item, idx) => {
+                      const catColor = CATEGORY_COLORS[item.category] || '#94a3b8';
+                      const isEven = idx % 2 === 0;
+                      const isAhrEligible = Boolean(item.inclInSupport);
+
+                      return (
+                        <tr
+                          key={item.id}
+                          style={{
+                            background: isEven ? '#1f2937' : '#111827',
+                            borderBottom: '1px solid #374151',
+                          }}
+                        >
+                          {/* Category */}
+                          <td style={{ padding: '10px 12px' }}>
+                            <span
+                              style={{
+                                background: `${catColor}20`,
+                                border: `1px solid ${catColor}60`,
+                                color: catColor,
+                                padding: '3px 7px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {item.category}
+                            </span>
+                          </td>
+
+                          {/* SKU + AHR Indicator Tag */}
+                          <td
                             style={{
-                              background: `${catColor}20`,
-                              border: `1px solid ${catColor}60`,
-                              color: catColor,
-                              padding: '3px 7px',
-                              borderRadius: '4px',
-                              fontSize: '10px',
+                              padding: '10px 12px',
+                              fontFamily: 'monospace',
                               fontWeight: 'bold',
-                              textTransform: 'uppercase',
+                              color: '#38bdf8',
+                              fontSize: '12.5px',
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {item.category}
-                          </span>
-                        </td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{item.sku}</span>
+                              {isAhrEligible && (
+                                <span
+                                  style={{
+                                    background: 'rgba(236, 72, 153, 0.2)',
+                                    border: '1px solid #ec4899',
+                                    color: '#f472b6',
+                                    fontSize: '9.5px',
+                                    fontWeight: 'bold',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    letterSpacing: '0.3px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px',
+                                    cursor: 'help',
+                                  }}
+                                  title={
+                                    globalLicenseMode === 'Perpetual'
+                                      ? 'Covered product included in Traditional Support calculation (GSS-FYS-* / GSS-RNL-*)'
+                                      : 'AHR Eligible Hardware: Qualifies for 41% Advance Hardware Replacement support calculation'
+                                  }
+                                >
+                                  🛡️ {globalLicenseMode === 'Perpetual' ? 'SUPPORT' : 'AHR'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
 
-                        {/* SKU + AHR Indicator Tag */}
-                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 'bold', color: '#38bdf8', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>{item.sku}</span>
-                            {isAhrEligible && (
-                              <span
-                                style={{
-                                  background: 'rgba(236, 72, 153, 0.2)',
-                                  border: '1px solid #ec4899',
-                                  color: '#f472b6',
-                                  fontSize: '9.5px',
-                                  fontWeight: 'bold',
-                                  padding: '1px 5px',
-                                  borderRadius: '4px',
-                                  letterSpacing: '0.3px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '2px',
-                                  cursor: 'help',
-                                }}
-                                title={
-                                  globalLicenseMode === 'Perpetual'
-                                    ? 'Covered product included in Traditional Support calculation (GSS-FYS-* / GSS-RNL-*)'
-                                    : 'AHR Eligible Hardware: Qualifies for 41% Advance Hardware Replacement support calculation'
-                                }
-                              >
-                                🛡️ {globalLicenseMode === 'Perpetual' ? 'SUPPORT' : 'AHR'}
-                              </span>
+                          {/* Description */}
+                          <td
+                            style={{
+                              padding: '10px 12px',
+                              color: '#e5e7eb',
+                              fontSize: '12px',
+                              maxWidth: '320px',
+                              lineHeight: '1.4',
+                            }}
+                          >
+                            {item.description}
+                            {item.note && (
+                              <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '3px' }}>{item.note}</div>
                             )}
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Description */}
-                        <td style={{ padding: '10px 12px', color: '#e5e7eb', fontSize: '12px', maxWidth: '320px', lineHeight: '1.4' }}>
-                          {item.description}
-                          {item.note && (
-                            <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '3px' }}>{item.note}</div>
-                          )}
-                        </td>
+                          {/* Term (Months) */}
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            {item.isMonthlyPrice ? (
+                              <input
+                                type="text"
+                                value={
+                                  rawRowInputs[item.id]?.termMonths !== undefined
+                                    ? rawRowInputs[item.id]!.termMonths!
+                                    : String(item.termMonths ?? '')
+                                }
+                                onChange={(e) => handleRowTermChange(item.id, e.target.value)}
+                                onBlur={() => handleRowTermBlur(item.id, item.termMonths)}
+                                style={{
+                                  width: '42px',
+                                  padding: '4px 6px',
+                                  borderRadius: '4px',
+                                  background: '#111827',
+                                  border: '1px solid #4b5563',
+                                  color: '#c084fc',
+                                  fontSize: '12px',
+                                  textAlign: 'center',
+                                }}
+                              />
+                            ) : (
+                              <span style={{ color: '#6b7280' }}>—</span>
+                            )}
+                          </td>
 
-                        {/* Term (Months) */}
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          {item.isMonthlyPrice ? (
+                          {/* Qty */}
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                             <input
                               type="text"
                               value={
-                                rawRowInputs[item.id]?.termMonths !== undefined
-                                  ? rawRowInputs[item.id]!.termMonths!
-                                  : String(item.termMonths ?? '')
+                                rawRowInputs[item.id]?.qty !== undefined
+                                  ? rawRowInputs[item.id]!.qty!
+                                  : String(item.qty)
                               }
-                              onChange={(e) => handleRowTermChange(item.id, e.target.value)}
-                              onBlur={() => handleRowTermBlur(item.id, item.termMonths)}
+                              onChange={(e) => handleRowQtyChange(item.id, e.target.value)}
+                              onBlur={() => handleRowQtyBlur(item.id, item.qty)}
                               style={{
-                                width: '42px',
+                                width: '48px',
                                 padding: '4px 6px',
                                 borderRadius: '4px',
                                 background: '#111827',
                                 border: '1px solid #4b5563',
-                                color: '#c084fc',
+                                color: '#fff',
                                 fontSize: '12px',
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                              }}
+                            />
+                          </td>
+
+                          {/* Unit List Price (Editable!) */}
+                          <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                            <input
+                              type="text"
+                              value={
+                                rawRowInputs[item.id]?.unitListPrice !== undefined
+                                  ? rawRowInputs[item.id]!.unitListPrice!
+                                  : String(item.unitListPrice ?? 0)
+                              }
+                              onChange={(e) => handleRowPriceChange(item.id, e.target.value)}
+                              onBlur={() => handleRowPriceBlur(item.id, item.unitListPrice)}
+                              style={{
+                                width: '80px',
+                                padding: '4px 6px',
+                                borderRadius: '4px',
+                                background: '#111827',
+                                border: item.unitListPrice === 0 ? '1px solid #f59e0b' : '1px solid #4b5563',
+                                color: item.unitListPrice === 0 ? '#fbbf24' : '#fff',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                                fontFamily: 'monospace',
+                              }}
+                            />
+                            {item.isMonthlyPrice && (
+                              <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>/mo</div>
+                            )}
+                          </td>
+
+                          {/* Cost Before Discount (Extended List Price) */}
+                          <td
+                            style={{
+                              padding: '10px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'monospace',
+                              color: '#cbd5e1',
+                              fontSize: '12.5px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {formatCurrency(item.extendedListPrice)}
+                          </td>
+
+                          {/* Apply Discount Checkbox (Selective hardware discounts!) */}
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={item.applyDiscount}
+                              onChange={(e) => handleUpdateItem(item.id, { applyDiscount: e.target.checked })}
+                              style={{ cursor: 'pointer', accentColor: '#0284c7', width: '15px', height: '15px' }}
+                              title="Toggle discount for this specific line"
+                            />
+                          </td>
+
+                          {/* Discount % Override */}
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <input
+                              type="text"
+                              value={
+                                rawRowInputs[item.id]?.discountOverride !== undefined
+                                  ? rawRowInputs[item.id]!.discountOverride!
+                                  : item.discountOverride !== undefined
+                                    ? `${item.discountOverride}%`
+                                    : item.applyDiscount
+                                      ? `${item.effectiveDiscountPercent}% (A)`
+                                      : '0%'
+                              }
+                              onChange={(e) => handleRowDiscountChange(item.id, e.target.value)}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={() => handleRowDiscountBlur(item.id)}
+                              disabled={!item.applyDiscount}
+                              title={
+                                item.discountOverride !== undefined
+                                  ? `Manual Override: ${item.discountOverride}% discount applied to this line. Clear value to restore auto.`
+                                  : `Auto: ${item.effectiveDiscountPercent}% discount applied from ${item.category} category configuration. Click to enter a custom override.`
+                              }
+                              style={{
+                                width: '74px',
+                                padding: '4px 6px',
+                                borderRadius: '4px',
+                                background: !item.applyDiscount ? '#374151' : '#111827',
+                                border: item.discountOverride !== undefined ? '1px solid #38bdf8' : '1px solid #4b5563',
+                                color:
+                                  item.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
+                                fontSize: '12px',
+                                fontWeight: item.discountOverride !== undefined ? 'bold' : 'normal',
                                 textAlign: 'center',
                               }}
                             />
-                          ) : (
-                            <span style={{ color: '#6b7280' }}>—</span>
-                          )}
-                        </td>
+                          </td>
 
-                        {/* Qty */}
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <input
-                            type="text"
-                            value={
-                              rawRowInputs[item.id]?.qty !== undefined
-                                ? rawRowInputs[item.id]!.qty!
-                                : String(item.qty)
-                            }
-                            onChange={(e) => handleRowQtyChange(item.id, e.target.value)}
-                            onBlur={() => handleRowQtyBlur(item.id, item.qty)}
+                          {/* Ext Net Price */}
+                          <td
                             style={{
-                              width: '48px',
-                              padding: '4px 6px',
-                              borderRadius: '4px',
-                              background: '#111827',
-                              border: '1px solid #4b5563',
-                              color: '#fff',
-                              fontSize: '12px',
-                              textAlign: 'center',
-                              fontWeight: 'bold',
-                            }}
-                          />
-                        </td>
-
-                        {/* Unit List Price (Editable!) */}
-                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                          <input
-                            type="text"
-                            value={
-                              rawRowInputs[item.id]?.unitListPrice !== undefined
-                                ? rawRowInputs[item.id]!.unitListPrice!
-                                : String(item.unitListPrice ?? 0)
-                            }
-                            onChange={(e) => handleRowPriceChange(item.id, e.target.value)}
-                            onBlur={() => handleRowPriceBlur(item.id, item.unitListPrice)}
-                            style={{
-                              width: '80px',
-                              padding: '4px 6px',
-                              borderRadius: '4px',
-                              background: '#111827',
-                              border: item.unitListPrice === 0 ? '1px solid #f59e0b' : '1px solid #4b5563',
-                              color: item.unitListPrice === 0 ? '#fbbf24' : '#fff',
-                              fontSize: '12px',
+                              padding: '10px 12px',
                               textAlign: 'right',
                               fontFamily: 'monospace',
+                              fontWeight: 'bold',
+                              color: '#38bdf8',
+                              fontSize: '13px',
                             }}
-                          />
-                          {item.isMonthlyPrice && (
-                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>/mo</div>
-                          )}
-                        </td>
-
-                        {/* Cost Before Discount (Extended List Price) */}
-                        <td
-                          style={{
-                            padding: '10px 12px',
-                            textAlign: 'right',
-                            fontFamily: 'monospace',
-                            color: '#cbd5e1',
-                            fontSize: '12.5px',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {formatCurrency(item.extendedListPrice)}
-                        </td>
-
-                        {/* Apply Discount Checkbox (Selective hardware discounts!) */}
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={item.applyDiscount}
-                            onChange={(e) => handleUpdateItem(item.id, { applyDiscount: e.target.checked })}
-                            style={{ cursor: 'pointer', accentColor: '#0284c7', width: '15px', height: '15px' }}
-                            title="Toggle discount for this specific line"
-                          />
-                        </td>
-
-                        {/* Discount % Override */}
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <input
-                            type="text"
-                            value={
-                              rawRowInputs[item.id]?.discountOverride !== undefined
-                                ? rawRowInputs[item.id]!.discountOverride!
-                                : item.discountOverride !== undefined
-                                  ? `${item.discountOverride}%`
-                                  : item.applyDiscount
-                                    ? `${item.effectiveDiscountPercent}% (A)`
-                                    : '0%'
-                            }
-                            onChange={(e) => handleRowDiscountChange(item.id, e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onBlur={() => handleRowDiscountBlur(item.id)}
-                            disabled={!item.applyDiscount}
-                            title={
-                              item.discountOverride !== undefined
-                                ? `Manual Override: ${item.discountOverride}% discount applied to this line. Clear value to restore auto.`
-                                : `Auto: ${item.effectiveDiscountPercent}% discount applied from ${item.category} category configuration. Click to enter a custom override.`
-                            }
-                            style={{
-                              width: '74px',
-                              padding: '4px 6px',
-                              borderRadius: '4px',
-                              background: !item.applyDiscount ? '#374151' : '#111827',
-                              border: item.discountOverride !== undefined ? '1px solid #38bdf8' : '1px solid #4b5563',
-                              color: item.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
-                              fontSize: '12px',
-                              fontWeight: item.discountOverride !== undefined ? 'bold' : 'normal',
-                              textAlign: 'center',
-                            }}
-                          />
-                        </td>
-
-                        {/* Ext Net Price */}
-                        <td
-                          style={{
-                            padding: '10px 12px',
-                            textAlign: 'right',
-                            fontFamily: 'monospace',
-                            fontWeight: 'bold',
-                            color: '#38bdf8',
-                            fontSize: '13px',
-                          }}
-                        >
-                          {formatCurrency(item.extendedNetPrice)}
-                        </td>
-
-                        {/* Delete action */}
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#ef4444',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              padding: '3px 6px',
-                            }}
-                            title="Remove item from quote"
                           >
-                            🗑
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-              <tfoot
-                style={{
-                  position: 'sticky',
-                  bottom: 0,
-                  zIndex: 10,
-                  background: '#0f172a',
-                  borderTop: '2px solid #38bdf8',
-                  boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.3)',
-                }}
-              >
-                <tr style={{ fontWeight: 'bold' }}>
-                  <td
-                    colSpan={4}
-                    style={{
-                      padding: '12px 12px',
-                      textAlign: 'right',
-                      color: '#94a3b8',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    Total ({summary.items.length} {summary.items.length === 1 ? 'line' : 'lines'}):
-                  </td>
-                  <td
-                    style={{
-                      padding: '12px 12px',
-                      textAlign: 'center',
-                      fontFamily: 'monospace',
-                      color: '#ffffff',
-                      fontSize: '12.5px',
-                    }}
-                  >
-                    {summary.totalQty}
-                  </td>
-                  <td style={{ padding: '12px 12px' }}></td>
-                  {/* Total Cost Before Discount */}
-                  <td
-                    style={{
-                      padding: '12px 12px',
-                      textAlign: 'right',
-                      fontFamily: 'monospace',
-                      color: '#cbd5e1',
-                      fontSize: '13.5px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {formatCurrency(summary.totalListPrice)}
-                  </td>
-                  <td style={{ padding: '12px 12px' }}></td>
-                  {/* Effective Discount % */}
-                  <td
-                    style={{
-                      padding: '12px 12px',
-                      textAlign: 'center',
-                      fontFamily: 'monospace',
-                      color: summary.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
-                      fontSize: '12px',
-                    }}
-                  >
-                    {summary.effectiveDiscountPercent > 0
-                      ? `${summary.effectiveDiscountPercent.toFixed(1)}%`
-                      : '0%'}
-                  </td>
-                  {/* Total Cost After Discount */}
-                  <td
-                    style={{
-                      padding: '12px 12px',
-                      textAlign: 'right',
-                      fontFamily: 'monospace',
-                      color: '#38bdf8',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {formatCurrency(summary.totalNetPrice)}
-                  </td>
-                  <td style={{ padding: '12px 12px' }}></td>
-                </tr>
-              </tfoot>
-            </table>
+                            {formatCurrency(item.extendedNetPrice)}
+                          </td>
+
+                          {/* Delete action */}
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                padding: '3px 6px',
+                              }}
+                              title="Remove item from quote"
+                            >
+                              🗑
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+                <tfoot
+                  style={{
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 10,
+                    background: '#0f172a',
+                    borderTop: '2px solid #38bdf8',
+                    boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.3)',
+                  }}
+                >
+                  <tr style={{ fontWeight: 'bold' }}>
+                    <td
+                      colSpan={4}
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'right',
+                        color: '#94a3b8',
+                        fontSize: '12px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      Total ({summary.items.length} {summary.items.length === 1 ? 'line' : 'lines'}):
+                    </td>
+                    <td
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'center',
+                        fontFamily: 'monospace',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                      }}
+                    >
+                      {summary.totalQty}
+                    </td>
+                    <td style={{ padding: '12px 12px' }}></td>
+                    {/* Total Cost Before Discount */}
+                    <td
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'right',
+                        fontFamily: 'monospace',
+                        color: '#cbd5e1',
+                        fontSize: '13.5px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {formatCurrency(summary.totalListPrice)}
+                    </td>
+                    <td style={{ padding: '12px 12px' }}></td>
+                    {/* Effective Discount % */}
+                    <td
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'center',
+                        fontFamily: 'monospace',
+                        color: summary.effectiveDiscountPercent > 0 ? 'var(--status-green-soft, #34d399)' : '#9ca3af',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {summary.effectiveDiscountPercent > 0 ? `${summary.effectiveDiscountPercent.toFixed(1)}%` : '0%'}
+                    </td>
+                    {/* Total Cost After Discount */}
+                    <td
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'right',
+                        fontFamily: 'monospace',
+                        color: '#38bdf8',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {formatCurrency(summary.totalNetPrice)}
+                    </td>
+                    <td style={{ padding: '12px 12px' }}></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
 
@@ -2257,7 +2828,8 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         >
           <div style={{ fontSize: '10px', color: '#9ca3af', lineHeight: '1.3', maxWidth: '65%' }}>
             <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>⚠️ Indicative / Order of Magnitude Only:</span>{' '}
-            Informal budgetary and engineering aid for SEs, sales leadership, and customers. Strictly non-binding and non-contractual; does not constitute a formal commercial offer by Gigamon.
+            Informal budgetary and engineering aid for SEs, sales leadership, and customers. Strictly non-binding and
+            non-contractual; does not constitute a formal commercial offer by Gigamon.
           </div>
 
           {/* Hidden File Input for Loading Quote JSON */}
