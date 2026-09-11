@@ -1808,6 +1808,110 @@
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
 }
 
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Token chips (Executive summary variables) */
+.token-chip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: 'Fira Code', monospace;
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm, 3px);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+.token-chip:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: var(--accent-cyan-bg);
+}
+
+.token-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Glean AI Card & Buttons */
+.glean-assistant-card {
+  background: rgba(225, 89, 42, 0.08);
+  border: 1px solid rgba(225, 89, 42, 0.35);
+  border-radius: var(--radius-lg, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-glean-copy {
+  background: #e1592a;
+  color: #ffffff !important;
+  border: 1px solid #c84a20;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-md, 4px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--transition-fast);
+}
+
+.btn-glean-copy:hover:not(:disabled) {
+  background: #ea6b3c;
+  box-shadow: 0 0 10px rgba(225, 89, 42, 0.4);
+}
+
+.btn-glean-copy.copied {
+  background: #16a34a !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
+}
+
+.btn-glean-export {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-md, 4px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--transition-fast);
+}
+
+.btn-glean-export:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: rgba(225, 89, 42, 0.6);
+  color: var(--text-primary);
+}
+
 .btn-danger {
   background: var(--accent-red-bg);
   color: var(--accent-red);

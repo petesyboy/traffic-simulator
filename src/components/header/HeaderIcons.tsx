@@ -115,6 +115,24 @@ export const SaveIcon: React.FC<IconProps> = ({ size = 14 }) => (
   </svg>
 );
 
+export const DownloadIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M12 3.5v10.5M12 14l-4-4M12 14l4-4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4 17v2a1.5 1.5 0 001.5 1.5h13a1.5 1.5 0 001.5-1.5v-2"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 export const FolderOpenIcon: React.FC<IconProps> = ({ size = 14 }) => (
   <svg width={size} height={size} {...base}>
     <path

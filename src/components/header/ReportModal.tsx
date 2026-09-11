@@ -163,28 +163,25 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       });
 
       let copied = false;
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+
+      // Attempt synchronous scratch textarea copy first to safeguard user gesture
+      try {
+        const scratch = document.getElementById('glean-prompt-scratch') as HTMLTextAreaElement | null;
+        if (scratch) {
+          scratch.value = prompt;
+          scratch.focus();
+          scratch.select();
+          copied = document.execCommand('copy');
+        }
+      } catch {
+        copied = false;
+      }
+
+      // Modern Clipboard API attempt if available
+      if (!copied && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         try {
           await navigator.clipboard.writeText(prompt);
           copied = true;
-        } catch {
-          copied = false;
-        }
-      }
-
-      if (!copied && typeof document !== 'undefined') {
-        try {
-          const textarea = document.createElement('textarea');
-          textarea.value = prompt;
-          textarea.style.position = 'fixed';
-          textarea.style.left = '-9999px';
-          textarea.style.top = '-9999px';
-          document.body.appendChild(textarea);
-          textarea.focus();
-          textarea.select();
-          const ok = document.execCommand('copy');
-          document.body.removeChild(textarea);
-          if (ok) copied = true;
         } catch {
           copied = false;
         }
@@ -548,328 +545,406 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
   return (
     <div className="modal-overlay">
+      {/* Hidden scratch textarea for guaranteed synchronous copy execution */}
+      <textarea
+        id="glean-prompt-scratch"
+        tabIndex={-1}
+        aria-hidden="true"
+        style={{ position: 'fixed', left: '-9999px', top: '-9999px', opacity: 0, pointerEvents: 'none' }}
+        readOnly
+      />
       <div
         className="modal-card"
-        style={{ width: '560px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
+        style={{
+          width: '620px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
+          overflow: 'hidden',
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
+        }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', color: '#ff9800', fontWeight: 'bold' }}>Generate Report Suite</h3>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>FABRIC DESIGN SYSTEM</span>
-        </div>
-
-        {/* Format Selector Grid */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>
-            Select Report Format
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {formatOptions.map((fmt) => {
-              const selected = reportFormat === fmt.id;
-              return (
-                <button
-                  key={fmt.id}
-                  type="button"
-                  onClick={() => setReportFormat(fmt.id)}
-                  disabled={busy}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    textAlign: 'left',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: selected ? `2px solid #E1592A` : '1px solid var(--color-border)',
-                    background: selected ? 'rgba(225, 89, 42, 0.08)' : 'var(--color-surface)',
-                    cursor: busy ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: selected ? '#E1592A' : 'var(--color-text)' }}>
-                      {fmt.title}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '8.5px',
-                        padding: '1px 6px',
-                        borderRadius: '3px',
-                        background: fmt.color,
-                        color: '#FFFFFF',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {fmt.tag}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.35 }}>
-                    {fmt.subtitle}
-                  </p>
-                </button>
-              );
-            })}
+        {/* Pinned Header */}
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'var(--bg-header, #0d0d0d)',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📊</span>
+            <h3 style={{ margin: 0, fontSize: '15px', color: '#ff9800', fontWeight: 'bold' }}>Generate Report Suite</h3>
           </div>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px', fontWeight: 600 }}>
+            FABRIC DESIGN SYSTEM
+          </span>
         </div>
 
-        {/* Report Template Picker */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Report Template</label>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <select
-              value={selectedTemplateId}
-              disabled={busy}
-              onChange={(e) => {
-                const t = templates.find((tpl) => tpl.id === e.target.value);
-                if (t) applyTemplate(t);
-              }}
-              style={{ flex: 1, fontSize: '11px', padding: '6px' }}
-            >
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                  {t.isBuiltIn ? '' : ' (Custom)'}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleSaveAsNewTemplate} disabled={busy}>
-              Save As New
-            </button>
-            <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleExportTemplate} disabled={busy}>
-              Export
-            </button>
-            <label className="btn btn-secondary" style={{ fontSize: '10px', margin: 0, cursor: busy ? 'not-allowed' : 'pointer' }}>
-              Import
-              <input
-                type="file"
-                accept="application/json"
-                hidden
-                disabled={busy}
+        {/* Scrollable Body Container */}
+        <div
+          style={{
+            padding: '16px 20px',
+            overflowY: 'auto',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4, 14px)',
+          }}
+        >
+          {/* Format Selector Grid */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              Select Report Format
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+              {formatOptions.map((fmt) => {
+                const selected = reportFormat === fmt.id;
+                return (
+                  <button
+                    key={fmt.id}
+                    type="button"
+                    onClick={() => setReportFormat(fmt.id)}
+                    disabled={busy || isExportingAll}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      textAlign: 'left',
+                      padding: '10px 12px',
+                      borderRadius: '6px',
+                      border: selected ? `2px solid #E1592A` : '1px solid var(--border-color)',
+                      background: selected ? 'rgba(225, 89, 42, 0.08)' : 'var(--bg-surface)',
+                      cursor: busy || isExportingAll ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: selected ? '#E1592A' : 'var(--text-primary)' }}>
+                        {fmt.title}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          padding: '2px 8px',
+                          borderRadius: '3px',
+                          background: fmt.color,
+                          color: '#FFFFFF',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {fmt.tag}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '10.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.35 }}>
+                      {fmt.subtitle}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Report Template Picker */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Report Template</label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                value={selectedTemplateId}
+                disabled={busy || isExportingAll}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImportTemplate(file);
-                  e.target.value = '';
+                  const t = templates.find((tpl) => tpl.id === e.target.value);
+                  if (t) applyTemplate(t);
                 }}
-              />
-            </label>
-            {!templates.find((t) => t.id === selectedTemplateId)?.isBuiltIn && (
-              <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleDeleteTemplate} disabled={busy}>
-                Delete
+                className="form-select"
+                style={{ flex: '1 1 200px', fontSize: '11px', padding: '6px 10px' }}
+              >
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                    {t.isBuiltIn ? '' : ' (Custom)'}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-secondary" style={{ fontSize: '10.5px', padding: '5px 9px' }} onClick={handleSaveAsNewTemplate} disabled={busy || isExportingAll}>
+                Save As New
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Branding */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Branding</label>
-          <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
-            The Gigamon badge always appears on every report. Co-branding adds a partner logo alongside it — it never replaces it.
-          </p>
-          <div style={{ display: 'flex', gap: '12px', fontSize: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="radio"
-                checked={coBrandingMode === 'gigamon-only'}
-                onChange={() => setCoBrandingMode('gigamon-only')}
-                disabled={busy}
-              />
-              Gigamon Only
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="radio"
-                checked={coBrandingMode === 'co-branded'}
-                onChange={() => setCoBrandingMode('co-branded')}
-                disabled={busy}
-              />
-              Co-Branded with Partner
-            </label>
-          </div>
-          {coBrandingMode === 'co-branded' && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Partner company name"
-                value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
-                disabled={busy}
-                style={{ flex: 1, fontSize: '11px', padding: '6px' }}
-              />
-              <label className="btn btn-secondary" style={{ fontSize: '10px', margin: 0, cursor: busy ? 'not-allowed' : 'pointer' }}>
-                {partnerLogoDataUrl ? 'Change Logo' : 'Upload Logo'}
+              <button type="button" className="btn btn-secondary" style={{ fontSize: '10.5px', padding: '5px 9px' }} onClick={handleExportTemplate} disabled={busy || isExportingAll}>
+                Export
+              </button>
+              <label className="btn btn-secondary" style={{ fontSize: '10.5px', padding: '5px 9px', margin: 0, cursor: busy || isExportingAll ? 'not-allowed' : 'pointer' }}>
+                Import
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="application/json"
                   hidden
-                  disabled={busy}
+                  disabled={busy || isExportingAll}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) handlePartnerLogoFile(file);
+                    if (file) handleImportTemplate(file);
                     e.target.value = '';
                   }}
                 />
               </label>
+              {!templates.find((t) => t.id === selectedTemplateId)?.isBuiltIn && (
+                <button type="button" className="btn btn-secondary" style={{ fontSize: '10.5px', padding: '5px 9px' }} onClick={handleDeleteTemplate} disabled={busy || isExportingAll}>
+                  Delete
+                </button>
+              )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Section Toggles */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-text)' }}>Include / Exclude Sections</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px' }}>
-            {(
-              [
-                ['executiveSummary', 'Executive Summary & Key Metrics'],
-                ['topologyDiagram', 'Topology Diagram'],
-                ['componentNarrative', 'Component Narrative'],
-                ['billOfMaterials', 'Bill of Materials'],
-                ['rackElevation', 'Physical Rack & Deployment'],
-              ] as [keyof ReportSectionToggles, string][]
-            ).map(([key, label]) => (
-              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {/* Branding */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Branding</label>
+            <p className="text-muted" style={{ fontSize: '10.5px', margin: 0, lineHeight: 1.4 }}>
+              The Gigamon badge always appears on every report. Co-branding adds a partner logo alongside it — it never replaces it.
+            </p>
+            <div style={{ display: 'flex', gap: '14px', fontSize: '11px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
                 <input
-                  type="checkbox"
-                  checked={sectionToggles[key]}
-                  disabled={busy}
-                  onChange={(e) => setSectionToggles({ ...sectionToggles, [key]: e.target.checked })}
+                  type="radio"
+                  checked={coBrandingMode === 'gigamon-only'}
+                  onChange={() => setCoBrandingMode('gigamon-only')}
+                  disabled={busy || isExportingAll}
                 />
-                {label}
+                Gigamon Only
               </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Executive Summary Markdown Box */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold' }} htmlFor="report-exec-summary">
-            Executive Summary / Notes (optional)
-          </label>
-          <p className="text-muted" style={{ fontSize: '10px', margin: 0, lineHeight: 1.4 }}>
-            Customer context and notes. Supports Markdown (<strong>**bold**</strong>, <em>*italic*</em>, <code>-</code> lists) and tokens like{' '}
-            <code>{'{{projectName}}'}</code>.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {['projectName', 'partnerName', 'siteCount', 'totalLinks', 'hardwareCount', 'licenseModel', 'date'].map((token) => (
-              <button
-                key={token}
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '9px', padding: '2px 6px' }}
-                disabled={busy}
-                onClick={() => setExecSummaryText((prev) => `${prev}{{${token}}}`)}
-              >
-                {`{{${token}}}`}
-              </button>
-            ))}
-          </div>
-
-          {isInternalEdition() && (
-            <div
-              style={{
-                background: 'rgba(225, 89, 42, 0.06)',
-                border: '1px solid rgba(225, 89, 42, 0.28)',
-                borderRadius: '4px',
-                padding: '6px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-                marginTop: '2px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>✨</span> Glean AI Assistant <span style={{ fontSize: '9px', opacity: 0.75, fontWeight: 'normal' }}>(Internal Gigamon SE)</span>
-                </span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{
-                      fontSize: '9.5px',
-                      padding: '2px 8px',
-                      fontWeight: 600,
-                      color: gleanCopyStatus === 'copied' ? '#4caf50' : 'inherit',
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  checked={coBrandingMode === 'co-branded'}
+                  onChange={() => setCoBrandingMode('co-branded')}
+                  disabled={busy || isExportingAll}
+                />
+                Co-Branded with Partner
+              </label>
+            </div>
+            {coBrandingMode === 'co-branded' && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '2px' }}>
+                <input
+                  type="text"
+                  placeholder="Partner company name"
+                  value={partnerName}
+                  onChange={(e) => setPartnerName(e.target.value)}
+                  disabled={busy || isExportingAll}
+                  className="form-input"
+                  style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
+                />
+                <label className="btn btn-secondary" style={{ fontSize: '10.5px', padding: '5px 10px', margin: 0, cursor: busy || isExportingAll ? 'not-allowed' : 'pointer' }}>
+                  {partnerLogoDataUrl ? 'Change Logo' : 'Upload Logo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={busy || isExportingAll}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePartnerLogoFile(file);
+                      e.target.value = '';
                     }}
-                    disabled={busy || isGeneratingGleanPrompt}
-                    onClick={handleCopyGleanPrompt}
-                    title="Copies full context, BOM, and prompt for Glean to generate an Executive Summary"
-                  >
-                    {isGeneratingGleanPrompt
-                      ? 'Generating...'
-                      : gleanCopyStatus === 'copied'
-                        ? '✓ Copied to Clipboard!'
-                        : gleanCopyStatus === 'error'
-                          ? '⚠️ Copy Failed (Downloading .md)'
-                          : '📋 Copy Glean Prompt'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '9.5px', padding: '2px 8px', fontWeight: 600 }}
-                    disabled={busy || isGeneratingGleanPrompt}
-                    onClick={() => handleExportGleanPrompt()}
-                    title="Export prompt as a .md file to upload into Glean"
-                  >
-                    📄 Export Prompt (.md)
-                  </button>
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Section Toggles */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Include / Exclude Sections</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '10.5px' }}>
+              {(
+                [
+                  ['executiveSummary', 'Executive Summary & Key Metrics'],
+                  ['topologyDiagram', 'Topology Diagram'],
+                  ['componentNarrative', 'Component Narrative'],
+                  ['billOfMaterials', 'Bill of Materials'],
+                  ['rackElevation', 'Physical Rack & Deployment'],
+                ] as [keyof ReportSectionToggles, string][]
+              ).map(([key, label]) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={sectionToggles[key]}
+                    disabled={busy || isExportingAll}
+                    onChange={(e) => setSectionToggles({ ...sectionToggles, [key]: e.target.checked })}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Executive Summary Markdown Box & Glean Assistant */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2, 6px)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }} htmlFor="report-exec-summary">
+                Executive Summary / Notes (optional)
+              </label>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Supports Markdown</span>
+            </div>
+            <p className="text-muted" style={{ fontSize: '10.5px', margin: 0, lineHeight: 1.4 }}>
+              Customer context and notes. Supports Markdown (<strong>**bold**</strong>, <em>*italic*</em>, <code>-</code> lists) and dynamic tokens:
+            </p>
+
+            {/* Token Chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '2px' }}>
+              {['projectName', 'partnerName', 'siteCount', 'totalLinks', 'hardwareCount', 'licenseModel', 'date'].map((token) => (
+                <button
+                  key={token}
+                  type="button"
+                  className="token-chip"
+                  disabled={busy || isExportingAll}
+                  onClick={() => setExecSummaryText((prev) => `${prev}{{${token}}}`)}
+                  title={`Insert {{${token}}} token into summary`}
+                >
+                  {`{{${token}}}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Prominent Glean AI Card */}
+            {isInternalEdition() && (
+              <div className="glean-assistant-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '13px' }}>✨</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Glean AI Assistant
+                    </span>
+                    <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(225, 89, 42, 0.15)', color: '#E1592A', fontWeight: 600 }}>
+                      Internal Gigamon SE
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      className={`btn-glean-copy ${gleanCopyStatus === 'copied' ? 'copied' : ''}`}
+                      disabled={busy || isExportingAll || isGeneratingGleanPrompt}
+                      onClick={handleCopyGleanPrompt}
+                      title="Copies full context, BOM, and prompt for Glean to generate an Executive Summary"
+                    >
+                      {isGeneratingGleanPrompt
+                        ? '⏳ Generating...'
+                        : gleanCopyStatus === 'copied'
+                          ? '✓ Copied to Clipboard!'
+                          : gleanCopyStatus === 'error'
+                            ? '⚠️ Downloaded as .md'
+                            : '📋 Copy Glean Prompt'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-glean-export"
+                      disabled={busy || isExportingAll || isGeneratingGleanPrompt}
+                      onClick={() => handleExportGleanPrompt()}
+                      title="Export prompt as a .md file to upload into Glean"
+                    >
+                      📄 Export Prompt (.md)
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.45, background: 'rgba(0, 0, 0, 0.2)', padding: '6px 8px', borderRadius: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quick Workflow:</span>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '3px', flexWrap: 'wrap' }}>
+                    <span><strong>1.</strong> Click <em>Copy Glean Prompt</em></span>
+                    <span><strong>2.</strong> Paste into Glean AI</span>
+                    <span><strong>3.</strong> Paste Markdown response below</span>
+                  </div>
                 </div>
               </div>
-              <p className="text-muted" style={{ fontSize: '9.5px', margin: 0, lineHeight: 1.3 }}>
-                Author a consultative summary with Glean: Copy or export this prompt, paste into Glean AI (attach the diagram PNG), and paste the Markdown response into the box below.
-              </p>
+            )}
+
+            <textarea
+              id="report-exec-summary"
+              value={execSummaryText}
+              onChange={(e) => setExecSummaryText(e.target.value)}
+              disabled={busy || isExportingAll}
+              rows={4}
+              className="form-input"
+              style={{
+                fontSize: '11px',
+                padding: '8px 10px',
+                resize: 'vertical',
+                minHeight: '80px',
+                lineHeight: 1.45,
+                marginTop: '4px',
+              }}
+              placeholder={
+                'e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project.'
+              }
+            />
+          </div>
+
+          {error && (
+            <div style={{ fontSize: '11px', color: '#ff5252', lineHeight: 1.4, padding: '6px 10px', background: 'rgba(255, 82, 82, 0.1)', borderRadius: '4px', border: '1px solid rgba(255, 82, 82, 0.3)' }}>
+              {error}
             </div>
           )}
-
-          <textarea
-            id="report-exec-summary"
-            value={execSummaryText}
-            onChange={(e) => setExecSummaryText(e.target.value)}
-            disabled={busy}
-            rows={4}
-            style={{
-              fontSize: '11px',
-              padding: 'var(--space-2)',
-              resize: 'vertical',
-              fontFamily: 'inherit',
-            }}
-            placeholder={
-              'e.g. This deployment gives the SOC full east-west visibility into the datacentre core ahead of the Q4 segmentation project.'
-            }
-          />
+          {exportAllStatus && (
+            <div style={{ fontSize: '11px', color: '#4caf50', lineHeight: 1.4, padding: '6px 10px', background: 'rgba(76, 175, 80, 0.1)', borderRadius: '4px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
+              {exportAllStatus}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleGenerate} disabled={busy || isExportingAll}>
-            {buttonLabel}
-          </button>
+        {/* Pinned Footer */}
+        <div
+          style={{
+            padding: '14px 20px',
+            borderTop: '1px solid var(--border-color)',
+            background: 'var(--bg-tertiary, #161618)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '10px',
+            flexShrink: 0,
+          }}
+        >
           <button
             type="button"
-            className="btn btn-secondary"
-            onClick={handleExportAll}
+            className="btn btn-ghost"
+            onClick={onClose}
             disabled={busy || isExportingAll}
-            title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
-            style={{
-              padding: '0 14px',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: '1px solid #E1592A',
-              color: '#E1592A',
-              background: 'rgba(225, 89, 42, 0.08)',
-            }}
           >
-            {isExportingAll ? 'Dumping All...' : '📁 Dump All to Folder...'}
-          </button>
-        </div>
-
-        {error && <div style={{ fontSize: '11px', color: '#ff5252', lineHeight: 1.4 }}>{error}</div>}
-        {exportAllStatus && <div style={{ fontSize: '11px', color: '#4caf50', lineHeight: 1.4 }}>{exportAllStatus}</div>}
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-          <button className="btn btn-ghost" onClick={onClose}>
             Close
           </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleExportAll}
+              disabled={busy || isExportingAll}
+              title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
+              style={{
+                padding: '6px 14px',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #E1592A',
+                color: '#E1592A',
+                background: 'rgba(225, 89, 42, 0.08)',
+              }}
+            >
+              {isExportingAll ? 'Dumping All...' : '📁 Dump All to Folder...'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ minWidth: '130px', padding: '6px 16px', fontSize: '11.5px', fontWeight: 700 }}
+              onClick={handleGenerate}
+              disabled={busy || isExportingAll}
+            >
+              {buttonLabel}
+            </button>
+          </div>
         </div>
       </div>
 

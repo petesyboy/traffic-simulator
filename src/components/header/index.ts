@@ -27,6 +27,7 @@ export {
   StopIcon,
   CameraIcon,
   SaveIcon,
+  DownloadIcon,
   FolderOpenIcon,
   GearIcon,
   SlidersIcon,

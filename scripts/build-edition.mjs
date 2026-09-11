@@ -39,21 +39,27 @@ const destIndexHtml = path.join(targetFolder, 'index.html');
 if (fs.existsSync(srcHtml)) {
   fs.copyFileSync(srcHtml, destStandaloneHtml);
   fs.copyFileSync(srcHtml, destIndexHtml);
+  // Also ensure traffic-reduction-simulator.html is in root dist/ for relative website downloads
+  fs.copyFileSync(srcHtml, path.join(DIST_DIR, 'traffic-reduction-simulator.html'));
   console.log(`\n✅ Created standalone deliverables in dist/${editionDirName}/`);
   console.log(`   - dist/${editionDirName}/traffic-reduction-simulator.html`);
   console.log(`   - dist/${editionDirName}/index.html`);
+  console.log(`   - dist/traffic-reduction-simulator.html`);
   execSync(`node scripts/generate-checksums.mjs dist/${editionDirName}/traffic-reduction-simulator.html`, { cwd: ROOT_DIR, stdio: 'inherit' });
+  execSync(`node scripts/generate-checksums.mjs dist/traffic-reduction-simulator.html`, { cwd: ROOT_DIR, stdio: 'inherit' });
 }
 
 // 5. Ensure root dist/index.html is always the public partner edition (sanitised, zero pricing)
 if (targetEdition === 'partner') {
   execSync('node scripts/generate-checksums.mjs dist/index.html', { cwd: ROOT_DIR, stdio: 'inherit' });
 } else if (targetEdition === 'internal') {
-  // If an internal build was produced, ensure dist/index.html remains the partner edition
+  // If an internal build was produced, ensure dist/index.html and dist/traffic-reduction-simulator.html remain the partner edition
   const partnerHtml = path.join(DIST_DIR, 'partner-edition', 'traffic-reduction-simulator.html');
   if (fs.existsSync(partnerHtml)) {
     fs.copyFileSync(partnerHtml, path.join(DIST_DIR, 'index.html'));
+    fs.copyFileSync(partnerHtml, path.join(DIST_DIR, 'traffic-reduction-simulator.html'));
     execSync('node scripts/generate-checksums.mjs dist/index.html', { cwd: ROOT_DIR, stdio: 'inherit' });
+    execSync('node scripts/generate-checksums.mjs dist/traffic-reduction-simulator.html', { cwd: ROOT_DIR, stdio: 'inherit' });
   }
 }
 

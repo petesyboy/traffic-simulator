@@ -17,6 +17,7 @@ import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
 import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
 import { clearAllProjectQuoteWorkspaces } from '../utils/projectQuoteStorage';
 import { isInternalEdition } from '../constants/edition';
+import { downloadOfflineApp } from '../utils/offlineDownload';
 import gigamonLogo from '../assets/gigamon-logo.png';
 
 import {
@@ -41,6 +42,7 @@ import {
   CameraIcon,
   ReportIcon,
   SaveIcon,
+  DownloadIcon,
   FolderOpenIcon,
   GearIcon,
   RefreshIcon,
@@ -326,6 +328,27 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
         setIsExportingPackage(false);
       }
     });
+  };
+
+  const handleDownloadOfflineApp = async () => {
+    setIsExportingPackage(true);
+    setExportPackageStatus('Preparing offline application package...');
+    try {
+      const res = await downloadOfflineApp(pkg.version);
+      if (res.success) {
+        setExportPackageStatus(`Downloaded standalone app "${res.filename}" for offline use!`);
+        setTimeout(() => setExportPackageStatus(null), 5000);
+      } else {
+        setExportPackageStatus(res.error || 'Failed to download offline application.');
+        setTimeout(() => setExportPackageStatus(null), 5000);
+      }
+    } catch (err) {
+      console.error(err);
+      setExportPackageStatus('Failed to download offline application.');
+      setTimeout(() => setExportPackageStatus(null), 5000);
+    } finally {
+      setIsExportingPackage(false);
+    }
   };
 
   return (
@@ -714,6 +737,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       <span>
                         {isExportingPackage ? 'Dumping All Files...' : '📁 Dump All to Folder (Directory Chooser)...'}
                       </span>
+                    </button>
+                    <div className="header-dropdown-divider" />
+                    <button
+                      className="header-dropdown-item"
+                      disabled={isExportingPackage}
+                      onClick={() => {
+                        setShowProjectMenu(false);
+                        handleDownloadOfflineApp();
+                      }}
+                      style={{ color: '#4caf50', fontWeight: 600 }}
+                      title="Download self-contained single-file HTML application to run offline without an internet connection"
+                    >
+                      <DownloadIcon size={14} />
+                      <span>📥 Download Offline App (.html)...</span>
                     </button>
                     <div className="header-dropdown-divider" />
                     <button

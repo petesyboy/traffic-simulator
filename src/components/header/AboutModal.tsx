@@ -9,6 +9,7 @@ import React from 'react';
 import pkg from '../../../package.json';
 import { CHANGELOG } from '../../constants/changelog';
 import { SUPPORT_EMAIL } from '../../constants/support';
+import { downloadOfflineApp } from '../../utils/offlineDownload';
 
 export interface AboutModalProps {
   onClose: () => void;
@@ -34,6 +35,52 @@ const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => (
         <section>
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '14px', textAlign: 'center' }}>
             <strong style={{ color: '#00e5ff', fontSize: '28px', letterSpacing: '0.02em' }}>v{pkg.version}</strong>
+          </div>
+        </section>
+
+        <section>
+          <div
+            style={{
+              background: 'rgba(76, 175, 80, 0.08)',
+              border: '1px solid rgba(76, 175, 80, 0.3)',
+              borderRadius: '6px',
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
+            <div className="flex-between">
+              <strong style={{ color: '#4caf50', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📦</span> Offline Portable Edition
+              </strong>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>100% Self-Contained</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              Download the single-file HTML version to run the simulator directly in any web browser without requiring an active internet connection.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={async () => {
+                  await downloadOfflineApp(pkg.version);
+                }}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#4caf50',
+                  borderColor: 'rgba(76, 175, 80, 0.5)',
+                  padding: '4px 10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                title="Download offline single-file HTML app"
+              >
+                <span>📥</span> Download Offline App (.html)
+              </button>
+            </div>
           </div>
         </section>
 
