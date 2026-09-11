@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.784",
+    date: "2026-09-11",
+    summary: "Restore data centre boundary enclosures in overview diagrams, isolate local DWDM nodes in per-site sub-diagrams, and drop simulated traffic bandwidth figures (v1.0.784)",
+  },
+  {
     version: "1.0.783",
     date: "2026-09-11",
     summary: "Add internal glean ai executive summary prompt generator and deliverables export",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.762",
     date: "2026-09-09",
     summary: "Add quantity stepper and bin removal controls for installed optics",
-  },
-  {
-    version: "1.0.761",
-    date: "2026-09-09",
-    summary: "Implement GigaSMART tunnel decapsulation and ERSPAN remote encapsulation source",
   },
 ];

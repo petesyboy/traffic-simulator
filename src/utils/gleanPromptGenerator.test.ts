@@ -83,6 +83,7 @@ describe('gleanPromptGenerator', () => {
     expect(prompt).toContain('Splunk');
     expect(prompt).toContain('Traffic profiles, stream volumes, and specific protocol distributions will be established');
     expect(prompt).toContain('Northbound and Southbound duplex split');
+    expect(prompt).toContain('copy-and-pasteable Markdown file');
   });
 
   it('handles empty topologies gracefully without crashing', async () => {

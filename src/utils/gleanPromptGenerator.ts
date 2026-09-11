@@ -241,9 +241,13 @@ It must articulate:
 
 ## STRICT OUTPUT REQUIREMENTS & CONSTRAINTS
 
+- **Format & Deliverable**: Produce the response as a **single, directly copy-and-pasteable Markdown file (\`.md\`)**. 
+  - Do NOT wrap the entire response in a top-level code fence (no \` \`\`markdown \` or \` \`\` \` wrapping around the whole output).
+  - Do NOT include any conversational preamble, intro, or sign-off (e.g. absolutely no "Here is the executive summary", "Sure, here is your markdown", or "Let me know if you need anything else").
+  - Start immediately with the first Markdown heading (\`### Executive Solution Overview & Strategic Value\`).
+  - The output must be 100% valid Markdown ready to be copied with a single click and pasted directly into the simulator's **Executive Summary / Notes** field or saved directly as a \`.md\` file.
 - **Language & Spelling**: Use **British English spelling** conventions throughout (e.g., *analyse*, *optimise*, *centre*, *colour*, *prioritisation*).
 - **Tone**: Consultative, authoritative, customer-focused, persuasive, and technically precise.
-- **Format**: Pure Markdown only. **DO NOT include conversational chatter, preambles, or postscripts** (such as *"Here is your summary:"* or *"Hope this helps!"*). Begin immediately with the section heading.
 - **Section Structure**: You MUST structure your response into the following four distinct sections:
   - \`### Executive Solution Overview & Strategic Value\`
   - \`### Architecture & Operational Mechanics (What it does & How it does it)\`
@@ -294,6 +298,6 @@ ${signalFlowDiagram}
 
 ## PROMPT EXECUTION TASK
 
-Using the technical and commercial data above, write the formal **Executive Summary** in Markdown following the exact 4-section structure and constraints outlined above.
+Using the technical and commercial architecture data above, output the formal **Executive Summary** as a single copy-and-pasteable Markdown file following the exact 4-section structure and strict formatting constraints outlined above (no intro greetings, no conversational commentary, no enclosing outer code blocks; start immediately with \`### Executive Solution Overview & Strategic Value\`).
 `;
 }
