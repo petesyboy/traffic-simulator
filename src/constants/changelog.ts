@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.788",
+    date: "2026-09-11",
+    summary: "V1.0.788: add strict licensing model enforcement instructions to Glean AI prompt generator",
+  },
+  {
     version: "1.0.787",
     date: "2026-09-11",
     summary: "V1.0.787: add offline HTML application download for partners in project menu and about dialog; overhaul ReportModal usability and Glean workflow",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.766",
     date: "2026-09-10",
     summary: "Standardise hardware graphic widths and align names in advanced mode menu",
-  },
-  {
-    version: "1.0.764",
-    date: "2026-09-10",
-    summary: "Configure partner edition as default repository and GitHub Pages distribution (v1.0.764)",
   },
 ];
