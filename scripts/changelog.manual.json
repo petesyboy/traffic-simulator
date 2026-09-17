@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.0.797",
+    "date": "2026-09-17",
+    "summary": "Add comprehensive documentation, interactive info tooltips, and explanatory helper text for browser storage options and slot management"
+  },
+  {
+    "version": "1.0.796",
+    "date": "2026-09-17",
+    "summary": "Enhance data centre enclosure drag handle with 4-way move cursor, larger pill badge, gripper icon, and hover affordances"
+  },
+  {
     "version": "1.0.795",
     "date": "2026-09-17",
     "summary": "Default new project setup name to 'Untitled Project' rather than inheriting previous solution name"

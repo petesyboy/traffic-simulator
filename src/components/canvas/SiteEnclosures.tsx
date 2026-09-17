@@ -34,6 +34,23 @@ function getSitePalette(siteName: string, index: number) {
   return SITE_PALETTES[idx];
 }
 
+const GripIcon: React.FC<{ size?: number }> = ({ size = 12 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    style={{ opacity: 0.6, flexShrink: 0, cursor: 'move' }}
+  >
+    <circle cx="8" cy="6" r="2" />
+    <circle cx="16" cy="6" r="2" />
+    <circle cx="8" cy="12" r="2" />
+    <circle cx="16" cy="12" r="2" />
+    <circle cx="8" cy="18" r="2" />
+    <circle cx="16" cy="18" r="2" />
+  </svg>
+);
+
 export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: propEdges, enabled = true }) => {
   const { x: vpX, y: vpY, zoom } = useViewport();
   const { getNodesBounds } = useReactFlow();
@@ -187,14 +204,15 @@ export const SiteEnclosures: React.FC<SiteEnclosuresProps> = ({ nodes, edges: pr
             <div
               className="site-enclosure-header"
               onMouseDown={(e) => beginSiteDrag(e, site, siteNodes)}
-              title={`Drag to move all of ${site} together, or click to select the whole site`}
+              title={`Drag to move all devices in ${site} together, or click to select entire site`}
               style={{
                 borderColor: palette.border,
                 color: palette.text,
                 whiteSpace: 'nowrap',
               }}
             >
-              <span style={{ fontSize: '11px', flexShrink: 0 }}>🏢</span>
+              <GripIcon size={12} />
+              <span style={{ fontSize: '13px', flexShrink: 0 }}>🏢</span>
               <span style={{ fontWeight: 700, letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                 Data Centre: {site}
               </span>

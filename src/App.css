@@ -1411,32 +1411,43 @@
 .site-enclosure-header {
   /* The enclosure itself stays click-through; only its header is a handle. */
   pointer-events: auto;
-  cursor: grab;
+  cursor: move;
   position: absolute;
-  top: -14px;
+  top: -18px;
   left: 20px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid;
   background: var(--bg-tertiary, #161618);
-  font-size: 10.5px;
+  font-size: 12px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   user-select: none;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
+  z-index: 10;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.site-enclosure-header:hover {
+  cursor: move;
+  transform: translateY(-2px);
+  background: var(--bg-surface, #1e293b);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
 }
 
 .site-enclosure-header:active {
   cursor: grabbing;
+  transform: translateY(0);
 }
 
 .site-enclosure-count {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
   border: 1px solid;
 }
 

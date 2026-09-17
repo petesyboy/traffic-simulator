@@ -329,9 +329,24 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Local Save Layout Row */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#888', marginBottom: '6px' }}>
-                Save to Browser Storage (This PC)
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '11px', color: '#ccc', fontWeight: 600 }}>
+                  Save to Browser Storage (This PC)
+                </label>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    color: '#38bdf8',
+                    cursor: 'help',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                  }}
+                  title="Browser storage saves your design inside this web browser's local cache (HTML5 LocalStorage) on this device only. It is not synced across other PCs or browsers and can be cleared if you reset browser browsing data or cookies. For permanent storage or sharing with colleagues, use 'Dump All to Folder' or 'Export GigaVUE Project (.gvp) File'."
+                >
+                  ⓘ How does this work?
+                </span>
+              </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
@@ -339,6 +354,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                   value={slotName}
                   onChange={(e) => setSlotName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  title="Enter a name for this layout slot to save in this browser"
                   style={{
                     flex: 1,
                     padding: '7px 10px',
@@ -351,6 +367,11 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                 />
                 <button
                   onClick={handleSave}
+                  title={
+                    slots.includes(slotName.trim())
+                      ? `Overwrite existing browser slot "${slotName.trim()}" on this computer`
+                      : 'Save layout to a browser slot on this computer'
+                  }
                   style={{
                     padding: '7px 14px',
                     background: slots.includes(slotName.trim()) ? 'rgba(239,83,80,0.2)' : 'var(--color-blue)',
@@ -365,6 +386,16 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                   {slots.includes(slotName.trim()) ? 'Overwrite' : 'Save'}
                 </button>
               </div>
+              <p
+                style={{
+                  margin: '6px 0 0 0',
+                  fontSize: '10px',
+                  color: '#888',
+                  lineHeight: 1.4,
+                }}
+              >
+                Saves instantly to this browser's local memory on this computer. Use below export buttons if you need to transfer designs or back them up permanently.
+              </p>
             </div>
 
             {/* List of existing layouts for quick overwrite */}
@@ -410,6 +441,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                         }}
+                        title={`Click to populate name: ${name}`}
                       >
                         {name}
                       </span>
@@ -419,6 +451,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                           setSlotName(name);
                           setTimeout(handleSave, 0);
                         }}
+                        title={`Immediately overwrite browser slot "${name}" with the current canvas layout`}
                         style={{
                           padding: '3px 10px',
                           background: 'rgba(239,83,80,0.15)',
@@ -548,7 +581,22 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
             <div style={{ height: '1px', background: '#2d2d2d', margin: '4px 0' }} />
 
             {/* List of browser saved layouts */}
-            <span style={{ fontSize: '11px', color: '#888' }}>Saved Layouts on this PC:</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#ccc', fontWeight: 600 }}>Saved Layouts on this PC:</span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: '#38bdf8',
+                  cursor: 'help',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                }}
+                title="These slots are stored exclusively in this web browser's local cache on this machine. They do not require an active internet connection. To open a project created on another computer, use 'Import GVP / JSON Project File'."
+              >
+                ⓘ About local slots
+              </span>
+            </div>
             {slots.length === 0 ? (
               <p style={{ fontSize: '11px', color: '#555', textAlign: 'center', margin: '8px 0' }}>
                 No layouts saved on this PC yet.
@@ -586,11 +634,13 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
+                      title={`Saved slot name: ${name}`}
                     >
                       {name}
                     </span>
                     <button
                       onClick={() => handleLoad(name)}
+                      title={`Load saved slot "${name}" from this browser onto the canvas`}
                       style={{
                         padding: '3px 10px',
                         background: 'rgba(0,124,255,0.15)',
@@ -606,6 +656,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                     </button>
                     <button
                       onClick={() => handleDelete(name)}
+                      title={`Delete saved slot "${name}" permanently from this browser`}
                       style={{
                         padding: '3px 8px',
                         background: 'rgba(239,83,80,0.1)',

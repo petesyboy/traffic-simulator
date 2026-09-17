@@ -949,6 +949,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                           onSaveClick();
                         });
                       }}
+                      title="Save your current canvas layout, nodes, links, and quotations directly into this web browser's local storage (saved locally on this computer without creating a file)"
                     >
                       <SaveIcon size={14} />
                       <span>Save to Browser Slot...</span>
@@ -959,6 +960,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                         onLoadClick();
                         setShowProjectMenu(false);
                       }}
+                      title="Load a previously saved layout slot from this browser's local storage or explore pre-configured demonstration topologies"
                     >
                       <FolderOpenIcon size={14} />
                       <span>Load from Browser Slot...</span>

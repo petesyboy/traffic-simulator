@@ -372,6 +372,17 @@ For partner SEs operating in secure, air-gapped customer environments or conduct
 - Select **📥 Download Offline App (.html)...**.
 - The simulator generates and downloads a single, self-contained, offline-ready HTML application file. This standalone file contains all application logic, styling, hardware photography, and SKU catalogues, and runs natively in any modern web browser without an internet connection or external web server.
 
+### G. Browser Local Storage vs File Exports
+The simulator provides two complementary persistence mechanisms:
+1. **Browser Storage (Local Slots)**:
+   - **Where stored**: HTML5 `localStorage` in the user's local web browser (`fm-simulator-slot-<Name>`).
+   - **Use case**: Quick, friction-free checkpointing during an active design session without creating or managing disk files.
+   - **Persistence characteristics**: Instant saving and loading on the same PC and browser. Does not transfer across machines or private/incognito sessions, and will be cleared if browser website data or cookies are purged.
+2. **GigaVUE Project (`.gvp`) & Deliverables Packages**:
+   - **Where stored**: Physical disk files on local drives, network shares, OneDrive, or Google Drive via native File System pickers or directory dumps.
+   - **Use case**: Permanent storage, formal archival, emailing or version-controlling project blueprints, and sharing designs across team members.
+   - **Included data**: Complete topological node graph, links, allocated transceivers, custom rule configurations, and commercial quote workspaces.
+
 ---
 
 ## 11. 42U Rack Elevation View & TAP Tray Bin-Packing

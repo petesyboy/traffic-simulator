@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.797",
+    date: "2026-09-17",
+    summary: "Add comprehensive documentation, interactive info tooltips, and explanatory helper text for browser storage options and slot management",
+  },
+  {
+    version: "1.0.796",
+    date: "2026-09-17",
+    summary: "Enhance data centre enclosure drag handle with 4-way move cursor, larger pill badge, gripper icon, and hover affordances",
+  },
+  {
     version: "1.0.795",
     date: "2026-09-17",
     summary: "Default new project setup name to 'Untitled Project' rather than inheriting previous solution name",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.775",
     date: "2026-09-11",
     summary: "Make the default packet tool partner-configurable (v1.0.775)",
-  },
-  {
-    version: "1.0.774",
-    date: "2026-09-10",
-    summary: "Redesign cover page co-branding lockup and eliminate vector interference (v1.0.774)",
-  },
-  {
-    version: "1.0.773",
-    date: "2026-09-10",
-    summary: "Separate co-branded partner logo from Gigamon wordmark on report cover (v1.0.773)",
   },
 ];

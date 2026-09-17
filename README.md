@@ -28,7 +28,7 @@ The simulator loads with a ready-made scenario, so you can walk straight into th
 5. **Tidy Layout Auto-Arrangement**: Click the Tidy Layout button on the canvas toolbar to instantly organise complex topologies into clean, presentation-ready columns.
 6. **Multi-Site Organisation & Port Grouping**: Assign devices to distinct physical sites and group multiple traffic sources inside Port Group containers.
 7. **Comprehensive PDF Solution Reports**: Export customer-ready PDF architecture reports complete with topology diagrams, chassis front-panel captures, BOM breakdowns, and physical rack deployment metrics.
-8. **Save/Load Slots & File Export**: Multi-slot layout storage allows naming, loading, exporting, and importing custom demo topology snapshots.
+8. **Save/Load Slots & File Export**: Save designs instantly to browser storage (HTML5 LocalStorage) for quick local recall without generating files, or export complete GigaVUE Project (`.gvp`) files and deliverables packages for permanent archiving and cross-team sharing.
 9. **Presentation Focus Mode**: Double-click any node to put a pulsing focus glow around it, making it easy to talk about specific components during a customer call.
 
 ---
