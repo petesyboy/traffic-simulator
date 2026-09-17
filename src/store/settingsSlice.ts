@@ -5,6 +5,12 @@ import { syncSplunkLabels } from './storeHelpers';
 import { syncOpticsOnTapConnection } from '../utils/bomEngine';
 import { syncPortAssignments } from '../utils/portSync';
 import { syncTapTrays } from '../utils/traySync';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  storeDirectoryHandle,
+  removeDirectoryHandle,
+  getDirectoryHandle,
+} from '../utils/projectDirectoryStorage';
 
 export interface SettingsSlice {
   advancedMode: boolean;
@@ -15,6 +21,9 @@ export interface SettingsSlice {
   disableDcWarnings: boolean;
   panelTextScale: number;
   trayAllocationPreference: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+  projectId: string;
+  workingDirectoryName: string | null;
+  workingDirectoryPromptDismissed: boolean;
 
   setAdvancedMode: (mode: boolean) => void;
   setAdvancedModeUnlocked: (unlocked: boolean) => void;
@@ -24,6 +33,10 @@ export interface SettingsSlice {
   setDisableDcWarnings: (disable: boolean) => void;
   setPanelTextScale: (scale: number) => void;
   setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
+  setProjectId: (id: string) => void;
+  setWorkingDirectory: (name: string | null, handle?: FileSystemDirectoryHandle) => Promise<void>;
+  clearWorkingDirectory: () => Promise<void>;
+  setWorkingDirectoryPromptDismissed: (dismissed: boolean) => void;
   restoreState: (
     nodes: CustomNode[],
     edges: Edge[],
@@ -38,6 +51,9 @@ export interface SettingsSlice {
       showGrid?: boolean;
       snapToGrid?: boolean;
       trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+      projectId?: string;
+      workingDirectoryName?: string | null;
+      workingDirectoryPromptDismissed?: boolean;
     }
   ) => void;
 }
@@ -51,6 +67,9 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   disableDcWarnings: false,
   panelTextScale: 1.0,
   trayAllocationPreference: 'auto',
+  projectId: uuidv4(),
+  workingDirectoryName: null,
+  workingDirectoryPromptDismissed: false,
 
   setAdvancedMode: (mode) => set({ advancedMode: mode }),
   setAdvancedModeUnlocked: (unlocked) => set({ advancedModeUnlocked: unlocked }),
@@ -63,6 +82,27 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
     const updatedNodes = syncTapTrays(get().nodes, pref);
     set({ trayAllocationPreference: pref, nodes: updatedNodes });
   },
+  setProjectId: (id) => set({ projectId: id }),
+  setWorkingDirectory: async (name, handle) => {
+    const currentId = get().projectId || uuidv4();
+    if (handle) {
+      await storeDirectoryHandle(currentId, handle);
+    }
+    set({
+      projectId: currentId,
+      workingDirectoryName: name,
+      workingDirectoryPromptDismissed: true,
+    });
+  },
+  clearWorkingDirectory: async () => {
+    const currentId = get().projectId;
+    if (currentId) {
+      await removeDirectoryHandle(currentId);
+    }
+    set({ workingDirectoryName: null });
+  },
+  setWorkingDirectoryPromptDismissed: (dismissed) =>
+    set({ workingDirectoryPromptDismissed: dismissed }),
 
   restoreState: (nodes, edges, trafficStreams, settings) => {
     // Deduplicate only truly duplicate edge IDs to preserve intentional parallel links and clustered links
@@ -105,8 +145,23 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
       if (settings.panelTextScale !== undefined) updateObj.panelTextScale = settings.panelTextScale;
       if (settings.showGrid !== undefined) updateObj.showGrid = settings.showGrid;
       if (settings.snapToGrid !== undefined) updateObj.snapToGrid = settings.snapToGrid;
+      if (settings.workingDirectoryName !== undefined) updateObj.workingDirectoryName = settings.workingDirectoryName;
+      if (settings.workingDirectoryPromptDismissed !== undefined) updateObj.workingDirectoryPromptDismissed = settings.workingDirectoryPromptDismissed;
     }
 
+    const targetProjectId = settings?.projectId || uuidv4();
+    updateObj.projectId = targetProjectId;
+
     set(updateObj);
+
+    getDirectoryHandle(targetProjectId)
+      .then((handle) => {
+        if (handle) {
+          set({ workingDirectoryName: handle.name });
+        }
+      })
+      .catch(() => {
+        // ignore
+      });
   },
 });

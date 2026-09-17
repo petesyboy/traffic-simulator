@@ -35,7 +35,7 @@ import {
   parseCommercialQuoteJson,
   isSupportEnabledHardware,
 } from '../../utils/pricingEngine';
-import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { saveProjectArtifact } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import {
   CLOUD_SUITE_TIERS,
@@ -103,6 +103,9 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
+  const projectId = useStore((s) => s.projectId);
+  const workingDirectoryName = useStore((s) => s.workingDirectoryName);
+  const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
 
   // Project-specific quote workspace restoration
   const initialWorkspace = useMemo(() => getProjectQuoteWorkspace(currentScenarioName), [currentScenarioName]);
@@ -842,7 +845,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
     try {
       const defaultFilename = getStandardExportFilename('quote-pdf', currentScenarioName);
 
-      const res = await saveWithFilePickerOrPrompt(
+      const res = await saveProjectArtifact(
         async () => {
           const pdfMake = await loadPdfMake();
           const docDef = buildQuotePdfDocDefinition(
@@ -899,12 +902,20 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           mimeType: 'application/pdf',
           extension: '.pdf',
         },
+        {
+          projectId,
+          workingDirectoryName,
+          onStaleDirectory: () => clearWorkingDirectory(),
+        },
       );
 
       if (res.saved) {
         setQuoteNotification({
           type: 'success',
-          message: `Formal quote PDF saved successfully as "${res.filename}".`,
+          message:
+            res.savedToDirectory && res.directoryName
+              ? `Formal quote PDF saved directly to folder "${res.directoryName}".`
+              : `Formal quote PDF saved successfully as "${res.filename}".`,
         });
         setTimeout(() => setQuoteNotification(null), 4000);
       }

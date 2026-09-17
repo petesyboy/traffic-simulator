@@ -22,7 +22,8 @@ import JSZip from 'jszip';
 import type { CustomNode, HardwareNodeData, TrafficStream, NodeMetrics } from '../store/types';
 import type { Edge } from '@xyflow/react';
 import { getStandardExportFilename } from './exportNaming';
-import { saveWithFilePickerOrPrompt } from './fileSaveHelper';
+import { saveWithFilePickerOrPrompt, writeBlobToDirectory } from './fileSaveHelper';
+import { verifyAndRequestDirectoryPermission } from './projectDirectoryStorage';
 import { generateBom, getSkus } from './bomEngine';
 import { buildProjectWideOpticBom } from './bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from './bom/consolidateSimpleDevices';
@@ -62,6 +63,7 @@ export interface GeneratePackageOptions {
   peakNodeRxMbps?: Record<string, number>;
   nodeMetrics?: Record<string, unknown>;
   isRunning?: boolean;
+  targetDirectoryHandle?: FileSystemDirectoryHandle | null;
   onProgress?: (status: string) => void;
 }
 
@@ -431,21 +433,31 @@ export async function exportSolutionToDirectoryOrZip(
 }> {
   const scenarioName = options.currentScenarioName || 'Solution';
 
-  // 1. Try modern File System Access Directory Picker (showDirectoryPicker) FIRST while user gesture is active
-  if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-    let dirHandle: FileSystemDirectoryHandle | null = null;
-    try {
-      dirHandle = await (window as unknown as {
-        showDirectoryPicker: (opts?: { id?: string; mode?: string }) => Promise<FileSystemDirectoryHandle>;
-      }).showDirectoryPicker({
-        mode: 'readwrite',
-      });
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        // User cancelled folder chooser
-        return { success: false, fileCount: 0 };
+  // 1. Check if targetDirectoryHandle is provided or prompt via showDirectoryPicker FIRST while user gesture is active
+  if (typeof window !== 'undefined') {
+    let dirHandle: FileSystemDirectoryHandle | null = options.targetDirectoryHandle || null;
+
+    if (dirHandle) {
+      const permitted = await verifyAndRequestDirectoryPermission(dirHandle);
+      if (!permitted) {
+        dirHandle = null;
       }
-      console.warn('showDirectoryPicker unavailable or threw, falling back to ZIP package:', err);
+    }
+
+    if (!dirHandle && 'showDirectoryPicker' in window) {
+      try {
+        dirHandle = await (window as unknown as {
+          showDirectoryPicker: (opts?: { id?: string; mode?: string }) => Promise<FileSystemDirectoryHandle>;
+        }).showDirectoryPicker({
+          mode: 'readwrite',
+        });
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // User cancelled folder chooser
+          return { success: false, fileCount: 0 };
+        }
+        console.warn('showDirectoryPicker unavailable or threw, falling back to ZIP package:', err);
+      }
     }
 
     if (dirHandle) {
@@ -455,13 +467,10 @@ export async function exportSolutionToDirectoryOrZip(
       options.onProgress?.(`Writing ${assets.length} files to folder "${dirHandle.name}"...`);
 
       for (const asset of assets) {
-        const fileHandle = await dirHandle.getFileHandle(asset.filename, { create: true });
-        const writable = await fileHandle.createWritable();
         const blob = typeof asset.content === 'string'
           ? new Blob([asset.content], { type: asset.mimeType })
           : asset.content;
-        await writable.write(blob);
-        await writable.close();
+        await writeBlobToDirectory(dirHandle, asset.filename, blob);
       }
 
       return {

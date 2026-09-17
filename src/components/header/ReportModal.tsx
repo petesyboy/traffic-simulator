@@ -24,7 +24,8 @@ import { buildCrossoverReportDocDefinition } from '../../utils/report/crossoverR
 import { autoDeployRack } from '../../utils/autoRack';
 import { NODE_TYPES } from '../../constants/nodeTypes';
 import { getModuleSlotPositions, getChassisImagePath, isRackableGigamonEquipment } from '../../utils/hardwareUtils';
-import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { saveWithFilePickerOrPrompt, saveProjectArtifact } from '../../utils/fileSaveHelper';
+import { getDirectoryHandle } from '../../utils/projectDirectoryStorage';
 import { getStandardExportFilename, type ExportDocumentType } from '../../utils/exportNaming';
 import { exportSolutionToDirectoryOrZip } from '../../utils/solutionPackage';
 import { resolveHardwareIcon } from '../../assets/hardwareIcons';
@@ -96,6 +97,9 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
   const nodeMetrics = useStore((s) => s.nodeMetrics);
   const isRunning = useStore((s) => s.isRunning);
+  const projectId = useStore((s) => s.projectId);
+  const workingDirectoryName = useStore((s) => s.workingDirectoryName);
+  const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,11 +139,20 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           advancedMode,
         }));
       const filename = getStandardExportFilename('glean-prompt-markdown', currentScenarioName);
-      await saveWithFilePickerOrPrompt(prompt, filename, {
-        description: 'Glean AI Executive Summary Prompt',
-        mimeType: 'text/markdown',
-        extension: '.md',
-      });
+      await saveProjectArtifact(
+        prompt,
+        filename,
+        {
+          description: 'Glean AI Executive Summary Prompt',
+          mimeType: 'text/markdown',
+          extension: '.md',
+        },
+        {
+          projectId,
+          workingDirectoryName,
+          onStaleDirectory: () => clearWorkingDirectory(),
+        },
+      );
     } catch (err) {
       console.error('Failed to export Glean prompt:', err);
     } finally {
@@ -317,7 +330,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       setBusy(true);
 
       try {
-        const saveRes = await saveWithFilePickerOrPrompt(
+        const saveRes = await saveProjectArtifact(
           async () => {
             setStep('capturing');
 
@@ -463,12 +476,21 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
             description: 'PDF Solution Report',
             mimeType: 'application/pdf',
             extension: '.pdf',
-          }
+          },
+          {
+            projectId,
+            workingDirectoryName,
+            onStaleDirectory: () => clearWorkingDirectory(),
+          },
         );
 
         if (saveRes.saved) {
           setStep('done');
-          setSavedReportFilename(saveRes.filename);
+          setSavedReportFilename(
+            saveRes.savedToDirectory && saveRes.directoryName
+              ? `${saveRes.filename} (saved to ${saveRes.directoryName})`
+              : saveRes.filename,
+          );
         } else {
           setStep('idle');
         }
@@ -490,6 +512,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       setError(null);
       setExportAllStatus('Preparing deliverables (all reports, CSVs, JSON, diagram)...');
       try {
+        const existingHandle = await getDirectoryHandle(projectId);
         const res = await exportSolutionToDirectoryOrZip({
           nodes,
           edges,
@@ -502,6 +525,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           peakNodeRxMbps,
           nodeMetrics,
           isRunning,
+          targetDirectoryHandle: existingHandle,
           onProgress: (status) => setExportAllStatus(status),
         });
 

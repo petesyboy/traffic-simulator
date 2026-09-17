@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.0.790",
+    "date": "2026-09-17",
+    "summary": "Add project working directory support with local disk, mapped drive, OneDrive, and Google Drive integration"
+  },
+  {
+    "version": "1.0.789",
+    "date": "2026-09-16",
+    "summary": "Update advanced SE guide for TAP optic allocations, TA-to-HC interconnects, embedded GigaSMART pipelines, and report generation"
+  },
+  {
     "version": "1.0.788",
     "date": "2026-09-11",
     "summary": "V1.0.788: add strict licensing model enforcement instructions to Glean AI prompt generator"

@@ -38,7 +38,7 @@ import SimulationEngine from './components/SimulationEngine';
 import TrafficGenerator from './components/TrafficGenerator';
 import { useStore } from './store/store';
 import { getStandardExportFilename } from './utils/exportNaming';
-import { saveWithFilePickerOrPrompt } from './utils/fileSaveHelper';
+import { saveProjectArtifact } from './utils/fileSaveHelper';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TradeShowDemo } from './components/TradeShowDemo';
 import { MissionDemo } from './components/MissionDemo';
@@ -73,6 +73,10 @@ function App() {
   const theme               = useStore((s) => s.theme);
   const focusMode           = useStore((s) => s.focusMode);
   const setFocusMode        = useStore((s) => s.setFocusMode);
+  const projectId           = useStore((s) => s.projectId);
+  const workingDirectoryName = useStore((s) => s.workingDirectoryName);
+  const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
+  const workingDirectoryPromptDismissed = useStore((s) => s.workingDirectoryPromptDismissed);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -106,20 +110,36 @@ function App() {
         panelTextScale,
         showGrid,
         snapToGrid,
+        projectId,
+        workingDirectoryName,
+        workingDirectoryPromptDismissed,
       },
       quoteWorkspace,
     };
     const json = JSON.stringify(projectData, null, 2);
 
-    const res = await saveWithFilePickerOrPrompt(json, filename, {
-      description: 'GigaVUE Project File (*.gvp)',
-      mimeType: 'application/json',
-      extension: '.gvp',
-    });
+    const res = await saveProjectArtifact(
+      json,
+      filename,
+      {
+        description: 'GigaVUE Project File (*.gvp)',
+        mimeType: 'application/json',
+        extension: '.gvp',
+      },
+      {
+        projectId,
+        workingDirectoryName,
+        onStaleDirectory: () => clearWorkingDirectory(),
+      },
+    );
 
     if (res.saved) {
       setCurrentScenarioName(activeName);
-      setSaveToast(`Saved project to "${res.filename}"`);
+      setSaveToast(
+        res.directoryName
+          ? `Saved project directly to "${res.directoryName}"`
+          : `Saved project to "${res.filename}"`,
+      );
       setTimeout(() => setSaveToast(''), 5000);
     }
   }, [
@@ -134,6 +154,10 @@ function App() {
     panelTextScale,
     showGrid,
     snapToGrid,
+    projectId,
+    workingDirectoryName,
+    workingDirectoryPromptDismissed,
+    clearWorkingDirectory,
     currentScenarioName,
     setCurrentScenarioName,
   ]);
@@ -237,6 +261,9 @@ function App() {
             panelTextScale,
             showGrid,
             snapToGrid,
+            projectId,
+            workingDirectoryName,
+            workingDirectoryPromptDismissed,
           },
         };
         try {
@@ -260,6 +287,9 @@ function App() {
     panelTextScale,
     showGrid,
     snapToGrid,
+    projectId,
+    workingDirectoryName,
+    workingDirectoryPromptDismissed,
   ]);
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────

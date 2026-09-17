@@ -13,7 +13,13 @@ import pkg from '../../package.json';
 import { validateConfiguration, detectMixedSiteAssignment } from '../utils/bomEngine';
 import { captureTopologyDiagramForReport } from '../utils/report/captureTopologyDiagram';
 import { getStandardExportFilename } from '../utils/exportNaming';
-import { saveWithFilePickerOrPrompt } from '../utils/fileSaveHelper';
+import { saveProjectArtifact } from '../utils/fileSaveHelper';
+import {
+  getDirectoryHandle,
+  pickWorkingDirectory,
+  isFileSystemAccessSupported,
+} from '../utils/projectDirectoryStorage';
+import { v4 as uuidv4 } from 'uuid';
 import { exportSolutionToDirectoryOrZip } from '../utils/solutionPackage';
 import { clearAllProjectQuoteWorkspaces } from '../utils/projectQuoteStorage';
 import { isInternalEdition } from '../constants/edition';
@@ -25,6 +31,8 @@ import {
   DuplicateModal,
   ProjectSettingsModal,
   ProjectNamePromptModal,
+  WorkingDirectoryPromptModal,
+  ProjectSetupModal,
   isUntitledProject,
   BomModal,
   AboutModal,
@@ -112,10 +120,19 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const bumpSkuCatalogueVersion = useStore((state) => state.bumpSkuCatalogueVersion);
   const focusMode = useStore((state) => state.focusMode);
   const toggleFocusMode = useStore((state) => state.toggleFocusMode);
+  const projectId = useStore((state) => state.projectId);
+  const setProjectId = useStore((state) => state.setProjectId);
+  const workingDirectoryName = useStore((state) => state.workingDirectoryName);
+  const setWorkingDirectory = useStore((state) => state.setWorkingDirectory);
+  const clearWorkingDirectory = useStore((state) => state.clearWorkingDirectory);
+  const workingDirectoryPromptDismissed = useStore((state) => state.workingDirectoryPromptDismissed);
 
   // Local UI state for modals & dropdowns
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showNewProjectConfirm, setShowNewProjectConfirm] = useState(false);
+  const [showProjectSetup, setShowProjectSetup] = useState(false);
+  const [showDirectoryPrompt, setShowDirectoryPrompt] = useState(false);
+  const [pendingDirectoryAction, setPendingDirectoryAction] = useState<((handle?: FileSystemDirectoryHandle) => void) | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [pendingNameAction, setPendingNameAction] = useState<((confirmedName: string) => void) | null>(null);
   const [showBom, setShowBom] = useState(false);
@@ -188,23 +205,40 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
     ) {
       setShowNewProjectConfirm(true);
     } else {
-      handleNewProjectExecute();
+      setShowProjectSetup(true);
     }
   };
 
-  const handleNewProjectExecute = () => {
+  const handleNewProjectConfirm = () => {
+    setShowNewProjectConfirm(false);
+    setShowProjectSetup(true);
+  };
+
+  const handleProjectSetupConfirm = async (config: {
+    projectName: string;
+    directoryHandle?: FileSystemDirectoryHandle | null;
+  }) => {
     clearCanvas();
-    setCurrentScenarioName(null);
+    setCurrentScenarioName(config.projectName);
     clearAllProjectQuoteWorkspaces();
     setActiveView('canvas');
-    setShowNewProjectConfirm(false);
+    setShowProjectSetup(false);
     setExportPackageStatus(null);
+    const newId = uuidv4();
+    setProjectId(newId);
+    if (config.directoryHandle) {
+      await setWorkingDirectory(config.directoryHandle.name, config.directoryHandle);
+    } else {
+      await clearWorkingDirectory();
+    }
     try {
       localStorage.removeItem('fm-simulator-autosave');
       localStorage.removeItem('fm-simulator-last-slot');
     } catch {
       // ignore
     }
+    setExportPackageStatus(`Started project "${config.projectName}"`);
+    setTimeout(() => setExportPackageStatus(null), 4000);
   };
 
   const handleOpenBom = () => {
@@ -270,20 +304,45 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
   const handleExportScreenshot = () => {
     ensureProjectNamed((resolvedName) => {
-      const filename = getStandardExportFilename('diagram-png', resolvedName);
-      saveWithFilePickerOrPrompt(
-        async () => {
-          return await captureTopologyDiagramForReport();
-        },
-        filename,
-        {
-          description: 'PNG Topology Diagram',
-          mimeType: 'image/png',
-          extension: '.png',
-        },
-      ).catch((err) => {
-        console.error('oops, something went wrong!', err);
-      });
+      const executeScreenshotSave = async (dirHandle?: FileSystemDirectoryHandle | null) => {
+        const filename = getStandardExportFilename('diagram-png', resolvedName);
+        try {
+          const res = await saveProjectArtifact(
+            async () => {
+              return await captureTopologyDiagramForReport();
+            },
+            filename,
+            {
+              description: 'PNG Topology Diagram',
+              mimeType: 'image/png',
+              extension: '.png',
+            },
+            {
+              projectId,
+              workingDirectoryName,
+              directoryHandle: dirHandle,
+              onStaleDirectory: () => clearWorkingDirectory(),
+            },
+          );
+          if (res.saved) {
+            setExportPackageStatus(
+              res.directoryName
+                ? `✓ Saved screenshot directly to "${res.directoryName}"`
+                : `✓ Saved screenshot "${res.filename}"`,
+            );
+            setTimeout(() => setExportPackageStatus(null), 5000);
+          }
+        } catch (err) {
+          console.error('oops, something went wrong!', err);
+        }
+      };
+
+      if (!workingDirectoryName && !workingDirectoryPromptDismissed && isFileSystemAccessSupported()) {
+        setPendingDirectoryAction(() => (handle?: FileSystemDirectoryHandle) => executeScreenshotSave(handle));
+        setShowDirectoryPrompt(true);
+      } else {
+        executeScreenshotSave();
+      }
     });
   };
 
@@ -292,6 +351,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
       setIsExportingPackage(true);
       setExportPackageStatus('Preparing all solution files (PDFs, CSVs, JSON, PNG)...');
       try {
+        const existingHandle = await getDirectoryHandle(projectId);
         const res = await exportSolutionToDirectoryOrZip({
           nodes,
           edges,
@@ -308,13 +368,20 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
           peakNodeRxMbps,
           nodeMetrics,
           isRunning,
+          targetDirectoryHandle: existingHandle,
           onProgress: (status) => setExportPackageStatus(status),
         });
         if (res.success) {
+          if (res.directoryName && !workingDirectoryName) {
+            const handle = await getDirectoryHandle(projectId);
+            if (handle) {
+              await setWorkingDirectory(handle.name, handle);
+            }
+          }
           setExportPackageStatus(
             res.directoryName
-              ? `Successfully exported the ${res.fileCount} files into folder "${res.directoryName}"!`
-              : `Successfully exported the ${res.fileCount} files in ZIP package "${res.zipFilename}"!`,
+              ? `Successfully exported all ${res.fileCount} files into folder "${res.directoryName}"!`
+              : `Successfully exported all ${res.fileCount} files in ZIP package "${res.zipFilename}"!`,
           );
           setTimeout(() => setExportPackageStatus(null), 5000);
         } else {
@@ -363,10 +430,44 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
       {showNewProjectConfirm && (
         <ConfirmModal
-          message="Are you sure you want to create a new project? All items will be removed from the canvas, all quotations will be reset, and the project name will return to Untitled Project."
-          confirmLabel="New Project"
-          onConfirm={handleNewProjectExecute}
+          message="Are you sure you want to create a new project? All items will be removed from the canvas, all quotations will be reset, and you can specify a new project name and working directory."
+          confirmLabel="Continue to Setup"
+          onConfirm={handleNewProjectConfirm}
           onCancel={() => setShowNewProjectConfirm(false)}
+        />
+      )}
+
+      {showProjectSetup && (
+        <ProjectSetupModal
+          initialName={currentScenarioName || ''}
+          onConfirm={handleProjectSetupConfirm}
+          onCancel={() => setShowProjectSetup(false)}
+        />
+      )}
+
+      {showDirectoryPrompt && (
+        <WorkingDirectoryPromptModal
+          actionName="export or save"
+          onDirectorySelected={(handle) => {
+            setShowDirectoryPrompt(false);
+            if (pendingDirectoryAction) {
+              const action = pendingDirectoryAction;
+              setPendingDirectoryAction(null);
+              action(handle);
+            }
+          }}
+          onContinueWithoutDirectory={() => {
+            setShowDirectoryPrompt(false);
+            if (pendingDirectoryAction) {
+              const action = pendingDirectoryAction;
+              setPendingDirectoryAction(null);
+              action();
+            }
+          }}
+          onCancel={() => {
+            setShowDirectoryPrompt(false);
+            setPendingDirectoryAction(null);
+          }}
         />
       )}
 
@@ -481,6 +582,30 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                   title={`Deployment Region: ${projectRegion}`}
                   onClick={() => setShowSettings(true)}
                 />
+                {workingDirectoryName && (
+                  <span
+                    onClick={() => setShowSettings(true)}
+                    title={`Working Directory: ${workingDirectoryName} (click to configure in Project Settings)`}
+                    style={{
+                      fontSize: '10px',
+                      color: '#38bdf8',
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      borderRadius: '3px',
+                      padding: '1px 5px',
+                      cursor: 'pointer',
+                      maxWidth: '130px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                    }}
+                  >
+                    📁 {workingDirectoryName}
+                  </span>
+                )}
               </span>
               <span className="brand-subtitle">
                 <span className="brand-subtitle-full">FLOW MAPPING DESIGNER </span>
@@ -717,6 +842,29 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                     >
                       <FilePlusIcon size={14} />
                       <span>✨ New Project...</span>
+                    </button>
+                    <button
+                      className="header-dropdown-item"
+                      onClick={async () => {
+                        setShowProjectMenu(false);
+                        try {
+                          const handle = await pickWorkingDirectory();
+                          if (handle) {
+                            await setWorkingDirectory(handle.name, handle);
+                            setExportPackageStatus(`✓ Working directory set to "${handle.name}"`);
+                            setTimeout(() => setExportPackageStatus(null), 4000);
+                          }
+                        } catch (err) {
+                          console.warn(err);
+                        }
+                      }}
+                      style={{ color: '#38bdf8' }}
+                      title="Set or change project working directory (supports local disks, mapped drives, OneDrive, Google Drive)"
+                    >
+                      <FolderOpenIcon size={14} />
+                      <span>
+                        {workingDirectoryName ? `📁 Working Dir: ${workingDirectoryName}` : '📁 Set Working Directory...'}
+                      </span>
                     </button>
                     <div className="header-dropdown-divider" />
                     <button

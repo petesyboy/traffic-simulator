@@ -11,7 +11,7 @@ import { generateBom, validateConfiguration, detectMixedSiteAssignment, getSkus 
 import { buildProjectWideOpticBom } from '../../utils/bom/opticPacks';
 import { consolidateSimpleDeviceRows, CONSOLIDATED_DEVICES_NODE_ID } from '../../utils/bom/consolidateSimpleDevices';
 import { buildPhysicalItems, parseAndConvertDimensions, type PhysicalItem } from '../../utils/bom/physicalItems';
-import { saveWithFilePickerOrPrompt } from '../../utils/fileSaveHelper';
+import { saveProjectArtifact } from '../../utils/fileSaveHelper';
 import { getStandardExportFilename } from '../../utils/exportNaming';
 import type { HardwareNodeData } from '../../store/types';
 import { isInternalEdition } from '../../constants/edition';
@@ -36,6 +36,9 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
+  const projectId = useStore((s) => s.projectId);
+  const workingDirectoryName = useStore((s) => s.workingDirectoryName);
+  const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
 
   const [activeTab, setActiveTab] = useState<'bom' | 'physical'>('bom');
   const [bomViewMode, setBomViewMode] = useState<'site' | 'master'>('site');
@@ -112,11 +115,20 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         .join('\n');
       const defaultFilename = getStandardExportFilename('bom-csv', resolvedName);
 
-      await saveWithFilePickerOrPrompt(csv, defaultFilename, {
-        description: 'BOM CSV File',
-        mimeType: 'text/csv',
-        extension: '.csv',
-      });
+      await saveProjectArtifact(
+        csv,
+        defaultFilename,
+        {
+          description: 'BOM CSV File',
+          mimeType: 'text/csv',
+          extension: '.csv',
+        },
+        {
+          projectId,
+          workingDirectoryName,
+          onStaleDirectory: () => clearWorkingDirectory(),
+        },
+      );
     });
   };
 
@@ -139,11 +151,20 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
         .join('\n');
       const defaultFilename = getStandardExportFilename('bom-deployment-csv', resolvedName);
 
-      await saveWithFilePickerOrPrompt(csv, defaultFilename, {
-        description: 'Deployment Report CSV File',
-        mimeType: 'text/csv',
-        extension: '.csv',
-      });
+      await saveProjectArtifact(
+        csv,
+        defaultFilename,
+        {
+          description: 'Deployment Report CSV File',
+          mimeType: 'text/csv',
+          extension: '.csv',
+        },
+        {
+          projectId,
+          workingDirectoryName,
+          onStaleDirectory: () => clearWorkingDirectory(),
+        },
+      );
     });
   };
 

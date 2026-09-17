@@ -3,8 +3,14 @@
  *
  * Provides file saving functionality that prompts the user with the native OS
  * "Save As" file picker (supporting directory selection and overwriting existing files),
+ * writes directly to an active project working directory when configured,
  * with a graceful window.prompt() fallback for browsers or file:// contexts without File System Access API.
  */
+
+import {
+  getDirectoryHandle,
+  verifyAndRequestDirectoryPermission,
+} from './projectDirectoryStorage';
 
 export type FileContentInput =
   | Blob
@@ -22,6 +28,15 @@ export interface SaveFileResult {
   saved: boolean;
   filename: string;
   cancelled?: boolean;
+  directoryName?: string;
+  savedToDirectory?: boolean;
+}
+
+export interface SaveProjectArtifactContext {
+  projectId?: string;
+  directoryHandle?: FileSystemDirectoryHandle | null;
+  workingDirectoryName?: string | null;
+  onStaleDirectory?: () => void;
 }
 
 function convertContentToBlob(content: Blob | string, defaultMime: string): Blob {
@@ -43,6 +58,39 @@ function convertContentToBlob(content: Blob | string, defaultMime: string): Blob
     }
   }
   return new Blob([content], { type: defaultMime });
+}
+
+/**
+ * Writes a Blob to a FileSystemDirectoryHandle with retry backoff for cloud-drive file locks
+ * (such as OneDrive or Google Drive synchronisation locks).
+ */
+export async function writeBlobToDirectory(
+  dirHandle: FileSystemDirectoryHandle,
+  filename: string,
+  blob: Blob,
+  maxRetries = 3,
+): Promise<void> {
+  const delays = [200, 500, 1000];
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err: unknown) {
+      lastError = err;
+      // If error might be transient lock (e.g. OneDrive/Google Drive sync daemon)
+      if (attempt < maxRetries) {
+        const delay = delays[attempt] || 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 /**
@@ -161,4 +209,78 @@ export async function saveWithFilePickerOrPrompt(
     saved: true,
     filename: targetFilename,
   };
+}
+
+/**
+ * Saves a project artifact (report, BOM, quote, screenshot, project file).
+ *
+ * If an active project working directory handle is present and permitted:
+ *  - Verifies permission immediately in the user gesture call stack
+ *  - Writes the artifact directly to the directory
+ *  - Retries on cloud-drive locks
+ *  - Recovers gracefully from stale/unmounted directories
+ *
+ * If no working directory handle is available, seamlessly falls back to
+ * `saveWithFilePickerOrPrompt()`.
+ */
+export async function saveProjectArtifact(
+  contentOrGenerator: FileContentInput,
+  defaultFilename: string,
+  options?: Partial<FilePickerTypeOption>,
+  context?: SaveProjectArtifactContext,
+): Promise<SaveFileResult> {
+  const rawExt = options?.extension || (defaultFilename.includes('.') ? '.' + defaultFilename.split('.').pop()! : '');
+  const ext = rawExt.startsWith('.') ? rawExt : `.${rawExt}`;
+  const mime = options?.mimeType || 'application/octet-stream';
+
+  let targetFilename = defaultFilename;
+  if (ext && !targetFilename.toLowerCase().endsWith(ext.toLowerCase())) {
+    targetFilename += ext;
+  }
+
+  // 1. Check if we have an active directory handle
+  let dirHandle = context?.directoryHandle || null;
+  if (!dirHandle && context?.projectId) {
+    dirHandle = await getDirectoryHandle(context.projectId);
+  }
+
+  if (dirHandle) {
+    try {
+      // Permission check MUST happen first within the active user activation gesture
+      const permitted = await verifyAndRequestDirectoryPermission(dirHandle);
+
+      if (permitted) {
+        // Resolve content now that destination is validated
+        const resolvedContent = typeof contentOrGenerator === 'function'
+          ? await contentOrGenerator()
+          : contentOrGenerator;
+
+        const blob = convertContentToBlob(resolvedContent, mime);
+
+        await writeBlobToDirectory(dirHandle, targetFilename, blob);
+
+        return {
+          saved: true,
+          filename: targetFilename,
+          directoryName: dirHandle.name,
+          savedToDirectory: true,
+        };
+      }
+    } catch (err: unknown) {
+      console.warn('Failed to write artifact directly to working directory:', err);
+
+      // Detect unmounted or moved directory (NotFoundError, NotAllowedError, etc.)
+      const isStale =
+        err instanceof Error &&
+        (err.name === 'NotFoundError' || err.name === 'NotAllowedError');
+
+      if (isStale && context?.onStaleDirectory) {
+        context.onStaleDirectory();
+      }
+      // Fall through to saveWithFilePickerOrPrompt so user work is never lost!
+    }
+  }
+
+  // 2. Fallback to native Save As or standard download
+  return saveWithFilePickerOrPrompt(contentOrGenerator, defaultFilename, options);
 }

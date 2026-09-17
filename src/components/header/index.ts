@@ -14,6 +14,8 @@ export { default as SkuUpdateModal } from './SkuUpdateModal';
 export { default as ReportModal } from './ReportModal';
 export { default as MixedSiteConfirmModal } from './MixedSiteConfirmModal';
 export { SaveSlotModal } from './SaveSlotModal';
+export { default as WorkingDirectoryPromptModal } from './WorkingDirectoryPromptModal';
+export { default as ProjectSetupModal } from './ProjectSetupModal';
 
 
 export {

@@ -13,7 +13,11 @@
 
 import { skuService } from '../services/skuService';
 import type { BomRow } from './bom/bomGenerator';
-import { saveWithFilePickerOrPrompt, type SaveFileResult } from './fileSaveHelper';
+import {
+  saveProjectArtifact,
+  type SaveFileResult,
+  type SaveProjectArtifactContext,
+} from './fileSaveHelper';
 import { getStandardExportFilename } from './exportNaming';
 
 export type QuoteCategory =
@@ -1126,6 +1130,7 @@ export async function exportQuoteToCsv(
   freePowerCords: boolean = false,
   spanOnlyMode: boolean = false,
   scenarioName?: string,
+  context?: SaveProjectArtifactContext,
 ): Promise<SaveFileResult> {
   const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
 
@@ -1179,11 +1184,11 @@ export async function exportQuoteToCsv(
   const csvContent = [headers, ...rows, ...summaryRows].join('\n');
   const defaultFilename = getStandardExportFilename('quote-csv', scenarioName);
 
-  return saveWithFilePickerOrPrompt(csvContent, defaultFilename, {
+  return saveProjectArtifact(csvContent, defaultFilename, {
     description: 'Commercial Quote CSV File',
     mimeType: 'text/csv',
     extension: '.csv',
-  });
+  }, context);
 }
 
 /** Structured JSON payload for persistent saving and loading of customized commercial quotes. */
@@ -1225,6 +1230,7 @@ export async function exportCommercialQuoteToJson(
     defaultTermDuration?: string;
     projectRegion?: string;
   },
+  context?: SaveProjectArtifactContext,
 ): Promise<SaveFileResult> {
   const summary = calculateQuoteSummary(items, config, excludeOptics, freePowerCords, spanOnlyMode);
 
@@ -1255,11 +1261,11 @@ export async function exportCommercialQuoteToJson(
   const jsonString = JSON.stringify(quoteData, null, 2);
   const defaultFilename = getStandardExportFilename('quote-json', metadata.scenarioName);
 
-  return saveWithFilePickerOrPrompt(jsonString, defaultFilename, {
+  return saveProjectArtifact(jsonString, defaultFilename, {
     description: 'Commercial Quote JSON File',
     mimeType: 'application/json',
     extension: '.json',
-  });
+  }, context);
 }
 
 /** Validates and parses imported JSON string into CommercialQuoteSaveData. */

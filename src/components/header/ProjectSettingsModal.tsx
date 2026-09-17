@@ -4,9 +4,15 @@
  * Project-level settings modal: licence mode, region, term duration, grid, etc.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { TOOL_INGEST_PROFILES } from '../../constants/toolIngestLimits';
+import {
+  pickWorkingDirectory,
+  isFileSystemAccessSupported,
+  testDirectoryAccess,
+  getDirectoryHandle,
+} from '../../utils/projectDirectoryStorage';
 
 const DEFAULT_TOOL_OPTIONS = Object.keys(TOOL_INGEST_PROFILES).filter((name) => name !== 'GigaSMART Appliance');
 
@@ -15,6 +21,10 @@ export interface ProjectSettingsModalProps {
 }
 
 const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) => {
+  const projectId = useStore((s) => s.projectId);
+  const workingDirectoryName = useStore((s) => s.workingDirectoryName);
+  const setWorkingDirectory = useStore((s) => s.setWorkingDirectory);
+  const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
   const projectLicenseMode = useStore((s) => s.projectLicenseMode);
   const setProjectLicenseMode = useStore((s) => s.setProjectLicenseMode);
   const defaultTermDuration = useStore((s) => s.defaultTermDuration);
@@ -34,6 +44,55 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
   const defaultPacketTool = useStore((s) => s.defaultPacketTool);
   const setDefaultPacketTool = useStore((s) => s.setDefaultPacketTool);
 
+  const [dirStatusMsg, setDirStatusMsg] = useState<string | null>(null);
+  const [isDirBusy, setIsDirBusy] = useState(false);
+
+  const isFsSupported = isFileSystemAccessSupported();
+
+  const handlePickDirectory = async () => {
+    setIsDirBusy(true);
+    setDirStatusMsg(null);
+    try {
+      const handle = await pickWorkingDirectory();
+      if (handle) {
+        await setWorkingDirectory(handle.name, handle);
+        setDirStatusMsg(`✓ Connected to folder "${handle.name}"`);
+      }
+    } catch (err) {
+      console.warn('Directory pick failed:', err);
+      setDirStatusMsg('Could not open folder picker.');
+    } finally {
+      setIsDirBusy(false);
+    }
+  };
+
+  const handleVerifyDirectory = async () => {
+    setIsDirBusy(true);
+    setDirStatusMsg(null);
+    try {
+      const handle = await getDirectoryHandle(projectId);
+      if (!handle) {
+        setDirStatusMsg('No directory handle found in storage. Please reconnect.');
+        return;
+      }
+      const test = await testDirectoryAccess(handle);
+      if (test.accessible) {
+        setDirStatusMsg(`✓ Directory "${handle.name}" is verified and ready for direct saves.`);
+      } else {
+        setDirStatusMsg(`⚠️ Access issue: ${test.error || 'Permission required or folder moved'}`);
+      }
+    } catch (err) {
+      setDirStatusMsg('Failed to test directory access.');
+    } finally {
+      setIsDirBusy(false);
+    }
+  };
+
+  const handleDisconnectDirectory = async () => {
+    await clearWorkingDirectory();
+    setDirStatusMsg('Working directory disconnected.');
+  };
+
   const handleTermBlur = () => {
     let parsed = parseInt(defaultTermDuration, 10);
     if (isNaN(parsed) || parsed < 1) parsed = 1;
@@ -43,12 +102,130 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card" style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="modal-card" style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <h3 style={{ margin: 0, fontSize: '14px', color: '#ff9800', fontWeight: 'bold' }}>
           ⚙️ Project Settings
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Working Directory */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              padding: '10px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>
+                📁 Project Working Directory
+              </label>
+              {workingDirectoryName && (
+                <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 600 }}>Active</span>
+              )}
+            </div>
+
+            {workingDirectoryName ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid #0284c7',
+                    borderRadius: '4px',
+                    padding: '6px 8px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span style={{ fontSize: '14px' }}>📁</span>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      color: '#fff',
+                      fontWeight: 600,
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {workingDirectoryName}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handlePickDirectory}
+                    disabled={isDirBusy}
+                    style={{ fontSize: '11px', padding: '3px 8px', height: 'auto', color: '#38bdf8' }}
+                  >
+                    Change Folder...
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handleVerifyDirectory}
+                    disabled={isDirBusy}
+                    style={{ fontSize: '11px', padding: '3px 8px', height: 'auto', color: '#a5b4fc' }}
+                  >
+                    Verify Access
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handleDisconnectDirectory}
+                    disabled={isDirBusy}
+                    style={{ fontSize: '11px', padding: '3px 8px', height: 'auto', color: '#f87171' }}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ) : isFsSupported ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handlePickDirectory}
+                  disabled={isDirBusy}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '6px 10px',
+                    fontSize: '11px',
+                    background: '#1e293b',
+                    border: '1px dashed #475569',
+                    color: '#cbd5e1',
+                    cursor: 'pointer',
+                  }}
+                >
+                  📁 {isDirBusy ? 'Opening Chooser...' : 'Select Working Directory...'}
+                </button>
+              </div>
+            ) : (
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                Directory picker requires a Chromium-based browser (Chrome, Edge).
+              </span>
+            )}
+
+            <span className="text-muted" style={{ fontSize: '10px', lineHeight: 1.4 }}>
+              All project files (.gvp), screenshots (.png), BOM (.csv), quotes, and reports (.pdf) are saved directly into this directory. Supports local disks (C:\, D:\), mapped network drives, OneDrive, and Google Drive.
+            </span>
+
+            {dirStatusMsg && (
+              <span style={{ fontSize: '11px', color: dirStatusMsg.startsWith('✓') ? '#4ade80' : '#f87171' }}>
+                {dirStatusMsg}
+              </span>
+            )}
+          </div>
           {/* Licence Mode */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>

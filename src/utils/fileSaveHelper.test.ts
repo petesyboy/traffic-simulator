@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { saveWithFilePickerOrPrompt } from './fileSaveHelper';
+import { saveWithFilePickerOrPrompt, saveProjectArtifact } from './fileSaveHelper';
 
 describe('fileSaveHelper', () => {
   beforeEach(() => {
@@ -128,5 +128,114 @@ describe('fileSaveHelper', () => {
     expect(result.cancelled).toBe(true);
     expect(generator).not.toHaveBeenCalled();
   });
+
+  describe('saveProjectArtifact & writeBlobToDirectory', () => {
+    it('saves directly to active working directory when handle is provided and permitted', async () => {
+      const writeMock = vi.fn().mockResolvedValue(undefined);
+      const closeMock = vi.fn().mockResolvedValue(undefined);
+      const createWritableMock = vi.fn().mockResolvedValue({
+        write: writeMock,
+        close: closeMock,
+      });
+      const getFileHandleMock = vi.fn().mockResolvedValue({
+        createWritable: createWritableMock,
+      });
+
+      const mockDirHandle = {
+        name: 'Enterprise-Project-2026',
+        queryPermission: vi.fn().mockResolvedValue('granted'),
+        getFileHandle: getFileHandleMock,
+      } as unknown as FileSystemDirectoryHandle;
+
+      const result = await saveProjectArtifact(
+        'csv-content-123',
+        'Bill_of_Materials_Alpha.csv',
+        {
+          extension: '.csv',
+          mimeType: 'text/csv',
+        },
+        {
+          directoryHandle: mockDirHandle,
+        },
+      );
+
+      expect(result.saved).toBe(true);
+      expect(result.savedToDirectory).toBe(true);
+      expect(result.directoryName).toBe('Enterprise-Project-2026');
+      expect(getFileHandleMock).toHaveBeenCalledWith('Bill_of_Materials_Alpha.csv', { create: true });
+      expect(createWritableMock).toHaveBeenCalled();
+      expect(writeMock).toHaveBeenCalled();
+      expect(closeMock).toHaveBeenCalled();
+    });
+
+    it('recovers from stale or unmounted directory by calling onStaleDirectory and falling back', async () => {
+      const notFoundErr = new Error('A requested file or directory could not be found.');
+      notFoundErr.name = 'NotFoundError';
+
+      const mockDirHandle = {
+        name: 'Stale-Network-Share',
+        queryPermission: vi.fn().mockResolvedValue('granted'),
+        getFileHandle: vi.fn().mockRejectedValue(notFoundErr),
+      } as unknown as FileSystemDirectoryHandle;
+
+      const onStaleDirectoryMock = vi.fn();
+      const promptMock = vi.fn().mockReturnValue('FallbackSaved.csv');
+      (globalThis as unknown as Record<string, unknown>).window = {
+        prompt: promptMock,
+      };
+
+      const result = await saveProjectArtifact(
+        'content',
+        'FallbackSaved.csv',
+        { extension: '.csv', mimeType: 'text/csv' },
+        {
+          directoryHandle: mockDirHandle,
+          onStaleDirectory: onStaleDirectoryMock,
+        },
+      );
+
+      expect(onStaleDirectoryMock).toHaveBeenCalled();
+      expect(result.saved).toBe(true);
+      expect(result.filename).toBe('FallbackSaved.csv');
+    });
+
+    it('retries writeBlobToDirectory upon temporary cloud sync lock and succeeds', async () => {
+      const writeMock = vi.fn().mockResolvedValue(undefined);
+      const closeMock = vi.fn().mockResolvedValue(undefined);
+      const createWritableMock = vi.fn().mockResolvedValue({
+        write: writeMock,
+        close: closeMock,
+      });
+
+      let attempts = 0;
+      const getFileHandleMock = vi.fn().mockImplementation(async () => {
+        attempts++;
+        if (attempts === 1) {
+          const lockErr = new Error('File locked by OneDrive sync');
+          lockErr.name = 'NoModificationAllowedError';
+          throw lockErr;
+        }
+        return { createWritable: createWritableMock };
+      });
+
+      const mockDirHandle = {
+        name: 'OneDrive-Sync-Folder',
+        queryPermission: vi.fn().mockResolvedValue('granted'),
+        getFileHandle: getFileHandleMock,
+      } as unknown as FileSystemDirectoryHandle;
+
+      const result = await saveProjectArtifact(
+        'retry-content',
+        'Solution_Overview.gvp',
+        { extension: '.gvp', mimeType: 'application/json' },
+        { directoryHandle: mockDirHandle },
+      );
+
+      expect(result.saved).toBe(true);
+      expect(attempts).toBe(2);
+      expect(result.savedToDirectory).toBe(true);
+    });
+  });
 });
+
 

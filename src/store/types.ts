@@ -503,8 +503,18 @@ export interface RFState {
       showGrid?: boolean;
       snapToGrid?: boolean;
       trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+      projectId?: string;
+      workingDirectoryName?: string | null;
+      workingDirectoryPromptDismissed?: boolean;
     },
   ) => void;
+  projectId: string;
+  workingDirectoryName: string | null;
+  workingDirectoryPromptDismissed: boolean;
+  setProjectId: (id: string) => void;
+  setWorkingDirectory: (name: string | null, handle?: FileSystemDirectoryHandle) => Promise<void>;
+  clearWorkingDirectory: () => Promise<void>;
+  setWorkingDirectoryPromptDismissed: (dismissed: boolean) => void;
   toggleSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
   setAdvancedMode: (mode: boolean) => void;

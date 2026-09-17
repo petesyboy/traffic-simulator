@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.790",
+    date: "2026-09-17",
+    summary: "Add project working directory support with local disk, mapped drive, OneDrive, and Google Drive integration",
+  },
+  {
+    version: "1.0.789",
+    date: "2026-09-16",
+    summary: "Update advanced SE guide for TAP optic allocations, TA-to-HC interconnects, embedded GigaSMART pipelines, and report generation",
+  },
+  {
     version: "1.0.788",
     date: "2026-09-11",
     summary: "V1.0.788: add strict licensing model enforcement instructions to Glean AI prompt generator",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.768",
     date: "2026-09-10",
     summary: "Eliminate dual mouseovers on info icons and provide rich, accurate hardware specifications in node descriptions",
-  },
-  {
-    version: "1.0.767",
-    date: "2026-09-10",
-    summary: "Fix changelog history persistence across shallow CI and deployment builds",
-  },
-  {
-    version: "1.0.766",
-    date: "2026-09-10",
-    summary: "Standardise hardware graphic widths and align names in advanced mode menu",
   },
 ];
