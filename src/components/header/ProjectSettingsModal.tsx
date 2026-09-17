@@ -18,9 +18,10 @@ const DEFAULT_TOOL_OPTIONS = Object.keys(TOOL_INGEST_PROFILES).filter((name) => 
 
 export interface ProjectSettingsModalProps {
   onClose: () => void;
+  onOpenFeedback?: () => void;
 }
 
-const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) => {
+const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose, onOpenFeedback }) => {
   const projectId = useStore((s) => s.projectId);
   const workingDirectoryName = useStore((s) => s.workingDirectoryName);
   const setWorkingDirectory = useStore((s) => s.setWorkingDirectory);
@@ -375,7 +376,30 @@ const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ onClose }) 
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+          {onOpenFeedback ? (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                onClose();
+                onOpenFeedback();
+              }}
+              style={{
+                color: '#38bdf8',
+                fontSize: '11px',
+                padding: '4px 8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+              title="Send feedback or report an issue"
+            >
+              <span>💬</span> Send Feedback or Report an Issue...
+            </button>
+          ) : (
+            <div />
+          )}
           <button className="btn btn-ghost" onClick={onClose}>
             Close
           </button>

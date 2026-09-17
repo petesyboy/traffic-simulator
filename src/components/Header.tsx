@@ -508,7 +508,12 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
         })()}
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
-      {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <ProjectSettingsModal
+          onClose={() => setShowSettings(false)}
+          onOpenFeedback={() => setShowFeedback(true)}
+        />
+      )}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} onOpenFeedback={() => setShowFeedback(true)} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       {showSkuUpdate && <SkuUpdateModal onClose={() => setShowSkuUpdate(false)} onChanged={bumpSkuCatalogueVersion} />}
@@ -958,6 +963,19 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       <FolderOpenIcon size={14} />
                       <span>Load from Browser Slot...</span>
                     </button>
+                    <div className="header-dropdown-divider" />
+                    <button
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        setShowProjectMenu(false);
+                        setShowFeedback(true);
+                      }}
+                      style={{ color: '#38bdf8', fontWeight: 600 }}
+                      title="Send feedback, report a bug, or request an improvement directly via email"
+                    >
+                      <FeedbackIcon size={14} />
+                      <span>💬 Send Feedback / Report Issue...</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -998,12 +1016,13 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
               </button>
               <button
-                className="header-btn icon-only"
+                className="header-btn header-btn--cyan"
                 onClick={() => setShowFeedback(true)}
                 title="Send Feedback or Report an Issue (email pete.connolly@gigamon.com)"
-                style={{ color: '#38bdf8' }}
+                style={{ gap: '5px' }}
               >
-                <FeedbackIcon />
+                <FeedbackIcon size={14} />
+                <span>Feedback</span>
               </button>
               <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
                 <GearIcon />

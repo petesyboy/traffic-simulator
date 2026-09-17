@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.793",
+    "date": "2026-09-17",
+    "summary": "Surface labeled Feedback button in top header toolbar, Project menu, and Project Settings dialog"
+  },
+  {
     "version": "1.0.792",
     "date": "2026-09-17",
     "summary": "Add feedback submission modal to wrap and dispatch user requests, bug reports, and enhancements via email or clipboard"

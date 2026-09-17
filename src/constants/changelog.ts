@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.793",
+    date: "2026-09-17",
+    summary: "Surface labeled Feedback button in top header toolbar, Project menu, and Project Settings dialog",
+  },
+  {
     version: "1.0.792",
     date: "2026-09-17",
     summary: "Add feedback submission modal to wrap and dispatch user requests, bug reports, and enhancements via email or clipboard",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.771",
     date: "2026-09-10",
     summary: "Add partner-brandable report templates, deprecate Patch Sheet/Crossover formats (v1.0.771)",
-  },
-  {
-    version: "1.0.770",
-    date: "2026-09-10",
-    summary: "Add multi-select batch property editing and cluster group configuration for TAPs, Tools, and datacentre locations",
   },
 ];
