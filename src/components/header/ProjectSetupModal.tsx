@@ -26,7 +26,7 @@ export interface ProjectSetupModalProps {
 }
 
 export const ProjectSetupModal: React.FC<ProjectSetupModalProps> = ({
-  initialName = '',
+  initialName = 'Untitled Project',
   onConfirm,
   onCancel,
 }) => {
@@ -61,7 +61,7 @@ export const ProjectSetupModal: React.FC<ProjectSetupModalProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || trimmed.toLowerCase() === 'untitled project') return;
+    if (!trimmed) return;
 
     onConfirm({
       projectName: trimmed,
@@ -69,7 +69,7 @@ export const ProjectSetupModal: React.FC<ProjectSetupModalProps> = ({
     });
   };
 
-  const isInvalid = !name.trim() || name.trim().toLowerCase() === 'untitled project';
+  const isInvalid = !name.trim();
 
   return (
     <div className="modal-overlay" style={{ zIndex: 10000 }}>
@@ -107,7 +107,8 @@ export const ProjectSetupModal: React.FC<ProjectSetupModalProps> = ({
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Enterprise Core Network Visibility"
+              onFocus={(e) => e.target.select()}
+              placeholder="Untitled Project"
               autoFocus
               style={{
                 padding: '8px 10px',
@@ -118,11 +119,6 @@ export const ProjectSetupModal: React.FC<ProjectSetupModalProps> = ({
                 fontSize: '13px',
               }}
             />
-            {name.trim().toLowerCase() === 'untitled project' && (
-              <span style={{ fontSize: '11px', color: '#f87171' }}>
-                Please specify a descriptive customer or project name.
-              </span>
-            )}
           </div>
 
           {/* Working Directory Box */}

@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.795",
+    date: "2026-09-17",
+    summary: "Default new project setup name to 'Untitled Project' rather than inheriting previous solution name",
+  },
+  {
+    version: "1.0.794",
+    date: "2026-09-17",
+    summary: "Standardise solution export file format on GigaVUE Project (.gvp) across deliverables and directory dumps",
+  },
+  {
     version: "1.0.793",
     date: "2026-09-17",
     summary: "Surface labeled Feedback button in top header toolbar, Project menu, and Project Settings dialog",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.773",
     date: "2026-09-10",
     summary: "Separate co-branded partner logo from Gigamon wordmark on report cover (v1.0.773)",
-  },
-  {
-    version: "1.0.772",
-    date: "2026-09-10",
-    summary: "Show a confirmation modal with the saved filename after report generation (v1.0.772)",
-  },
-  {
-    version: "1.0.771",
-    date: "2026-09-10",
-    summary: "Add partner-brandable report templates, deprecate Patch Sheet/Crossover formats (v1.0.771)",
   },
 ];

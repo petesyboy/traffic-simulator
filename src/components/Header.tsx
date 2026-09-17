@@ -442,7 +442,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
       {showProjectSetup && (
         <ProjectSetupModal
-          initialName={currentScenarioName || ''}
+          initialName="Untitled Project"
           onConfirm={handleProjectSetupConfirm}
           onCancel={() => setShowProjectSetup(false)}
         />
@@ -886,8 +886,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                       style={{ color: '#E1592A', fontWeight: 600 }}
                       title={
                         isInternalEdition()
-                          ? 'Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, JSON, and PNG diagram'
-                          : 'Select a directory on your computer to save all reports, BOM CSVs, JSON, and PNG diagram'
+                          ? 'Select a directory on your computer to save all reports, BOM CSVs, Commercial Quote, GVP project file, and PNG diagram'
+                          : 'Select a directory on your computer to save all reports, BOM CSVs, GVP project file, and PNG diagram'
                       }
                     >
                       <FolderOpenIcon size={14} />

@@ -465,7 +465,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                     justifyContent: 'center',
                     gap: '6px',
                   }}
-                  title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
+                  title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, GVP project file, and PNG diagram"
                 >
                   📁 {isExportingAll ? 'Dumping All Deliverables...' : 'Dump All to Folder (Directory Chooser)...'}
                 </button>
@@ -488,9 +488,9 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                     justifyContent: 'center',
                     gap: '6px',
                   }}
-                  title="Download JSON scenario file"
+                  title="Download GigaVUE Project (.gvp) file"
                 >
-                  ✉️ Export Topology JSON File Only
+                  💾 Export GigaVUE Project (.gvp) File Only
                 </button>
               </div>
 
@@ -508,7 +508,7 @@ export const SaveSlotModal: React.FC<SaveSlotModalProps> = ({ mode, onClose, onS
                   textAlign: 'center',
                 }}
               >
-                Dump All exports all 8 deliverables (PDF reports, CSVs, quotes, diagrams, JSON) directly into your chosen folder.
+                Dump All exports all deliverables (PDF reports, CSVs, quotes, diagrams, GVP project file) directly into your chosen folder.
               </span>
             </div>
           </div>

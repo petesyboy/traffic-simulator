@@ -944,7 +944,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               className="btn btn-secondary"
               onClick={handleExportAll}
               disabled={busy || isExportingAll}
-              title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, JSON, and PNG diagram"
+              title="Open Directory Chooser to pick or create a target folder and dump all reports, CSVs, commercial quotes, GVP project file, and PNG diagram"
               style={{
                 padding: '6px 14px',
                 fontSize: '11px',

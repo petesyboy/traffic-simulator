@@ -56,7 +56,8 @@ describe('solutionPackage', () => {
 
     const filenames = assets.map((a) => a.filename);
 
-    expect(filenames).toContain('Solution_Overview_City_of_Goteborg.json');
+    expect(filenames).toContain('GigaVUE_Project_City_of_Goteborg.gvp');
+    expect(filenames).not.toContain('Solution_Overview_City_of_Goteborg.json');
     expect(filenames).toContain('Bill_of_Materials_City_of_Goteborg.csv');
     expect(filenames).toContain('Bill_of_Materials_Deployment_Report_City_of_Goteborg.csv');
     expect(filenames).toContain('Gigamon_Architecture_Diagram_City_of_Goteborg.png');

@@ -44,7 +44,7 @@ export interface SolutionAssetFile {
   filename: string;
   content: Blob | string;
   mimeType: string;
-  category: 'json' | 'pdf' | 'csv' | 'png';
+  category: 'gvp' | 'json' | 'pdf' | 'csv' | 'png';
 }
 
 export interface GeneratePackageOptions {
@@ -198,9 +198,10 @@ export async function generateAllSolutionAssets(
   const files: SolutionAssetFile[] = [];
   const scenarioName = currentScenarioName || 'Solution';
 
-  // ── 1. Topology JSON State ──
-  onProgress?.('Generating Solution Topology JSON...');
+  // ── 1. GigaVUE Solution Project File (.gvp) ──
+  onProgress?.('Generating GigaVUE Solution Project File (.gvp)...');
   const flow = {
+    version: 1,
     projectName: scenarioName,
     nodes,
     edges,
@@ -217,12 +218,12 @@ export async function generateAllSolutionAssets(
     },
     quoteWorkspace: isInternalEdition() ? getProjectQuoteWorkspace(scenarioName) : undefined,
   };
-  const jsonContent = JSON.stringify(flow, null, 2);
+  const gvpContent = JSON.stringify(flow, null, 2);
   files.push({
-    filename: getStandardExportFilename('topology-json', scenarioName),
-    content: jsonContent,
+    filename: getStandardExportFilename('project-gvp', scenarioName),
+    content: gvpContent,
     mimeType: 'application/json',
-    category: 'json',
+    category: 'gvp',
   });
 
   // ── 2. Bill of Materials CSV ──
@@ -487,7 +488,7 @@ export async function exportSolutionToDirectoryOrZip(
 
   options.onProgress?.('Packaging all deliverables into a ZIP archive...');
   const zip = new JSZip();
-  const folderName = getStandardExportFilename('topology-json', scenarioName).replace(/\.json$/i, '');
+  const folderName = getStandardExportFilename('project-gvp', scenarioName).replace(/\.gvp$/i, '');
   const zipFolder = zip.folder(folderName) || zip;
 
   for (const asset of assets) {

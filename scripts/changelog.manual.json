@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.0.795",
+    "date": "2026-09-17",
+    "summary": "Default new project setup name to 'Untitled Project' rather than inheriting previous solution name"
+  },
+  {
+    "version": "1.0.794",
+    "date": "2026-09-17",
+    "summary": "Standardise solution export file format on GigaVUE Project (.gvp) across deliverables and directory dumps"
+  },
+  {
     "version": "1.0.793",
     "date": "2026-09-17",
     "summary": "Surface labeled Feedback button in top header toolbar, Project menu, and Project Settings dialog"

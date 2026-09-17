@@ -97,6 +97,6 @@ export function getStandardExportFilename(
     case 'glean-prompt-markdown':
       return `Glean_Executive_Summary_Prompt_${cleanName}.md`;
     default:
-      return `Solution_Overview_${cleanName}.json`;
+      return `GigaVUE_Project_${cleanName}.gvp`;
   }
 }
