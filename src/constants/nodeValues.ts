@@ -6,6 +6,7 @@
  */
 
 import { CONFIG_TYPES, ACTION_TYPES } from './nodeTypes';
+import { describeToolPurpose } from '../utils/report/toolDescriptions';
 
 export const getNodeValueProposition = (
   type: string,
@@ -175,6 +176,12 @@ export const getNodeValueProposition = (
     }
     if (toolName === 'GigaSMART Appliance') {
       return "Dedicated high-throughput hardware appliance running specialised GigaSMART processing engines for compute-intensive SSL/TLS decryption, deduplication, and application metadata generation.";
+    }
+    if (toolName) {
+      const toolPurpose = describeToolPurpose(toolName);
+      if (toolPurpose) {
+        return `${toolPurpose} Gigamon ensures it receives normalised, deduplicated, and optimised traffic to prevent sensor overload.`;
+      }
     }
     return "Monitors and analyses network packets to detect threats or measure performance. Gigamon ensures it receives optimised, clean traffic.";
   }

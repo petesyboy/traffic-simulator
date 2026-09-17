@@ -49,3 +49,48 @@ describe('describeToolOverloadRisk', () => {
     expect(text).toContain('falls behind');
   });
 });
+
+describe('getNodeValueProposition for tools', () => {
+  it('returns custom purpose and value proposition for Corelight toolNode', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Packet Tool', undefined, 'Corelight');
+    expect(tooltip).toContain('open-source Zeek/Suricata');
+    expect(tooltip).toContain('structured, high-fidelity logs');
+    expect(tooltip).toContain('Gigamon ensures it receives');
+  });
+
+  it('returns custom purpose and value proposition for Vectra toolNode', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Packet Tool', undefined, 'Vectra');
+    expect(tooltip).toContain('attacker behaviour');
+    expect(tooltip).toContain('Gigamon ensures it receives');
+  });
+
+  it('returns custom purpose and value proposition for Armis toolNode', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Packet Tool', undefined, 'Armis');
+    expect(tooltip).toContain('asset intelligence');
+    expect(tooltip).toContain('Gigamon ensures it receives');
+  });
+
+  it('returns generic purpose with Gigamon value proposition for unlisted tool like Ericsson Probe', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Packet Tool', undefined, 'Ericsson Probe');
+    expect(tooltip).toContain('Monitors and analyses the traffic it receives');
+    expect(tooltip).toContain('Gigamon ensures it receives');
+  });
+
+  it('returns dedicated Splunk value proposition', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Metadata Tool', undefined, 'Splunk');
+    expect(tooltip).toContain('Transforms raw data into searchable events');
+    expect(tooltip).toContain('federated search');
+  });
+
+  it('returns fallback generic value proposition for unlisted tool', async () => {
+    const { getNodeValueProposition } = await import('../../constants/nodeValues');
+    const tooltip = getNodeValueProposition('toolNode', 'Packet Tool', undefined, 'Unknown Custom Sensor');
+    expect(tooltip).toContain('Monitors and analyses the traffic it receives');
+    expect(tooltip).toContain('Gigamon ensures it receives');
+  });
+});

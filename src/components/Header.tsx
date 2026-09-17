@@ -36,6 +36,7 @@ import {
   isUntitledProject,
   BomModal,
   AboutModal,
+  FeedbackModal,
   SkuUpdateModal,
   ReportModal,
   MixedSiteConfirmModal,
@@ -63,6 +64,7 @@ import {
   ChevronDownIcon,
   FilePlusIcon,
   FocusIcon,
+  FeedbackIcon,
 } from './header/index';
 
 // ─── Header component ─────────────────────────────────────────────────────────
@@ -138,6 +140,7 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
   const [showBom, setShowBom] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showDuplicatePrompt, setShowDuplicatePrompt] = useState(false);
   const [showSkuUpdate, setShowSkuUpdate] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -506,7 +509,8 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
 
       {showBom && <BomModal onClose={() => setShowBom(false)} />}
       {showSettings && <ProjectSettingsModal onClose={() => setShowSettings(false)} />}
-      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} onOpenFeedback={() => setShowFeedback(true)} />}
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       {showSkuUpdate && <SkuUpdateModal onClose={() => setShowSkuUpdate(false)} onChanged={bumpSkuCatalogueVersion} />}
       {showReport && <ReportModal onClose={() => setShowReport(false)} />}
       {showDuplicatePrompt && (
@@ -992,6 +996,14 @@ const Header: React.FC<HeaderProps> = ({ onSaveClick, onLoadClick, onSaveFileCli
                 style={{ color: theme === 'light' ? '#ff9800' : '#00e5ff' }}
               >
                 {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              </button>
+              <button
+                className="header-btn icon-only"
+                onClick={() => setShowFeedback(true)}
+                title="Send Feedback or Report an Issue (email pete.connolly@gigamon.com)"
+                style={{ color: '#38bdf8' }}
+              >
+                <FeedbackIcon />
               </button>
               <button className="header-btn icon-only" onClick={() => setShowSettings(true)} title="Project Settings">
                 <GearIcon />

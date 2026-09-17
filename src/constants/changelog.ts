@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.792",
+    date: "2026-09-17",
+    summary: "Add feedback submission modal to wrap and dispatch user requests, bug reports, and enhancements via email or clipboard",
+  },
+  {
+    version: "1.0.791",
+    date: "2026-09-17",
+    summary: "Display tool-specific research descriptions and value propositions in canvas tool tooltips",
+  },
+  {
     version: "1.0.790",
     date: "2026-09-17",
     summary: "Add project working directory support with local disk, mapped drive, OneDrive, and Google Drive integration",
@@ -104,15 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.770",
     date: "2026-09-10",
     summary: "Add multi-select batch property editing and cluster group configuration for TAPs, Tools, and datacentre locations",
-  },
-  {
-    version: "1.0.769",
-    date: "2026-09-10",
-    summary: "Ensure location tag and data centre enclosure encompass collapsed and expanded tap clusters",
-  },
-  {
-    version: "1.0.768",
-    date: "2026-09-10",
-    summary: "Eliminate dual mouseovers on info icons and provide rich, accurate hardware specifications in node descriptions",
   },
 ];

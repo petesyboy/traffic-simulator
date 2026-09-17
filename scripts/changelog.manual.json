@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.0.792",
+    "date": "2026-09-17",
+    "summary": "Add feedback submission modal to wrap and dispatch user requests, bug reports, and enhancements via email or clipboard"
+  },
+  {
+    "version": "1.0.791",
+    "date": "2026-09-17",
+    "summary": "Display tool-specific research descriptions and value propositions in canvas tool tooltips"
+  },
+  {
     "version": "1.0.790",
     "date": "2026-09-17",
     "summary": "Add project working directory support with local disk, mapped drive, OneDrive, and Google Drive integration"

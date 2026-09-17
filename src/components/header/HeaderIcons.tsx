@@ -354,4 +354,17 @@ export const FocusIcon: React.FC<IconProps> = ({ size = 14 }) => (
   </svg>
 );
 
+export const FeedbackIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg width={size} height={size} {...base}>
+    <path
+      d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+
 

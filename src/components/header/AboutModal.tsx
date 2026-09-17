@@ -13,11 +13,12 @@ import { downloadOfflineApp } from '../../utils/offlineDownload';
 
 export interface AboutModalProps {
   onClose: () => void;
+  onOpenFeedback?: () => void;
 }
 
 const RECENT_COUNT = 4;
 
-const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => (
+const AboutModal: React.FC<AboutModalProps> = ({ onClose, onOpenFeedback }) => (
   <div className="modal-overlay" onClick={onClose}>
     <div
       className="modal-card"
@@ -103,11 +104,38 @@ const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => (
 
         <section>
           <h4 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Feedback
+            Feedback & Suggestions
           </h4>
-          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '10px', color: '#ccc', lineHeight: 1.5 }}>
-            Questions, bug reports or feature requests:{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: '#00e5ff' }}>{SUPPORT_EMAIL}</a>
+          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '4px', padding: '12px', color: '#ccc', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>
+              Questions, bug reports, or suggestions for improvements:{' '}
+              <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: '#00e5ff' }}>{SUPPORT_EMAIL}</a>
+            </div>
+            {onOpenFeedback && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  onClose();
+                  onOpenFeedback();
+                }}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#38bdf8',
+                  borderColor: 'rgba(56, 189, 248, 0.5)',
+                  padding: '5px 12px',
+                  alignSelf: 'flex-start',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+                title="Open feedback form"
+              >
+                <span>💬</span> Send Feedback or Report an Issue...
+              </button>
+            )}
           </div>
         </section>
       </div>
@@ -116,3 +144,4 @@ const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => (
 );
 
 export default AboutModal;
+

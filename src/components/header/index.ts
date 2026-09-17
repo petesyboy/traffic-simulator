@@ -16,6 +16,7 @@ export { default as MixedSiteConfirmModal } from './MixedSiteConfirmModal';
 export { SaveSlotModal } from './SaveSlotModal';
 export { default as WorkingDirectoryPromptModal } from './WorkingDirectoryPromptModal';
 export { default as ProjectSetupModal } from './ProjectSetupModal';
+export { default as FeedbackModal } from './FeedbackModal';
 
 
 export {
@@ -45,6 +46,7 @@ export {
   ChevronDownIcon,
   FilePlusIcon,
   FocusIcon,
+  FeedbackIcon,
 } from './HeaderIcons';
 
 export type { ConfirmModalProps } from './ConfirmModal';
@@ -57,5 +59,7 @@ export type { SkuUpdateModalProps } from './SkuUpdateModal';
 export type { ReportModalProps } from './ReportModal';
 export type { MixedSiteConfirmModalProps } from './MixedSiteConfirmModal';
 export type { SaveSlotModalProps } from './SaveSlotModal';
+export type { FeedbackModalProps } from './FeedbackModal';
+
 
 
