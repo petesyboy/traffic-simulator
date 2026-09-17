@@ -505,6 +505,7 @@ export interface RFState {
       showGrid?: boolean;
       snapToGrid?: boolean;
       trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+      isProofOfConcept?: boolean;
       projectId?: string;
       workingDirectoryName?: string | null;
       workingDirectoryPromptDismissed?: boolean;
@@ -526,6 +527,8 @@ export interface RFState {
   setProjectRegion: (region: 'US' | 'EU' | 'UK' | 'AU') => void;
   setDisableDcWarnings: (disable: boolean) => void;
   setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
+  setIsProofOfConcept: (enabled: boolean) => void;
+  isProofOfConcept: boolean;
   setPanelTextScale: (scale: number) => void;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;

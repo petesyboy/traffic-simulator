@@ -103,6 +103,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
   const currentScenarioName = useStore((s) => s.currentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
+  const isProofOfConcept = useStore((s) => s.isProofOfConcept);
   const projectId = useStore((s) => s.projectId);
   const workingDirectoryName = useStore((s) => s.workingDirectoryName);
   const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
@@ -150,6 +151,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
         true,
         peakNodeRxMbps,
         trayAllocationPreference,
+        isProofOfConcept,
       ),
     );
     const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), initialWorkspace?.useOpticPacks ?? true);
@@ -177,6 +179,7 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ onClose }) => {
           true,
           peakNodeRxMbps,
           trayAllocationPreference,
+          isProofOfConcept,
         ),
       );
       const masterBom = buildProjectWideOpticBom(rawBom, getSkus(), useOpticPacks);

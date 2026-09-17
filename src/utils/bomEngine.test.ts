@@ -824,6 +824,142 @@ describe('MPO breakout panel validation', () => {
       expect(bundleRow?.qty).toBe(1);
     });
   });
+
+  describe('Proof of Concept (PoC) Evaluation Mode', () => {
+    it('forces TA-25E Half capacity to Full capacity and adds TA Advanced Features licence in PoC mode', () => {
+      const taNode: CustomNode = {
+        id: 'ta-poc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-TA25E',
+          configType: 'Hardware',
+          model: 'GigaVUE-TA25E',
+          powerSupply: 'AC',
+          portCapacity: 'Half',
+          advancedFeatures: false,
+        },
+      } as unknown as CustomNode;
+
+      // Normal mode: Half port capacity (GVS-TAX20EA-SW-TM) and no advanced features licence
+      const normalBom = generateBom([taNode], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(normalBom.some(r => r.sku.includes('TAX20EA'))).toBe(true);
+      expect(normalBom.some(r => r.sku.startsWith('CLS-TAX20'))).toBe(false);
+
+      // PoC mode: Full port capacity (GVS-TAX20E-SW-TM without 'A') and advanced features licence (CLS-TAX20E-SW-TM)
+      const pocBom = generateBom([taNode], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      expect(pocBom.some(r => r.sku.includes('TAX20EA'))).toBe(false);
+      expect(pocBom.some(r => r.sku === 'GVS-TAX20E-SW-TM')).toBe(true);
+      expect(pocBom.some(r => r.sku === 'CLS-TAX20E-SW-TM')).toBe(true);
+
+      // Verify non-mutating behaviour: switching back to normal cleanly reverts
+      const revertedBom = generateBom([taNode], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(revertedBom.some(r => r.sku.includes('TAX20EA'))).toBe(true);
+      expect(revertedBom.some(r => r.sku.startsWith('CLS-TAX20'))).toBe(false);
+    });
+
+    it('forces TA-200 to Full capacity quoting UPG-TAC20-SW-TM and CLS-TAC20-SW-TM in PoC mode', () => {
+      const ta200Node: CustomNode = {
+        id: 'ta200-poc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-TA200',
+          configType: 'Hardware',
+          model: 'GigaVUE-TA200',
+          powerSupply: 'AC',
+          portCapacity: 'Half',
+          advancedFeatures: false,
+        },
+      } as unknown as CustomNode;
+
+      const normalBom = generateBom([ta200Node], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(normalBom.some(r => r.sku.includes('UPG-TAC20'))).toBe(false);
+      expect(normalBom.some(r => r.sku.includes('CLS-TAC20'))).toBe(false);
+
+      const pocBom = generateBom([ta200Node], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      expect(pocBom.some(r => r.sku.includes('UPG-TAC20-SW-TM'))).toBe(true);
+      expect(pocBom.some(r => r.sku.includes('CLS-TAC20-SW-TM'))).toBe(true);
+    });
+
+    it('replaces individual GigaSMART feature licences on HC3 with SecureVUE+ bundle in PoC mode', () => {
+      const hc3Node: CustomNode = {
+        id: 'hc3-poc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC3',
+          sku: 'HC3-BASE',
+          powerSupply: 'AC',
+          gigaSmartApps: [
+            { id: '1', label: 'Deduplication', actionType: 'Deduplication' },
+            { id: '2', label: 'SSL Decryption', actionType: 'SSL Decrypt' },
+          ],
+        },
+      } as unknown as CustomNode;
+
+      // Normal mode: Individual licences quoted
+      const normalBom = generateBom([hc3Node], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(normalBom.some(r => r.sku === 'SMT-HC3-BN-SVP')).toBe(false);
+      expect(normalBom.some(r => r.sku === 'SMT-HC3-GEN3-DD1-SW-TM')).toBe(true);
+      expect(normalBom.some(r => r.sku === 'SMT-HC3-GEN3-INSSL-SW-TM')).toBe(true);
+
+      // PoC mode: SecureVUE+ bundle replaces individual licences
+      const pocBom = generateBom([hc3Node], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC3-BN-SVP')).toBe(true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC3-GEN3-DD1-SW-TM')).toBe(false);
+      expect(pocBom.some(r => r.sku === 'SMT-HC3-GEN3-INSSL-SW-TM')).toBe(false);
+
+      // Unticked / reverted
+      const revertedBom = generateBom([hc3Node], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(revertedBom.some(r => r.sku === 'SMT-HC3-BN-SVP')).toBe(false);
+      expect(revertedBom.some(r => r.sku === 'SMT-HC3-GEN3-DD1-SW-TM')).toBe(true);
+    });
+
+    it('replaces HC1 CoreVUE bundle with SecureVUE+ bundle in PoC mode', () => {
+      const hc1Node: CustomNode = {
+        id: 'hc1-poc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          powerSupply: 'AC',
+          activeBundle: 'CoreVUE',
+        },
+      } as unknown as CustomNode;
+
+      const pocBom = generateBom([hc1Node], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC1-BN-SVP')).toBe(true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC1-BN-CORE')).toBe(false);
+    });
+
+    it('quotes VBL-50T-BN-SVP evaluation licence for virtual environments in PoC mode', () => {
+      const vmNode: CustomNode = {
+        id: 'vm-poc-1',
+        type: 'inputNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'VMWare Cluster',
+          configType: 'VMWare',
+          site: 'London DC',
+        },
+      } as unknown as CustomNode;
+
+      // Normal mode: No VBL-50T-BN-SVP
+      const normalBom = generateBom([vmNode], [], 'HTL', '12', 'US', false, {}, undefined, false);
+      expect(normalBom.some(r => r.sku === 'VBL-50T-BN-SVP')).toBe(false);
+
+      // PoC mode: quotes 50 TB SecureVUE+ evaluation licence
+      const pocBom = generateBom([vmNode], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      const vblRow = pocBom.find(r => r.sku === 'VBL-50T-BN-SVP');
+      expect(vblRow).toBeDefined();
+      expect(vblRow?.qty).toBe(1);
+    });
+  });
 });
 
 

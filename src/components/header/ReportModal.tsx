@@ -100,6 +100,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   const projectId = useStore((s) => s.projectId);
   const workingDirectoryName = useStore((s) => s.workingDirectoryName);
   const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
+  const isProofOfConcept = useStore((s) => s.isProofOfConcept);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -419,6 +420,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
               coBrandingMode,
               partnerName: partnerName.trim() || undefined,
               partnerLogoDataUrl,
+              isProofOfConcept,
             };
 
             let docDefinition: TDocumentDefinitions;
@@ -522,6 +524,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
           projectLicenseMode,
           defaultTermDuration,
           projectRegion,
+          isProofOfConcept: useStore.getState().isProofOfConcept,
           peakNodeRxMbps,
           nodeMetrics,
           isRunning,

@@ -36,6 +36,8 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   const setCurrentScenarioName = useStore((s) => s.setCurrentScenarioName);
   const peakNodeRxMbps = useStore((s) => s.peakNodeRxMbps);
   const trayAllocationPreference = useStore((s) => s.trayAllocationPreference);
+  const isProofOfConcept = useStore((s) => s.isProofOfConcept);
+  const setIsProofOfConcept = useStore((s) => s.setIsProofOfConcept);
   const projectId = useStore((s) => s.projectId);
   const workingDirectoryName = useStore((s) => s.workingDirectoryName);
   const clearWorkingDirectory = useStore((s) => s.clearWorkingDirectory);
@@ -73,7 +75,17 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
   // a chassis with multiple line items (modules/optics/licenses) keeps its
   // own per-node breakdown, since that detail is still useful there.
   const items = consolidateSimpleDeviceRows(
-    generateBom(nodes, edges, globalLicenseMode, globalTermDuration, globalRegion, true, peakNodeRxMbps, trayAllocationPreference),
+    generateBom(
+      nodes,
+      edges,
+      globalLicenseMode,
+      globalTermDuration,
+      globalRegion,
+      true,
+      peakNodeRxMbps,
+      trayAllocationPreference,
+      isProofOfConcept,
+    ),
   );
   const validationErrors = validateConfiguration(nodes, edges);
   const siteCheck = detectMixedSiteAssignment(nodes);
@@ -376,6 +388,58 @@ const BomModal: React.FC<BomModalProps> = ({ onClose }) => {
                   Master Report (Aggregated)
                 </button>
               </div>
+
+              {/* Proof of Concept (PoC) Mode toggle */}
+              {activeTab === 'bom' && (
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: isProofOfConcept ? 'rgba(255, 152, 0, 0.15)' : '#222',
+                    border: isProofOfConcept ? '1px solid #ff9800' : '1px solid #444',
+                    padding: '5px 12px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    marginLeft: '14px',
+                    userSelect: 'none',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Proof of Concept mode: quotes unrestricted full-capacity TAs with clustering licences, chassis SecureVUE+ bundles, and 50TB VBL virtual evaluation licences."
+                >
+                  <input
+                    type="checkbox"
+                    checked={isProofOfConcept}
+                    onChange={(e) => setIsProofOfConcept(e.target.checked)}
+                    style={{ cursor: 'pointer', accentColor: '#ff9800' }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: isProofOfConcept ? '#ffb74d' : '#ccc',
+                    }}
+                  >
+                    Proof of Concept (PoC) Mode
+                  </span>
+                  {isProofOfConcept && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        letterSpacing: '0.5px',
+                        background: '#ff9800',
+                        color: '#000',
+                        padding: '1px 5px',
+                        borderRadius: '3px',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Evaluation
+                    </span>
+                  )}
+                </label>
+              )}
 
               {activeTab === 'physical' && (
                 <div

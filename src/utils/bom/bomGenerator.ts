@@ -14,6 +14,7 @@ import { optimizeOpticPacks } from './opticPacks';
 import { deriveInputFeedOptics } from '../inputFeedOptics';
 import { getTapTerminationClass } from '../../constants/tapOpticRules';
 import { resolveBundleSkus, isActionInBundle, type GigaSmartBundleId } from '../../constants/gigaSmartBundles';
+import { resolveNodeSite } from '../report/describeTopology';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
@@ -276,6 +277,7 @@ export function generateBom(
   groupByNode: boolean = false,
   peakNodeRxMbps: Record<string, number> = {},
   trayPreferenceOverride?: TrayAllocationPreference,
+  isProofOfConcept: boolean = false,
 ): BomRow[] {
   const syncedNodes = syncOpticsOnTapConnection(nodes, edges);
   const rowMap: Record<string, BomRow> = {};
@@ -350,7 +352,14 @@ export function generateBom(
     if (isAutoTrayModel(model, sku)) return;
     const termOverride = (node.data?.termDurationOverride as string) || globalTermDuration;
     const licenseMode = (node.data?.licenseModeOverride as string && node.data?.licenseModeOverride !== 'default') ? node.data?.licenseModeOverride as 'HTL' | 'Perpetual' : globalLicenseMode;
-    const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
+    
+    // In Proof of Concept mode, TA appliances are evaluated with unrestricted Full port capacity
+    // and Advanced Features (clustering) enabled.
+    const isTaChassis = model.includes('TA') && !model.includes('TAP');
+    const skuData: HardwareNodeSkuData = (isProofOfConcept && isTaChassis)
+      ? { ...(node.data as HardwareNodeSkuData), portCapacity: 'Full', advancedFeatures: true }
+      : ((node.data as HardwareNodeSkuData) || {});
+    const resolved = resolveNodeSkus(skuData, globalLicenseMode);
 
     if (model.includes('TAP')) {
       addRow(node.id, resolved.hwSku, 1, 'TAP');
@@ -410,12 +419,14 @@ export function generateBom(
 
     addRow(node.id, resolved.hwSku, 1, 'Chassis');
     if (resolved.swSku) addRow(node.id, resolved.swSku, 1, 'License', termOverride);
-    if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+    if (!isProofOfConcept && model.includes('TA400') && node.data?.portCapacity === 'Upgrade') {
+      addRow(node.id, globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+    }
     // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default -
     // going to Full (64 ports) needs a separate UPG-TAC20(E)(-SW-TM) add-on
-    // license. See the matching comment in generateSingleNodeBom below and in
-    // skuResolver.ts.
-    if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
+    // license. In PoC mode, Full capacity is automatically quoted.
+    const effectiveTa200Capacity = isProofOfConcept ? 'Full' : ((node.data?.portCapacity as string) || 'Full');
+    if (model.includes('TA200') && effectiveTa200Capacity === 'Full') {
       const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
       addRow(node.id, globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
     }
@@ -442,17 +453,27 @@ export function generateBom(
 
     if (model.includes('HC')) {
       const activeBundle = node.data?.activeBundle as GigaSmartBundleId | undefined;
-      if (activeBundle) {
+      const gsApps = resolveGsAppsFromGraph(
+        node.id,
+        node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+        edges,
+        syncedNodes,
+      );
+
+      if (isProofOfConcept) {
+        // In PoC Mode, if the HC chassis has any GigaSMART apps or an active bundle,
+        // substitute all individual features and lower bundles with the chassis SecureVUE+ bundle.
+        if (activeBundle || gsApps.length > 0) {
+          const svpSkus = resolveBundleSkus('SecureVUE+', model, licenseMode);
+          svpSkus.forEach((bSku) => {
+            addRow(node.id, bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
+          });
+        }
+      } else if (activeBundle) {
         const bundleSkus = resolveBundleSkus(activeBundle, model, licenseMode);
         bundleSkus.forEach((bSku) => {
           addRow(node.id, bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
         });
-        const gsApps = resolveGsAppsFromGraph(
-          node.id,
-          node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
-          edges,
-          syncedNodes,
-        );
         const unbundledApps = gsApps.filter((a) => !isActionInBundle(activeBundle, a.actionType));
         if (unbundledApps.length > 0) {
           resolveGsLicenseSkus(unbundledApps, model, licenseMode).forEach((gsSku) => {
@@ -460,18 +481,33 @@ export function generateBom(
           });
         }
       } else {
-        const gsApps = resolveGsAppsFromGraph(
-          node.id,
-          node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
-          edges,
-          syncedNodes,
-        );
         resolveGsLicenseSkus(gsApps, model, licenseMode).forEach((gsSku) => {
           addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
         });
       }
     }
   });
+
+  // In Proof of Concept mode, virtual/cloud workloads receive a 50 TB/day SecureVUE+ evaluation license
+  // (VBL-50T-BN-SVP) for each site domain containing virtual inputs.
+  if (isProofOfConcept) {
+    const virtualSites = new Set<string>();
+    syncedNodes.forEach((n) => {
+      const isVirtual = n.type === NODE_TYPES.INPUT && (
+        n.data?.configType === CONFIG_TYPES.VMWARE ||
+        String(n.data?.label || '').toLowerCase().includes('vmware') ||
+        String(n.data?.label || '').toLowerCase().includes('cloud')
+      );
+      if (isVirtual) {
+        const site = resolveNodeSite(n, syncedNodes, edges) || (n.data?.site as string) || 'Global / Unassigned';
+        virtualSites.add(site);
+      }
+    });
+
+    virtualSites.forEach((site) => {
+      addRow(null, 'VBL-50T-BN-SVP', 1, 'License', globalTermDuration, site);
+    });
+  }
 
   // Tray quantities are bin-packed once, shared with traySync.ts's Rack View
   // tray-node generator, so tap modules and breakout panels (which pool into
@@ -854,7 +890,8 @@ export function generateSingleNodeBom(
   globalRegion: 'US' | 'EU' | 'UK' | 'AU' = 'US',
   edges: Edge[] = [],
   nodes: CustomNode[] = [],
-  peakRxMbps?: number
+  peakRxMbps?: number,
+  isProofOfConcept: boolean = false,
 ): BomRow[] {
   const rowMap: Record<string, BomRow> = {};
   const skus = getSkus();
@@ -904,7 +941,24 @@ export function generateSingleNodeBom(
     return optimizeOpticPacks(Object.values(rowMap), skus);
   }
 
-  const resolved = resolveNodeSkus((node.data as HardwareNodeSkuData) || {}, globalLicenseMode);
+  // Virtual inputs in PoC mode: quote VBL-50T-BN-SVP
+  if (isProofOfConcept && node.type === NODE_TYPES.INPUT && (
+    node.data?.configType === CONFIG_TYPES.VMWARE ||
+    String(node.data?.label || '').toLowerCase().includes('vmware') ||
+    String(node.data?.label || '').toLowerCase().includes('cloud')
+  )) {
+    addRow('VBL-50T-BN-SVP', 1, 'License', globalTermDuration);
+    return optimizeOpticPacks(Object.values(rowMap), skus);
+  }
+
+  // In Proof of Concept mode, TA appliances are evaluated with unrestricted Full port capacity
+  // and Advanced Features (clustering) enabled.
+  const isTaChassis = model.includes('TA') && !model.includes('TAP');
+  const skuData: HardwareNodeSkuData = (isProofOfConcept && isTaChassis)
+    ? { ...(node.data as HardwareNodeSkuData), portCapacity: 'Full', advancedFeatures: true }
+    : ((node.data as HardwareNodeSkuData) || {});
+  const resolved = resolveNodeSkus(skuData, globalLicenseMode);
+
   if (model.includes('TAP')) {
     addRow(resolved.hwSku, 1, 'TAP');
     if (model.includes('G-TAP A-SF') || model.includes('ASF2')) {
@@ -941,13 +995,15 @@ export function generateSingleNodeBom(
 
   addRow(resolved.hwSku, 1, 'Chassis');
   if (resolved.swSku) addRow(resolved.swSku, 1, 'License', termOverride);
-  if (model.includes('TA400') && node.data?.portCapacity === 'Upgrade') addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+  if (!isProofOfConcept && model.includes('TA400') && node.data?.portCapacity === 'Upgrade') {
+    addRow(globalLicenseMode === 'HTL' ? 'UPG-TAC40EA-SW-TM' : 'UPG-TAC40EA', 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
+  }
   // TA200/TA200E ship licensed for 32 of their 64 QSFP28 ports by default (the
   // base GVS-TAC2[12](E)(-HW)/-SW-TM SKUs already cover that) - going to Full
   // (64 ports) is a separate UPG-TAC20(E)(-SW-TM) add-on license, not a
-  // different base SKU. See the comment in skuResolver.ts for why this isn't
-  // baked into resolved.swSku like TA25(E)/TA400(E)'s suffixed variants are.
-  if (model.includes('TA200') && ((node.data?.portCapacity as string) || 'Full') === 'Full') {
+  // different base SKU. In PoC mode, Full capacity is automatically quoted.
+  const effectiveTa200Capacity = isProofOfConcept ? 'Full' : ((node.data?.portCapacity as string) || 'Full');
+  if (model.includes('TA200') && effectiveTa200Capacity === 'Full') {
     const upgBase = model.includes('TA200E') ? 'UPG-TAC20E' : 'UPG-TAC20';
     addRow(globalLicenseMode === 'HTL' ? `${upgBase}-SW-TM` : upgBase, 1, 'License', globalLicenseMode === 'HTL' ? termOverride : undefined);
   }
@@ -961,17 +1017,25 @@ export function generateSingleNodeBom(
   ((node.data?.optics as InstalledOptic[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, isTapTerminationOptic(opt) ? 'tap-termination' : undefined); });
   if (model.includes('HC')) {
     const activeBundle = node.data?.activeBundle as GigaSmartBundleId | undefined;
-    if (activeBundle) {
+    const gsApps = resolveGsAppsFromGraph(
+      node.id,
+      node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+      edges,
+      nodes,
+    );
+
+    if (isProofOfConcept) {
+      if (activeBundle || gsApps.length > 0) {
+        const svpSkus = resolveBundleSkus('SecureVUE+', model, licenseMode);
+        svpSkus.forEach((bSku) => {
+          addRow(bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
+        });
+      }
+    } else if (activeBundle) {
       const bundleSkus = resolveBundleSkus(activeBundle, model, licenseMode);
       bundleSkus.forEach((bSku) => {
         addRow(bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
       });
-      const gsApps = resolveGsAppsFromGraph(
-        node.id,
-        node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
-        edges,
-        nodes,
-      );
       const unbundledApps = gsApps.filter((a) => !isActionInBundle(activeBundle, a.actionType));
       if (unbundledApps.length > 0) {
         resolveGsLicenseSkus(unbundledApps, model, licenseMode).forEach((gsSku) => {
@@ -979,12 +1043,6 @@ export function generateSingleNodeBom(
         });
       }
     } else {
-      const gsApps = resolveGsAppsFromGraph(
-        node.id,
-        node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
-        edges,
-        nodes,
-      );
       resolveGsLicenseSkus(gsApps, model, licenseMode).forEach((gsSku) => {
         addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
       });

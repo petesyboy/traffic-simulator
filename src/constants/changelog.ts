@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.799",
+    date: "2026-09-17",
+    summary: "Allocate multi-speed TAP feeds to matching SFP and QSFP cages on multi-rate chassis (v1.0.799)",
+  },
+  {
     version: "1.0.797",
     date: "2026-09-17",
     summary: "Add comprehensive documentation, interactive info tooltips, and explanatory helper text for browser storage options and slot management",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.776",
     date: "2026-09-11",
     summary: "Implement top executive header bar layout and deconflict cover background graphic (v1.0.776)",
-  },
-  {
-    version: "1.0.775",
-    date: "2026-09-11",
-    summary: "Make the default packet tool partner-configurable (v1.0.775)",
   },
 ];

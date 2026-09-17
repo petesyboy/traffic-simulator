@@ -57,6 +57,7 @@ export interface ReportInput {
   projectRegion: string;
   projectLicenseMode: 'HTL' | 'Perpetual';
   defaultTermDuration: string;
+  isProofOfConcept?: boolean;
   peakNodeRxMbps: Record<string, number>;
   advancedMode: boolean;
   diagramDataUrl: string;
@@ -424,6 +425,7 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     projectRegion,
     projectLicenseMode,
     defaultTermDuration,
+    isProofOfConcept,
     peakNodeRxMbps,
     diagramDataUrl,
     logoDataUrl,
@@ -450,6 +452,8 @@ export function buildReportDocDefinition(input: ReportInput): TDocumentDefinitio
     projectRegion as 'US' | 'EU' | 'UK' | 'AU',
     true,
     peakNodeRxMbps,
+    undefined,
+    isProofOfConcept,
   );
   const validationErrors = validateConfiguration(nodes, edges);
   const physicalItems = buildPhysicalItems(nodes, bomRows);

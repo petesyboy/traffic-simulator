@@ -21,6 +21,7 @@ export interface SettingsSlice {
   disableDcWarnings: boolean;
   panelTextScale: number;
   trayAllocationPreference: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+  isProofOfConcept: boolean;
   projectId: string;
   workingDirectoryName: string | null;
   workingDirectoryPromptDismissed: boolean;
@@ -33,6 +34,7 @@ export interface SettingsSlice {
   setDisableDcWarnings: (disable: boolean) => void;
   setPanelTextScale: (scale: number) => void;
   setTrayAllocationPreference: (pref: 'auto' | 'TAP-M200T' | 'TAP-M100T') => void;
+  setIsProofOfConcept: (enabled: boolean) => void;
   setProjectId: (id: string) => void;
   setWorkingDirectory: (name: string | null, handle?: FileSystemDirectoryHandle) => Promise<void>;
   clearWorkingDirectory: () => Promise<void>;
@@ -51,6 +53,7 @@ export interface SettingsSlice {
       showGrid?: boolean;
       snapToGrid?: boolean;
       trayAllocationPreference?: 'auto' | 'TAP-M200T' | 'TAP-M100T';
+      isProofOfConcept?: boolean;
       projectId?: string;
       workingDirectoryName?: string | null;
       workingDirectoryPromptDismissed?: boolean;
@@ -67,6 +70,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
   disableDcWarnings: false,
   panelTextScale: 1.0,
   trayAllocationPreference: 'auto',
+  isProofOfConcept: false,
   projectId: uuidv4(),
   workingDirectoryName: null,
   workingDirectoryPromptDismissed: false,
@@ -82,6 +86,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
     const updatedNodes = syncTapTrays(get().nodes, pref);
     set({ trayAllocationPreference: pref, nodes: updatedNodes });
   },
+  setIsProofOfConcept: (enabled) => set({ isProofOfConcept: enabled }),
   setProjectId: (id) => set({ projectId: id }),
   setWorkingDirectory: async (name, handle) => {
     const currentId = get().projectId || uuidv4();
@@ -145,6 +150,7 @@ export const createSettingsSlice: StateCreator<RFState, [], [], SettingsSlice> =
       if (settings.panelTextScale !== undefined) updateObj.panelTextScale = settings.panelTextScale;
       if (settings.showGrid !== undefined) updateObj.showGrid = settings.showGrid;
       if (settings.snapToGrid !== undefined) updateObj.snapToGrid = settings.snapToGrid;
+      if (settings.isProofOfConcept !== undefined) updateObj.isProofOfConcept = settings.isProofOfConcept;
       if (settings.workingDirectoryName !== undefined) updateObj.workingDirectoryName = settings.workingDirectoryName;
       if (settings.workingDirectoryPromptDismissed !== undefined) updateObj.workingDirectoryPromptDismissed = settings.workingDirectoryPromptDismissed;
     }

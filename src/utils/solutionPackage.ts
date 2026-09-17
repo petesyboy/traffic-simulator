@@ -60,6 +60,7 @@ export interface GeneratePackageOptions {
   panelTextScale?: number;
   showGrid?: boolean;
   snapToGrid?: boolean;
+  isProofOfConcept?: boolean;
   peakNodeRxMbps?: Record<string, number>;
   nodeMetrics?: Record<string, unknown>;
   isRunning?: boolean;
@@ -189,6 +190,7 @@ export async function generateAllSolutionAssets(
     panelTextScale,
     showGrid,
     snapToGrid,
+    isProofOfConcept,
     peakNodeRxMbps,
     nodeMetrics,
     isRunning,
@@ -215,6 +217,7 @@ export async function generateAllSolutionAssets(
       panelTextScale,
       showGrid,
       snapToGrid,
+      isProofOfConcept,
     },
     quoteWorkspace: isInternalEdition() ? getProjectQuoteWorkspace(scenarioName) : undefined,
   };
@@ -231,7 +234,7 @@ export async function generateAllSolutionAssets(
   const licenseMode = projectLicenseMode === 'HTL' ? 'HTL' : 'Perpetual';
   const termDuration = defaultTermDuration || '36';
   const region = projectRegion === 'EU' || projectRegion === 'UK' ? projectRegion : 'US';
-  const rawBom = generateBom(nodes, edges, licenseMode, termDuration, region, false, peakNodeRxMbps || {});
+  const rawBom = generateBom(nodes, edges, licenseMode, termDuration, region, false, peakNodeRxMbps || {}, undefined, isProofOfConcept);
   const skus = getSkus();
   const opticBom = buildProjectWideOpticBom(rawBom, skus);
   const finalBom = consolidateSimpleDeviceRows(opticBom);
