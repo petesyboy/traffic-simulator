@@ -937,6 +937,25 @@ describe('MPO breakout panel validation', () => {
       expect(pocBom.some(r => r.sku === 'SMT-HC1-BN-CORE')).toBe(false);
     });
 
+    it('quotes SMT-HC1P-GEN3-BN-ZTA-SW-TM for HC1-Plus in PoC mode', () => {
+      const hc1pNode: CustomNode = {
+        id: 'hc1p-poc-1',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1-Plus',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1-Plus',
+          powerSupply: 'AC',
+          activeBundle: 'NetVUE',
+        },
+      } as unknown as CustomNode;
+
+      const pocBom = generateBom([hc1pNode], [], 'HTL', '12', 'US', false, {}, undefined, true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC1P-GEN3-BN-ZTA-SW-TM')).toBe(true);
+      expect(pocBom.some(r => r.sku === 'SMT-HC1-BN-SVP')).toBe(false);
+    });
+
     it('quotes VBL-50T-BN-SVP evaluation licence for virtual environments in PoC mode', () => {
       const vmNode: CustomNode = {
         id: 'vm-poc-1',

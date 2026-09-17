@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.800",
+    date: "2026-09-17",
+    summary: "Add Proof of Concept (PoC) evaluation mode to Bill of Materials (v1.0.800)",
+  },
+  {
     version: "1.0.799",
     date: "2026-09-17",
     summary: "Allocate multi-speed TAP feeds to matching SFP and QSFP cages on multi-rate chassis (v1.0.799)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.778",
     date: "2026-09-11",
     summary: "Add GigaVUE Cloud Suite (VBL) quick-add to Commercial Quote (v1.0.778)",
-  },
-  {
-    version: "1.0.776",
-    date: "2026-09-11",
-    summary: "Implement top executive header bar layout and deconflict cover background graphic (v1.0.776)",
   },
 ];
