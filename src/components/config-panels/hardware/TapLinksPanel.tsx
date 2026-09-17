@@ -129,10 +129,9 @@ export const TapLinksPanel: React.FC<TapLinksPanelProps> = ({
     const chassisModel = String(connectedChassis.data?.model || '');
     const freeCages = getRemainingCageCapacity(chassisModel, connectedChassis.data as HardwareNodeData);
 
-    const networkIsQsfp = isQsfpSpeed(networkSpeed);
     const toolIsQsfp = isQsfpSpeed(getOpticSpeed(activeAddToolOptic));
-    const qsfpPerLink = (networkIsQsfp ? 1 : 0) + (toolIsQsfp ? 1 : 0);
-    const sfpPerLink = 2 - qsfpPerLink;
+    const qsfpPerLink = toolIsQsfp ? 2 : 0;
+    const sfpPerLink = toolIsQsfp ? 0 : 2;
 
     const maxByQsfp = qsfpPerLink > 0 ? Math.floor(freeCages.qsfp / qsfpPerLink) : Infinity;
     const maxBySfp = sfpPerLink > 0 ? Math.floor(freeCages.sfp / sfpPerLink) : Infinity;

@@ -2,6 +2,8 @@ import React from 'react';
 import type { CustomNode } from '../../../store/store';
 import type { BaseNodeData, HardwareNodeData, GigaSmartNodeData } from '../../../store/types';
 import { areActionsCompatible, getAvailableEngines } from '../../../constants/gigaSmartRules';
+import { GIGASMART_BUNDLES, ORDERED_BUNDLES, isActionInBundle, type GigaSmartBundleId } from '../../../constants/gigaSmartBundles';
+import { BundleIcon } from '../../Icons';
 
 interface GigaSmartAppsPanelProps {
   selectedNode: CustomNode;
@@ -15,10 +17,121 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
   // a real SKU on the GigaSMART Appliance - not on an HC's onboard AMI.
   const isGsa = selectedNode.type === 'toolNode' && selectedNode.data?.toolName === 'GigaSMART Appliance';
 
+  const model = String(hwData.model || '').trim();
+  const installedBoards = Object.values(hwData.installedBoards || {});
+  const engines = getAvailableEngines(model, installedBoards);
+  const engineCount = engines.length;
+
+  const activeBundleSpec = hwData.activeBundle ? GIGASMART_BUNDLES[hwData.activeBundle as GigaSmartBundleId] : undefined;
+
+  const handleApplyBundle = (bundleId: GigaSmartBundleId, cleanReset = false) => {
+    const spec = GIGASMART_BUNDLES[bundleId];
+    if (!spec) return;
+    const baseApps = cleanReset ? [] : [...gigaSmartApps];
+    spec.apps.forEach((bApp) => {
+      const existing = baseApps.find((a) => (a as Record<string, unknown>).actionType === bApp.actionType);
+      if (!existing) {
+        baseApps.push({
+          id: `gs-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          label: bApp.label,
+          actionType: bApp.actionType,
+          configType: bApp.configType,
+          dedupRate: 20,
+          metadataFormat: 'CEF',
+          sliceSize: 128,
+          ...bApp.defaultData,
+          fromBundle: bundleId,
+        });
+      }
+    });
+
+    const currentBoards = { ...((hwData.installedBoards as Record<string, string>) || {}) };
+    const currentModules = Object.values(currentBoards);
+    const currEngineCount = getAvailableEngines(model, currentModules).length;
+    if (bundleId === 'SecureVUE+' && currEngineCount < 2) {
+      const modelLower = model.toLowerCase();
+      let expansionSku = '';
+      let maxSlots = 2;
+      if (modelLower.includes('hc1-plus') || modelLower.includes('hc1 plus')) {
+        expansionSku = 'SMT-HC1-S';
+        maxSlots = 2;
+      } else if (modelLower.includes('hc1')) {
+        expansionSku = 'SMT-HC1-S';
+        maxSlots = 2;
+      } else if (modelLower.includes('hc3')) {
+        expansionSku = 'SMT-HC3-C08';
+        maxSlots = 4;
+      } else if (modelLower.includes('hc2')) {
+        expansionSku = 'SMT-HC0-X16';
+        maxSlots = 4;
+      }
+      if (expansionSku) {
+        for (let s = 1; s <= maxSlots; s++) {
+          const k = String(s);
+          if (!currentBoards[k]) {
+            currentBoards[k] = expansionSku;
+            break;
+          }
+        }
+      }
+    }
+
+    updateNodeData(selectedNode.id, {
+      activeBundle: bundleId,
+      gigaSmartApps: baseApps,
+      installedBoards: currentBoards,
+    });
+  };
+
+  const handleClearBundle = () => {
+    updateNodeData(selectedNode.id, {
+      activeBundle: undefined,
+    });
+  };
+
   if (gigaSmartApps.length === 0) {
     return (
-      <div style={{ fontSize: '12px', color: '#aaa', padding: '16px 0', textAlign: 'center' }}>
-        No GigaSMART applications dropped on this hardware.
+      <div className="panel-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 className="text-base font-semibold m-0">🧠 GigaSMART Pipeline</h3>
+        </div>
+        <div style={{ fontSize: '12px', color: '#aaa', padding: '8px 0', textAlign: 'center' }}>
+          No GigaSMART applications active on this chassis.
+        </div>
+        <div style={{ marginTop: '8px', padding: '10px', background: '#181818', border: '1px solid #333', borderRadius: '4px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#00e5ff', marginBottom: '8px', textAlign: 'center' }}>
+            Quick-Enable Software Bundle:
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {ORDERED_BUNDLES.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => handleApplyBundle(b.id)}
+                style={{
+                  padding: '6px 10px',
+                  background: `${b.badgeColour}20`,
+                  border: `1px solid ${b.badgeColour}60`,
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <BundleIcon colour={b.badgeColour} size={16} />
+                  <span>{b.label}</span>
+                </div>
+                <span style={{ fontSize: '9px', color: b.accentColour, background: 'rgba(0,0,0,0.4)', padding: '1px 5px', borderRadius: '3px' }}>
+                  {b.skuBadge}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -43,11 +156,6 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
     updateNodeData(selectedNode.id, { gigaSmartApps: newApps });
   };
 
-  const model = String(hwData.model || '').trim();
-  const installedBoards = Object.values(hwData.installedBoards || {});
-  const engines = getAvailableEngines(model, installedBoards);
-  const engineCount = engines.length;
-
   let incompatibilityPrompt: string | null = null;
   if (gigaSmartApps.length >= 2 && engineCount < 2) {
     for (let i = 0; i < gigaSmartApps.length; i++) {
@@ -70,6 +178,52 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
         <h3 className="text-base font-semibold m-0">🧠 GigaSMART Pipeline</h3>
       </div>
 
+      {/* Software Bundle Management Section */}
+      <div style={{ marginBottom: '12px', padding: '10px', background: activeBundleSpec ? `${activeBundleSpec.badgeColour}15` : '#181818', border: `1px solid ${activeBundleSpec ? activeBundleSpec.badgeColour + '55' : '#333'}`, borderRadius: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <BundleIcon colour={activeBundleSpec ? activeBundleSpec.badgeColour : '#888'} size={18} />
+            <span style={{ fontSize: '11px', fontWeight: 700, color: activeBundleSpec ? '#fff' : '#aaa' }}>
+              {activeBundleSpec ? `Active Bundle: ${activeBundleSpec.id}` : 'Custom / Unbundled Pipeline'}
+            </span>
+          </div>
+          {activeBundleSpec && (
+            <span style={{ fontSize: '9px', fontWeight: 700, color: activeBundleSpec.accentColour, background: 'rgba(0,0,0,0.4)', padding: '1px 5px', borderRadius: '3px', border: `1px solid ${activeBundleSpec.badgeColour}50` }}>
+              {activeBundleSpec.skuBadge}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <select
+            value={hwData.activeBundle || ''}
+            onChange={(e) => {
+              if (e.target.value) {
+                handleApplyBundle(e.target.value as GigaSmartBundleId);
+              } else {
+                handleClearBundle();
+              }
+            }}
+            style={{ flex: 1, padding: '4px 6px', background: '#222', border: '1px solid #444', borderRadius: '3px', color: '#fff', fontSize: '11px' }}
+          >
+            <option value="">Custom / Unbundled</option>
+            {ORDERED_BUNDLES.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.label} ({b.skuBadge})
+              </option>
+            ))}
+          </select>
+          {activeBundleSpec && (
+            <button
+              onClick={() => handleApplyBundle(activeBundleSpec.id, true)}
+              title="Reset pipeline strictly to bundle features"
+              style={{ padding: '4px 8px', background: '#333', border: '1px solid #555', borderRadius: '3px', color: '#ccc', fontSize: '10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              Reset to Bundle
+            </button>
+          )}
+        </div>
+      </div>
+
       {incompatibilityPrompt && (
         <div style={{ marginBottom: '12px', padding: '8px 10px', background: 'rgba(255, 171, 0, 0.1)', border: '1px solid rgba(255, 171, 0, 0.35)', borderRadius: '4px', color: '#ffb300', fontSize: '11px', lineHeight: '1.4' }}>
           ⚠️ <strong>Single-Operation Combination:</strong> {incompatibilityPrompt}
@@ -87,6 +241,11 @@ export const GigaSmartAppsPanel: React.FC<GigaSmartAppsPanelProps> = ({ selected
                   {idx + 1}
                 </div>
                 <span style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>{(app as Record<string, unknown>).label as string || actionType}</span>
+                {hwData.activeBundle && isActionInBundle(hwData.activeBundle as GigaSmartBundleId, actionType) && (
+                  <span style={{ fontSize: '8.5px', fontWeight: 600, color: activeBundleSpec?.accentColour || '#00e5ff', background: 'rgba(0,0,0,0.4)', padding: '1px 5px', borderRadius: '3px', border: `1px solid ${activeBundleSpec ? activeBundleSpec.badgeColour + '50' : '#444'}` }}>
+                    {hwData.activeBundle}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button

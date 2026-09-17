@@ -17,6 +17,8 @@ import {
   getRequiredPortCount,
   getTapPortIds,
   isTapNode,
+  getTapAllocationForLink,
+  getTapLinkNumber,
 } from './ports';
 import { isBreakoutPanelModel } from './hardwareUtils';
 import { getInputFeedCage, isPacketFeedInput } from './inputFeedOptics';
@@ -253,13 +255,25 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     // save/reload instead of settling anywhere.
     const existingAuto = existing.filter(l => !l.pinned);
     const keptLinks: { sourcePortId: string; targetPortId: string }[] = [];
-    for (const link of existingAuto) {
+    for (let idx = 0; idx < existingAuto.length; idx++) {
       if (keptLinks.length >= autoCount) break;
+      const link = existingAuto[idx];
       const srcId = link.sourcePortId || '';
       const tgtId = link.targetPortId || '';
+
+      let linkSourcePreferred = sourcePreferred;
+      let linkTargetPreferred = targetPreferred;
+      if (sourceIsTap && sourceNode && srcId) {
+        const linkNum = getTapLinkNumber(srcId, idx);
+        linkTargetPreferred = getTapAllocationForLink(sourceNode, linkNum, String(targetNode?.data?.model || '')).cage;
+      } else if (targetIsTap && targetNode && tgtId) {
+        const linkNum = getTapLinkNumber(tgtId, idx);
+        linkSourcePreferred = getTapAllocationForLink(targetNode, linkNum, String(sourceNode?.data?.model || '')).cage;
+      }
+
       if (
-        !isValidId(srcId, sourceExpectsPort, sourceOccupied, sourcePorts, sourceIsTap, sourceTapIds, sourcePreferred) ||
-        !isValidId(tgtId, targetExpectsPort, targetOccupied, targetPorts, targetIsTap, targetTapIds, targetPreferred)
+        !isValidId(srcId, sourceExpectsPort, sourceOccupied, sourcePorts, sourceIsTap, sourceTapIds, linkSourcePreferred) ||
+        !isValidId(tgtId, targetExpectsPort, targetOccupied, targetPorts, targetIsTap, targetTapIds, linkTargetPreferred)
       ) {
         continue;
       }
@@ -272,27 +286,69 @@ export function syncPortAssignments(nodes: CustomNode[], edges: Edge[]): Edge[] 
     const sourceFreshOccupied = new Set([...sourceOccupied, ...(opticPinnedByNode.get(edge.source) || [])]);
     const targetFreshOccupied = new Set([...targetOccupied, ...(opticPinnedByNode.get(edge.target) || [])]);
 
-    const sourceAuto = sourceIsTap
-      ? sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourcePreferred).map(p => p.id);
-    const targetAuto = targetIsTap
-      ? targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining)
-      : allocatePorts(targetPorts, targetFreshOccupied, remaining, targetPreferred).map(p => p.id);
+    const freshLinks: { sourcePortId: string; targetPortId: string }[] = [];
+
+    if (remaining > 0) {
+      if (sourceIsTap && sourceNode) {
+        const availableTapIds = sourceTapIds.filter(id => !sourceFreshOccupied.has(id)).slice(0, remaining);
+
+        for (let i = 0; i < availableTapIds.length; i++) {
+          const srcId = availableTapIds[i];
+          const overallIndex = keptLinks.length + i;
+          const linkNum = getTapLinkNumber(srcId, overallIndex);
+          const requiredCage = getTapAllocationForLink(sourceNode, linkNum, String(targetNode?.data?.model || '')).cage;
+          const allocated = targetPorts.length > 0
+            ? allocatePorts(targetPorts, targetFreshOccupied, 1, requiredCage)
+            : [];
+          if (targetExpectsPort && allocated.length === 0) {
+            break;
+          }
+          const tgtId = allocated[0]?.id || '';
+          freshLinks.push({ sourcePortId: srcId, targetPortId: tgtId });
+          if (srcId) sourceOccupied.add(srcId);
+          if (tgtId) {
+            targetFreshOccupied.add(tgtId);
+            targetOccupied.add(tgtId);
+          }
+        }
+      } else if (targetIsTap && targetNode) {
+        const availableTapIds = targetTapIds.filter(id => !targetFreshOccupied.has(id)).slice(0, remaining);
+
+        for (let i = 0; i < availableTapIds.length; i++) {
+          const tgtId = availableTapIds[i];
+          const overallIndex = keptLinks.length + i;
+          const linkNum = getTapLinkNumber(tgtId, overallIndex);
+          const requiredCage = getTapAllocationForLink(targetNode, linkNum, String(sourceNode?.data?.model || '')).cage;
+          const allocated = sourcePorts.length > 0
+            ? allocatePorts(sourcePorts, sourceFreshOccupied, 1, requiredCage)
+            : [];
+          if (sourceExpectsPort && allocated.length === 0) {
+            break;
+          }
+          const srcId = allocated[0]?.id || '';
+          freshLinks.push({ sourcePortId: srcId, targetPortId: tgtId });
+          if (tgtId) targetOccupied.add(tgtId);
+          if (srcId) {
+            sourceFreshOccupied.add(srcId);
+            sourceOccupied.add(srcId);
+          }
+        }
+      } else {
+        const sourceAuto = allocatePorts(sourcePorts, sourceFreshOccupied, remaining, sourcePreferred).map(p => p.id);
+        const targetAuto = allocatePorts(targetPorts, targetFreshOccupied, remaining, targetPreferred).map(p => p.id);
+        for (let i = 0; i < remaining; i++) {
+          const sourcePortId = sourceAuto[i] || '';
+          const targetPortId = targetAuto[i] || '';
+          if ((sourceExpectsPort && !sourcePortId) || (targetExpectsPort && !targetPortId)) break;
+          freshLinks.push({ sourcePortId, targetPortId });
+          if (sourcePortId) sourceOccupied.add(sourcePortId);
+          if (targetPortId) targetOccupied.add(targetPortId);
+        }
+      }
+    }
 
     const sourceOptics = opticsFor(sourceNode);
     const targetOptics = opticsFor(targetNode);
-
-    const freshLinks: { sourcePortId: string; targetPortId: string }[] = [];
-    for (let i = 0; i < remaining; i++) {
-      const sourcePortId = sourceAuto[i] || '';
-      const targetPortId = targetAuto[i] || '';
-      // Stop rather than emit half-links once a chassis has run out of cages;
-      // the shortfall surfaces as a validation error instead.
-      if ((sourceExpectsPort && !sourcePortId) || (targetExpectsPort && !targetPortId)) break;
-      freshLinks.push({ sourcePortId, targetPortId });
-      if (sourcePortId) sourceOccupied.add(sourcePortId);
-      if (targetPortId) targetOccupied.add(targetPortId);
-    }
 
     const autoLinks: PortLink[] = [...keptLinks, ...freshLinks].map(l => ({
       sourcePortId: l.sourcePortId,

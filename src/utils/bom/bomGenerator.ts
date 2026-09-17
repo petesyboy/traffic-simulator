@@ -13,6 +13,7 @@ import { getEdgeTapLinksCount } from '../clusterUtils';
 import { optimizeOpticPacks } from './opticPacks';
 import { deriveInputFeedOptics } from '../inputFeedOptics';
 import { getTapTerminationClass } from '../../constants/tapOpticRules';
+import { resolveBundleSkus, isActionInBundle, type GigaSmartBundleId } from '../../constants/gigaSmartBundles';
 
 // Re-exported so existing imports of `requiresUltTray` from this module keep working.
 export { requiresUltTray };
@@ -440,10 +441,35 @@ export function generateBom(
     });
 
     if (model.includes('HC')) {
-      const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, syncedNodes);
-      resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {
-        addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
-      });
+      const activeBundle = node.data?.activeBundle as GigaSmartBundleId | undefined;
+      if (activeBundle) {
+        const bundleSkus = resolveBundleSkus(activeBundle, model, licenseMode);
+        bundleSkus.forEach((bSku) => {
+          addRow(node.id, bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
+        });
+        const gsApps = resolveGsAppsFromGraph(
+          node.id,
+          node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+          edges,
+          syncedNodes,
+        );
+        const unbundledApps = gsApps.filter((a) => !isActionInBundle(activeBundle, a.actionType));
+        if (unbundledApps.length > 0) {
+          resolveGsLicenseSkus(unbundledApps, model, licenseMode).forEach((gsSku) => {
+            addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+          });
+        }
+      } else {
+        const gsApps = resolveGsAppsFromGraph(
+          node.id,
+          node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+          edges,
+          syncedNodes,
+        );
+        resolveGsLicenseSkus(gsApps, model, licenseMode).forEach((gsSku) => {
+          addRow(node.id, gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+        });
+      }
     }
   });
 
@@ -934,10 +960,35 @@ export function generateSingleNodeBom(
   Object.values((node.data?.installedBoards as Record<string, string>) || {}).forEach(boardSku => { if (!boardSku || boardSku.toLowerCase().includes('base')) return; if (licenseMode === 'HTL') { addRow(boardSku + '-HW', 1, 'Module'); addRow(boardSku + '-SW-TM', 1, 'License', termOverride); } else addRow(boardSku, 1, 'Module'); });
   ((node.data?.optics as InstalledOptic[]) || []).forEach(opt => { if (!opt.optic) return; addRow(resolveOpticSku(opt.optic, model), opt.qty, 'Optic', undefined, isTapTerminationOptic(opt) ? 'tap-termination' : undefined); });
   if (model.includes('HC')) {
-    const gsApps = resolveGsAppsFromGraph(node.id, node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[], edges, nodes);
-    resolveGsLicenseSkus(gsApps, model, licenseMode).forEach(gsSku => {
-      addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
-    });
+    const activeBundle = node.data?.activeBundle as GigaSmartBundleId | undefined;
+    if (activeBundle) {
+      const bundleSkus = resolveBundleSkus(activeBundle, model, licenseMode);
+      bundleSkus.forEach((bSku) => {
+        addRow(bSku, 1, 'License', (bSku.includes('-BN-') || licenseMode === 'HTL') ? termOverride : undefined);
+      });
+      const gsApps = resolveGsAppsFromGraph(
+        node.id,
+        node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+        edges,
+        nodes,
+      );
+      const unbundledApps = gsApps.filter((a) => !isActionInBundle(activeBundle, a.actionType));
+      if (unbundledApps.length > 0) {
+        resolveGsLicenseSkus(unbundledApps, model, licenseMode).forEach((gsSku) => {
+          addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+        });
+      }
+    } else {
+      const gsApps = resolveGsAppsFromGraph(
+        node.id,
+        node.data?.gigaSmartApps as { actionType?: string; gtpSamplePercent?: number }[],
+        edges,
+        nodes,
+      );
+      resolveGsLicenseSkus(gsApps, model, licenseMode).forEach((gsSku) => {
+        addRow(gsSku, 1, 'License', licenseMode === 'HTL' ? termOverride : undefined);
+      });
+    }
   }
   return optimizeOpticPacks(Object.values(rowMap), skus);
 }

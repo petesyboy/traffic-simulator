@@ -9,7 +9,7 @@ import React from 'react';
 import type { Edge } from '@xyflow/react';
 import { useStore } from '../../store/store';
 import type { CustomNode, HardwareNodeData, InputNodeData, PortLink } from '../../store/types';
-import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from '../../utils/ports';
+import { getChassisPorts, getPortOpticMap, getTapAllocationForLink, getTapLinkNumber } from '../../utils/ports';
 import { getOpticSpeed, getOpticFiberType, formatOpticLabel, isBreakoutPanelModel } from '../../utils/hardwareUtils';
 import { getSkus } from '../../utils/bom/skuUtils';
 import { diagnoseLink, resolveLinkConnectionProblem } from '../../utils/linkResolution';
@@ -76,9 +76,9 @@ export const LinkDetailPanel: React.FC<LinkDetailPanelProps> = ({
       sourceOptic = opticMap.get(sourcePortId)!;
     }
   } else if (sourceNode?.type === 'hardwareNode' && sourceModel.includes('TAP')) {
-    const hwData = sourceNode.data as HardwareNodeData;
-    const allocs = resolveTapAllocations(hwData, 'SFP-532');
-    sourceOptic = allocs[0]?.toolOptic || allocs[0]?.optic || (hwData.tappedLinkOptic as string) || 'Passive Optical Splitter';
+    const linkNum = getTapLinkNumber(sourcePortId);
+    const alloc = getTapAllocationForLink(sourceNode, linkNum, targetModel);
+    sourceOptic = alloc.toolOptic || alloc.optic || 'Passive Optical Splitter';
   } else if (sourceNode?.type === 'inputNode') {
     const inputData = sourceNode.data as InputNodeData;
     sourceOptic = inputData.tappedLinkOptic || 'Network Ingress Feed';

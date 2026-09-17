@@ -727,6 +727,102 @@ describe('MPO breakout panel validation', () => {
       expect(chassisCord).toBeDefined();
       expect(chassisCord?.qty).toBe(2);
     });
+
+    it('quotes SMT-HC1-BN-SVP and suppresses individual feature SKUs when SecureVUE+ bundle is active on HC1', () => {
+      const hcNode: CustomNode = {
+        id: 'hc1-node',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          sku: 'HC1-BASE',
+          powerSupply: 'AC',
+          activeBundle: 'SecureVUE+',
+          gigaSmartApps: [
+            { id: '1', label: 'Deduplication', actionType: 'Deduplication' },
+            { id: '2', label: 'SSL Decrypt', actionType: 'SSL Decrypt' },
+            { id: '3', label: 'Application Metadata', actionType: 'Application Metadata' },
+            { id: '4', label: 'Packet Slicing', actionType: 'Packet Slicing' },
+          ],
+        },
+      } as unknown as CustomNode;
+
+      const bom = generateBom([hcNode], [], 'HTL', '12', 'US');
+      const bundleRow = bom.find(r => r.sku === 'SMT-HC1-BN-SVP');
+      expect(bundleRow).toBeDefined();
+      expect(bundleRow?.qty).toBe(1);
+      expect(bundleRow?.type).toBe('License');
+
+      // Individual feature SKUs covered by bundle must not be quoted
+      expect(bom.find(r => r.sku === 'SMT-HC1-GEN2-DD1-SW-TM')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'SMT-HC1-GEN2-INSSL-SW-TM')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'SMT-HC1-GEN2-AMI-SW-TM')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'SMT-HC1-GEN2-BSE-SW-TM')).toBeUndefined();
+    });
+
+    it('quotes bundle SKU and quotes extra unbundled apps on HC3', () => {
+      const hc3Node: CustomNode = {
+        id: 'hc3-node',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC3',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC3',
+          sku: 'GVS-HC3A1-HW',
+          powerSupply: 'AC',
+          activeBundle: 'SecureVUE+',
+          installedBoards: { '1': 'SMT-HC3-C08' },
+          gigaSmartApps: [
+            { id: '1', label: 'Deduplication', actionType: 'Deduplication' },
+            { id: '2', label: 'SSL Decrypt', actionType: 'SSL Decrypt' },
+            // GTP Flow Filtering is not part of SecureVUE+ bundle
+            { id: '3', label: 'GTP Flow Filtering', actionType: 'GTP Flow Filtering' },
+          ],
+        },
+      } as unknown as CustomNode;
+
+      const bom = generateBom([hc3Node], [], 'HTL', '12', 'US');
+      const bundleRow = bom.find(r => r.sku === 'SMT-HC3-BN-SVP');
+      expect(bundleRow).toBeDefined();
+      expect(bundleRow?.qty).toBe(1);
+
+      // Unbundled GTP Max license must still be quoted
+      const gtpRow = bom.find(r => r.sku === 'SMT-HC3-GEN3-GTPMAX-SW-TM');
+      expect(gtpRow).toBeDefined();
+      expect(gtpRow?.qty).toBe(1);
+
+      // Redundant individual Dedup and SSL Decrypt licenses covered by bundle must not be quoted
+      expect(bom.find(r => r.sku === 'SMT-HC3-GEN3-DD1-SW-TM')).toBeUndefined();
+      expect(bom.find(r => r.sku === 'SMT-HC3-GEN3-INSSL-SW-TM')).toBeUndefined();
+    });
+
+    it('quotes SMT-HC1-BN-CORE via generateSingleNodeBom', () => {
+      const hcNode: CustomNode = {
+        id: 'hc1-single',
+        type: 'hardwareNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'GigaVUE-HC1',
+          configType: 'Hardware',
+          model: 'GigaVUE-HC1',
+          sku: 'HC1-BASE',
+          powerSupply: 'AC',
+          activeBundle: 'CoreVUE',
+          gigaSmartApps: [
+            { id: '1', label: 'Packet Slicing', actionType: 'Packet Slicing' },
+            { id: '2', label: 'Masking', actionType: 'Masking' },
+          ],
+        },
+      } as unknown as CustomNode;
+
+      const singleBom = generateSingleNodeBom(hcNode, 'HTL', '12', 'US');
+      const bundleRow = singleBom.find(r => r.sku === 'SMT-HC1-BN-CORE');
+      expect(bundleRow).toBeDefined();
+      expect(bundleRow?.qty).toBe(1);
+    });
   });
 });
 

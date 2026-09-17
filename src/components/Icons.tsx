@@ -31,6 +31,25 @@ export const AppIcon: React.FC<{ type: string; size?: number; rate?: number }> =
   const t = type.toLowerCase().replace(/\s+/g, '-');
 
   switch (t) {
+    case 'corevue':
+    case 'corevue-bundle':
+      return <BundleIcon colour="#0284c7" size={size} />;
+    case 'netvue':
+    case 'netvue-bundle':
+      return <BundleIcon colour="#059669" size={size} />;
+    case 'netvue+':
+    case 'netvue-plus':
+    case 'netvue-plus-bundle':
+      return <BundleIcon colour="#0d9488" size={size} />;
+    case 'securevue':
+    case 'securevue-bundle':
+      return <BundleIcon colour="#7c3aed" size={size} />;
+    case 'securevue+':
+    case 'securevue-plus':
+    case 'securevue-plus-bundle':
+      return <BundleIcon colour="#e11d48" size={size} />;
+    case 'bundle':
+      return <BundleIcon colour="#0284c7" size={size} />;
     case 'metadata':
     case 'application-metadata':
       return (
@@ -386,4 +405,21 @@ export const DwdmNetworkIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
     <path d="M11 12L15 16H13L9.5 12.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
   </svg>
 );
+
+/** Layered software stack icon for GigaSMART Software Bundles (CoreVUE, NetVUE, SecureVUE+). */
+export const BundleIcon: React.FC<{ tier?: number | string; size?: number; colour?: string }> = ({
+  size = 20,
+  colour = '#0284c7',
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="4" fill={colour} />
+    {/* Top isometric stack layer */}
+    <path d="M12 4.5L19 8L12 11.5L5 8L12 4.5Z" fill="rgba(255, 255, 255, 0.95)" />
+    {/* Middle stack layer */}
+    <path d="M5 11.5L12 15L19 11.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    {/* Bottom stack layer */}
+    <path d="M5 15.5L12 19L19 15.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+
 

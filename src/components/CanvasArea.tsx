@@ -15,7 +15,8 @@ import { useStore, type CustomNode } from '../store/store';
 import type { GigaSmartNodeData } from '../store/types';
 import { InputNode, FilterNode, ToolNode, MapNode, GigaStreamNode, GigaSmartNode, GroupNode, HardwareNode, MissionPipelineNode, MissionCloudNode, ClusterNode, DwdmNetworkNode } from './nodes';
 import { NODE_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
-import { isActionSupportedOnNode, areActionsCompatible } from '../constants/gigaSmartRules';
+import { isActionSupportedOnNode, areActionsCompatible, getGigaSmartEngineCount } from '../constants/gigaSmartRules';
+import { GIGASMART_BUNDLES, type GigaSmartBundleId } from '../constants/gigaSmartBundles';
 import { isMetadataEdge, calculateAnimationDuration } from '../utils/graphUtils';
 import { isAutoTrayModel } from '../utils/trayModels';
 import { isTapNode, isToolNode, formatEdgeLinkPrefix } from '../utils/clusterUtils';
@@ -302,30 +303,138 @@ const CanvasArea: React.FC = () => {
     const { type, label, initialData } = JSON.parse(rawData);
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
 
-    if (advancedMode && type === NODE_TYPES.GIGASMART) {
-      const targetNode = nodes.find(n => {
+    if (type === NODE_TYPES.GIGASMART) {
+      const targetNode = nodes.find((n) => {
         if (n.type !== 'hardwareNode') return false;
-        const w = n.measured?.width || n.width || 400, h = n.measured?.height || n.height || 200;
-        return (position.x >= n.position.x - w / 2 && position.x <= n.position.x + w / 2 && position.y >= n.position.y - h / 2 && position.y <= n.position.y + h / 2) ||
-               (position.x >= n.position.x && position.x <= n.position.x + w && position.y >= n.position.y && position.y <= n.position.y + h);
-      });
-      if (targetNode && String(targetNode.data?.model || '').includes('HC')) {
-        const actionType = initialData?.actionType || 'Deduplication', chassisModel = String(targetNode.data?.model || '');
-        const installedModules = Object.values((targetNode.data?.installedBoards as Record<string, string>) || {});
-        if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) { alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`); return; }
-        const apps = targetNode.data.gigaSmartApps || [];
-        const incompatibleApp = apps.find(
-          (a: GigaSmartNodeData) =>
-            !areActionsCompatible(actionType, a.actionType, undefined, chassisModel, installedModules).compatible,
+        const w = n.measured?.width || n.width || 400,
+          h = n.measured?.height || n.height || 200;
+        return (
+          (position.x >= n.position.x - w / 2 &&
+            position.x <= n.position.x + w / 2 &&
+            position.y >= n.position.y - h / 2 &&
+            position.y <= n.position.y + h / 2) ||
+          (position.x >= n.position.x &&
+            position.x <= n.position.x + w &&
+            position.y >= n.position.y &&
+            position.y <= n.position.y + h)
         );
-        if (incompatibleApp) {
-          const comp = areActionsCompatible(actionType, incompatibleApp.actionType, undefined, chassisModel, installedModules);
-          alert(`🚫 COMBINATION REFUSED: ${comp.reason}`);
-          return;
+      });
+
+      if (initialData?.isBundle) {
+        if (targetNode && String(targetNode.data?.model || '').includes('HC')) {
+          const bundleId = (initialData?.bundleId || initialData?.bundleType || 'CoreVUE') as GigaSmartBundleId;
+          const bundleSpec = GIGASMART_BUNDLES[bundleId];
+          if (bundleSpec) {
+            const chassisModel = String(targetNode.data?.model || '');
+            const installedBoards = { ...((targetNode.data?.installedBoards as Record<string, string>) || {}) };
+            const installedModules = Object.values(installedBoards);
+            const engineCount = getGigaSmartEngineCount(chassisModel, installedModules);
+
+            // Auto-provision secondary engine if bundle requires multi-engine (e.g. SecureVUE+) and engineCount < 2
+            let provisionedModule: string | null = null;
+            if (bundleId === 'SecureVUE+' && engineCount < 2) {
+              const modelLower = chassisModel.toLowerCase();
+              let expansionModuleSku = '';
+              let maxSlots = 2;
+              if (modelLower.includes('hc1-plus') || modelLower.includes('hc1 plus')) {
+                expansionModuleSku = 'SMT-HC1-S';
+                maxSlots = 2;
+              } else if (modelLower.includes('hc1')) {
+                expansionModuleSku = 'SMT-HC1-S';
+                maxSlots = 2;
+              } else if (modelLower.includes('hc3')) {
+                expansionModuleSku = 'SMT-HC3-C08';
+                maxSlots = 4;
+              } else if (modelLower.includes('hc2')) {
+                expansionModuleSku = 'SMT-HC0-X16';
+                maxSlots = 4;
+              }
+
+              if (expansionModuleSku) {
+                for (let slot = 1; slot <= maxSlots; slot++) {
+                  const slotKey = String(slot);
+                  if (!installedBoards[slotKey]) {
+                    installedBoards[slotKey] = expansionModuleSku;
+                    provisionedModule = expansionModuleSku;
+                    break;
+                  }
+                }
+              }
+            }
+
+            const currentApps = targetNode.data.gigaSmartApps || [];
+            const mergedApps = [...currentApps];
+            bundleSpec.apps.forEach((bApp) => {
+              const existing = mergedApps.find((a) => a.actionType === bApp.actionType);
+              if (!existing) {
+                mergedApps.push({
+                  id: `gs-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                  label: bApp.label,
+                  actionType: bApp.actionType,
+                  configType: bApp.configType,
+                  dedupRate: 20,
+                  metadataFormat: 'CEF',
+                  sliceSize: 128,
+                  ...bApp.defaultData,
+                  fromBundle: bundleId,
+                });
+              }
+            });
+
+            updateNodeData(targetNode.id, {
+              activeBundle: bundleId,
+              gigaSmartApps: mergedApps,
+              installedBoards,
+            });
+
+            if (provisionedModule) {
+              alert(
+                `📦 ${bundleSpec.label} activated! Automatically provisioned expansion GigaSMART module (${provisionedModule}) to support dual-engine concurrent operations.`,
+              );
+            }
+          }
+        } else {
+          alert(
+            'GigaSMART Software Bundles must be dropped directly onto a GigaVUE-HC series appliance (HC1, HC1-Plus, HC2, or HC3).',
+          );
         }
-        updateNodeData(targetNode.id, { gigaSmartApps: [...apps, { id: `gs-${Date.now()}`, label, actionType, dedupRate: 20, metadataFormat: 'CEF' }] });
-      } else alert(advancedMode && !nodes.some(n => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC')) ? "GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first." : "In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.");
-      return;
+        return;
+      }
+
+      if (advancedMode) {
+        if (targetNode && String(targetNode.data?.model || '').includes('HC')) {
+          const actionType = initialData?.actionType || 'Deduplication',
+            chassisModel = String(targetNode.data?.model || '');
+          const installedModules = Object.values((targetNode.data?.installedBoards as Record<string, string>) || {});
+          if (!isActionSupportedOnNode(actionType, chassisModel, installedModules)) {
+            alert(`GigaSMART action '${actionType}' is not supported on the currently installed modules in this ${chassisModel} chassis.`);
+            return;
+          }
+          const apps = targetNode.data.gigaSmartApps || [];
+          const incompatibleApp = apps.find(
+            (a: GigaSmartNodeData) =>
+              !areActionsCompatible(actionType, a.actionType, undefined, chassisModel, installedModules).compatible,
+          );
+          if (incompatibleApp) {
+            const comp = areActionsCompatible(actionType, incompatibleApp.actionType, undefined, chassisModel, installedModules);
+            alert(`🚫 COMBINATION REFUSED: ${comp.reason}`);
+            return;
+          }
+          updateNodeData(targetNode.id, {
+            gigaSmartApps: [
+              ...apps,
+              { id: `gs-${Date.now()}`, label, actionType, dedupRate: 20, metadataFormat: 'CEF' },
+            ],
+          });
+        } else {
+          alert(
+            advancedMode && !nodes.some((n) => n.type === 'hardwareNode' && String(n.data?.model || '').includes('HC'))
+              ? 'GigaSMART requires a GigaVUE-HC series node. Please add a GigaVUE-HC node to the canvas first.'
+              : 'In Advanced Mode, GigaSMART applications must be dropped directly onto a GigaVUE-HC series appliance.',
+          );
+        }
+        return;
+      }
     }
 
     const mergedData = { ...initialData };

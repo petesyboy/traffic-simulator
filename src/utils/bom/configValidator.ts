@@ -13,6 +13,7 @@ import {
   getTappedLinkCount,
   isTapNode,
   isTapUnconfigured,
+  getTapAllocationForLink,
 } from '../ports';
 import { getEdgeTapLinksCount } from '../clusterUtils';
 import { getCompatibleTapOptics, isTapOpticCompatible } from '../../constants/tapOpticRules';
@@ -404,15 +405,22 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
     incomingEdges.forEach((e) => {
       const sourceNode = nodes.find((n) => n.id === e.source);
       if (!sourceNode) return;
-      let linkCount = 1;
-      if (sourceNode.data?.model?.includes('TAP')) linkCount = ((sourceNode.data.tappedLinksCount as number) ?? 1) * 2;
-      const sourceSpeed = sourceNode.data?.linkSpeed || 0;
-      const isQsfp =
-        sourceSpeed >= 40000 ||
-        String(sourceNode.data?.label || '').includes('40G') ||
-        String(sourceNode.data?.label || '').includes('100G');
-      if (isQsfp) requiredQsfpPorts += linkCount;
-      else requiredSfpPorts += linkCount;
+      if (isTapNode(sourceNode)) {
+        const edgeTapLinks = getEdgeTapLinksCount(e, sourceNode, nodes);
+        for (let l = 1; l <= edgeTapLinks; l++) {
+          const alloc = getTapAllocationForLink(sourceNode, l, String(node.data?.model || ''));
+          if (alloc.cage === 'QSFP') requiredQsfpPorts += 2;
+          else requiredSfpPorts += 2;
+        }
+      } else {
+        const sourceSpeed = sourceNode.data?.linkSpeed || 0;
+        const isQsfp =
+          sourceSpeed >= 40000 ||
+          String(sourceNode.data?.label || '').includes('40G') ||
+          String(sourceNode.data?.label || '').includes('100G');
+        if (isQsfp) requiredQsfpPorts += 1;
+        else requiredSfpPorts += 1;
+      }
     });
 
     const outboundEdges = edges.filter((e) => e.source === node.id);
@@ -425,7 +433,7 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
         type: 'license_port_limit_exceeded',
         nodeId: node.id,
         nodeLabel: String(node.data?.model || 'TA25'),
-        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") requires ${requiredSfpPorts} SFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxSfp} ports.`,
+        message: `Chassis "${node.data?.model || 'TA25'}" (labelled: "${node.data?.label || ''}") requires ${requiredSfpPorts} SFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxSfp} ports.`,
       });
     }
 
@@ -434,7 +442,7 @@ export function validateConfiguration(nodes: CustomNode[], edges: Edge[]): Confi
         type: 'license_port_limit_exceeded',
         nodeId: node.id,
         nodeLabel: String(node.data?.model || 'TA25'),
-        message: `Chassis "${node.data?.model || 'TA25'}" (labeled: "${node.data?.label || ''}") requires ${requiredQsfpPorts} QSFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxQsfp} ports.`,
+        message: `Chassis "${node.data?.model || 'TA25'}" (labelled: "${node.data?.label || ''}") requires ${requiredQsfpPorts} QSFP ports for connected links, which exceeds its "${portCapacity}" license limit of ${maxQsfp} ports.`,
       });
     }
   });

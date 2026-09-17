@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Edge } from '@xyflow/react';
-import type { CustomNode, PortLink } from '../store/types';
+import type { CustomNode, HardwareNodeData, InstalledOptic, PortLink } from '../store/types';
 import { syncPortAssignments } from './portSync';
 import { generateBom, syncOpticsOnTapConnection } from './bom/bomGenerator';
 import { validateConfiguration } from './bom/configValidator';
@@ -513,4 +513,132 @@ describe('BOM regression', () => {
     expect(links).toHaveLength(12);
     links.forEach(l => expect(l.targetPortId).toMatch(/^1\/1\/x\d+$/));
   });
+
+  it('correctly allocates mixed-speed TAP links: 10G links to SFP cages and 100G links to QSFP cages', () => {
+    // 2x 10G links (SFP-533) + 2x 100G links (Q28-503) on a TAP-M253
+    const tap: CustomNode = {
+      id: 'tap-m253-1',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'TAP-M253T Unit',
+        model: 'TAP-M253T',
+        sku: 'TAP-M253T',
+        tappedLinkAllocations: [
+          { qty: 2, optic: 'SFP-533', toolOptic: 'SFP-533T (10G SFP+ LR)' },
+          { qty: 2, optic: 'Q28-503', toolOptic: 'Q28-503T (100G QSFP28 LR4)' },
+        ],
+        tappedLinksCount: 4,
+      },
+    } as unknown as CustomNode;
+
+    const ta = {
+      id: 'ta25e-1',
+      type: 'hardwareNode',
+      position: { x: 300, y: 0 },
+      data: {
+        label: 'Aggregator TA25E',
+        model: 'GigaVUE-TA25E',
+        sku: 'TA25E-BASE',
+        portCapacity: 'Full',
+        optics: [] as InstalledOptic[],
+      },
+    } as unknown as CustomNode;
+
+    const edges: Edge[] = [{ id: 'e-tap-ta', source: 'tap-m253-1', target: 'ta25e-1' }];
+
+    // 1. Sync optics on TA-25E chassis from TAP connection
+    const nodesWithOptics = syncOpticsOnTapConnection([tap, ta], edges);
+    const updatedTa = nodesWithOptics.find(n => n.id === 'ta25e-1')!;
+    const taOptics = (updatedTa.data as HardwareNodeData).optics || [];
+
+    // Should have 4x SFP-533T and 4x Q28-503T auto-added
+    expect(taOptics).toHaveLength(2);
+    expect(taOptics.find((o: InstalledOptic) => o.optic.includes('SFP-533T'))?.qty).toBe(4);
+    expect(taOptics.find((o: InstalledOptic) => o.optic.includes('Q28-503T'))?.qty).toBe(4);
+
+    // 2. Sync port assignments
+    const syncedEdges = syncPortAssignments(nodesWithOptics, edges);
+    const links = linksOf(syncedEdges[0]);
+
+    expect(links).toHaveLength(8);
+
+    // North and South feeds for link 1 and link 2 land on SFP cages (1/1/x1..x4)
+    expect(links[0]).toMatchObject({ sourcePortId: 'L1-N', targetPortId: '1/1/x1' });
+    expect(links[1]).toMatchObject({ sourcePortId: 'L1-S', targetPortId: '1/1/x2' });
+    expect(links[2]).toMatchObject({ sourcePortId: 'L2-N', targetPortId: '1/1/x3' });
+    expect(links[3]).toMatchObject({ sourcePortId: 'L2-S', targetPortId: '1/1/x4' });
+    expect(links.slice(0, 4).every(l => l.opticSku?.includes('SFP-533T'))).toBe(true);
+
+    // North and South feeds for link 3 and link 4 land on QSFP cages (1/1/c1..c4)
+    expect(links[4]).toMatchObject({ sourcePortId: 'L3-N', targetPortId: '1/1/c1' });
+    expect(links[5]).toMatchObject({ sourcePortId: 'L3-S', targetPortId: '1/1/c2' });
+    expect(links[6]).toMatchObject({ sourcePortId: 'L4-N', targetPortId: '1/1/c3' });
+    expect(links[7]).toMatchObject({ sourcePortId: 'L4-S', targetPortId: '1/1/c4' });
+    expect(links.slice(4, 8).every(l => l.opticSku?.includes('Q28-503T'))).toBe(true);
+
+    // 3. Verify Configuration Validator passes with 0 errors
+    const errors = validateConfiguration(nodesWithOptics, syncedEdges);
+    expect(errors).toHaveLength(0);
+
+    // 4. Idempotency: re-running syncPortAssignments preserves the exact same links
+    const reSyncedEdges = syncPortAssignments(nodesWithOptics, syncedEdges);
+    expect(reSyncedEdges).toBe(syncedEdges); // Same reference when unchanged
+    expect(linksOf(reSyncedEdges[0])).toEqual(links);
+  });
+
+  it('handles reverse connection (TA-25E source, TAP target) with mixed link speeds', () => {
+    const tap = {
+      id: 'tap-m253-rev',
+      type: 'hardwareNode',
+      position: { x: 300, y: 0 },
+      data: {
+        label: 'TAP-M253T Rev',
+        model: 'TAP-M253T',
+        sku: 'TAP-M253T',
+        tappedLinkAllocations: [
+          { qty: 1, optic: 'SFP-533', toolOptic: 'SFP-533T (10G SFP+ LR)' },
+          { qty: 1, optic: 'Q28-503', toolOptic: 'Q28-503T (100G QSFP28 LR4)' },
+        ],
+        tappedLinksCount: 2,
+      },
+    } as unknown as CustomNode;
+
+    const ta = {
+      id: 'ta25e-rev',
+      type: 'hardwareNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Aggregator TA25E Rev',
+        model: 'GigaVUE-TA25E',
+        sku: 'TA25E-BASE',
+        portCapacity: 'Full',
+        optics: [] as InstalledOptic[],
+      },
+    } as unknown as CustomNode;
+
+    const edges: Edge[] = [{ id: 'e-rev', source: 'ta25e-rev', target: 'tap-m253-rev' }];
+
+    const nodesWithOptics = syncOpticsOnTapConnection([tap, ta], edges);
+    const syncedEdges = syncPortAssignments(nodesWithOptics, edges);
+    const links = linksOf(syncedEdges[0]);
+
+    expect(links).toHaveLength(4);
+    // Link 1: 10G -> SFP cages on source chassis
+    expect(links[0]).toMatchObject({ sourcePortId: '1/1/x1', targetPortId: 'L1-N' });
+    expect(links[1]).toMatchObject({ sourcePortId: '1/1/x2', targetPortId: 'L1-S' });
+    expect(links[0].opticSku).toContain('SFP-533T');
+    expect(links[1].opticSku).toContain('SFP-533T');
+
+    // Link 2: 100G -> QSFP cages on source chassis
+    expect(links[2]).toMatchObject({ sourcePortId: '1/1/c1', targetPortId: 'L2-N' });
+    expect(links[3]).toMatchObject({ sourcePortId: '1/1/c2', targetPortId: 'L2-S' });
+    expect(links[2].opticSku).toContain('Q28-503T');
+    expect(links[3].opticSku).toContain('Q28-503T');
+
+    const errors = validateConfiguration(nodesWithOptics, syncedEdges);
+    expect(errors).toHaveLength(0);
+  });
 });
+
+

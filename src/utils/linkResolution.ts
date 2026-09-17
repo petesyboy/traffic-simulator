@@ -9,7 +9,7 @@
  */
 import type { Edge } from '@xyflow/react';
 import type { CustomNode, HardwareNodeData, InstalledOptic, PortLink } from '../store/types';
-import { getChassisPorts, getPortOpticMap, resolveTapAllocations } from './ports';
+import { getChassisPorts, getPortOpticMap, getTapAllocationForLink, getTapLinkNumber } from './ports';
 import { getOpticSpeed, getOpticSpeedMbps, getOpticFiberType, isBreakoutPanelModel } from './hardwareUtils';
 import { getSupportedBoards } from './opticValidation';
 import { isPacketFeedInput, resolveInputFeedOptic } from './inputFeedOptics';
@@ -126,9 +126,9 @@ export function diagnoseLink(edge: Edge, nodes: CustomNode[]): LinkDiagnosticRes
     // node, against what the receiving chassis actually supports.
     sourceOptic = resolveInputFeedOptic(sourceNode, targetModel, (targetNode.data as HardwareNodeData)?.portCapacity as string);
   } else if (isSourceTap) {
-    const hwData = sourceNode.data as HardwareNodeData;
-    const allocs = resolveTapAllocations(hwData, 'SFP-532');
-    sourceOptic = allocs[0]?.toolOptic || allocs[0]?.optic || (hwData.tappedLinkOptic as string) || 'Passive Optical Splitter';
+    const linkNum = getTapLinkNumber(sourcePortId);
+    const alloc = getTapAllocationForLink(sourceNode, linkNum, targetModel);
+    sourceOptic = alloc.toolOptic || alloc.optic || 'Passive Optical Splitter';
   }
 
   // Get target optic
@@ -266,9 +266,9 @@ export function resolveLinkConnectionProblem(
   } else if (isPacketFeedInput(sourceNode)) {
     sourceOptic = resolveInputFeedOptic(sourceNode, targetModel, (targetNode.data as HardwareNodeData)?.portCapacity as string);
   } else if (sourceNode.type === 'inputNode' || sourceModel.includes('TAP')) {
-    const hwData = sourceNode.data as HardwareNodeData;
-    const allocs = resolveTapAllocations(hwData, 'SFP-532');
-    sourceOptic = allocs[0]?.toolOptic || allocs[0]?.optic || (hwData.tappedLinkOptic as string) || 'SFP-532T (10G SFP+ SR)';
+    const linkNum = getTapLinkNumber(sourcePortId);
+    const alloc = getTapAllocationForLink(sourceNode, linkNum, targetModel);
+    sourceOptic = alloc.toolOptic || alloc.optic || 'SFP-532T (10G SFP+ SR)';
   }
 
   let targetOptic = '';

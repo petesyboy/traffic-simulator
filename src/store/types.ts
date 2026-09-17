@@ -291,6 +291,7 @@ export interface GigaSmartNodeData extends BaseNodeData {
   metadataRate?: number;
   decryptionRate?: number;
   sliceSize?: number;
+  fromBundle?: string;
   /** GTP Flow Sampling only: percentage of GTP flows sampled (0-100). Per Gigamon's
    *  KB, 0% or 100% needs only the GTPMAX license; anything strictly in between also
    *  needs a FlowVUE entitlement on the same card. Unset is treated as 100%. */
@@ -337,6 +338,7 @@ export interface HardwareNodeData extends BaseNodeData {
   image?: string;
   optics?: InstalledOptic[];
   gigaSmartApps?: GigaSmartNodeData[];
+  activeBundle?: 'CoreVUE' | 'NetVUE' | 'NetVUE+' | 'SecureVUE' | 'SecureVUE+' | string;
   installedBoards?: Record<string, string>;
   powerSupply?: 'AC' | 'DC';
   psuCount?: 2 | 4;

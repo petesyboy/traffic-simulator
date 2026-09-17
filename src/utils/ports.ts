@@ -17,6 +17,7 @@ import { findModuleBySku, findChassisInCatalogue, getOpticSpeed, getTaLicenseLim
 import { getSupportedBoards } from './opticValidation';
 import { PANEL_MPO_GROUPS, PANEL_LC_PER_GROUP, isMpoPortId, getBreakoutLcOptics } from './breakoutRules';
 import { getEdgeTapLinksCount } from './clusterUtils';
+import { getTapTerminationClass } from '../constants/tapOpticRules';
 
 /** GigaVUE-OS port-id prefixes: x = SFP family, c = QSFP family, g = 1G copper, m = MPO family. */
 const CAGE_PREFIX: Record<ChassisPort['cage'], string> = { SFP: 'x', QSFP: 'c', RJ45: 'g', MPO: 'm' };
@@ -213,6 +214,119 @@ export function resolveTapAllocations(
   const qty = legacyCount === undefined ? 1 : legacyCount;
   if (qty <= 0) return [];
   return [{ qty, optic: (data?.tappedLinkOptic as string) || defaultOptic }];
+}
+
+/**
+ * Resolves the 1-indexed link number for a TAP feed port ID (e.g. 'L3-N' -> 3).
+ * If unparseable, falls back to Math.floor(feedIndex / 2) + 1 when feedIndex is given, else 1.
+ */
+export function getTapLinkNumber(portId?: string, feedIndex?: number): number {
+  if (portId) {
+    const m = portId.match(/^L(\d+)-[NS]$/i);
+    if (m) return parseInt(m[1], 10);
+    const mAlt = portId.match(/\b(?:link|l)?(\d+)\b/i);
+    if (mAlt) return parseInt(mAlt[1], 10);
+  }
+  if (feedIndex !== undefined && feedIndex >= 0) {
+    return Math.floor(feedIndex / 2) + 1;
+  }
+  return 1;
+}
+
+export interface TapLinkAllocationResolved {
+  qty: number;
+  optic: string;
+  toolOptic: string;
+  cage: ChassisPort['cage'];
+}
+
+/**
+ * Returns the specific allocation, upgraded tool optic, and required chassis cage for a 1-indexed link on a TAP.
+ */
+export function getTapAllocationForLink(
+  tapNode: CustomNode,
+  linkNumber: number,
+  chassisModel?: string,
+): TapLinkAllocationResolved {
+  const data = tapNode.data as HardwareNodeData | undefined;
+  const isHw = tapNode.type === 'hardwareNode' && String(data?.model || '').includes('TAP');
+  const isSMTap = isHw
+    ? (String(data?.sku || '').includes('253') ||
+       String(data?.sku || '').includes('273') ||
+       String(data?.sku || '').includes('453') ||
+       String(data?.model || '').toLowerCase().includes('single-mode') ||
+       String(data?.model || '').toLowerCase().includes('sm') ||
+       String(data?.sku || '').includes('253T') ||
+       String(data?.sku || '').includes('273T') ||
+       String(data?.sku || '').includes('453T'))
+    : (data?.tapFiberMode === 'Singlemode');
+
+  const tapModel = String(data?.model || '');
+  const tapSku = String(data?.sku || '');
+  const tapCls = getTapTerminationClass(tapModel, tapSku);
+  const isM506T = tapCls === 'bidi' || tapModel.includes('TAP-M506T') || tapSku.includes('TAP-M506T');
+  const isMpoMM = tapCls === 'multimode-mpo';
+  const isMpoSM = tapCls === 'singlemode-mpo';
+  const isQsfpOnly = chassisModel ? (chassisModel.includes('TA200') || chassisModel.includes('TA400')) : false;
+
+  let defaultOptic = 'SFP-532T';
+  if (isM506T) {
+    defaultOptic = 'QSB-523T';
+  } else if (isMpoMM) {
+    defaultOptic = 'Q28-502T';
+  } else if (isMpoSM) {
+    defaultOptic = 'Q28-506';
+  } else if (isSMTap) {
+    defaultOptic = isQsfpOnly ? 'Q28-503T' : 'SFP-533T';
+  } else if (isQsfpOnly) {
+    defaultOptic = 'Q28-508';
+  }
+
+  const allocations = resolveTapAllocations(data, defaultOptic);
+  const isSplitter = (str?: string) => Boolean(str && str.startsWith('Passive Optical Splitter'));
+
+  const upgradeOptic = (val?: string) => {
+    let optic = val || defaultOptic;
+    const needsUpgrade =
+      isSplitter(optic) ||
+      (isM506T && optic.startsWith('SFP')) ||
+      (isMpoMM && optic.startsWith('SFP')) ||
+      (isMpoSM && optic.startsWith('SFP')) ||
+      (isQsfpOnly && optic.startsWith('SFP'));
+    return needsUpgrade ? defaultOptic : optic;
+  };
+
+  if (allocations.length === 0) {
+    return {
+      qty: 1,
+      optic: defaultOptic,
+      toolOptic: defaultOptic,
+      cage: getOpticCage(defaultOptic),
+    };
+  }
+
+  let accumulated = 0;
+  for (const alloc of allocations) {
+    accumulated += (alloc.qty || 0);
+    if (linkNumber <= accumulated) {
+      const selected = upgradeOptic(alloc.toolOptic || alloc.optic);
+      return {
+        qty: alloc.qty,
+        optic: alloc.optic,
+        toolOptic: selected,
+        cage: getOpticCage(selected),
+      };
+    }
+  }
+
+  const last = allocations[allocations.length - 1];
+  const selected = upgradeOptic(last.toolOptic || last.optic);
+  return {
+    qty: last.qty,
+    optic: last.optic,
+    toolOptic: selected,
+    cage: getOpticCage(selected),
+  };
 }
 
 /** True when a TAP has no tapped links set up, so nothing can be derived from it. */

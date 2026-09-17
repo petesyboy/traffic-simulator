@@ -28,8 +28,10 @@ import {
   S3StorageIcon,
   WiresharkIcon,
   DwdmNetworkIcon,
+  BundleIcon,
 } from './Icons';
 import { NODE_TYPES, ACTION_TYPES, CONFIG_TYPES } from '../constants/nodeTypes';
+import { ORDERED_BUNDLES } from '../constants/gigaSmartBundles';
 import { DEFAULT_TOOL_INGEST_LIMITS_MBPS, GENERIC_PACKET_TOOL_INGEST_LIMIT_MBPS } from '../constants/toolIngestLimits';
 import hardwareCatalogue from '../constants/hardwareCatalogue.json';
 import { getSkus } from '../utils/bom/skuUtils';
@@ -940,7 +942,115 @@ const Sidebar: React.FC = () => {
             </div>
             {openSections.apps && (
               <div className="tree-content" style={{ maxHeight: '550px', overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', padding: '4px' }}>
+                {/* ── Software Bundles Sub-Group ── */}
+                <div
+                  style={{
+                    padding: '6px 8px 4px 8px',
+                    fontSize: '10px',
+                    color: '#aaa',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    marginBottom: '4px',
+                  }}
+                >
+                  <span>📦 Software Bundles</span>
+                  <span style={{ fontSize: '8.5px', color: '#888' }}>Drop on HC</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', padding: '2px 4px 8px 4px' }}>
+                  {ORDERED_BUNDLES
+                    .filter(
+                      (bundle) =>
+                        bundle.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        bundle.skuBadge.toLowerCase().includes(searchQuery.toLowerCase()),
+                    )
+                    .map((bundle) => {
+                      const isHighPriority = ['CoreVUE', 'NetVUE+', 'SecureVUE+'].includes(bundle.id);
+                      return (
+                        <div
+                          key={bundle.id}
+                          className="tree-draggable"
+                          draggable
+                          title={`${bundle.label}: ${bundle.tooltip}`}
+                          onDragStart={(e) =>
+                            onDragStart(e, NODE_TYPES.GIGASMART, bundle.label, {
+                              isBundle: true,
+                              bundleId: bundle.id,
+                              bundleType: bundle.id,
+                            })
+                          }
+                          style={{
+                            margin: 0,
+                            padding: '6px 4px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            gap: '3px',
+                            background: isHighPriority ? `${bundle.badgeColour}18` : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${isHighPriority ? bundle.badgeColour + '55' : 'rgba(255,255,255,0.08)'}`,
+                            borderRadius: '6px',
+                            cursor: 'grab',
+                            position: 'relative',
+                            boxShadow: isHighPriority ? `0 2px 6px ${bundle.badgeColour}20` : 'none',
+                          }}
+                        >
+                          <BundleIcon colour={bundle.badgeColour} size={20} />
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: isHighPriority ? 700 : 500,
+                              lineHeight: '1.1',
+                              color: isHighPriority ? '#fff' : 'var(--text-primary)',
+                            }}
+                          >
+                            {bundle.id}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '7.5px',
+                              fontWeight: 700,
+                              color: bundle.accentColour,
+                              background: 'rgba(0, 0, 0, 0.35)',
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              letterSpacing: '0.2px',
+                              border: `1px solid ${bundle.badgeColour}40`,
+                            }}
+                          >
+                            {bundle.skuBadge}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* ── Individual Applications Sub-Group ── */}
+                <div
+                  style={{
+                    padding: '6px 8px 4px 8px',
+                    fontSize: '10px',
+                    color: '#aaa',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    marginBottom: '4px',
+                  }}
+                >
+                  <span>⚡ Individual Apps</span>
+                  <span style={{ fontSize: '8.5px', color: '#888' }}>15 apps</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', padding: '2px 4px 4px 4px' }}>
                   {appsList
                     .filter((app) => app.label.toLowerCase().includes(searchQuery))
                     .map((app) => (
