@@ -1,5 +1,10 @@
 [
   {
+    "version": "1.0.801",
+    "date": "2026-09-17",
+    "summary": "Maintain SMT-HC1P-GEN3-BN-ZTA-SW-TM bundle for HC1-Plus SecureVUE+ and PoC (v1.0.801)"
+  },
+  {
     "version": "1.0.800",
     "date": "2026-09-17",
     "summary": "Add Proof of Concept (PoC) evaluation mode to Bill of Materials (v1.0.800)"

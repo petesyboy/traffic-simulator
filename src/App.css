@@ -1404,42 +1404,42 @@
   border-width: 1.5px;
   border-style: dashed;
   border-radius: 16px;
-  z-index: 0;
+  z-index: 5;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .site-enclosure-header {
   /* The enclosure itself stays click-through; only its header is a handle. */
-  pointer-events: auto;
-  cursor: move;
+  pointer-events: auto !important;
+  cursor: grab !important;
   position: absolute;
-  top: -18px;
+  top: -20px;
   left: 20px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: 8px;
-  border: 1.5px solid;
+  border: 2px solid;
   background: var(--bg-tertiary, #161618);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
   user-select: none;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
-  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85);
+  z-index: 1000;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .site-enclosure-header:hover {
-  cursor: move;
+  cursor: grab !important;
   transform: translateY(-2px);
   background: var(--bg-surface, #1e293b);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.95);
 }
 
 .site-enclosure-header:active {
-  cursor: grabbing;
+  cursor: grabbing !important;
   transform: translateY(0);
 }
 

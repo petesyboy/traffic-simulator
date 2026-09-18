@@ -16,6 +16,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.801",
+    date: "2026-09-17",
+    summary: "Maintain SMT-HC1P-GEN3-BN-ZTA-SW-TM bundle for HC1-Plus SecureVUE+ and PoC (v1.0.801)",
+  },
+  {
     version: "1.0.800",
     date: "2026-09-17",
     summary: "Add Proof of Concept (PoC) evaluation mode to Bill of Materials (v1.0.800)",
@@ -109,10 +114,5 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "1.0.779",
     date: "2026-09-11",
     summary: "Drop cosmetic cloud platform selector from Cloud Suite quick-add (v1.0.779)",
-  },
-  {
-    version: "1.0.778",
-    date: "2026-09-11",
-    summary: "Add GigaVUE Cloud Suite (VBL) quick-add to Commercial Quote (v1.0.778)",
   },
 ];
